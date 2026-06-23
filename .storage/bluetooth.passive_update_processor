@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "bluetooth.passive_update_processor",
+  "data": {
+    "01KS1BKKE800WKY6QHAR640WK9": {
+      "binary_sensor": {
+        "devices": {},
+        "entity_descriptions": {},
+        "entity_names": {},
+        "entity_data": {}
+      },
+      "sensor": {
+        "devices": {},
+        "entity_descriptions": {},
+        "entity_names": {},
+        "entity_data": {}
+      }
+    }
+  }
+}

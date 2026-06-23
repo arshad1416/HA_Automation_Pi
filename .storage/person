@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "minor_version": 1,
+  "key": "person",
+  "data": {
+    "items": [
+      {
+        "id": "arshad14",
+        "name": "arshad14",
+        "user_id": "3b4f228b5f7e4c038ec670067287fc67",
+        "device_trackers": [
+          "device_tracker.oneplus_13"
+        ]
+      }
+    ]
+  }
+}

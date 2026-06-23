@@ -1,0 +1,388 @@
+default_config:
+
+# Load frontend themes from the themes folder
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include_dir_merge_list automations/
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+# Manual override toggle for kitchen auto lights
+# Set by manual-off trigger in downstairs_cabinet_occupancy_auto
+# Cleared by unoccupied event immediately, or by 15-minute cooldown
+input_number:
+  nightly_dim_brightness:
+    name: Nightly Dim Brightness
+    icon: mdi:brightness-6
+    min: 1
+    max: 100
+    step: 5
+    unit_of_measurement: '%'
+    initial: 10
+  airbnb_heater_temperature:
+    name: Airbnb Heater Temperature
+    icon: mdi:thermometer
+    min: 10
+    max: 30
+    step: 1
+    unit_of_measurement: °C
+    initial: 20
+  vent_fan_heat_threshold:
+    name: Vent Fan Heat Threshold
+    icon: mdi:thermometer-low
+    min: 15
+    max: 25
+    step: 1
+    unit_of_measurement: °C
+    initial: 21
+  vent_fan_cool_threshold:
+    name: Vent Fan Cool Threshold
+    icon: mdi:thermometer-high
+    min: 20
+    max: 30
+    step: 1
+    unit_of_measurement: °C
+    initial: 23
+  stairs_late_night_brightness:
+    name: Stairs Late Night Brightness
+    icon: mdi:stairs
+    min: 1
+    max: 100
+    step: 5
+    unit_of_measurement: '%'
+    initial: 10
+  stairs_day_brightness:
+    name: Stairs Day Brightness
+    icon: mdi:stairs
+    min: 1
+    max: 100
+    step: 5
+    unit_of_measurement: '%'
+    initial: 100
+
+# Manual override toggle for kitchen auto lights
+# Set by manual-off trigger in downstairs_cabinet_occupancy_auto
+# Cleared by unoccupied event immediately, or by 15-minute cooldown
+  window_family_room_facing:
+    name: Family Room Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 350
+  window_minas_room_facing:
+    name: Mina's Room Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 350
+  window_dining_room_facing:
+    name: Dining Room Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 270
+  window_izaans_room_facing:
+    name: Izaan's Room Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 165
+  window_guest_room_facing:
+    name: Guest Room Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 165
+  window_living_room_facing:
+    name: Living Room Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 165
+
+  house_elevation:
+    name: House Elevation
+    icon: mdi:elevation-rise
+    min: 0
+    max: 500
+    step: 0.1
+    unit_of_measurement: "m"
+    initial: 256.6
+  ceiling_height:
+    name: Ceiling Height
+    icon: mdi:human
+    min: 2
+    max: 5
+    step: 0.01
+    unit_of_measurement: "m"
+    initial: 2.74
+
+  floor_family_room:
+    name: Family Room Floor
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 1
+  floor_dining_room:
+    name: Dining Room Floor
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 1
+  floor_living_room:
+    name: Living Room Floor
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 1
+  floor_minas_room:
+    name: "Mina's Room Floor"
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 2
+  floor_master_bedroom:
+    name: Master Bedroom Floor
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 2
+  window_master_bedroom_facing:
+    name: Master Bedroom Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 350
+  window_kitchen_facing:
+    name: Kitchen Window Facing
+    icon: mdi:window-open
+    min: 0
+    max: 359
+    step: 1
+    unit_of_measurement: "°"
+    initial: 350
+  floor_kitchen:
+    name: Kitchen Floor
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 1
+input_boolean:
+  kitchen_auto_lights_disable:
+    name: Kitchen Auto Lights Disable
+    icon: mdi:lightbulb-off
+  kitchen_occupied_motion:
+    name: Kitchen Occupied (Motion)
+    icon: mdi:motion-sensor
+    initial: false
+  nest_kitchen_presence:
+    name: Nest Kitchen Presence
+    icon: mdi:motion-sensor
+  climate_ai_enabled:
+    name: Climate AI Enabled
+    icon: mdi:thermostat-auto
+    initial: true
+  climate_summer_mode:
+    name: Climate Summer Mode
+    icon: mdi:white-balance-sunny
+    initial: true
+  climate_winter_mode:
+    name: Climate Winter Mode
+    icon: mdi:snowflake
+    initial: false
+  airbnb_heater_auto:
+    name: "Airbnb Heater Auto"
+    initial: on
+    icon: mdi:thermostat-auto
+input_text:
+  climate_ai_recommendation:
+    name: Climate AI Recommendation
+    icon: mdi:brain
+    max: 255
+  climate_ai_debug:
+    name: Climate AI Debug
+    icon: mdi:code-json
+    max: 255
+
+counter:
+  season_switch_summer:
+    name: Season Switch Summer
+    icon: mdi:counter
+    initial: 0
+    step: 1
+    minimum: 0
+    maximum: 3
+    restore: true
+  season_switch_winter:
+    name: Season Switch Winter
+    icon: mdi:counter
+    initial: 0
+    step: 1
+    minimum: 0
+    maximum: 3
+    restore: true
+
+# Kitchen manual cooldown - prevents re-triggering lights for 15 min after manual off
+timer:
+  kitchen_manual_cooldown:
+    duration: "00:15:00"
+    name: Kitchen Manual Cooldown
+  kitchen_occupied_timeout:
+    name: Kitchen Occupied Timeout
+    duration: "00:02:00"
+    icon: mdi:timer-sand
+
+# ── HTTP (external access via Cloudflare) ────────────────────────────────
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 127.0.0.1
+    - ::1
+    - 173.245.48.0/20
+    - 103.21.244.0/22
+    - 103.22.200.0/22
+    - 103.31.4.0/22
+    - 141.101.64.0/18
+    - 108.162.192.0/18
+    - 190.93.240.0/20
+    - 188.114.96.0/20
+    - 197.234.240.0/22
+    - 198.41.128.0/17
+    - 162.158.0.0/15
+    - 104.16.0.0/13
+    - 104.24.0.0/14
+    - 172.64.0.0/13
+    - 131.0.72.0/22
+
+# Emulated Hue — exposes HA devices to Echo Dots as fake Philips Hue bridge
+emulated_hue:
+  host_ip: 192.168.0.102
+  listen_port: 80
+  expose_by_default: true
+  exposed_domains:
+    - light
+    - switch
+    - scene
+    - script
+
+# Limit history to 7 days to keep DB manageable
+recorder:
+  purge_keep_days: 7
+  auto_purge: true
+
+logger:
+  default: warning
+  logs:
+    homeassistant.components.emulated_hue: error
+# Rest API commands for Climate AI - Direct API calls bypassing conversation agent
+rest_command:
+  climate_ai_gemini:
+    url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
+    method: POST
+    headers:
+      x-goog-api-key: !secret gemini_api_key
+      Content-Type: "application/json"
+    payload: '{"contents":[{"parts":[{"text":{{ prompt | tojson }}}]}],"generationConfig":{"maxOutputTokens":4000}}'
+    content_type: "application/json"
+    timeout: 60
+
+# ── Wyze Garage Cam (Garage Cam v3) ──────────────────────────────────
+camera:
+  - platform: ffmpeg
+    name: Garage Cam
+    input: rtsp://127.0.0.1:8554/garage
+
+# ── Garage door vision check sensors ─────────────────────────────────
+command_line:
+  - sensor:
+      name: Garage Door Vision State
+      unique_id: garage_door_vision_state
+      command: "python3 /config/check_garage_vision.py"
+      scan_interval: 60
+      command_timeout: 35
+  - sensor:
+      name: Solar Power Now
+      unique_id: solar_power_now
+      command: >-
+        /usr/local/bin/python3 -c 'import json;
+        d=json.load(open("/config/apsystems.json"));
+        print(int(d.get("power_approx_w",0)))'
+      unit_of_measurement: W
+      scan_interval: 300
+  - sensor:
+      name: Solar Energy Today
+      unique_id: solar_energy_today
+      command: >-
+        /usr/local/bin/python3 -c 'import json;
+        d=json.load(open("/config/apsystems.json"));
+        print(d.get("today_kwh",0))'
+      unit_of_measurement: kWh
+      scan_interval: 300
+  - sensor:
+      name: Solar Energy Month
+      unique_id: solar_energy_month
+      command: >-
+        /usr/local/bin/python3 -c 'import json;
+        d=json.load(open("/config/apsystems.json"));
+        print(d.get("month_kwh",0))'
+      unit_of_measurement: kWh
+      scan_interval: 300
+
+template:
+  - binary_sensor:
+      - name: Garage Door (Vision)
+        unique_id: garage_door_vision
+        device_class: garage_door
+        state: >
+          {{ states('sensor.garage_door_vision_state') | lower == 'open' }}
+        availability: >
+          {{ states('sensor.garage_door_vision_state') not in ('unknown', 'unavailable', 'error') }}
+
+
+
+
+# ESPHome Kitchen mmWave Bridge — workaround for HA 2026.6.3 + Python 3.14 ESPHome integration bug
+shell_command:
+  start_esphome_kitchen_bridge: "pkill -f esphome_kitchen_bridge.py 2>/dev/null; nohup python3 /config/esphome_kitchen_bridge.py > /config/esphome_bridge.log 2>&1 &"
+
+
+# Google Assistant — control HA via Google Home speakers
+# TEMPORARILY DISABLED: google_assistant_service_account.json not found after restore
+# google_assistant:
+#   project_id: shiftlogic-ha
+#   service_account: !include google_assistant_service_account.json
+#   report_state: true
+#   expose_by_default: true
+#   exposed_domains:
+#     - light
+#     - switch
+#     - climate
+#     - cover
+#     - media_player
+#     - fan
+#     - scene
+#     - script
+#     - lock
+#     - binary_sensor
+#     - sensor

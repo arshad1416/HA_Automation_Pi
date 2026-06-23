@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "frontend.user_data_3b4f228b5f7e4c038ec670067287fc67",
+  "data": {
+    "core": {
+      "showEntityIdPicker": true
+    }
+  }
+}

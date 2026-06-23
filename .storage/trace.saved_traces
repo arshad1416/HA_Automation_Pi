@@ -1,0 +1,871 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "trace.saved_traces",
+  "data": {
+    "automation.downstairs_occupancy_lighting": [
+      {
+        "extended_dict": {
+          "last_step": "action/0/choose/3/sequence/0/else/0",
+          "run_id": "9c3416c8853f881eca63990a10aa08a4",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T03:19:08.447743+00:00",
+            "finish": "2026-06-23T03:19:24.500445+00:00"
+          },
+          "domain": "automation",
+          "item_id": "downstairs_occupancy_lighting",
+          "error": "Request timeout",
+          "trigger": "Home Assistant starting",
+          "trace": {
+            "trigger/6": [
+              {
+                "path": "trigger/6",
+                "timestamp": "2026-06-23T03:19:08.447906+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.downstairs_occupancy_lighting",
+                    "state": "on",
+                    "attributes": {
+                      "id": "downstairs_occupancy_lighting",
+                      "last_triggered": null,
+                      "mode": "queued",
+                      "current": 0,
+                      "max": 10,
+                      "friendly_name": "Downstairs Occupancy Lighting"
+                    },
+                    "last_changed": "2026-06-23T03:18:39.301286+00:00",
+                    "last_reported": "2026-06-23T03:18:39.301286+00:00",
+                    "last_updated": "2026-06-23T03:18:39.301286+00:00",
+                    "context": {
+                      "id": "01KVS7SCY57R49GGAVTKC54ERH",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "ha_start",
+                    "idx": "6",
+                    "alias": null,
+                    "platform": "homeassistant",
+                    "event": "start",
+                    "description": "Home Assistant starting"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T03:19:08.448172+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVS7T9CZW6V5QG8ZBSNP0XS5",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "error": "Request timeout",
+                "result": {
+                  "choice": 3
+                }
+              }
+            ],
+            "action/0/choose/0": [
+              {
+                "path": "action/0/choose/0",
+                "timestamp": "2026-06-23T03:19:08.448640+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/0/conditions/0": [
+              {
+                "path": "action/0/choose/0/conditions/0",
+                "timestamp": "2026-06-23T03:19:08.461667+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/1": [
+              {
+                "path": "action/0/choose/1",
+                "timestamp": "2026-06-23T03:19:08.461820+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/1/conditions/0": [
+              {
+                "path": "action/0/choose/1/conditions/0",
+                "timestamp": "2026-06-23T03:19:08.461857+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/2": [
+              {
+                "path": "action/0/choose/2",
+                "timestamp": "2026-06-23T03:19:08.461909+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/2/conditions/0": [
+              {
+                "path": "action/0/choose/2/conditions/0",
+                "timestamp": "2026-06-23T03:19:08.461936+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3": [
+              {
+                "path": "action/0/choose/3",
+                "timestamp": "2026-06-23T03:19:08.461980+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/0/choose/3/conditions/0": [
+              {
+                "path": "action/0/choose/3/conditions/0",
+                "timestamp": "2026-06-23T03:19:08.462004+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0": [
+              {
+                "path": "action/0/choose/3/sequence/0",
+                "timestamp": "2026-06-23T03:19:08.462244+00:00",
+                "error": "Request timeout",
+                "result": {
+                  "choice": "else"
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if": [
+              {
+                "path": "action/0/choose/3/sequence/0/if",
+                "timestamp": "2026-06-23T03:19:08.462429+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0",
+                "timestamp": "2026-06-23T03:19:08.462463+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0",
+                "timestamp": "2026-06-23T03:19:08.462492+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0",
+                "timestamp": "2026-06-23T03:19:08.462517+00:00",
+                "result": {
+                  "result": false,
+                  "state": "off",
+                  "wanted_state": "on"
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/1": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1",
+                "timestamp": "2026-06-23T03:19:08.462570+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0",
+                "timestamp": "2026-06-23T03:19:08.462594+00:00",
+                "result": {
+                  "result": false,
+                  "state": "unknown",
+                  "wanted_state": "on"
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/else/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/else/0",
+                "timestamp": "2026-06-23T03:19:08.462735+00:00",
+                "error": "Request timeout",
+                "result": {
+                  "params": {
+                    "domain": "light",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "light.kitchen_light",
+                        "light.island_light_kitchen_island_light",
+                        "light.island_light_light",
+                        "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                        "light.nanoleaf_multicolor_ls",
+                        "light.nanoleaf_multicolor_ls_2"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "downstairs_occupancy_lighting",
+            "alias": "Downstairs Occupancy Lighting",
+            "description": "Kitchen lighting via mmWave presence + motion OR gate. 5 branches: occupied, unoccupied, manual, startup, watchdog.",
+            "mode": "queued",
+            "max": 10,
+            "max_exceeded": "silent",
+            "trigger": [
+              {
+                "id": "occupied",
+                "platform": "state",
+                "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                "to": "on"
+              },
+              {
+                "id": "occupied",
+                "platform": "state",
+                "entity_id": "input_boolean.kitchen_occupied_motion",
+                "to": "on"
+              },
+              {
+                "id": "occupied",
+                "platform": "state",
+                "entity_id": "timer.kitchen_manual_cooldown",
+                "to": "idle"
+              },
+              {
+                "id": "unoccupied",
+                "platform": "state",
+                "entity_id": "input_boolean.kitchen_occupied_motion",
+                "to": "off"
+              },
+              {
+                "id": "unoccupied",
+                "platform": "state",
+                "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                "to": "off",
+                "for": {
+                  "seconds": 10
+                }
+              },
+              {
+                "id": "manual_off",
+                "platform": "state",
+                "entity_id": "light.kitchen_light",
+                "to": "off"
+              },
+              {
+                "id": "ha_start",
+                "platform": "homeassistant",
+                "event": "start"
+              },
+              {
+                "id": "watchdog",
+                "platform": "state",
+                "entity_id": "light.kitchen_light",
+                "to": "on",
+                "for": {
+                  "minutes": 30
+                }
+              }
+            ],
+            "condition": [],
+            "action": [
+              {
+                "choose": [
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "occupied"
+                      },
+                      {
+                        "condition": "not",
+                        "conditions": [
+                          {
+                            "condition": "state",
+                            "entity_id": "timer.kitchen_manual_cooldown",
+                            "state": "active"
+                          }
+                        ]
+                      },
+                      {
+                        "condition": "or",
+                        "conditions": [
+                          {
+                            "condition": "state",
+                            "entity_id": "input_boolean.kitchen_occupied_motion",
+                            "state": "on"
+                          },
+                          {
+                            "condition": "state",
+                            "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                            "state": "on"
+                          }
+                        ]
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "light.turn_on",
+                        "target": {
+                          "entity_id": [
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "data": {
+                          "brightness_pct": 100,
+                          "transition": 1
+                        }
+                      },
+                      {
+                        "action": "light.turn_on",
+                        "target": {
+                          "entity_id": [
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "data": {
+                          "brightness_pct": 100
+                        }
+                      },
+                      {
+                        "if": [
+                          {
+                            "condition": "not",
+                            "conditions": [
+                              {
+                                "condition": "template",
+                                "value_template": "{% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %} {{ now() < nr and now().date() == nr.date() }}\n"
+                              }
+                            ]
+                          },
+                          {
+                            "condition": "or",
+                            "conditions": [
+                              {
+                                "condition": "state",
+                                "entity_id": "sun.sun",
+                                "state": "below_horizon"
+                              },
+                              {
+                                "condition": "template",
+                                "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(0) < 10 }}"
+                              },
+                              {
+                                "condition": "state",
+                                "entity_id": "weather.forecast_home",
+                                "state": [
+                                  "cloudy",
+                                  "rainy",
+                                  "snowy",
+                                  "fog",
+                                  "overcast",
+                                  "partlycloudy"
+                                ]
+                              }
+                            ]
+                          }
+                        ],
+                        "then": [
+                          {
+                            "action": "light.turn_on",
+                            "target": {
+                              "entity_id": [
+                                "light.kitchen_light",
+                                "light.island_light_kitchen_island_light",
+                                "light.island_light_light"
+                              ]
+                            },
+                            "data": {
+                              "brightness_pct": 100
+                            },
+                            "continue_on_error": true
+                          },
+                          {
+                            "action": "switch.turn_on",
+                            "target": {
+                              "entity_id": "switch.kitchen_pantry_light"
+                            },
+                            "continue_on_error": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "unoccupied"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "timer.kitchen_manual_cooldown",
+                        "state": "idle"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "input_boolean.kitchen_occupied_motion",
+                        "state": "off"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                        "state": "off"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "timer.cancel",
+                        "target": {
+                          "entity_id": "timer.kitchen_manual_cooldown"
+                        }
+                      },
+                      {
+                        "action": "light.turn_off",
+                        "target": {
+                          "entity_id": [
+                            "light.kitchen_light",
+                            "light.island_light_kitchen_island_light",
+                            "light.island_light_light",
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "switch.kitchen_pantry_light"
+                        },
+                        "continue_on_error": true
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "manual_off"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{{ trigger.to_state.context.parent_id is none }}"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "timer.start",
+                        "target": {
+                          "entity_id": "timer.kitchen_manual_cooldown"
+                        },
+                        "data": {
+                          "duration": "00:15:00"
+                        }
+                      },
+                      {
+                        "action": "light.turn_off",
+                        "target": {
+                          "entity_id": [
+                            "light.kitchen_light",
+                            "light.island_light_kitchen_island_light",
+                            "light.island_light_light",
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "switch.kitchen_pantry_light"
+                        },
+                        "continue_on_error": true
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "ha_start"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "if": [
+                          {
+                            "condition": "or",
+                            "conditions": [
+                              {
+                                "condition": "state",
+                                "entity_id": "input_boolean.kitchen_occupied_motion",
+                                "state": "on"
+                              },
+                              {
+                                "condition": "state",
+                                "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                                "state": "on"
+                              }
+                            ]
+                          }
+                        ],
+                        "then": [
+                          {
+                            "action": "light.turn_on",
+                            "target": {
+                              "entity_id": [
+                                "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                                "light.nanoleaf_multicolor_ls",
+                                "light.nanoleaf_multicolor_ls_2"
+                              ]
+                            },
+                            "data": {
+                              "brightness_pct": 100,
+                              "transition": 1
+                            }
+                          },
+                          {
+                            "action": "light.turn_on",
+                            "target": {
+                              "entity_id": [
+                                "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                                "light.nanoleaf_multicolor_ls",
+                                "light.nanoleaf_multicolor_ls_2"
+                              ]
+                            },
+                            "data": {
+                              "brightness_pct": 100
+                            }
+                          },
+                          {
+                            "if": [
+                              {
+                                "condition": "not",
+                                "conditions": [
+                                  {
+                                    "condition": "template",
+                                    "value_template": "{% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %} {{ now() < nr and now().date() == nr.date() }}\n"
+                                  }
+                                ]
+                              },
+                              {
+                                "condition": "or",
+                                "conditions": [
+                                  {
+                                    "condition": "state",
+                                    "entity_id": "sun.sun",
+                                    "state": "below_horizon"
+                                  },
+                                  {
+                                    "condition": "template",
+                                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(0) < 10 }}"
+                                  },
+                                  {
+                                    "condition": "state",
+                                    "entity_id": "weather.forecast_home",
+                                    "state": [
+                                      "cloudy",
+                                      "rainy",
+                                      "snowy",
+                                      "fog",
+                                      "overcast",
+                                      "partlycloudy"
+                                    ]
+                                  }
+                                ]
+                              }
+                            ],
+                            "then": [
+                              {
+                                "action": "light.turn_on",
+                                "target": {
+                                  "entity_id": [
+                                    "light.kitchen_light",
+                                    "light.island_light_kitchen_island_light",
+                                    "light.island_light_light"
+                                  ]
+                                },
+                                "data": {
+                                  "brightness_pct": 100
+                                },
+                                "continue_on_error": true
+                              },
+                              {
+                                "action": "switch.turn_on",
+                                "target": {
+                                  "entity_id": "switch.kitchen_pantry_light"
+                                },
+                                "continue_on_error": true
+                              }
+                            ]
+                          }
+                        ],
+                        "else": [
+                          {
+                            "action": "light.turn_off",
+                            "target": {
+                              "entity_id": [
+                                "light.kitchen_light",
+                                "light.island_light_kitchen_island_light",
+                                "light.island_light_light",
+                                "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                                "light.nanoleaf_multicolor_ls",
+                                "light.nanoleaf_multicolor_ls_2"
+                              ]
+                            },
+                            "continue_on_error": true
+                          },
+                          {
+                            "action": "switch.turn_off",
+                            "target": {
+                              "entity_id": "switch.kitchen_pantry_light"
+                            },
+                            "continue_on_error": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "watchdog"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "input_boolean.kitchen_occupied_motion",
+                        "state": "off"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "light.turn_off",
+                        "target": {
+                          "entity_id": [
+                            "light.kitchen_light",
+                            "light.island_light_kitchen_island_light",
+                            "light.island_light_light",
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "switch.kitchen_pantry_light"
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "logbook.log",
+                        "data": {
+                          "entity_id": "light.kitchen_light",
+                          "message": "Kitchen lights forced off by watchdog (on 30 min, no motion).",
+                          "name": "Kitchen Watchdog"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVS7T9CZW6V5QG8ZBSNP0XS5",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0/choose/3/sequence/0/else/0",
+          "run_id": "9c3416c8853f881eca63990a10aa08a4",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T03:19:08.447743+00:00",
+            "finish": "2026-06-23T03:19:24.500445+00:00"
+          },
+          "domain": "automation",
+          "item_id": "downstairs_occupancy_lighting",
+          "error": "Request timeout",
+          "trigger": "Home Assistant starting"
+        }
+      }
+    ],
+    "automation.esphome_kitchen_bridge_startup": [
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "c887d04a3889d863787aba6b8a3dd4ab",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T03:19:08.463887+00:00",
+            "finish": "2026-06-23T03:19:08.607226+00:00"
+          },
+          "domain": "automation",
+          "item_id": "esphome_kitchen_bridge_startup",
+          "trigger": "Home Assistant starting",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-06-23T03:19:08.463933+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.esphome_kitchen_bridge_startup",
+                    "state": "on",
+                    "attributes": {
+                      "id": "esphome_kitchen_bridge_startup",
+                      "last_triggered": null,
+                      "mode": "single",
+                      "current": 0,
+                      "friendly_name": "ESPHome Kitchen Bridge Startup"
+                    },
+                    "last_changed": "2026-06-23T03:18:39.301439+00:00",
+                    "last_reported": "2026-06-23T03:18:39.301439+00:00",
+                    "last_updated": "2026-06-23T03:18:39.301439+00:00",
+                    "context": {
+                      "id": "01KVS7SCY59G1YKNDVC4RH9GK4",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "homeassistant",
+                    "event": "start",
+                    "description": "Home Assistant starting"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T03:19:08.464081+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVS7T9DF87TEBTWKKQVSA0F3",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "shell_command",
+                    "service": "start_esphome_kitchen_bridge",
+                    "service_data": {},
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "esphome_kitchen_bridge_startup",
+            "alias": "ESPHome Kitchen Bridge Startup",
+            "description": "Starts the ESPHome\u2192HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.",
+            "trigger": [
+              {
+                "platform": "homeassistant",
+                "event": "start"
+              }
+            ],
+            "action": [
+              {
+                "action": "shell_command.start_esphome_kitchen_bridge"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVS7T9DF87TEBTWKKQVSA0F3",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "c887d04a3889d863787aba6b8a3dd4ab",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T03:19:08.463887+00:00",
+            "finish": "2026-06-23T03:19:08.607226+00:00"
+          },
+          "domain": "automation",
+          "item_id": "esphome_kitchen_bridge_startup",
+          "trigger": "Home Assistant starting"
+        }
+      }
+    ]
+  }
+}

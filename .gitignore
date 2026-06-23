@@ -1,0 +1,35 @@
+# === Secrets & Auth (NEVER commit) ===
+secrets.yaml
+.storage/auth
+.storage/auth_provider.*
+.storage/http.auth
+.storage/onboarding
+.storage/core.config
+
+# === Databases ===
+*.db
+*.db-shm
+*.db-wal
+
+# === Logs ===
+*.log
+*.log.*
+*.fault
+
+# === Cache / Temp / Generated ===
+.cache/
+.cloud/
+deps/
+tts/
+.ha_run.lock
+
+# === Python ===
+__pycache__/
+*.pyc
+
+# === OS ===
+.DS_Store
+Thumbs.db
+.storage/core.uuid
+.storage/roborock/
+.storage/core.config_entries

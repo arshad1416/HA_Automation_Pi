@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "minor_version": 2,
+  "key": "repairs.issue_registry",
+  "data": {
+    "issues": [
+      {
+        "created": "2026-06-23T03:18:29.189896+00:00",
+        "dismissed_version": null,
+        "domain": "homeassistant",
+        "is_persistent": false,
+        "issue_id": "config_entry_reauth_androidtv_remote_01JC3FYT7KAZJ16ZYH2A363D6N"
+      },
+      {
+        "created": "2026-06-23T03:18:29.191011+00:00",
+        "dismissed_version": null,
+        "domain": "homeassistant",
+        "is_persistent": false,
+        "issue_id": "config_entry_reauth_androidtv_remote_01JC3FY2DWZA4V3BZ0DB7WEAH5"
+      },
+      {
+        "created": "2026-06-23T03:18:29.191484+00:00",
+        "dismissed_version": null,
+        "domain": "homeassistant",
+        "is_persistent": false,
+        "issue_id": "config_entry_reauth_androidtv_remote_01JC3FTKJ6BC8X2QYMPC4HSM10"
+      },
+      {
+        "created": "2026-06-23T03:18:29.192228+00:00",
+        "dismissed_version": null,
+        "domain": "homeassistant",
+        "is_persistent": false,
+        "issue_id": "config_entry_reauth_androidtv_remote_01JC234R9GBBJFG7F5XQ3TMDMF"
+      },
+      {
+        "created": "2026-06-23T03:18:39.298147+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.garage_door_battery_notification_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.298274+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.low_battery_notification_for_airbnb_doorlock_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299150+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.turn_on_or_off_the_basement_lights_with_the_basement_stair_lights_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299243+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.turn_on_garage_lights_when_garage_door_is_open_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299330+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.turn_off_garage_light_when_garage_door_is_closed_for_2_hours_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299409+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.turn_on_garage_lights_when_larissa_s_garage_door_is_open_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299487+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.turn_off_garage_door_lights_when_larissa_s_garage_door_is_closed_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299656+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.turn_on_and_off_powder_room_mirror_with_light_switch_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299737+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.when_leak_is_detected_in_the_powder_room_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.299813+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.when_there_s_a_leak_in_the_guest_bathroom_validation_failed_triggers"
+      },
+      {
+        "created": "2026-06-23T03:18:39.300167+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.automation_23_validation_failed_schema"
+      },
+      {
+        "created": "2026-06-23T03:43:19.133074+00:00",
+        "dismissed_version": null,
+        "domain": "roborock",
+        "is_persistent": false,
+        "issue_id": "cloud_api_used_3g29hzjogmaw8hij4tmeud"
+      }
+    ]
+  }
+}

@@ -1,0 +1,251 @@
+# Downstairs Occupancy Lighting — REWRITE: 5 branches, <200 lines
+# Occupied (motion OR presence)→on | Unoccupied→off | Quiet hrs (00:00→sunrise): cabinet+kick only
+# Manual off→15-min cooldown | HA start→on if occupied/off if empty | Watchdog→force off 30min no-motion
+# FIX 2026-06-23: converted from dict to list for !include_dir_merge_list; added id; removed unavailable
+#   light.kitchen_light_light_1; added continue_on_error to bright light calls;
+#   replaced invalid 'before: sunrise' (time condition) with a template condition.
+- id: downstairs_occupancy_lighting
+  alias: Downstairs Occupancy Lighting
+  description: 'Kitchen lighting via mmWave presence + motion OR gate. 5 branches: occupied, unoccupied, manual, startup, watchdog.'
+  mode: queued
+  max: 10
+  max_exceeded: silent
+  trigger:
+    - id: occupied
+      platform: state
+      entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+      to: 'on'
+    - id: occupied
+      platform: state
+      entity_id: input_boolean.kitchen_occupied_motion
+      to: 'on'
+    - id: occupied
+      platform: state
+      entity_id: timer.kitchen_manual_cooldown
+      to: idle
+    - id: unoccupied
+      platform: state
+      entity_id: input_boolean.kitchen_occupied_motion
+      to: 'off'
+    - id: unoccupied
+      platform: state
+      entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+      to: 'off'
+      for: { seconds: 10 }
+    - id: manual_off
+      platform: state
+      entity_id: light.kitchen_light
+      to: 'off'
+    - id: ha_start
+      platform: homeassistant
+      event: start
+    - id: watchdog
+      platform: state
+      entity_id: light.kitchen_light
+      to: 'on'
+      for: { minutes: 30 }
+  condition: []
+  action:
+    - choose:
+      # 1: Occupied → lights on
+      - conditions:
+        - condition: trigger
+          id: occupied
+        - condition: not
+          conditions:
+          - condition: state
+            entity_id: timer.kitchen_manual_cooldown
+            state: active
+        - condition: or
+          conditions:
+          - condition: state
+            entity_id: input_boolean.kitchen_occupied_motion
+            state: 'on'
+          - condition: state
+            entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+            state: 'on'
+        sequence:
+        - action: light.turn_on
+          target:
+            entity_id: &ambient [light.cabinet_light_strip_left_nanoleaf_light_strip, light.cabinet_light_strip_center_nanoleaf_light_strip, light.cabinet_light_strip_right_nanoleaf_light_strip, light.nanoleaf_multicolor_ls, light.nanoleaf_multicolor_ls_2]
+          data: { brightness_pct: 100, transition: 1 }
+        - action: light.turn_on
+          target:
+            entity_id: *ambient
+          data: { brightness_pct: 100 }
+        - if:
+          - condition: not
+            conditions:
+            - condition: template
+              value_template: >
+                {% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %}
+                {{ now() < nr and now().date() == nr.date() }}
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: sun.sun
+              state: below_horizon
+            - condition: template
+              value_template: '{{ state_attr("sun.sun", "elevation") | float(0) < 10 }}'
+            - condition: state
+              entity_id: weather.forecast_home
+              state:
+              - cloudy
+              - rainy
+              - snowy
+              - fog
+              - overcast
+              - partlycloudy
+          then:
+          - action: light.turn_on
+            target:
+              entity_id: &bright [light.kitchen_light, light.island_light_kitchen_island_light, light.island_light_light]
+            data: { brightness_pct: 100 }
+            continue_on_error: true
+          - action: switch.turn_on
+            target:
+              entity_id: switch.kitchen_pantry_light
+            continue_on_error: true
+      # 2: Unoccupied → lights off
+      - conditions:
+        - condition: trigger
+          id: unoccupied
+        - condition: state
+          entity_id: timer.kitchen_manual_cooldown
+          state: idle
+        - condition: state
+          entity_id: input_boolean.kitchen_occupied_motion
+          state: 'off'
+        - condition: state
+          entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+          state: 'off'
+        sequence:
+        - action: timer.cancel
+          target:
+            entity_id: timer.kitchen_manual_cooldown
+        - action: light.turn_off
+          target:
+            entity_id: &all_off [light.kitchen_light, light.island_light_kitchen_island_light, light.island_light_light, light.cabinet_light_strip_left_nanoleaf_light_strip, light.cabinet_light_strip_center_nanoleaf_light_strip, light.cabinet_light_strip_right_nanoleaf_light_strip, light.nanoleaf_multicolor_ls, light.nanoleaf_multicolor_ls_2]
+          continue_on_error: true
+        - action: switch.turn_off
+          target:
+            entity_id: switch.kitchen_pantry_light
+          continue_on_error: true
+      # 3: Manual off → 15-min cooldown
+      - conditions:
+        - condition: trigger
+          id: manual_off
+        - condition: template
+          value_template: '{{ trigger.to_state.context.parent_id is none }}'
+        sequence:
+        - action: timer.start
+          target:
+            entity_id: timer.kitchen_manual_cooldown
+          data: { duration: '00:15:00' }
+        - action: light.turn_off
+          target:
+            entity_id: *all_off
+          continue_on_error: true
+        - action: switch.turn_off
+          target:
+            entity_id: switch.kitchen_pantry_light
+          continue_on_error: true
+      # 4: HA startup → on if occupied, off if empty
+      - conditions:
+        - condition: trigger
+          id: ha_start
+        sequence:
+        - if:
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: input_boolean.kitchen_occupied_motion
+              state: 'on'
+            - condition: state
+              entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+              state: 'on'
+          then:
+          - action: light.turn_on
+            target:
+              entity_id: *ambient
+            data: { brightness_pct: 100, transition: 1 }
+          - action: light.turn_on
+            target:
+              entity_id: *ambient
+            data: { brightness_pct: 100 }
+          - if:
+            - condition: not
+              conditions:
+              - condition: template
+                value_template: >
+                  {% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %}
+                  {{ now() < nr and now().date() == nr.date() }}
+            - condition: or
+              conditions:
+              - condition: state
+                entity_id: sun.sun
+                state: below_horizon
+              - condition: template
+                value_template: '{{ state_attr("sun.sun", "elevation") | float(0) < 10 }}'
+              - condition: state
+                entity_id: weather.forecast_home
+                state:
+                - cloudy
+                - rainy
+                - snowy
+                - fog
+                - overcast
+                - partlycloudy
+            then:
+            - action: light.turn_on
+              target:
+                entity_id: *bright
+              data: { brightness_pct: 100 }
+              continue_on_error: true
+            - action: switch.turn_on
+              target:
+                entity_id: switch.kitchen_pantry_light
+              continue_on_error: true
+          else:
+          - action: light.turn_off
+            target:
+              entity_id: *all_off
+            continue_on_error: true
+          - action: switch.turn_off
+            target:
+              entity_id: switch.kitchen_pantry_light
+            continue_on_error: true
+      # 5: Safety watchdog → force off
+      - conditions:
+        - condition: trigger
+          id: watchdog
+        - condition: state
+          entity_id: input_boolean.kitchen_occupied_motion
+          state: 'off'
+        sequence:
+        - action: light.turn_off
+          target:
+            entity_id: *all_off
+          continue_on_error: true
+        - action: switch.turn_off
+          target:
+            entity_id: switch.kitchen_pantry_light
+          continue_on_error: true
+        - action: logbook.log
+          data:
+            entity_id: light.kitchen_light
+            message: Kitchen lights forced off by watchdog (on 30 min, no motion).
+            name: Kitchen Watchdog
+
+# ESPHome Kitchen Bridge — auto-start on HA boot
+# Workaround for HA 2026.6.3 + Python 3.14 ESPHome integration ReconnectLogic bug.
+# The bridge daemon connects directly to the ESP32 via aioesphomeapi and pushes
+# presence/moving_distance states to HA, driving the occupancy automation above.
+- id: esphome_kitchen_bridge_startup
+  alias: ESPHome Kitchen Bridge Startup
+  description: 'Starts the ESPHome→HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.'
+  trigger:
+    - platform: homeassistant
+      event: start
+  action:
+    - action: shell_command.start_esphome_kitchen_bridge

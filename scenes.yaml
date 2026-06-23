@@ -1,0 +1,121 @@
+- id: '1732259140632'
+  name: Walkway
+  entities:
+    light.controller_rgbw_14e60b:
+      effect_list:
+      - blue_fade
+      - blue_strobe
+      - colorjump
+      - colorloop
+      - colorstrobe
+      - cyan_fade
+      - cyan_strobe
+      - cycle_rgb
+      - cycle_seven_colors
+      - gb_cross_fade
+      - green_fade
+      - green_strobe
+      - purple_fade
+      - purple_strobe
+      - rb_cross_fade
+      - red_fade
+      - red_strobe
+      - rg_cross_fade
+      - rgb_cross_fade
+      - white_fade
+      - white_strobe
+      - yellow_fade
+      - yellow_strobe
+      - random
+      supported_color_modes:
+      - rgb
+      - white
+      effect:
+      color_mode: white
+      brightness: 75
+      hs_color:
+      rgb_color:
+      xy_color:
+      ip_address: 192.168.86.120
+      friendly_name: Controller RGBW 14E60B
+      supported_features: 36
+      state: 'on'
+    number.controller_rgbw_14e60b_effect_speed:
+      min: 1
+      max: 100
+      step: 1
+      mode: slider
+      ip_address: 192.168.86.120
+      friendly_name: Controller RGBW 14E60B Effect speed
+      state: '50'
+    select.controller_rgbw_14e60b_operating_mode:
+      options:
+      - RGB&W
+      - RGB/W
+      ip_address: 192.168.86.120
+      friendly_name: Controller RGBW 14E60B Operating mode
+      state: RGB/W
+    switch.controller_rgbw_14e60b_remote_access:
+      friendly_name: Controller RGBW 14E60B Remote access
+      state: 'on'
+    button.controller_rgbw_14e60b_restart:
+      device_class: restart
+      friendly_name: Controller RGBW 14E60B Restart
+      state: unknown
+    select.controller_rgbw_14e60b_wiring:
+      options:
+      - RGBW
+      - GRBW
+      - BRGW
+      ip_address: 192.168.86.120
+      friendly_name: Controller RGBW 14E60B Wiring
+      state: RGBW
+    light.controller_rgbw_4d38ce:
+      effect_list:
+      - blue_fade
+      - blue_strobe
+      - colorjump
+      - colorloop
+      - colorstrobe
+      - cyan_fade
+      - cyan_strobe
+      - cycle_rgb
+      - cycle_seven_colors
+      - gb_cross_fade
+      - green_fade
+      - green_strobe
+      - purple_fade
+      - purple_strobe
+      - rb_cross_fade
+      - red_fade
+      - red_strobe
+      - rg_cross_fade
+      - rgb_cross_fade
+      - white_fade
+      - white_strobe
+      - yellow_fade
+      - yellow_strobe
+      - random
+      supported_color_modes:
+      - rgb
+      - white
+      effect:
+      color_mode: white
+      brightness: 75
+      hs_color:
+      rgb_color:
+      xy_color:
+      ip_address: 192.168.86.111
+      friendly_name: Controller RGBW 4D38CE
+      supported_features: 36
+      state: 'on'
+    number.controller_rgbw_4d38ce_effect_speed:
+      min: 1
+      max: 100
+      step: 1
+      mode: slider
+      ip_address: 192.168.86.111
+      friendly_name: Controller RGBW 4D38CE Effect speed
+      state: '50'
+  icon: mdi:led-strip-variant
+  metadata: {}
