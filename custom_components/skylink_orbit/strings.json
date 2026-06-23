@@ -1,0 +1,56 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect to Skylink Orbit Home",
+        "description": "Enter your Orbit Home app credentials and hub IDs. Hub IDs can be found by capturing the app traffic with mitmproxy (look for hub_id values in hub_add requests).",
+        "data": {
+          "username": "Email (Orbit Home login)",
+          "password": "Password",
+          "hub_ids": "Hub IDs (comma-separated)",
+          "acc_no": "Account Number (optional, auto-detected)",
+          "base_url": "API URL (advanced, don't change)"
+        },
+        "data_description": {
+          "hub_ids": "Enter your hub IDs separated by commas. Example: rA8qM4QS, YAkDn9r2",
+          "acc_no": "Found in hub_add responses. Leave blank to auto-detect.",
+          "base_url": "Only change if the Skylink API server changes."
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Orbit Home",
+        "description": "Your session for {username} has expired. Please enter your password to reconnect.",
+        "data": {
+          "password": "Password"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid email or password. Please check your Orbit Home credentials.",
+      "cannot_connect": "Cannot connect to iot.skyhm.net. Check your internet connection.",
+      "unknown": "An unexpected error occurred. Check the Home Assistant logs for details.",
+      "no_hub_ids": "Please enter at least one hub ID."
+    },
+    "abort": {
+      "already_configured": "This Orbit Home account is already configured.",
+      "reauth_successful": "Re-authentication was successful."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Skylink Orbit Options",
+        "description": "Edit the hub IDs for your garage doors. Add or remove hub IDs separated by commas.",
+        "data": {
+          "hub_ids": "Hub IDs (comma-separated)"
+        },
+        "data_description": {
+          "hub_ids": "Enter your hub IDs separated by commas. Example: rA8qM4QS, YAkDn9r2, NewHubId"
+        }
+      }
+    },
+    "error": {
+      "no_hub_ids": "Please enter at least one hub ID."
+    }
+  }
+}

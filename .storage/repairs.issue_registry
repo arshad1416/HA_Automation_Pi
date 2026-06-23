@@ -115,6 +115,20 @@
         "domain": "roborock",
         "is_persistent": false,
         "issue_id": "cloud_api_used_3g29hzjogmaw8hij4tmeud"
+      },
+      {
+        "created": "2026-06-23T04:01:37.607979+00:00",
+        "dismissed_version": null,
+        "domain": "homeassistant",
+        "is_persistent": false,
+        "issue_id": "config_entry_reauth_alexa_media_01KQADEF66CTQY1GN8P6B1H58F"
+      },
+      {
+        "created": "2026-06-23T04:11:12.610378+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.climate_ai_advisor_validation_failed_schema"
       }
     ]
   }

@@ -1,0 +1,11 @@
+{
+  "domain": "skylink_orbit",
+  "name": "Skylink Orbit Garage Door",
+  "codeowners": [],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/your-repo/skylink-orbit-ha",
+  "iot_class": "cloud_push",
+  "requirements": ["paho-mqtt>=1.6.0"],
+  "version": "1.0.0"
+}

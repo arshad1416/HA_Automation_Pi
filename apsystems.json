@@ -1,0 +1,6 @@
+{
+  "power_approx_w": 0,
+  "today_kwh": 0,
+  "month_kwh": 0,
+  "_note": "Stub file — replace with actual APsystems API data. The original fetch_solar.py on the Pi generates this file periodically via cron."
+}

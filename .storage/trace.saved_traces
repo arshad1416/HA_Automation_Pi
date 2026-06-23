@@ -6,40 +6,39 @@
     "automation.downstairs_occupancy_lighting": [
       {
         "extended_dict": {
-          "last_step": "action/0/choose/3/sequence/0/else/0",
-          "run_id": "9c3416c8853f881eca63990a10aa08a4",
+          "last_step": "action/0/choose/3/sequence/0/else/1",
+          "run_id": "7e4a7cf9a79349b46518ab5187dd59b6",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T03:19:08.447743+00:00",
-            "finish": "2026-06-23T03:19:24.500445+00:00"
+            "start": "2026-06-23T04:11:41.758692+00:00",
+            "finish": "2026-06-23T04:11:41.910931+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
-          "error": "Request timeout",
           "trigger": "Home Assistant starting",
           "trace": {
             "trigger/6": [
               {
                 "path": "trigger/6",
-                "timestamp": "2026-06-23T03:19:08.447906+00:00",
+                "timestamp": "2026-06-23T04:11:41.758739+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.downstairs_occupancy_lighting",
                     "state": "on",
                     "attributes": {
                       "id": "downstairs_occupancy_lighting",
-                      "last_triggered": null,
+                      "last_triggered": "2026-06-23T04:01:49.512530+00:00",
                       "mode": "queued",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Downstairs Occupancy Lighting"
                     },
-                    "last_changed": "2026-06-23T03:18:39.301286+00:00",
-                    "last_reported": "2026-06-23T03:18:39.301286+00:00",
-                    "last_updated": "2026-06-23T03:18:39.301286+00:00",
+                    "last_changed": "2026-06-23T04:11:12.611362+00:00",
+                    "last_reported": "2026-06-23T04:11:12.611362+00:00",
+                    "last_updated": "2026-06-23T04:11:12.611362+00:00",
                     "context": {
-                      "id": "01KVS7SCY57R49GGAVTKC54ERH",
+                      "id": "01KVSASMB3PYTRBC90WRRXPZGJ",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -58,15 +57,14 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T03:19:08.448172+00:00",
+                "timestamp": "2026-06-23T04:11:41.758991+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVS7T9CZW6V5QG8ZBSNP0XS5",
+                    "id": "01KVSATGSY4338CQ8ZHAFWYGN3",
                     "parent_id": null,
                     "user_id": null
                   }
                 },
-                "error": "Request timeout",
                 "result": {
                   "choice": 3
                 }
@@ -75,7 +73,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T03:19:08.448640+00:00",
+                "timestamp": "2026-06-23T04:11:41.759362+00:00",
                 "result": {
                   "result": false
                 }
@@ -84,7 +82,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T03:19:08.461667+00:00",
+                "timestamp": "2026-06-23T04:11:41.759407+00:00",
                 "result": {
                   "result": false
                 }
@@ -93,7 +91,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T03:19:08.461820+00:00",
+                "timestamp": "2026-06-23T04:11:41.759461+00:00",
                 "result": {
                   "result": false
                 }
@@ -102,7 +100,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T03:19:08.461857+00:00",
+                "timestamp": "2026-06-23T04:11:41.759482+00:00",
                 "result": {
                   "result": false
                 }
@@ -111,7 +109,7 @@
             "action/0/choose/2": [
               {
                 "path": "action/0/choose/2",
-                "timestamp": "2026-06-23T03:19:08.461909+00:00",
+                "timestamp": "2026-06-23T04:11:41.759515+00:00",
                 "result": {
                   "result": false
                 }
@@ -120,7 +118,7 @@
             "action/0/choose/2/conditions/0": [
               {
                 "path": "action/0/choose/2/conditions/0",
-                "timestamp": "2026-06-23T03:19:08.461936+00:00",
+                "timestamp": "2026-06-23T04:11:41.759533+00:00",
                 "result": {
                   "result": false
                 }
@@ -129,7 +127,7 @@
             "action/0/choose/3": [
               {
                 "path": "action/0/choose/3",
-                "timestamp": "2026-06-23T03:19:08.461980+00:00",
+                "timestamp": "2026-06-23T04:11:41.759562+00:00",
                 "result": {
                   "result": true
                 }
@@ -138,7 +136,7 @@
             "action/0/choose/3/conditions/0": [
               {
                 "path": "action/0/choose/3/conditions/0",
-                "timestamp": "2026-06-23T03:19:08.462004+00:00",
+                "timestamp": "2026-06-23T04:11:41.759578+00:00",
                 "result": {
                   "result": true
                 }
@@ -147,8 +145,7 @@
             "action/0/choose/3/sequence/0": [
               {
                 "path": "action/0/choose/3/sequence/0",
-                "timestamp": "2026-06-23T03:19:08.462244+00:00",
-                "error": "Request timeout",
+                "timestamp": "2026-06-23T04:11:41.759697+00:00",
                 "result": {
                   "choice": "else"
                 }
@@ -157,7 +154,7 @@
             "action/0/choose/3/sequence/0/if": [
               {
                 "path": "action/0/choose/3/sequence/0/if",
-                "timestamp": "2026-06-23T03:19:08.462429+00:00",
+                "timestamp": "2026-06-23T04:11:41.759808+00:00",
                 "result": {
                   "result": false
                 }
@@ -166,7 +163,7 @@
             "action/0/choose/3/sequence/0/if/condition/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0",
-                "timestamp": "2026-06-23T03:19:08.462463+00:00",
+                "timestamp": "2026-06-23T04:11:41.759831+00:00",
                 "result": {
                   "result": false
                 }
@@ -175,7 +172,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0",
-                "timestamp": "2026-06-23T03:19:08.462492+00:00",
+                "timestamp": "2026-06-23T04:11:41.759851+00:00",
                 "result": {
                   "result": false
                 }
@@ -184,7 +181,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T03:19:08.462517+00:00",
+                "timestamp": "2026-06-23T04:11:41.759870+00:00",
                 "result": {
                   "result": false,
                   "state": "off",
@@ -195,7 +192,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1",
-                "timestamp": "2026-06-23T03:19:08.462570+00:00",
+                "timestamp": "2026-06-23T04:11:41.759909+00:00",
                 "result": {
                   "result": false
                 }
@@ -204,7 +201,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0",
-                "timestamp": "2026-06-23T03:19:08.462594+00:00",
+                "timestamp": "2026-06-23T04:11:41.759926+00:00",
                 "result": {
                   "result": false,
                   "state": "unknown",
@@ -215,8 +212,7 @@
             "action/0/choose/3/sequence/0/else/0": [
               {
                 "path": "action/0/choose/3/sequence/0/else/0",
-                "timestamp": "2026-06-23T03:19:08.462735+00:00",
-                "error": "Request timeout",
+                "timestamp": "2026-06-23T04:11:41.760025+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -232,6 +228,25 @@
                         "light.cabinet_light_strip_right_nanoleaf_light_strip",
                         "light.nanoleaf_multicolor_ls",
                         "light.nanoleaf_multicolor_ls_2"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/else/1": [
+              {
+                "path": "action/0/choose/3/sequence/0/else/1",
+                "timestamp": "2026-06-23T04:11:41.907967+00:00",
+                "result": {
+                  "params": {
+                    "domain": "switch",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "switch.kitchen_pantry_light"
                       ]
                     }
                   },
@@ -735,23 +750,787 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVS7T9CZW6V5QG8ZBSNP0XS5",
+            "id": "01KVSATGSY4338CQ8ZHAFWYGN3",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0/choose/3/sequence/0/else/0",
-          "run_id": "9c3416c8853f881eca63990a10aa08a4",
+          "last_step": "action/0/choose/3/sequence/0/else/1",
+          "run_id": "7e4a7cf9a79349b46518ab5187dd59b6",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T03:19:08.447743+00:00",
-            "finish": "2026-06-23T03:19:24.500445+00:00"
+            "start": "2026-06-23T04:11:41.758692+00:00",
+            "finish": "2026-06-23T04:11:41.910931+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
-          "error": "Request timeout",
+          "trigger": "Home Assistant starting"
+        }
+      },
+      {
+        "extended_dict": {
+          "last_step": "action/0/choose/3/sequence/0/else/1",
+          "run_id": "81ddfff90b81aead9075091e155c342c",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T04:16:48.770968+00:00",
+            "finish": "2026-06-23T04:16:48.962603+00:00"
+          },
+          "domain": "automation",
+          "item_id": "downstairs_occupancy_lighting",
+          "trigger": "Home Assistant starting",
+          "trace": {
+            "trigger/6": [
+              {
+                "path": "trigger/6",
+                "timestamp": "2026-06-23T04:16:48.771015+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.downstairs_occupancy_lighting",
+                    "state": "on",
+                    "attributes": {
+                      "id": "downstairs_occupancy_lighting",
+                      "last_triggered": "2026-06-23T04:11:41.758830+00:00",
+                      "mode": "queued",
+                      "current": 0,
+                      "max": 10,
+                      "friendly_name": "Downstairs Occupancy Lighting"
+                    },
+                    "last_changed": "2026-06-23T04:16:16.168804+00:00",
+                    "last_reported": "2026-06-23T04:16:16.168804+00:00",
+                    "last_updated": "2026-06-23T04:16:16.168804+00:00",
+                    "context": {
+                      "id": "01KVSB2WS8NDG0VHNFF8PQT5PV",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "ha_start",
+                    "idx": "6",
+                    "alias": null,
+                    "platform": "homeassistant",
+                    "event": "start",
+                    "description": "Home Assistant starting"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T04:16:48.771342+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVSB3WM2X6MNCDZ5SN4JWHZE",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "choice": 3
+                }
+              }
+            ],
+            "action/0/choose/0": [
+              {
+                "path": "action/0/choose/0",
+                "timestamp": "2026-06-23T04:16:48.771711+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/0/conditions/0": [
+              {
+                "path": "action/0/choose/0/conditions/0",
+                "timestamp": "2026-06-23T04:16:48.771753+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/1": [
+              {
+                "path": "action/0/choose/1",
+                "timestamp": "2026-06-23T04:16:48.771805+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/1/conditions/0": [
+              {
+                "path": "action/0/choose/1/conditions/0",
+                "timestamp": "2026-06-23T04:16:48.771826+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/2": [
+              {
+                "path": "action/0/choose/2",
+                "timestamp": "2026-06-23T04:16:48.771862+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/2/conditions/0": [
+              {
+                "path": "action/0/choose/2/conditions/0",
+                "timestamp": "2026-06-23T04:16:48.771882+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3": [
+              {
+                "path": "action/0/choose/3",
+                "timestamp": "2026-06-23T04:16:48.771910+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/0/choose/3/conditions/0": [
+              {
+                "path": "action/0/choose/3/conditions/0",
+                "timestamp": "2026-06-23T04:16:48.771926+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0": [
+              {
+                "path": "action/0/choose/3/sequence/0",
+                "timestamp": "2026-06-23T04:16:48.772038+00:00",
+                "result": {
+                  "choice": "else"
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if": [
+              {
+                "path": "action/0/choose/3/sequence/0/if",
+                "timestamp": "2026-06-23T04:16:48.772135+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0",
+                "timestamp": "2026-06-23T04:16:48.772243+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0",
+                "timestamp": "2026-06-23T04:16:48.772266+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0",
+                "timestamp": "2026-06-23T04:16:48.772283+00:00",
+                "result": {
+                  "result": false,
+                  "state": "off",
+                  "wanted_state": "on"
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/1": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1",
+                "timestamp": "2026-06-23T04:16:48.772321+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0",
+                "timestamp": "2026-06-23T04:16:48.772337+00:00",
+                "result": {
+                  "result": false,
+                  "state": "unknown",
+                  "wanted_state": "on"
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/else/0": [
+              {
+                "path": "action/0/choose/3/sequence/0/else/0",
+                "timestamp": "2026-06-23T04:16:48.772435+00:00",
+                "result": {
+                  "params": {
+                    "domain": "light",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "light.kitchen_light",
+                        "light.island_light_kitchen_island_light",
+                        "light.island_light_light",
+                        "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                        "light.nanoleaf_multicolor_ls",
+                        "light.nanoleaf_multicolor_ls_2"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/else/1": [
+              {
+                "path": "action/0/choose/3/sequence/0/else/1",
+                "timestamp": "2026-06-23T04:16:48.961259+00:00",
+                "result": {
+                  "params": {
+                    "domain": "switch",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "switch.kitchen_pantry_light"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "downstairs_occupancy_lighting",
+            "alias": "Downstairs Occupancy Lighting",
+            "description": "Kitchen lighting via mmWave presence + motion OR gate. 5 branches: occupied, unoccupied, manual, startup, watchdog.",
+            "mode": "queued",
+            "max": 10,
+            "max_exceeded": "silent",
+            "trigger": [
+              {
+                "id": "occupied",
+                "platform": "state",
+                "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                "to": "on"
+              },
+              {
+                "id": "occupied",
+                "platform": "state",
+                "entity_id": "input_boolean.kitchen_occupied_motion",
+                "to": "on"
+              },
+              {
+                "id": "occupied",
+                "platform": "state",
+                "entity_id": "timer.kitchen_manual_cooldown",
+                "to": "idle"
+              },
+              {
+                "id": "unoccupied",
+                "platform": "state",
+                "entity_id": "input_boolean.kitchen_occupied_motion",
+                "to": "off"
+              },
+              {
+                "id": "unoccupied",
+                "platform": "state",
+                "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                "to": "off",
+                "for": {
+                  "seconds": 10
+                }
+              },
+              {
+                "id": "manual_off",
+                "platform": "state",
+                "entity_id": "light.kitchen_light",
+                "to": "off"
+              },
+              {
+                "id": "ha_start",
+                "platform": "homeassistant",
+                "event": "start"
+              },
+              {
+                "id": "watchdog",
+                "platform": "state",
+                "entity_id": "light.kitchen_light",
+                "to": "on",
+                "for": {
+                  "minutes": 30
+                }
+              }
+            ],
+            "condition": [],
+            "action": [
+              {
+                "choose": [
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "occupied"
+                      },
+                      {
+                        "condition": "not",
+                        "conditions": [
+                          {
+                            "condition": "state",
+                            "entity_id": "timer.kitchen_manual_cooldown",
+                            "state": "active"
+                          }
+                        ]
+                      },
+                      {
+                        "condition": "or",
+                        "conditions": [
+                          {
+                            "condition": "state",
+                            "entity_id": "input_boolean.kitchen_occupied_motion",
+                            "state": "on"
+                          },
+                          {
+                            "condition": "state",
+                            "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                            "state": "on"
+                          }
+                        ]
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "light.turn_on",
+                        "target": {
+                          "entity_id": [
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "data": {
+                          "brightness_pct": 100,
+                          "transition": 1
+                        }
+                      },
+                      {
+                        "action": "light.turn_on",
+                        "target": {
+                          "entity_id": [
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "data": {
+                          "brightness_pct": 100
+                        }
+                      },
+                      {
+                        "if": [
+                          {
+                            "condition": "not",
+                            "conditions": [
+                              {
+                                "condition": "template",
+                                "value_template": "{% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %} {{ now() < nr and now().date() == nr.date() }}\n"
+                              }
+                            ]
+                          },
+                          {
+                            "condition": "or",
+                            "conditions": [
+                              {
+                                "condition": "state",
+                                "entity_id": "sun.sun",
+                                "state": "below_horizon"
+                              },
+                              {
+                                "condition": "template",
+                                "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(0) < 10 }}"
+                              },
+                              {
+                                "condition": "state",
+                                "entity_id": "weather.forecast_home",
+                                "state": [
+                                  "cloudy",
+                                  "rainy",
+                                  "snowy",
+                                  "fog",
+                                  "overcast",
+                                  "partlycloudy"
+                                ]
+                              }
+                            ]
+                          }
+                        ],
+                        "then": [
+                          {
+                            "action": "light.turn_on",
+                            "target": {
+                              "entity_id": [
+                                "light.kitchen_light",
+                                "light.island_light_kitchen_island_light",
+                                "light.island_light_light"
+                              ]
+                            },
+                            "data": {
+                              "brightness_pct": 100
+                            },
+                            "continue_on_error": true
+                          },
+                          {
+                            "action": "switch.turn_on",
+                            "target": {
+                              "entity_id": "switch.kitchen_pantry_light"
+                            },
+                            "continue_on_error": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "unoccupied"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "timer.kitchen_manual_cooldown",
+                        "state": "idle"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "input_boolean.kitchen_occupied_motion",
+                        "state": "off"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                        "state": "off"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "timer.cancel",
+                        "target": {
+                          "entity_id": "timer.kitchen_manual_cooldown"
+                        }
+                      },
+                      {
+                        "action": "light.turn_off",
+                        "target": {
+                          "entity_id": [
+                            "light.kitchen_light",
+                            "light.island_light_kitchen_island_light",
+                            "light.island_light_light",
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "switch.kitchen_pantry_light"
+                        },
+                        "continue_on_error": true
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "manual_off"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{{ trigger.to_state.context.parent_id is none }}"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "timer.start",
+                        "target": {
+                          "entity_id": "timer.kitchen_manual_cooldown"
+                        },
+                        "data": {
+                          "duration": "00:15:00"
+                        }
+                      },
+                      {
+                        "action": "light.turn_off",
+                        "target": {
+                          "entity_id": [
+                            "light.kitchen_light",
+                            "light.island_light_kitchen_island_light",
+                            "light.island_light_light",
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "switch.kitchen_pantry_light"
+                        },
+                        "continue_on_error": true
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "ha_start"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "if": [
+                          {
+                            "condition": "or",
+                            "conditions": [
+                              {
+                                "condition": "state",
+                                "entity_id": "input_boolean.kitchen_occupied_motion",
+                                "state": "on"
+                              },
+                              {
+                                "condition": "state",
+                                "entity_id": "binary_sensor.kitchen_mmwave_presence_sensor_presence",
+                                "state": "on"
+                              }
+                            ]
+                          }
+                        ],
+                        "then": [
+                          {
+                            "action": "light.turn_on",
+                            "target": {
+                              "entity_id": [
+                                "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                                "light.nanoleaf_multicolor_ls",
+                                "light.nanoleaf_multicolor_ls_2"
+                              ]
+                            },
+                            "data": {
+                              "brightness_pct": 100,
+                              "transition": 1
+                            }
+                          },
+                          {
+                            "action": "light.turn_on",
+                            "target": {
+                              "entity_id": [
+                                "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                                "light.nanoleaf_multicolor_ls",
+                                "light.nanoleaf_multicolor_ls_2"
+                              ]
+                            },
+                            "data": {
+                              "brightness_pct": 100
+                            }
+                          },
+                          {
+                            "if": [
+                              {
+                                "condition": "not",
+                                "conditions": [
+                                  {
+                                    "condition": "template",
+                                    "value_template": "{% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %} {{ now() < nr and now().date() == nr.date() }}\n"
+                                  }
+                                ]
+                              },
+                              {
+                                "condition": "or",
+                                "conditions": [
+                                  {
+                                    "condition": "state",
+                                    "entity_id": "sun.sun",
+                                    "state": "below_horizon"
+                                  },
+                                  {
+                                    "condition": "template",
+                                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(0) < 10 }}"
+                                  },
+                                  {
+                                    "condition": "state",
+                                    "entity_id": "weather.forecast_home",
+                                    "state": [
+                                      "cloudy",
+                                      "rainy",
+                                      "snowy",
+                                      "fog",
+                                      "overcast",
+                                      "partlycloudy"
+                                    ]
+                                  }
+                                ]
+                              }
+                            ],
+                            "then": [
+                              {
+                                "action": "light.turn_on",
+                                "target": {
+                                  "entity_id": [
+                                    "light.kitchen_light",
+                                    "light.island_light_kitchen_island_light",
+                                    "light.island_light_light"
+                                  ]
+                                },
+                                "data": {
+                                  "brightness_pct": 100
+                                },
+                                "continue_on_error": true
+                              },
+                              {
+                                "action": "switch.turn_on",
+                                "target": {
+                                  "entity_id": "switch.kitchen_pantry_light"
+                                },
+                                "continue_on_error": true
+                              }
+                            ]
+                          }
+                        ],
+                        "else": [
+                          {
+                            "action": "light.turn_off",
+                            "target": {
+                              "entity_id": [
+                                "light.kitchen_light",
+                                "light.island_light_kitchen_island_light",
+                                "light.island_light_light",
+                                "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                                "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                                "light.nanoleaf_multicolor_ls",
+                                "light.nanoleaf_multicolor_ls_2"
+                              ]
+                            },
+                            "continue_on_error": true
+                          },
+                          {
+                            "action": "switch.turn_off",
+                            "target": {
+                              "entity_id": "switch.kitchen_pantry_light"
+                            },
+                            "continue_on_error": true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "watchdog"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "input_boolean.kitchen_occupied_motion",
+                        "state": "off"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "light.turn_off",
+                        "target": {
+                          "entity_id": [
+                            "light.kitchen_light",
+                            "light.island_light_kitchen_island_light",
+                            "light.island_light_light",
+                            "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                            "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                            "light.nanoleaf_multicolor_ls",
+                            "light.nanoleaf_multicolor_ls_2"
+                          ]
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "switch.kitchen_pantry_light"
+                        },
+                        "continue_on_error": true
+                      },
+                      {
+                        "action": "logbook.log",
+                        "data": {
+                          "entity_id": "light.kitchen_light",
+                          "message": "Kitchen lights forced off by watchdog (on 30 min, no motion).",
+                          "name": "Kitchen Watchdog"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVSB3WM2X6MNCDZ5SN4JWHZE",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0/choose/3/sequence/0/else/1",
+          "run_id": "81ddfff90b81aead9075091e155c342c",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T04:16:48.770968+00:00",
+            "finish": "2026-06-23T04:16:48.962603+00:00"
+          },
+          "domain": "automation",
+          "item_id": "downstairs_occupancy_lighting",
           "trigger": "Home Assistant starting"
         }
       }
@@ -760,12 +1539,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "c887d04a3889d863787aba6b8a3dd4ab",
+          "run_id": "eb64e5fdaf4375e8c923da63b887f1ce",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T03:19:08.463887+00:00",
-            "finish": "2026-06-23T03:19:08.607226+00:00"
+            "start": "2026-06-23T04:11:41.760905+00:00",
+            "finish": "2026-06-23T04:11:41.873395+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -774,23 +1553,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T03:19:08.463933+00:00",
+                "timestamp": "2026-06-23T04:11:41.760939+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": null,
+                      "last_triggered": "2026-06-23T04:01:48.989747+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-06-23T03:18:39.301439+00:00",
-                    "last_reported": "2026-06-23T03:18:39.301439+00:00",
-                    "last_updated": "2026-06-23T03:18:39.301439+00:00",
+                    "last_changed": "2026-06-23T04:11:12.611465+00:00",
+                    "last_reported": "2026-06-23T04:11:12.611465+00:00",
+                    "last_updated": "2026-06-23T04:11:12.611465+00:00",
                     "context": {
-                      "id": "01KVS7SCY59G1YKNDVC4RH9GK4",
+                      "id": "01KVSASMB3BSTG4QEA6GYTQZ48",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -809,10 +1588,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T03:19:08.464081+00:00",
+                "timestamp": "2026-06-23T04:11:41.761090+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVS7T9DF87TEBTWKKQVSA0F3",
+                    "id": "01KVSATGT0SNRTRVVRRSZTFR56",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -847,23 +1626,1818 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVS7T9DF87TEBTWKKQVSA0F3",
+            "id": "01KVSATGT0SNRTRVVRRSZTFR56",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "c887d04a3889d863787aba6b8a3dd4ab",
+          "run_id": "eb64e5fdaf4375e8c923da63b887f1ce",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T03:19:08.463887+00:00",
-            "finish": "2026-06-23T03:19:08.607226+00:00"
+            "start": "2026-06-23T04:11:41.760905+00:00",
+            "finish": "2026-06-23T04:11:41.873395+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
           "trigger": "Home Assistant starting"
+        }
+      },
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "8de812fc9fc72228d37178998b78111b",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T04:16:48.773339+00:00",
+            "finish": "2026-06-23T04:16:48.876574+00:00"
+          },
+          "domain": "automation",
+          "item_id": "esphome_kitchen_bridge_startup",
+          "trigger": "Home Assistant starting",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-06-23T04:16:48.773372+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.esphome_kitchen_bridge_startup",
+                    "state": "on",
+                    "attributes": {
+                      "id": "esphome_kitchen_bridge_startup",
+                      "last_triggered": "2026-06-23T04:11:41.760985+00:00",
+                      "mode": "single",
+                      "current": 0,
+                      "friendly_name": "ESPHome Kitchen Bridge Startup"
+                    },
+                    "last_changed": "2026-06-23T04:16:16.168909+00:00",
+                    "last_reported": "2026-06-23T04:16:16.168909+00:00",
+                    "last_updated": "2026-06-23T04:16:16.168909+00:00",
+                    "context": {
+                      "id": "01KVSB2WS8Z67CM4ZPQN6GPNMR",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "homeassistant",
+                    "event": "start",
+                    "description": "Home Assistant starting"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T04:16:48.773517+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVSB3WM5QWHM8Y7Y1SWCJGD1",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "shell_command",
+                    "service": "start_esphome_kitchen_bridge",
+                    "service_data": {},
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "esphome_kitchen_bridge_startup",
+            "alias": "ESPHome Kitchen Bridge Startup",
+            "description": "Starts the ESPHome\u2192HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.",
+            "trigger": [
+              {
+                "platform": "homeassistant",
+                "event": "start"
+              }
+            ],
+            "action": [
+              {
+                "action": "shell_command.start_esphome_kitchen_bridge"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVSB3WM5QWHM8Y7Y1SWCJGD1",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "8de812fc9fc72228d37178998b78111b",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T04:16:48.773339+00:00",
+            "finish": "2026-06-23T04:16:48.876574+00:00"
+          },
+          "domain": "automation",
+          "item_id": "esphome_kitchen_bridge_startup",
+          "trigger": "Home Assistant starting"
+        }
+      }
+    ],
+    "automation.climate_ai_advisor": [
+      {
+        "extended_dict": {
+          "last_step": "action/11/then/0",
+          "run_id": "61dcef86f3e30d7ae008620a1086ec72",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T04:17:11.563173+00:00",
+            "finish": "2026-06-23T04:17:20.009529+00:00"
+          },
+          "domain": "automation",
+          "item_id": "climate_ai_advisor",
+          "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+          "trigger": null,
+          "trace": {
+            "trigger": [
+              {
+                "path": "trigger",
+                "timestamp": "2026-06-23T04:17:11.563209+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.climate_ai_advisor",
+                    "state": "on",
+                    "attributes": {
+                      "id": "climate_ai_advisor",
+                      "last_triggered": null,
+                      "mode": "queued",
+                      "current": 0,
+                      "max": 2,
+                      "friendly_name": "climate_ai_advisor"
+                    },
+                    "last_changed": "2026-06-23T04:16:16.168035+00:00",
+                    "last_reported": "2026-06-23T04:16:16.168035+00:00",
+                    "last_updated": "2026-06-23T04:16:16.168035+00:00",
+                    "context": {
+                      "id": "01KVSB2WS8G9RX9XMTA4REY0YN",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "platform": null
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T04:17:11.563483+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVSB4JWBBCBFM432N75Z87KQ",
+                    "parent_id": "01KVSB4JWA8JNDQASE0TMGMCC0",
+                    "user_id": null
+                  },
+                  "prompt": "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object: izaan/mina with percentage 0-100 or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn=75.0C Up=74.6C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: 13.8C\n                Humidity: E=48.0% S=unavailable%\n                Echo: Dn=74.66C Up=74.3C\n                Indoor: Iz=23.1C Mi=23.3C Bsmt=20.7C\n                Ecobee: cool\n                LeakSensorTemperatures: BB=19C Ensuite=22C GuestB=23C Powder=23C Laundry=24C  hvac=idle target=23.3C\\n                Occ:\\  Arshad=unavailable Larissa=unavailable\n                Szn=Summer\n                Fans: K=on M=on Mi=on G=on Iz=on\n                VentBoosters: Iz=off@30% Mi=off@30%\n                Sw: KFn=unavailable MFn=unavailable\n                Doors: Front=closed GE=closed\n                Blinds: DR=0%open FR=0%open MR=0%open\n                TV: FR_LG=unavailable\n                Weather: partlycloudy UV=0.0 Clouds=98.4%\n                Sun=below_horizon Azimuth=343.84 deg Elevation=-21.53 deg\n                Window facings: dining=270.0 deg living=165.0 deg family=350.0 deg mina=350.0 deg master=350.0 deg izaan=165.0 deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15\u00b0, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fan\":{\"room\":\"...\",\"speed\":N}, \"blinds\":{\"dining\":N,\"family\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun.\nFront door: FrontOpenDuration=0min. If open >5 min, recommend closing and note reduced HVAC efficiency. Adjust HVAC conservatively.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1\u00a2/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8\u00a2/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8\u00a2. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: Tuesday 00:17"
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-06-23T04:17:11.573753+00:00",
+                "changed_variables": {
+                  "ai_response": {
+                    "content": {
+                      "candidates": [
+                        {
+                          "content": {
+                            "parts": [
+                              {
+                                "text": "{\"setpoint\": 21.5, \"hvac_mode\": \"cool\", \"fan\": null, \"blinds\": {\"dining\": \"no_change\", \"family\": \"no_change\", \"mina\": \"no_change\"}, \"vent_boosters\": {\"izaan\": 30, \"mina\": 30}, \"reason\": \"It is Tuesday 00:17, which is the Ultra-Low Overnight period (3.9c/kWh). Initiating summer pre-cooling to 21.5C to shift energy load away from the expensive 4PM-9PM peak. Vent boosters set to the overnight maximum limit of 30% to distribute cool air. No blind adjustments are made because the sun is below the horizon.\"}",
+                                "thoughtSignature": "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"
+                              }
+                            ],
+                            "role": "model"
+                          },
+                          "finishReason": "STOP",
+                          "index": 0
+                        }
+                      ],
+                      "usageMetadata": {
+                        "promptTokenCount": 1226,
+                        "candidatesTokenCount": 164,
+                        "totalTokenCount": 2786,
+                        "promptTokensDetails": [
+                          {
+                            "modality": "TEXT",
+                            "tokenCount": 1226
+                          }
+                        ],
+                        "thoughtsTokenCount": 1396,
+                        "serviceTier": "standard"
+                      },
+                      "modelVersion": "gemini-3.5-flash",
+                      "responseId": "xwg6aueyLtiv_PUPg9aw2Q4"
+                    },
+                    "status": 200,
+                    "headers": {
+                      "X-Gemini-Service-Tier": "standard",
+                      "Content-Type": "application/json; charset=UTF-8",
+                      "Vary": [
+                        "Origin",
+                        "X-Origin",
+                        "Referer"
+                      ],
+                      "Content-Encoding": "gzip",
+                      "Date": "Tue, 23 Jun 2026 04:17:19 GMT",
+                      "Server": "scaffolding on HTTPServer2",
+                      "X-XSS-Protection": "0",
+                      "X-Frame-Options": "SAMEORIGIN",
+                      "X-Content-Type-Options": "nosniff",
+                      "Server-Timing": "gfet4t7; dur=7994",
+                      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+                      "Transfer-Encoding": "chunked"
+                    }
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "rest_command",
+                    "service": "climate_ai_gemini",
+                    "service_data": {
+                      "prompt": "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object: izaan/mina with percentage 0-100 or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn=75.0C Up=74.6C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: 13.8C\n                Humidity: E=48.0% S=unavailable%\n                Echo: Dn=74.66C Up=74.3C\n                Indoor: Iz=23.1C Mi=23.3C Bsmt=20.7C\n                Ecobee: cool\n                LeakSensorTemperatures: BB=19C Ensuite=22C GuestB=23C Powder=23C Laundry=24C  hvac=idle target=23.3C\\n                Occ:\\  Arshad=unavailable Larissa=unavailable\n                Szn=Summer\n                Fans: K=on M=on Mi=on G=on Iz=on\n                VentBoosters: Iz=off@30% Mi=off@30%\n                Sw: KFn=unavailable MFn=unavailable\n                Doors: Front=closed GE=closed\n                Blinds: DR=0%open FR=0%open MR=0%open\n                TV: FR_LG=unavailable\n                Weather: partlycloudy UV=0.0 Clouds=98.4%\n                Sun=below_horizon Azimuth=343.84 deg Elevation=-21.53 deg\n                Window facings: dining=270.0 deg living=165.0 deg family=350.0 deg mina=350.0 deg master=350.0 deg izaan=165.0 deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15\u00b0, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fan\":{\"room\":\"...\",\"speed\":N}, \"blinds\":{\"dining\":N,\"family\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun.\nFront door: FrontOpenDuration=0min. If open >5 min, recommend closing and note reduced HVAC efficiency. Adjust HVAC conservatively.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1\u00a2/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8\u00a2/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8\u00a2. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: Tuesday 00:17"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/2": [
+              {
+                "path": "action/2",
+                "timestamp": "2026-06-23T04:17:19.615508+00:00",
+                "changed_variables": {
+                  "ai_raw": "{\"setpoint\": 21.5, \"hvac_mode\": \"cool\", \"fan\": null, \"blinds\": {\"dining\": \"no_change\", \"family\": \"no_change\", \"mina\": \"no_change\"}, \"vent_boosters\": {\"izaan\": 30, \"mina\": 30}, \"reason\": \"It is Tuesday 00:17, which is the Ultra-Low Overnight period (3.9c/kWh). Initiating summer pre-cooling to 21.5C to shift energy load away from the expensive 4PM-9PM peak. Vent boosters set to the overnight maximum limit of 30% to distribute cool air. No blind adjustments are made because the sun is below the horizon.\"}",
+                  "ai_json": {
+                    "setpoint": 21.5,
+                    "hvac_mode": "cool",
+                    "fan": null,
+                    "blinds": {
+                      "dining": "no_change",
+                      "family": "no_change",
+                      "mina": "no_change"
+                    },
+                    "vent_boosters": {
+                      "izaan": 30,
+                      "mina": 30
+                    },
+                    "reason": "It is Tuesday 00:17, which is the Ultra-Low Overnight period (3.9c/kWh). Initiating summer pre-cooling to 21.5C to shift energy load away from the expensive 4PM-9PM peak. Vent boosters set to the overnight maximum limit of 30% to distribute cool air. No blind adjustments are made because the sun is below the horizon."
+                  },
+                  "hvac_mode": "cool",
+                  "setpoint": 21.5,
+                  "reason": "It is Tuesday 00:17, which is the Ultra-Low Overnight period (3.9c/kWh). Initiating summer pre-cooling to 21.5C to shift energy load away from the expensive 4PM-9PM peak. Vent boosters set to the overnight maximum limit of 30% to distribute cool air. No blind adjustments are made because the sun is below the horizon."
+                }
+              }
+            ],
+            "action/3": [
+              {
+                "path": "action/3",
+                "timestamp": "2026-06-23T04:17:19.616898+00:00",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/3/if": [
+              {
+                "path": "action/3/if",
+                "timestamp": "2026-06-23T04:17:19.617077+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/3/if/condition/0": [
+              {
+                "path": "action/3/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.617133+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/3/then/0": [
+              {
+                "path": "action/3/then/0",
+                "timestamp": "2026-06-23T04:17:19.617477+00:00",
+                "result": {
+                  "params": {
+                    "domain": "climate",
+                    "service": "set_hvac_mode",
+                    "service_data": {
+                      "hvac_mode": "cool",
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/4": [
+              {
+                "path": "action/4",
+                "timestamp": "2026-06-23T04:17:19.626143+00:00"
+              }
+            ],
+            "action/4/if": [
+              {
+                "path": "action/4/if",
+                "timestamp": "2026-06-23T04:17:19.626301+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/4/if/condition/0": [
+              {
+                "path": "action/4/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.626355+00:00",
+                "result": {
+                  "result": false,
+                  "entities": [
+                    "binary_sensor.front_door_door"
+                  ]
+                }
+              }
+            ],
+            "action/5": [
+              {
+                "path": "action/5",
+                "timestamp": "2026-06-23T04:17:19.626620+00:00"
+              }
+            ],
+            "action/5/if": [
+              {
+                "path": "action/5/if",
+                "timestamp": "2026-06-23T04:17:19.626717+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/5/if/condition/0": [
+              {
+                "path": "action/5/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.626765+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/6": [
+              {
+                "path": "action/6",
+                "timestamp": "2026-06-23T04:17:19.626955+00:00"
+              }
+            ],
+            "action/6/if": [
+              {
+                "path": "action/6/if",
+                "timestamp": "2026-06-23T04:17:19.627089+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/6/if/condition/0": [
+              {
+                "path": "action/6/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.627139+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/7": [
+              {
+                "path": "action/7",
+                "timestamp": "2026-06-23T04:17:19.627337+00:00"
+              }
+            ],
+            "action/7/if": [
+              {
+                "path": "action/7/if",
+                "timestamp": "2026-06-23T04:17:19.627436+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/7/if/condition/0": [
+              {
+                "path": "action/7/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.627482+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/8": [
+              {
+                "path": "action/8",
+                "timestamp": "2026-06-23T04:17:19.627664+00:00"
+              }
+            ],
+            "action/8/if": [
+              {
+                "path": "action/8/if",
+                "timestamp": "2026-06-23T04:17:19.627756+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/8/if/condition/0": [
+              {
+                "path": "action/8/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.627801+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/9": [
+              {
+                "path": "action/9",
+                "timestamp": "2026-06-23T04:17:19.627979+00:00",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/9/if": [
+              {
+                "path": "action/9/if",
+                "timestamp": "2026-06-23T04:17:19.628062+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/9/if/condition/0": [
+              {
+                "path": "action/9/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.628106+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/9/then/0": [
+              {
+                "path": "action/9/then/0",
+                "timestamp": "2026-06-23T04:17:19.628412+00:00",
+                "result": {
+                  "params": {
+                    "domain": "fan",
+                    "service": "set_percentage",
+                    "service_data": {
+                      "percentage": 30,
+                      "entity_id": [
+                        "fan.izaan_s_room_20a970"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "fan.izaan_s_room_20a970"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/10": [
+              {
+                "path": "action/10",
+                "timestamp": "2026-06-23T04:17:19.843929+00:00",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/10/if": [
+              {
+                "path": "action/10/if",
+                "timestamp": "2026-06-23T04:17:19.844094+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/10/if/condition/0": [
+              {
+                "path": "action/10/if/condition/0",
+                "timestamp": "2026-06-23T04:17:19.844148+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/10/then/0": [
+              {
+                "path": "action/10/then/0",
+                "timestamp": "2026-06-23T04:17:19.844518+00:00",
+                "result": {
+                  "params": {
+                    "domain": "fan",
+                    "service": "set_percentage",
+                    "service_data": {
+                      "percentage": 30,
+                      "entity_id": [
+                        "fan.mina_s_room_f851f4"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "fan.mina_s_room_f851f4"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/11": [
+              {
+                "path": "action/11",
+                "timestamp": "2026-06-23T04:17:20.006287+00:00",
+                "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/11/if": [
+              {
+                "path": "action/11/if",
+                "timestamp": "2026-06-23T04:17:20.006445+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/11/if/condition/0": [
+              {
+                "path": "action/11/if/condition/0",
+                "timestamp": "2026-06-23T04:17:20.006494+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/11/then/0": [
+              {
+                "path": "action/11/then/0",
+                "timestamp": "2026-06-23T04:17:20.006821+00:00",
+                "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+                "result": {
+                  "params": {
+                    "domain": "climate",
+                    "service": "set_temperature",
+                    "service_data": {
+                      "temperature": 21.5,
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "climate_ai_advisor",
+            "alias": "climate_ai_advisor",
+            "description": "Every 60 min: Climate AI via Gemini. Recommends setpoint, HVAC mode, fan speed, blinds.",
+            "triggers": [
+              {
+                "minutes": 0,
+                "trigger": "time_pattern"
+              }
+            ],
+            "conditions": [
+              {
+                "condition": "state",
+                "entity_id": "input_boolean.climate_ai_enabled",
+                "state": "on"
+              },
+              {
+                "condition": "or",
+                "conditions": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr('sun.sun', 'elevation') | float(-1) > -5 }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr('sun.sun', 'elevation') is none }}"
+                  }
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "variables": {
+                  "prompt": "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object: izaan/mina with percentage 0-100 or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ states(\"sensor.h5100_2c6f_humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ ((state_attr(\"climate.ecobee\", \"temperature\") | float(0) - 32) * 5 / 9) | round(1) }}C\\n                Occ:\\  Arshad={{ states(\"person.home\") }} Larissa={{ states(\"person.larissa\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan\") }} MFn={{ states(\"switch.master_bedroom_fan_light\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_un8500auj\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15\u00b0, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fan\":{\"room\":\"...\",\"speed\":N}, \"blinds\":{\"dining\":N,\"family\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(state_attr('binary_sensor.front_door_door','last_changed') | default(now())) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If open >5 min, recommend closing and note reduced HVAC efficiency. Adjust HVAC conservatively.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1\u00a2/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8\u00a2/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8\u00a2. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
+                }
+              },
+              {
+                "action": "rest_command.climate_ai_gemini",
+                "data": {
+                  "prompt": "{{ prompt }}"
+                },
+                "response_variable": "ai_response"
+              },
+              {
+                "variables": {
+                  "ai_raw": "{{ ai_response.content.candidates[0].content.parts[0].text }}",
+                  "ai_json": "{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace('(?i)```json\\s*', '') | regex_replace('(?i)```\\s*', '') | trim | from_json if ai_raw is string and ai_raw | trim != '' and (ai_raw | trim | regex_search('[\\{\\[]')) else {}) }}",
+                  "hvac_mode": "{{ ai_json.hvac_mode | default(none, true) }}",
+                  "setpoint": "{{ ai_json.setpoint | default(none) }}",
+                  "reason": "{{ ai_json.reason | default('No recommendation', true) }}"
+                }
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ hvac_mode is not none and hvac_mode | lower != 'none' }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "climate.set_hvac_mode",
+                    "data": {
+                      "hvac_mode": "{{ hvac_mode }}"
+                    },
+                    "target": {
+                      "entity_id": "climate.ecobee"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ is_state('binary_sensor.front_door_door', 'on') }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.mobile_app_cph2655",
+                    "data": {
+                      "message": "Front door is open while HVAC is running. Close it to save energy.",
+                      "title": "Front Door Open"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.fan is mapping and ai_json.fan.room is defined and ai_json.fan.speed is defined }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "variables": {
+                      "fan_entity": "{{ {'guest':'fan.guest_room_ceiling_fan','izaan':'fan.izaan_s_ceiling_fan','kitchen':'fan.kitchen_ceiling_fan','master':'fan.master_bedroom_ceiling_fan','mina':'fan.mina_s_ceiling_fan'}.get(ai_json.fan.room, none) }}",
+                      "fan_speed": "{{ ai_json.fan.speed }}",
+                      "fan_switch": "{{ {'guest':'switch.guest_room_light_switch_1','izaan':'switch.izaan_s_bedroom_light_switch_1','kitchen':'switch.kitchen_fan_switch_1','master':'switch.master_bedroom_fan_light_switch_1','mina':'switch.mina_s_light_switch_1'}.get(ai_json.fan.room, none) }}"
+                    }
+                  },
+                  {
+                    "else": [
+                      {
+                        "if": [
+                          {
+                            "condition": "template",
+                            "value_template": "{{ fan_switch is not none }}"
+                          }
+                        ],
+                        "then": [
+                          {
+                            "action": "switch.turn_on",
+                            "target": {
+                              "entity_id": "{{ fan_switch }}"
+                            }
+                          },
+                          {
+                            "delay": {
+                              "seconds": 2
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "action": "fan.turn_on",
+                        "data": {
+                          "percentage": "{{ fan_speed | int * 33 }}"
+                        },
+                        "target": {
+                          "entity_id": "{{ fan_entity }}"
+                        }
+                      }
+                    ],
+                    "if": [
+                      {
+                        "condition": "template",
+                        "value_template": "{{ fan_speed == 'off' }}"
+                      }
+                    ],
+                    "then": [
+                      {
+                        "action": "fan.turn_off",
+                        "target": {
+                          "entity_id": "{{ fan_entity }}"
+                        }
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "{{ fan_switch }}"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.dining is defined and ai_json.blinds.dining | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.dining | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.dining_room_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.family is defined and ai_json.blinds.family | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.family | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.family_room_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.mina is defined and ai_json.blinds.mina | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.mina | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.mina_s_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined and ai_json.vent_boosters.izaan != None and ai_json.vent_boosters.izaan | int >= 0 and ai_json.vent_boosters.izaan | int <= 100 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ [[(ai_json.vent_boosters.izaan | default(0, true)) | int(0), 0] | max, 30] | min if now().hour >= 21 or now().hour < 7 else [(ai_json.vent_boosters.izaan | default(0, true)) | int(0), 0] | max }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.izaan_s_room_20a970"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined and ai_json.vent_boosters.mina != None and ai_json.vent_boosters.mina | int >= 0 and ai_json.vent_boosters.mina | int <= 100 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ [[(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max, 30] | min if now().hour >= 21 or now().hour < 7 else [(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.mina_s_room_f851f4"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ setpoint is not none and (setpoint | float(-99) >= 20.0 and setpoint | float(-99) <= 26.0) }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "climate.set_temperature",
+                    "data": {
+                      "temperature": "{{ setpoint }}"
+                    },
+                    "target": {
+                      "entity_id": "climate.ecobee"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ setpoint is not none or hvac_mode is not none or ai_json.fan is mapping }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.persistent_notification",
+                    "data": {
+                      "message": "Set: {{ setpoint }}C Mode: {{ hvac_mode }} Fan: {{ ai_json.fan.room if ai_json.fan is mapping else '-' }}@{{ ai_json.fan.speed if ai_json.fan is mapping else '-' }} Vents: Iz={{ ai_json.vent_boosters.izaan if ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined else '--' }}% Mi={{ ai_json.vent_boosters.mina if ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined else '--' }}% Blinds: {{ ai_json.blinds | to_json if ai_json.blinds is mapping else 'none' }} - {{ reason }}",
+                      "title": "Climate AI: {{ setpoint }}C {{ hvac_mode }}"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ setpoint is not none or hvac_mode is not none or (ai_json.fan is mapping and ai_json.fan.room is defined) or (ai_json.blinds is mapping and (ai_json.blinds.dining is defined or ai_json.blinds.family is defined or ai_json.blinds.mina is defined)) }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.mobile_app_cph2655",
+                    "data": {
+                      "message": "Climate AI: {{ 'No change' if setpoint == 'no_change' else 'Set ' ~ setpoint ~ 'C ' ~ hvac_mode }}{{ ' Fan: ' ~ ai_json.fan.room ~ '@' ~ ai_json.fan.speed if ai_json.fan is mapping else '' }} - {{ reason }}",
+                      "title": "Climate AI"
+                    }
+                  }
+                ]
+              }
+            ],
+            "max": 2,
+            "mode": "queued"
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVSB4JWBBCBFM432N75Z87KQ",
+            "parent_id": "01KVSB4JWA8JNDQASE0TMGMCC0",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/11/then/0",
+          "run_id": "61dcef86f3e30d7ae008620a1086ec72",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T04:17:11.563173+00:00",
+            "finish": "2026-06-23T04:17:20.009529+00:00"
+          },
+          "domain": "automation",
+          "item_id": "climate_ai_advisor",
+          "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+          "trigger": null
+        }
+      },
+      {
+        "extended_dict": {
+          "last_step": "action/11/then/0",
+          "run_id": "ca2d436fb3f4507986bfb660fbd6556d",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T04:20:27.600517+00:00",
+            "finish": "2026-06-23T04:20:37.644390+00:00"
+          },
+          "domain": "automation",
+          "item_id": "climate_ai_advisor",
+          "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+          "trigger": null,
+          "trace": {
+            "trigger": [
+              {
+                "path": "trigger",
+                "timestamp": "2026-06-23T04:20:27.600550+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.climate_ai_advisor",
+                    "state": "on",
+                    "attributes": {
+                      "id": "climate_ai_advisor",
+                      "last_triggered": "2026-06-23T04:17:11.563276+00:00",
+                      "mode": "queued",
+                      "current": 0,
+                      "max": 2,
+                      "friendly_name": "climate_ai_advisor"
+                    },
+                    "last_changed": "2026-06-23T04:16:16.168035+00:00",
+                    "last_reported": "2026-06-23T04:17:20.008075+00:00",
+                    "last_updated": "2026-06-23T04:17:20.008075+00:00",
+                    "context": {
+                      "id": "01KVSB4V48NET0KRHVSFMKQADC",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "platform": null
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T04:20:27.600793+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVSBAJAGH0XQQHEKTD8KHYRJ",
+                    "parent_id": "01KVSBAJAGSJEBE0GEBP74Y9MW",
+                    "user_id": null
+                  },
+                  "prompt": "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object: izaan/mina with percentage 0-100 or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn=75.0C Up=74.6C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: 13.8C\n                Humidity: E=48.0% S=unavailable%\n                Echo: Dn=74.66C Up=74.3C\n                Indoor: Iz=23.1C Mi=23.2C Bsmt=20.7C\n                Ecobee: cool\n                LeakSensorTemperatures: BB=19C Ensuite=22C GuestB=23C Powder=23C Laundry=24C  hvac=idle target=23.3C\\n                Occ:\\  Arshad=unavailable Larissa=unavailable\n                Szn=Summer\n                Fans: K=on M=on Mi=on G=on Iz=on\n                VentBoosters: Iz=off@30% Mi=off@30%\n                Sw: KFn=off MFn=on\n                Doors: Front=closed GE=closed\n                Blinds: DR=0%open FR=0%open MR=0%open\n                TV: FR_LG=unavailable\n                Weather: partlycloudy UV=0.0 Clouds=98.4%\n                Sun=below_horizon Azimuth=343.84 deg Elevation=-21.53 deg\n                Window facings: dining=270.0 deg living=165.0 deg family=350.0 deg mina=350.0 deg master=350.0 deg izaan=165.0 deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15\u00b0, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fan\":{\"room\":\"...\",\"speed\":N}, \"blinds\":{\"dining\":N,\"family\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun.\nFront door: FrontOpenDuration=0min. If open >5 min, recommend closing and note reduced HVAC efficiency. Adjust HVAC conservatively.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1\u00a2/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8\u00a2/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8\u00a2. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: Tuesday 00:20"
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-06-23T04:20:27.601477+00:00",
+                "changed_variables": {
+                  "ai_response": {
+                    "content": {
+                      "candidates": [
+                        {
+                          "content": {
+                            "parts": [
+                              {
+                                "text": "{\"setpoint\": 21.5, \"hvac_mode\": \"cool\", \"fan\": null, \"blinds\": {\"dining\": \"no_change\", \"family\": \"no_change\", \"mina\": \"no_change\"}, \"vent_boosters\": {\"izaan\": 30, \"mina\": 30}, \"reason\": \"Pre-cooling during cheap Ultra-Low Overnight period (3.9c/kWh) to 21.5C for peak load shifting. Vent boosters set to overnight max of 30% to distribute cool air to bedrooms.\"}",
+                                "thoughtSignature": "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"
+                              }
+                            ],
+                            "role": "model"
+                          },
+                          "finishReason": "STOP",
+                          "index": 0
+                        }
+                      ],
+                      "usageMetadata": {
+                        "promptTokenCount": 1226,
+                        "candidatesTokenCount": 126,
+                        "totalTokenCount": 3191,
+                        "promptTokensDetails": [
+                          {
+                            "modality": "TEXT",
+                            "tokenCount": 1226
+                          }
+                        ],
+                        "thoughtsTokenCount": 1839,
+                        "serviceTier": "standard"
+                      },
+                      "modelVersion": "gemini-3.5-flash",
+                      "responseId": "iwk6avfdL-aNjrEP0bu7uQk"
+                    },
+                    "status": 200,
+                    "headers": {
+                      "X-Gemini-Service-Tier": "standard",
+                      "Content-Type": "application/json; charset=UTF-8",
+                      "Vary": [
+                        "Origin",
+                        "X-Origin",
+                        "Referer"
+                      ],
+                      "Content-Encoding": "gzip",
+                      "Date": "Tue, 23 Jun 2026 04:20:37 GMT",
+                      "Server": "scaffolding on HTTPServer2",
+                      "X-XSS-Protection": "0",
+                      "X-Frame-Options": "SAMEORIGIN",
+                      "X-Content-Type-Options": "nosniff",
+                      "Server-Timing": "gfet4t7; dur=9701",
+                      "Alt-Svc": "h3=\":443\"; ma=2592000,h3-29=\":443\"; ma=2592000",
+                      "Transfer-Encoding": "chunked"
+                    }
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "rest_command",
+                    "service": "climate_ai_gemini",
+                    "service_data": {
+                      "prompt": "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object: izaan/mina with percentage 0-100 or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn=75.0C Up=74.6C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: 13.8C\n                Humidity: E=48.0% S=unavailable%\n                Echo: Dn=74.66C Up=74.3C\n                Indoor: Iz=23.1C Mi=23.2C Bsmt=20.7C\n                Ecobee: cool\n                LeakSensorTemperatures: BB=19C Ensuite=22C GuestB=23C Powder=23C Laundry=24C  hvac=idle target=23.3C\\n                Occ:\\  Arshad=unavailable Larissa=unavailable\n                Szn=Summer\n                Fans: K=on M=on Mi=on G=on Iz=on\n                VentBoosters: Iz=off@30% Mi=off@30%\n                Sw: KFn=off MFn=on\n                Doors: Front=closed GE=closed\n                Blinds: DR=0%open FR=0%open MR=0%open\n                TV: FR_LG=unavailable\n                Weather: partlycloudy UV=0.0 Clouds=98.4%\n                Sun=below_horizon Azimuth=343.84 deg Elevation=-21.53 deg\n                Window facings: dining=270.0 deg living=165.0 deg family=350.0 deg mina=350.0 deg master=350.0 deg izaan=165.0 deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15\u00b0, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fan\":{\"room\":\"...\",\"speed\":N}, \"blinds\":{\"dining\":N,\"family\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun.\nFront door: FrontOpenDuration=0min. If open >5 min, recommend closing and note reduced HVAC efficiency. Adjust HVAC conservatively.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1\u00a2/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8\u00a2/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8\u00a2. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: Tuesday 00:20"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/2": [
+              {
+                "path": "action/2",
+                "timestamp": "2026-06-23T04:20:37.346730+00:00",
+                "changed_variables": {
+                  "ai_raw": "{\"setpoint\": 21.5, \"hvac_mode\": \"cool\", \"fan\": null, \"blinds\": {\"dining\": \"no_change\", \"family\": \"no_change\", \"mina\": \"no_change\"}, \"vent_boosters\": {\"izaan\": 30, \"mina\": 30}, \"reason\": \"Pre-cooling during cheap Ultra-Low Overnight period (3.9c/kWh) to 21.5C for peak load shifting. Vent boosters set to overnight max of 30% to distribute cool air to bedrooms.\"}",
+                  "ai_json": {
+                    "setpoint": 21.5,
+                    "hvac_mode": "cool",
+                    "fan": null,
+                    "blinds": {
+                      "dining": "no_change",
+                      "family": "no_change",
+                      "mina": "no_change"
+                    },
+                    "vent_boosters": {
+                      "izaan": 30,
+                      "mina": 30
+                    },
+                    "reason": "Pre-cooling during cheap Ultra-Low Overnight period (3.9c/kWh) to 21.5C for peak load shifting. Vent boosters set to overnight max of 30% to distribute cool air to bedrooms."
+                  },
+                  "hvac_mode": "cool",
+                  "setpoint": 21.5,
+                  "reason": "Pre-cooling during cheap Ultra-Low Overnight period (3.9c/kWh) to 21.5C for peak load shifting. Vent boosters set to overnight max of 30% to distribute cool air to bedrooms."
+                }
+              }
+            ],
+            "action/3": [
+              {
+                "path": "action/3",
+                "timestamp": "2026-06-23T04:20:37.347663+00:00",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/3/if": [
+              {
+                "path": "action/3/if",
+                "timestamp": "2026-06-23T04:20:37.347739+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/3/if/condition/0": [
+              {
+                "path": "action/3/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.347796+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/3/then/0": [
+              {
+                "path": "action/3/then/0",
+                "timestamp": "2026-06-23T04:20:37.348102+00:00",
+                "result": {
+                  "params": {
+                    "domain": "climate",
+                    "service": "set_hvac_mode",
+                    "service_data": {
+                      "hvac_mode": "cool",
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/4": [
+              {
+                "path": "action/4",
+                "timestamp": "2026-06-23T04:20:37.359229+00:00"
+              }
+            ],
+            "action/4/if": [
+              {
+                "path": "action/4/if",
+                "timestamp": "2026-06-23T04:20:37.359301+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/4/if/condition/0": [
+              {
+                "path": "action/4/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.359348+00:00",
+                "result": {
+                  "result": false,
+                  "entities": [
+                    "binary_sensor.front_door_door"
+                  ]
+                }
+              }
+            ],
+            "action/5": [
+              {
+                "path": "action/5",
+                "timestamp": "2026-06-23T04:20:37.359564+00:00"
+              }
+            ],
+            "action/5/if": [
+              {
+                "path": "action/5/if",
+                "timestamp": "2026-06-23T04:20:37.359613+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/5/if/condition/0": [
+              {
+                "path": "action/5/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.359654+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/6": [
+              {
+                "path": "action/6",
+                "timestamp": "2026-06-23T04:20:37.359815+00:00"
+              }
+            ],
+            "action/6/if": [
+              {
+                "path": "action/6/if",
+                "timestamp": "2026-06-23T04:20:37.359861+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/6/if/condition/0": [
+              {
+                "path": "action/6/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.359901+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/7": [
+              {
+                "path": "action/7",
+                "timestamp": "2026-06-23T04:20:37.360065+00:00"
+              }
+            ],
+            "action/7/if": [
+              {
+                "path": "action/7/if",
+                "timestamp": "2026-06-23T04:20:37.360109+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/7/if/condition/0": [
+              {
+                "path": "action/7/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.360149+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/8": [
+              {
+                "path": "action/8",
+                "timestamp": "2026-06-23T04:20:37.360305+00:00"
+              }
+            ],
+            "action/8/if": [
+              {
+                "path": "action/8/if",
+                "timestamp": "2026-06-23T04:20:37.360348+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/8/if/condition/0": [
+              {
+                "path": "action/8/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.360389+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ],
+            "action/9": [
+              {
+                "path": "action/9",
+                "timestamp": "2026-06-23T04:20:37.360538+00:00",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/9/if": [
+              {
+                "path": "action/9/if",
+                "timestamp": "2026-06-23T04:20:37.360580+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/9/if/condition/0": [
+              {
+                "path": "action/9/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.360618+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/9/then/0": [
+              {
+                "path": "action/9/then/0",
+                "timestamp": "2026-06-23T04:20:37.360873+00:00",
+                "result": {
+                  "params": {
+                    "domain": "fan",
+                    "service": "set_percentage",
+                    "service_data": {
+                      "percentage": 30,
+                      "entity_id": [
+                        "fan.izaan_s_room_20a970"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "fan.izaan_s_room_20a970"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/10": [
+              {
+                "path": "action/10",
+                "timestamp": "2026-06-23T04:20:37.537354+00:00",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/10/if": [
+              {
+                "path": "action/10/if",
+                "timestamp": "2026-06-23T04:20:37.537434+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/10/if/condition/0": [
+              {
+                "path": "action/10/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.537485+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/10/then/0": [
+              {
+                "path": "action/10/then/0",
+                "timestamp": "2026-06-23T04:20:37.537812+00:00",
+                "result": {
+                  "params": {
+                    "domain": "fan",
+                    "service": "set_percentage",
+                    "service_data": {
+                      "percentage": 30,
+                      "entity_id": [
+                        "fan.mina_s_room_f851f4"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "fan.mina_s_room_f851f4"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/11": [
+              {
+                "path": "action/11",
+                "timestamp": "2026-06-23T04:20:37.641437+00:00",
+                "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+                "result": {
+                  "choice": "then"
+                }
+              }
+            ],
+            "action/11/if": [
+              {
+                "path": "action/11/if",
+                "timestamp": "2026-06-23T04:20:37.641515+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "action/11/if/condition/0": [
+              {
+                "path": "action/11/if/condition/0",
+                "timestamp": "2026-06-23T04:20:37.641565+00:00",
+                "result": {
+                  "result": true,
+                  "entities": []
+                }
+              }
+            ],
+            "action/11/then/0": [
+              {
+                "path": "action/11/then/0",
+                "timestamp": "2026-06-23T04:20:37.641871+00:00",
+                "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+                "result": {
+                  "params": {
+                    "domain": "climate",
+                    "service": "set_temperature",
+                    "service_data": {
+                      "temperature": 21.5,
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    },
+                    "target": {
+                      "entity_id": [
+                        "climate.ecobee"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "climate_ai_advisor",
+            "alias": "climate_ai_advisor",
+            "description": "Every 60 min: Climate AI via Gemini. Recommends setpoint, HVAC mode, fan speed, blinds.",
+            "triggers": [
+              {
+                "minutes": 0,
+                "trigger": "time_pattern"
+              }
+            ],
+            "conditions": [
+              {
+                "condition": "state",
+                "entity_id": "input_boolean.climate_ai_enabled",
+                "state": "on"
+              },
+              {
+                "condition": "or",
+                "conditions": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr('sun.sun', 'elevation') | float(-1) > -5 }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr('sun.sun', 'elevation') is none }}"
+                  }
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "variables": {
+                  "prompt": "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object: izaan/mina with percentage 0-100 or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ states(\"sensor.h5100_2c6f_humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ ((state_attr(\"climate.ecobee\", \"temperature\") | float(0) - 32) * 5 / 9) | round(1) }}C\\n                Occ:\\  Arshad={{ states(\"person.home\") }} Larissa={{ states(\"person.larissa\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan\") }} MFn={{ states(\"switch.master_bedroom_fan_light\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_un8500auj\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15\u00b0, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fan\":{\"room\":\"...\",\"speed\":N}, \"blinds\":{\"dining\":N,\"family\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(state_attr('binary_sensor.front_door_door','last_changed') | default(now())) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If open >5 min, recommend closing and note reduced HVAC efficiency. Adjust HVAC conservatively.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1\u00a2/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8\u00a2/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8\u00a2. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
+                }
+              },
+              {
+                "action": "rest_command.climate_ai_gemini",
+                "data": {
+                  "prompt": "{{ prompt }}"
+                },
+                "response_variable": "ai_response"
+              },
+              {
+                "variables": {
+                  "ai_raw": "{{ ai_response.content.candidates[0].content.parts[0].text }}",
+                  "ai_json": "{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace('(?i)```json\\s*', '') | regex_replace('(?i)```\\s*', '') | trim | from_json if ai_raw is string and ai_raw | trim != '' and (ai_raw | trim | regex_search('[\\{\\[]')) else {}) }}",
+                  "hvac_mode": "{{ ai_json.hvac_mode | default(none, true) }}",
+                  "setpoint": "{{ ai_json.setpoint | default(none) }}",
+                  "reason": "{{ ai_json.reason | default('No recommendation', true) }}"
+                }
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ hvac_mode is not none and hvac_mode | lower != 'none' }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "climate.set_hvac_mode",
+                    "data": {
+                      "hvac_mode": "{{ hvac_mode }}"
+                    },
+                    "target": {
+                      "entity_id": "climate.ecobee"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ is_state('binary_sensor.front_door_door', 'on') }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.mobile_app_cph2655",
+                    "data": {
+                      "message": "Front door is open while HVAC is running. Close it to save energy.",
+                      "title": "Front Door Open"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.fan is mapping and ai_json.fan.room is defined and ai_json.fan.speed is defined }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "variables": {
+                      "fan_entity": "{{ {'guest':'fan.guest_room_ceiling_fan','izaan':'fan.izaan_s_ceiling_fan','kitchen':'fan.kitchen_ceiling_fan','master':'fan.master_bedroom_ceiling_fan','mina':'fan.mina_s_ceiling_fan'}.get(ai_json.fan.room, none) }}",
+                      "fan_speed": "{{ ai_json.fan.speed }}",
+                      "fan_switch": "{{ {'guest':'switch.guest_room_light_switch_1','izaan':'switch.izaan_s_bedroom_light_switch_1','kitchen':'switch.kitchen_fan_switch_1','master':'switch.master_bedroom_fan_light_switch_1','mina':'switch.mina_s_light_switch_1'}.get(ai_json.fan.room, none) }}"
+                    }
+                  },
+                  {
+                    "else": [
+                      {
+                        "if": [
+                          {
+                            "condition": "template",
+                            "value_template": "{{ fan_switch is not none }}"
+                          }
+                        ],
+                        "then": [
+                          {
+                            "action": "switch.turn_on",
+                            "target": {
+                              "entity_id": "{{ fan_switch }}"
+                            }
+                          },
+                          {
+                            "delay": {
+                              "seconds": 2
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "action": "fan.turn_on",
+                        "data": {
+                          "percentage": "{{ fan_speed | int * 33 }}"
+                        },
+                        "target": {
+                          "entity_id": "{{ fan_entity }}"
+                        }
+                      }
+                    ],
+                    "if": [
+                      {
+                        "condition": "template",
+                        "value_template": "{{ fan_speed == 'off' }}"
+                      }
+                    ],
+                    "then": [
+                      {
+                        "action": "fan.turn_off",
+                        "target": {
+                          "entity_id": "{{ fan_entity }}"
+                        }
+                      },
+                      {
+                        "action": "switch.turn_off",
+                        "target": {
+                          "entity_id": "{{ fan_switch }}"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.dining is defined and ai_json.blinds.dining | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.dining | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.dining_room_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.family is defined and ai_json.blinds.family | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.family | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.family_room_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.mina is defined and ai_json.blinds.mina | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.mina | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.mina_s_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined and ai_json.vent_boosters.izaan != None and ai_json.vent_boosters.izaan | int >= 0 and ai_json.vent_boosters.izaan | int <= 100 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ [[(ai_json.vent_boosters.izaan | default(0, true)) | int(0), 0] | max, 30] | min if now().hour >= 21 or now().hour < 7 else [(ai_json.vent_boosters.izaan | default(0, true)) | int(0), 0] | max }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.izaan_s_room_20a970"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined and ai_json.vent_boosters.mina != None and ai_json.vent_boosters.mina | int >= 0 and ai_json.vent_boosters.mina | int <= 100 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ [[(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max, 30] | min if now().hour >= 21 or now().hour < 7 else [(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.mina_s_room_f851f4"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ setpoint is not none and (setpoint | float(-99) >= 20.0 and setpoint | float(-99) <= 26.0) }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "climate.set_temperature",
+                    "data": {
+                      "temperature": "{{ setpoint }}"
+                    },
+                    "target": {
+                      "entity_id": "climate.ecobee"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ setpoint is not none or hvac_mode is not none or ai_json.fan is mapping }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.persistent_notification",
+                    "data": {
+                      "message": "Set: {{ setpoint }}C Mode: {{ hvac_mode }} Fan: {{ ai_json.fan.room if ai_json.fan is mapping else '-' }}@{{ ai_json.fan.speed if ai_json.fan is mapping else '-' }} Vents: Iz={{ ai_json.vent_boosters.izaan if ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined else '--' }}% Mi={{ ai_json.vent_boosters.mina if ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined else '--' }}% Blinds: {{ ai_json.blinds | to_json if ai_json.blinds is mapping else 'none' }} - {{ reason }}",
+                      "title": "Climate AI: {{ setpoint }}C {{ hvac_mode }}"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ setpoint is not none or hvac_mode is not none or (ai_json.fan is mapping and ai_json.fan.room is defined) or (ai_json.blinds is mapping and (ai_json.blinds.dining is defined or ai_json.blinds.family is defined or ai_json.blinds.mina is defined)) }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.mobile_app_cph2655",
+                    "data": {
+                      "message": "Climate AI: {{ 'No change' if setpoint == 'no_change' else 'Set ' ~ setpoint ~ 'C ' ~ hvac_mode }}{{ ' Fan: ' ~ ai_json.fan.room ~ '@' ~ ai_json.fan.speed if ai_json.fan is mapping else '' }} - {{ reason }}",
+                      "title": "Climate AI"
+                    }
+                  }
+                ]
+              }
+            ],
+            "max": 2,
+            "mode": "queued"
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVSBAJAGH0XQQHEKTD8KHYRJ",
+            "parent_id": "01KVSBAJAGSJEBE0GEBP74Y9MW",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/11/then/0",
+          "run_id": "ca2d436fb3f4507986bfb660fbd6556d",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T04:20:27.600517+00:00",
+            "finish": "2026-06-23T04:20:37.644390+00:00"
+          },
+          "domain": "automation",
+          "item_id": "climate_ai_advisor",
+          "error": "Provided temperature -5.833333333333333 is not valid. Accepted range is 7.5 to 26.0",
+          "trigger": null
         }
       }
     ]

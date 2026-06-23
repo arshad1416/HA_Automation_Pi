@@ -23,13 +23,13 @@
       "172.64.0.0",
       "131.0.72.0"
     ],
+    "ssl_profile": "modern",
+    "use_x_frame_options": true,
     "cors_allowed_origins": [
       "https://cast.home-assistant.io"
     ],
-    "use_x_frame_options": true,
-    "server_port": 8123,
-    "ssl_profile": "modern",
+    "ip_ban_enabled": true,
     "login_attempts_threshold": -1,
-    "ip_ban_enabled": true
+    "server_port": 8123
   }
 }

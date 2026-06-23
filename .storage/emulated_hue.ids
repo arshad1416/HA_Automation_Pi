@@ -333,6 +333,7 @@
     "328": "scene.if_back_hallway_light_switch_1_off_back_hallway_light_switch_1_off",
     "329": "scene.if_back_hallway_light_switch_1_on_back_hallway_light_switch_1_on",
     "330": "scene.when_light_on_fan_on",
-    "331": "switch.presence_3_restart_esphome_node"
+    "331": "switch.presence_3_restart_esphome_node",
+    "332": "switch.this_device_do_not_disturb_2"
   }
 }
