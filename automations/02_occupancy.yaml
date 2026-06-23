@@ -31,6 +31,11 @@
     - id: ha_start
       platform: homeassistant
       event: start
+    - id: watchdog
+      platform: state
+      entity_id: binary_sensor.kitchen_presence
+      to: 'on'
+      for: { hours: 2 }
   condition: []
   action:
     - choose:
@@ -134,3 +139,15 @@
             target:
               entity_id: *all_off
             continue_on_error: true
+      - conditions:
+        - condition: trigger
+          id: watchdog
+        sequence:
+        - action: light.turn_off
+          target:
+            entity_id: *all_off
+          continue_on_error: true
+        - action: switch.turn_off
+          target:
+            entity_id: switch.kitchen_pantry_light
+          continue_on_error: true

@@ -355,9 +355,8 @@ template:
         unique_id: kitchen_presence_combined
         device_class: occupancy
         state: >
-          {% set mm = states('binary_sensor.kitchen_mmwave_presence_sensor_presence') %}
-          {% if mm in ['on', 'off'] %}{{ mm == 'on' }}
-          {% else %}{{ is_state('input_boolean.nest_kitchen_presence', 'on') }}{% endif %}
+          {{ is_state('binary_sensor.kitchen_mmwave_presence_sensor_presence', 'on')
+             or is_state('switch.kitchen_occupancy', 'on') }}
   - binary_sensor:
       - name: Garage Door (Vision)
         unique_id: garage_door_vision
