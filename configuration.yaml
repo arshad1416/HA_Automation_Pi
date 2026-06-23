@@ -364,7 +364,7 @@ template:
 
 # ESPHome Kitchen mmWave Bridge — workaround for HA 2026.6.3 + Python 3.14 ESPHome integration bug
 shell_command:
-  start_esphome_kitchen_bridge: "pkill -f esphome_kitchen_bridge.py 2>/dev/null; nohup python3 /config/esphome_kitchen_bridge.py > /config/esphome_bridge.log 2>&1 &"
+  start_esphome_kitchen_bridge: "pkill -f '[e]sphome_kitchen_bridge.py' 2>/dev/null; nohup python3 /config/esphome_kitchen_bridge.py > /config/esphome_bridge.log 2>&1 &"
 
 
 # Google Assistant — control HA via Google Home speakers
