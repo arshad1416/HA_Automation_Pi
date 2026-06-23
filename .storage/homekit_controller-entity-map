@@ -513,7 +513,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 21.6,
+                    "value": 21.7,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -595,7 +595,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 47.0,
+                    "value": 45.0,
                     "description": "Current Relative Humidity",
                     "unit": "percentage",
                     "minValue": 0,
@@ -890,7 +890,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 711,
+                    "value": 2263,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -921,7 +921,7 @@
                       "ev"
                     ],
                     "format": "uint8",
-                    "value": 1,
+                    "value": 0,
                     "description": "Occupancy Detected",
                     "minValue": 0,
                     "maxValue": 1,
@@ -935,7 +935,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 809,
+                    "value": 2263,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1653,7 +1653,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 21.2,
+                    "value": 21.3,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -1759,7 +1759,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 4498,
+                    "value": 8345,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1825,7 +1825,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 4498,
+                    "value": 8345,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1980,7 +1980,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 21.3,
+                    "value": 21.5,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -2086,7 +2086,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 37746,
+                    "value": 2062,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2152,7 +2152,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 37746,
+                    "value": 2062,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2307,7 +2307,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 20.6,
+                    "value": 21.1,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -2413,7 +2413,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 67020,
+                    "value": 70867,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2479,7 +2479,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 67020,
+                    "value": 70867,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -3785,7 +3785,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 24
+                    "value": 25
                   }
                 ]
               }

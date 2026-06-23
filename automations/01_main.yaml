@@ -879,7 +879,7 @@
     - variables:
         fan_entity: '{{ {''guest'':''fan.guest_room_ceiling_fan'',''izaan'':''fan.izaan_s_ceiling_fan'',''kitchen'':''fan.kitchen_ceiling_fan'',''master'':''fan.master_bedroom_ceiling_fan'',''mina'':''fan.mina_s_ceiling_fan''}.get(ai_json.fan.room, none) }}'
         fan_speed: '{{ ai_json.fan.speed }}'
-        fan_switch: '{{ {''guest'':''switch.guest_room_light_switch_1'',''izaan'':''switch.izaan_s_bedroom_light_switch_1'',''kitchen'':''switch.kitchen_fan_switch_1'',''master'':''switch.master_bedroom_fan_light_switch_1'',''mina'':''switch.mina_s_light_switch_1''}.get(ai_json.fan.room, none) }}'
+        fan_switch: '{{ {''guest'':''switch.guest_room_light_switch_1'',''izaan'':''switch.izaan_s_bedroom_light_switch_1'',''kitchen'':''switch.kitchen_fan_switch_1'',''master'':''switch.master_bedroom_fan_light_switch_1'',''mina'':''switch.mina_s_light''}.get(ai_json.fan.room, none) }}'
     - else:
       - if:
         - condition: template
@@ -1600,7 +1600,7 @@
           - light.nanoleaf_multicolor_ls
           - light.nanoleaf_multicolor_ls_2
           - light.kitchen_light
-          - light.kitchen_light_light_1
+          - light.kitchen_light
     - conditions:
       - condition: trigger
         id: kitchen_off
@@ -2378,7 +2378,7 @@
     target:
       entity_id:
       - light.kitchen_light_light
-      - light.island_light_light
+      - light.island_light_kitchen_island_light
       - light.stair_light
       - light.stair_light_2
       - light.family_room_light
