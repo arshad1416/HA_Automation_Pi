@@ -811,7 +811,7 @@
                         Echo: Dn={{ states("sensor.downstairs_echo_dot_temperature") }}C Up={{ states("sensor.upstairs_echo_dot_temperature") }}C
                         Indoor: Iz={{ states("sensor.izaans_room_temperature") }}C Mi={{ states("sensor.minas_room_temperature") }}C Bsmt={{ states("sensor.basement_temperature") }}C
                         Ecobee: {{ states("climate.ecobee") }}
-                        LeakSensorTemperatures: BB={{ states("sensor.basement_bathroom_leak_sensor_device_temperature") }}C Ensuite={{ states("sensor.ensuite_leak_sensor_device_temperature") }}C GuestB={{ states("sensor.guest_bathroom_leak_sensor_device_temperature") }}C Powder={{ states("sensor.powder_room_leak_sensor_device_temperature") }}C Laundry={{ states("sensor.laundry_room_leak_sensor_device_temperature") }}C  hvac={{ state_attr("climate.ecobee", "hvac_action") }} target={{ ((state_attr("climate.ecobee", "temperature") | float(0) - 32) * 5 / 9) | round(1) }}C\n                Occ:\  Arshad={{ states("person.home") }} Larissa={{ states("person.larissa") }}
+                        LeakSensorTemperatures: BB={{ states("sensor.basement_bathroom_leak_sensor_device_temperature") }}C Ensuite={{ states("sensor.ensuite_leak_sensor_device_temperature") }}C GuestB={{ states("sensor.guest_bathroom_leak_sensor_device_temperature") }}C Powder={{ states("sensor.powder_room_leak_sensor_device_temperature") }}C Laundry={{ states("sensor.laundry_room_leak_sensor_device_temperature") }}C  hvac={{ state_attr("climate.ecobee", "hvac_action") }} target={{ state_attr("climate.ecobee", "temperature") }}C\n                Occ:\  Arshad={{ states("person.home") }} Larissa={{ states("person.larissa") }}
                         Szn={{ "Summer" if is_state("input_boolean.climate_summer_mode", "on") else "Winter" }}
                         Fans: K={{ states("fan.kitchen_ceiling_fan") }} M={{ states("fan.master_bedroom_ceiling_fan") }} Mi={{ states("fan.mina_s_ceiling_fan") }} G={{ states("fan.guest_room_ceiling_fan") }} Iz={{ states("fan.izaan_s_ceiling_fan") }}
                         VentBoosters: Iz={{ states("fan.izaan_s_room_20a970") }}@{{ state_attr("fan.izaan_s_room_20a970", "percentage") }}% Mi={{ states("fan.mina_s_room_f851f4") }}@{{ state_attr("fan.mina_s_room_f851f4", "percentage") }}%
@@ -962,7 +962,7 @@
     then:
     - action: climate.set_temperature
       data:
-        temperature: '{{ (setpoint | float(0) * 9 / 5 + 32) | round(0) }}'
+        temperature: '{{ setpoint }}'
       target:
         entity_id: climate.ecobee
   - if:

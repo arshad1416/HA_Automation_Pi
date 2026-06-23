@@ -33,3 +33,4 @@ Thumbs.db
 .storage/core.uuid
 .storage/roborock/
 .storage/core.config_entries
+.storage/google.*
