@@ -1934,26 +1934,18 @@
   - trigger: time
     at: '21:00:00'
   conditions:
-  - type: is_not_open
-    condition: device
-    device_id: 80f08d6bab982a67302cf6d6d155ee8f
-    entity_id: ddf1c5b529ed3a2cdb8593fbc427fcc7
-    domain: binary_sensor
-  - condition: device
-    device_id: 80f08d6bab982a67302cf6d6d155ee8f
-    domain: lock
-    entity_id: 317f8e7576751b55afff3ad27adb32c6
-    type: is_unlocked
-  - type: is_not_open
-    condition: device
-    device_id: 900fe2e9075cf966faa4b915df82d83c
-    entity_id: b4458963b6e4753ca30fd9ce50de9345
-    domain: binary_sensor
-  - condition: device
-    device_id: 900fe2e9075cf966faa4b915df82d83c
-    domain: lock
-    entity_id: 81eb6accd0e118d83a821bfef6f684db
-    type: is_unlocked
+  - condition: state
+    entity_id: lock.front_door
+    state: unlocked
+  - condition: state
+    entity_id: lock.front_door
+    state: unlocked
+  - condition: state
+    entity_id: lock.front_door
+    state: unlocked
+  - condition: state
+    entity_id: lock.front_door
+    state: unlocked
   actions:
   - device_id: 80f08d6bab982a67302cf6d6d155ee8f
     domain: lock
