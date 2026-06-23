@@ -513,7 +513,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 23.1,
+                    "value": 23.0,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -890,7 +890,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 10084,
+                    "value": 10527,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -935,7 +935,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 10084,
+                    "value": 10527,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1653,7 +1653,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 23.1,
+                    "value": 22.9,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -1759,7 +1759,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 8945,
+                    "value": 9389,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1825,7 +1825,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 8946,
+                    "value": 9389,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2086,7 +2086,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 10307,
+                    "value": 10750,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2152,7 +2152,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 10307,
+                    "value": 10750,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2307,7 +2307,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 20.7,
+                    "value": 20.6,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -2413,7 +2413,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 39581,
+                    "value": 40024,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2479,7 +2479,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 39581,
+                    "value": 40024,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
