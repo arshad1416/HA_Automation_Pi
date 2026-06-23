@@ -1937,24 +1937,13 @@
   - condition: state
     entity_id: lock.front_door
     state: unlocked
-  - condition: state
-    entity_id: lock.front_door
-    state: unlocked
-  - condition: state
-    entity_id: lock.front_door
-    state: unlocked
-  - condition: state
-    entity_id: lock.front_door
-    state: unlocked
   actions:
-  - device_id: 80f08d6bab982a67302cf6d6d155ee8f
-    domain: lock
-    entity_id: 317f8e7576751b55afff3ad27adb32c6
-    type: lock
-  - device_id: 900fe2e9075cf966faa4b915df82d83c
-    domain: lock
-    entity_id: 81eb6accd0e118d83a821bfef6f684db
-    type: lock
+  - action: lock.lock
+    target:
+      entity_id: lock.front_door
+  - action: lock.lock
+    target:
+      entity_id: lock.garages_entry_door
   mode: single
 - id: smartthings_nightly_token_refresh
   alias: Nightly SmartThings Token Refresh
@@ -1991,10 +1980,9 @@
         value_template: |
           {{ states('sensor.izaans_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}
       sequence:
-      - type: turn_on
-        device_id: 25dad770b527d5c6d6baf47584abe766
-        entity_id: e519bde78b1134019fb0c4d4564b39d1
-        domain: fan
+      - action: fan.turn_on
+        target:
+          entity_id: fan.izaan_s_room_20a970
     - conditions:
       - condition: state
         entity_id: climate.ecobee
@@ -2004,15 +1992,13 @@
         value_template: |
           {{ states('sensor.izaans_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}
       sequence:
-      - type: turn_on
-        device_id: 25dad770b527d5c6d6baf47584abe766
-        entity_id: e519bde78b1134019fb0c4d4564b39d1
-        domain: fan
+      - action: fan.turn_on
+        target:
+          entity_id: fan.izaan_s_room_20a970
     default:
-    - type: turn_off
-      device_id: 25dad770b527d5c6d6baf47584abe766
-      entity_id: e519bde78b1134019fb0c4d4564b39d1
-      domain: fan
+    - action: fan.turn_off
+      target:
+        entity_id: fan.izaan_s_room_20a970
   - choose:
     - conditions:
       - condition: state
@@ -2023,10 +2009,9 @@
         value_template: |
           {{ states('sensor.minas_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}
       sequence:
-      - type: turn_on
-        device_id: 1b59edc4ace13071d3afa094610548cd
-        entity_id: 180cc60c0138a13c41bab968f6b33054
-        domain: fan
+      - action: fan.turn_on
+        target:
+          entity_id: fan.mina_s_room_f851f4
     - conditions:
       - condition: state
         entity_id: climate.ecobee
@@ -2036,15 +2021,13 @@
         value_template: |
           {{ states('sensor.minas_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}
       sequence:
-      - type: turn_on
-        device_id: 1b59edc4ace13071d3afa094610548cd
-        entity_id: 180cc60c0138a13c41bab968f6b33054
-        domain: fan
+      - action: fan.turn_on
+        target:
+          entity_id: fan.mina_s_room_f851f4
     default:
-    - type: turn_off
-      device_id: 1b59edc4ace13071d3afa094610548cd
-      entity_id: 180cc60c0138a13c41bab968f6b33054
-      domain: fan
+    - action: fan.turn_off
+      target:
+        entity_id: fan.mina_s_room_f851f4
 - id: blinds_solar_shutter
   alias: blinds_solar_shutter
   description: Open all blinds at sunrise. In summer, close sun-facing blinds during direct-sun hours to block solar gain — only when sunny (cloud <60%, no rain). Reopen after sun passes window.

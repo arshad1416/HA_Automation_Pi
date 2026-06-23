@@ -7,12 +7,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "bd54886387feb748945d1004d2d74406",
+          "run_id": "b7e82224d555e4785b925f6ea86f060a",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:21:55.780778+00:00",
-            "finish": "2026-06-23T13:21:55.782375+00:00"
+            "start": "2026-06-23T13:24:16.384394+00:00",
+            "finish": "2026-06-23T13:24:16.385999+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -21,23 +21,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T13:21:55.780826+00:00",
+                "timestamp": "2026-06-23T13:24:16.384441+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.restore_govee_outdoor_lights_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "govee_restore_after_restart",
-                      "last_triggered": "2026-06-23T12:17:49.760915+00:00",
+                      "last_triggered": "2026-06-23T13:21:55.780923+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Restore Govee outdoor lights after HA restart"
                     },
-                    "last_changed": "2026-06-23T13:21:25.070796+00:00",
-                    "last_reported": "2026-06-23T13:21:25.070796+00:00",
-                    "last_updated": "2026-06-23T13:21:25.070796+00:00",
+                    "last_changed": "2026-06-23T13:23:43.074487+00:00",
+                    "last_reported": "2026-06-23T13:23:43.074487+00:00",
+                    "last_updated": "2026-06-23T13:23:43.074487+00:00",
                     "context": {
-                      "id": "01KVTA932EER08X9AGSTSCF0PZ",
+                      "id": "01KVTAD9V25BS7A7H1HMM48M78",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -56,10 +56,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:21:55.781075+00:00",
+                "timestamp": "2026-06-23T13:24:16.384681+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAA124739F9M5W8B3VYQF6",
+                    "id": "01KVTAEAC0AT4V50C7YRWGBTMR",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -72,7 +72,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:21:55.781284+00:00",
+                "timestamp": "2026-06-23T13:24:16.384893+00:00",
                 "result": {
                   "result": false
                 }
@@ -81,7 +81,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:21:55.781324+00:00",
+                "timestamp": "2026-06-23T13:24:16.384931+00:00",
                 "result": {
                   "wanted_time_after": "2026-06-24T01:06:22.662203+00:00",
                   "result": false
@@ -91,7 +91,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:21:55.781507+00:00",
+                "timestamp": "2026-06-23T13:24:16.385112+00:00",
                 "result": {
                   "result": false
                 }
@@ -100,7 +100,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:21:55.781532+00:00",
+                "timestamp": "2026-06-23T13:24:16.385137+00:00",
                 "result": {
                   "wanted_time_after": "2026-06-24T01:06:22.662203+00:00",
                   "result": false
@@ -110,7 +110,7 @@
             "action/0/default/0": [
               {
                 "path": "action/0/default/0",
-                "timestamp": "2026-06-23T13:21:55.781712+00:00",
+                "timestamp": "2026-06-23T13:24:16.385316+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -225,19 +225,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAA124739F9M5W8B3VYQF6",
+            "id": "01KVTAEAC0AT4V50C7YRWGBTMR",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "bd54886387feb748945d1004d2d74406",
+          "run_id": "b7e82224d555e4785b925f6ea86f060a",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:21:55.780778+00:00",
-            "finish": "2026-06-23T13:21:55.782375+00:00"
+            "start": "2026-06-23T13:24:16.384394+00:00",
+            "finish": "2026-06-23T13:24:16.385999+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -248,39 +248,40 @@
     "automation.downstairs_occupancy_lighting": [
       {
         "extended_dict": {
-          "last_step": "action/0/choose/3/sequence/0/else/1",
-          "run_id": "190bd0b7d10b0860c212d330d736cba9",
+          "last_step": "action/0/choose/3/sequence/0/else/0",
+          "run_id": "101a2358193a9e4ce79afd7af2f32021",
           "state": "stopped",
-          "script_execution": "finished",
+          "script_execution": "error",
           "timestamp": {
-            "start": "2026-06-23T13:21:55.786308+00:00",
-            "finish": "2026-06-23T13:21:56.220391+00:00"
+            "start": "2026-06-23T13:24:16.390292+00:00",
+            "finish": "2026-06-23T13:24:32.434696+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
+          "error": "Request timeout",
           "trigger": "Home Assistant starting",
           "trace": {
             "trigger/6": [
               {
                 "path": "trigger/6",
-                "timestamp": "2026-06-23T13:21:55.786345+00:00",
+                "timestamp": "2026-06-23T13:24:16.390336+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.downstairs_occupancy_lighting",
                     "state": "on",
                     "attributes": {
                       "id": "downstairs_occupancy_lighting",
-                      "last_triggered": "2026-06-23T12:17:49.766413+00:00",
+                      "last_triggered": "2026-06-23T13:21:55.786419+00:00",
                       "mode": "queued",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Downstairs Occupancy Lighting"
                     },
-                    "last_changed": "2026-06-23T13:21:25.072616+00:00",
-                    "last_reported": "2026-06-23T13:21:25.072616+00:00",
-                    "last_updated": "2026-06-23T13:21:25.072616+00:00",
+                    "last_changed": "2026-06-23T13:23:43.076886+00:00",
+                    "last_reported": "2026-06-23T13:23:43.076886+00:00",
+                    "last_updated": "2026-06-23T13:23:43.076886+00:00",
                     "context": {
-                      "id": "01KVTA932G6HTVGM4RTQK3P0B6",
+                      "id": "01KVTAD9V40Z4X2CT10B02YH2H",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -299,14 +300,15 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:21:55.786567+00:00",
+                "timestamp": "2026-06-23T13:24:16.390562+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAA12AVASC232PG5HQGE9B",
+                    "id": "01KVTAEAC6E28AENYFCG0KMXTQ",
                     "parent_id": null,
                     "user_id": null
                   }
                 },
+                "error": "Request timeout",
                 "result": {
                   "choice": 3
                 }
@@ -315,7 +317,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:21:55.787328+00:00",
+                "timestamp": "2026-06-23T13:24:16.390876+00:00",
                 "result": {
                   "result": false
                 }
@@ -324,7 +326,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:21:55.787366+00:00",
+                "timestamp": "2026-06-23T13:24:16.390909+00:00",
                 "result": {
                   "result": false
                 }
@@ -333,7 +335,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:21:55.787410+00:00",
+                "timestamp": "2026-06-23T13:24:16.390953+00:00",
                 "result": {
                   "result": false
                 }
@@ -342,7 +344,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:21:55.787429+00:00",
+                "timestamp": "2026-06-23T13:24:16.390971+00:00",
                 "result": {
                   "result": false
                 }
@@ -351,7 +353,7 @@
             "action/0/choose/2": [
               {
                 "path": "action/0/choose/2",
-                "timestamp": "2026-06-23T13:21:55.787459+00:00",
+                "timestamp": "2026-06-23T13:24:16.391002+00:00",
                 "result": {
                   "result": false
                 }
@@ -360,7 +362,7 @@
             "action/0/choose/2/conditions/0": [
               {
                 "path": "action/0/choose/2/conditions/0",
-                "timestamp": "2026-06-23T13:21:55.787476+00:00",
+                "timestamp": "2026-06-23T13:24:16.391019+00:00",
                 "result": {
                   "result": false
                 }
@@ -369,7 +371,7 @@
             "action/0/choose/3": [
               {
                 "path": "action/0/choose/3",
-                "timestamp": "2026-06-23T13:21:55.787504+00:00",
+                "timestamp": "2026-06-23T13:24:16.391046+00:00",
                 "result": {
                   "result": true
                 }
@@ -378,7 +380,7 @@
             "action/0/choose/3/conditions/0": [
               {
                 "path": "action/0/choose/3/conditions/0",
-                "timestamp": "2026-06-23T13:21:55.787520+00:00",
+                "timestamp": "2026-06-23T13:24:16.391090+00:00",
                 "result": {
                   "result": true
                 }
@@ -387,7 +389,8 @@
             "action/0/choose/3/sequence/0": [
               {
                 "path": "action/0/choose/3/sequence/0",
-                "timestamp": "2026-06-23T13:21:55.787626+00:00",
+                "timestamp": "2026-06-23T13:24:16.391190+00:00",
+                "error": "Request timeout",
                 "result": {
                   "choice": "else"
                 }
@@ -396,7 +399,7 @@
             "action/0/choose/3/sequence/0/if": [
               {
                 "path": "action/0/choose/3/sequence/0/if",
-                "timestamp": "2026-06-23T13:21:55.787728+00:00",
+                "timestamp": "2026-06-23T13:24:16.391289+00:00",
                 "result": {
                   "result": false
                 }
@@ -405,7 +408,7 @@
             "action/0/choose/3/sequence/0/if/condition/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0",
-                "timestamp": "2026-06-23T13:21:55.787749+00:00",
+                "timestamp": "2026-06-23T13:24:16.391310+00:00",
                 "result": {
                   "result": false
                 }
@@ -414,7 +417,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0",
-                "timestamp": "2026-06-23T13:21:55.787770+00:00",
+                "timestamp": "2026-06-23T13:24:16.391330+00:00",
                 "result": {
                   "result": false
                 }
@@ -423,7 +426,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:21:55.787787+00:00",
+                "timestamp": "2026-06-23T13:24:16.391348+00:00",
                 "result": {
                   "result": false,
                   "state": "off",
@@ -434,7 +437,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1",
-                "timestamp": "2026-06-23T13:21:55.787824+00:00",
+                "timestamp": "2026-06-23T13:24:16.391384+00:00",
                 "result": {
                   "result": false
                 }
@@ -443,7 +446,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0",
-                "timestamp": "2026-06-23T13:21:55.787840+00:00",
+                "timestamp": "2026-06-23T13:24:16.391400+00:00",
                 "result": {
                   "result": false,
                   "state": "unknown",
@@ -454,7 +457,8 @@
             "action/0/choose/3/sequence/0/else/0": [
               {
                 "path": "action/0/choose/3/sequence/0/else/0",
-                "timestamp": "2026-06-23T13:21:55.787927+00:00",
+                "timestamp": "2026-06-23T13:24:16.391491+00:00",
+                "error": "Request timeout",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -470,25 +474,6 @@
                         "light.cabinet_light_strip_right_nanoleaf_light_strip",
                         "light.nanoleaf_multicolor_ls",
                         "light.nanoleaf_multicolor_ls_2"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ],
-            "action/0/choose/3/sequence/0/else/1": [
-              {
-                "path": "action/0/choose/3/sequence/0/else/1",
-                "timestamp": "2026-06-23T13:21:56.193231+00:00",
-                "result": {
-                  "params": {
-                    "domain": "switch",
-                    "service": "turn_off",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "switch.kitchen_pantry_light"
                       ]
                     }
                   },
@@ -992,22 +977,23 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAA12AVASC232PG5HQGE9B",
+            "id": "01KVTAEAC6E28AENYFCG0KMXTQ",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0/choose/3/sequence/0/else/1",
-          "run_id": "190bd0b7d10b0860c212d330d736cba9",
+          "last_step": "action/0/choose/3/sequence/0/else/0",
+          "run_id": "101a2358193a9e4ce79afd7af2f32021",
           "state": "stopped",
-          "script_execution": "finished",
+          "script_execution": "error",
           "timestamp": {
-            "start": "2026-06-23T13:21:55.786308+00:00",
-            "finish": "2026-06-23T13:21:56.220391+00:00"
+            "start": "2026-06-23T13:24:16.390292+00:00",
+            "finish": "2026-06-23T13:24:32.434696+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
+          "error": "Request timeout",
           "trigger": "Home Assistant starting"
         }
       }
@@ -1016,12 +1002,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "0de6aa090cfa29e0e2e8a5650710f390",
+          "run_id": "0d853f6af02619a413859d123efe6e30",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:21:55.788619+00:00",
-            "finish": "2026-06-23T13:21:55.895123+00:00"
+            "start": "2026-06-23T13:24:16.392179+00:00",
+            "finish": "2026-06-23T13:24:16.505681+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -1030,23 +1016,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T13:21:55.788642+00:00",
+                "timestamp": "2026-06-23T13:24:16.392201+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-06-23T12:17:49.768377+00:00",
+                      "last_triggered": "2026-06-23T13:21:55.788677+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-06-23T13:21:25.072728+00:00",
-                    "last_reported": "2026-06-23T13:21:25.072728+00:00",
-                    "last_updated": "2026-06-23T13:21:25.072728+00:00",
+                    "last_changed": "2026-06-23T13:23:43.076996+00:00",
+                    "last_reported": "2026-06-23T13:23:43.076996+00:00",
+                    "last_updated": "2026-06-23T13:23:43.076996+00:00",
                     "context": {
-                      "id": "01KVTA932G2T01GH11TPD5RVZN",
+                      "id": "01KVTAD9V4Q1JY1CKP7EDRNQ33",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -1065,10 +1051,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:21:55.788789+00:00",
+                "timestamp": "2026-06-23T13:24:16.392338+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAA12CAYXR11CGH5S2WJ66",
+                    "id": "01KVTAEAC83E1QCD7JBRV24E4H",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -1103,322 +1089,23 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAA12CAYXR11CGH5S2WJ66",
+            "id": "01KVTAEAC83E1QCD7JBRV24E4H",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "0de6aa090cfa29e0e2e8a5650710f390",
+          "run_id": "0d853f6af02619a413859d123efe6e30",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:21:55.788619+00:00",
-            "finish": "2026-06-23T13:21:55.895123+00:00"
+            "start": "2026-06-23T13:24:16.392179+00:00",
+            "finish": "2026-06-23T13:24:16.505681+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
           "trigger": "Home Assistant starting"
-        }
-      }
-    ],
-    "automation.stairs_light_auto": [
-      {
-        "extended_dict": {
-          "last_step": "action/0/choose/1/sequence/0",
-          "run_id": "6e822532ec9e5b9e39c9778eaba4f3c0",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-06-23T13:22:43.541366+00:00",
-            "finish": "2026-06-23T13:22:44.633756+00:00"
-          },
-          "domain": "automation",
-          "item_id": "stairs_light_auto",
-          "trigger": "state of switch.stairs_occupancy",
-          "trace": {
-            "trigger/1": [
-              {
-                "path": "trigger/1",
-                "timestamp": "2026-06-23T13:22:43.541413+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.stairs_light_auto_on_off",
-                    "state": "on",
-                    "attributes": {
-                      "id": "stairs_light_auto",
-                      "last_triggered": null,
-                      "mode": "restart",
-                      "current": 0,
-                      "friendly_name": "Stairs Light Auto On/Off"
-                    },
-                    "last_changed": "2026-06-23T13:21:25.070043+00:00",
-                    "last_reported": "2026-06-23T13:21:25.070043+00:00",
-                    "last_updated": "2026-06-23T13:21:25.070043+00:00",
-                    "context": {
-                      "id": "01KVTA932EP5HQFVM4DWNHW1DW",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "stairs_off",
-                    "idx": "1",
-                    "alias": null,
-                    "platform": "state",
-                    "entity_id": "switch.stairs_occupancy",
-                    "from_state": {
-                      "entity_id": "switch.stairs_occupancy",
-                      "state": "on",
-                      "attributes": {
-                        "icon": "mdi:motion-sensor",
-                        "friendly_name": "Stairs Presence (Echo)"
-                      },
-                      "last_changed": "2026-06-23T13:21:41.582762+00:00",
-                      "last_reported": "2026-06-23T13:21:41.582762+00:00",
-                      "last_updated": "2026-06-23T13:21:41.582762+00:00",
-                      "context": {
-                        "id": "01KVTA9K6EH136NZRNJ6HPS2FD",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "to_state": {
-                      "entity_id": "switch.stairs_occupancy",
-                      "state": "off",
-                      "attributes": {
-                        "icon": "mdi:motion-sensor",
-                        "friendly_name": "Stairs Presence (Echo)"
-                      },
-                      "last_changed": "2026-06-23T13:22:43.541013+00:00",
-                      "last_reported": "2026-06-23T13:22:43.541013+00:00",
-                      "last_updated": "2026-06-23T13:22:43.541013+00:00",
-                      "context": {
-                        "id": "01KVTABFPNEV4HM6FBYT94S880",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "for": null,
-                    "attribute": null,
-                    "description": "state of switch.stairs_occupancy"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-06-23T13:22:43.541698+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KVTABFPNF583ZAPBKM4F4S34",
-                    "parent_id": "01KVTABFPNEV4HM6FBYT94S880",
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "choice": 1
-                }
-              }
-            ],
-            "action/0/choose/0": [
-              {
-                "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:22:43.541911+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/0/conditions/0": [
-              {
-                "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:22:43.541956+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/1": [
-              {
-                "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:22:43.542020+00:00",
-                "result": {
-                  "result": true
-                }
-              }
-            ],
-            "action/0/choose/1/conditions/0": [
-              {
-                "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:22:43.542048+00:00",
-                "result": {
-                  "result": true
-                }
-              }
-            ],
-            "action/0/choose/1/sequence/0": [
-              {
-                "path": "action/0/choose/1/sequence/0",
-                "timestamp": "2026-06-23T13:22:43.542191+00:00",
-                "result": {
-                  "params": {
-                    "domain": "light",
-                    "service": "turn_off",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "light.stair_light",
-                        "light.stair_light_2"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "actions": [
-              {
-                "choose": [
-                  {
-                    "conditions": [
-                      {
-                        "condition": "trigger",
-                        "id": "stairs_on"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "choose": [
-                          {
-                            "conditions": [
-                              {
-                                "after": "22:00:00",
-                                "before": "07:00:00",
-                                "condition": "time"
-                              }
-                            ],
-                            "sequence": [
-                              {
-                                "action": "light.turn_on",
-                                "data": {
-                                  "brightness_pct": "{{ states('input_number.stairs_late_night_brightness') | int }}"
-                                },
-                                "target": {
-                                  "entity_id": [
-                                    "light.stair_light",
-                                    "light.stair_light_2"
-                                  ]
-                                }
-                              }
-                            ]
-                          },
-                          {
-                            "conditions": [
-                              {
-                                "after": "07:00:00",
-                                "before": "22:00:00",
-                                "condition": "time"
-                              }
-                            ],
-                            "sequence": [
-                              {
-                                "action": "light.turn_on",
-                                "data": {
-                                  "brightness_pct": "{{ states('input_number.stairs_day_brightness') | int }}"
-                                },
-                                "target": {
-                                  "entity_id": [
-                                    "light.stair_light",
-                                    "light.stair_light_2"
-                                  ]
-                                }
-                              }
-                            ]
-                          }
-                        ],
-                        "default": [
-                          {
-                            "action": "light.turn_on",
-                            "data": {
-                              "brightness_pct": 100
-                            },
-                            "target": {
-                              "entity_id": [
-                                "light.stair_light",
-                                "light.stair_light_2"
-                              ]
-                            }
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "conditions": [
-                      {
-                        "condition": "trigger",
-                        "id": "stairs_off"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "light.turn_off",
-                        "target": {
-                          "entity_id": [
-                            "light.stair_light",
-                            "light.stair_light_2"
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ],
-            "alias": "Stairs Light Auto On/Off",
-            "conditions": [],
-            "description": "Turns stair lights on when echo stairs occupancy detected, off when cleared. Late-night mode uses dim brightness.",
-            "id": "stairs_light_auto",
-            "mode": "restart",
-            "triggers": [
-              {
-                "entity_id": "switch.stairs_occupancy",
-                "id": "stairs_on",
-                "to": "on",
-                "trigger": "state"
-              },
-              {
-                "entity_id": "switch.stairs_occupancy",
-                "id": "stairs_off",
-                "to": "off",
-                "trigger": "state"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KVTABFPNF583ZAPBKM4F4S34",
-            "parent_id": "01KVTABFPNEV4HM6FBYT94S880",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0/choose/1/sequence/0",
-          "run_id": "6e822532ec9e5b9e39c9778eaba4f3c0",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-06-23T13:22:43.541366+00:00",
-            "finish": "2026-06-23T13:22:44.633756+00:00"
-          },
-          "domain": "automation",
-          "item_id": "stairs_light_auto",
-          "trigger": "state of switch.stairs_occupancy"
         }
       }
     ]

@@ -143,6 +143,13 @@
         "domain": "automation",
         "is_persistent": false,
         "issue_id": "automation.smart_vent_fan_control_validation_failed_actions"
+      },
+      {
+        "created": "2026-06-23T13:23:43.075098+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.lock_front_and_garage_doors_at_9pm_validation_failed_actions"
       }
     ]
   }

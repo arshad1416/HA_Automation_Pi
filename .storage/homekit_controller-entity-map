@@ -890,7 +890,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 2401,
+                    "value": 2592,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -935,7 +935,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 2401,
+                    "value": 2592,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1759,7 +1759,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 8483,
+                    "value": 8674,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1825,7 +1825,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 8483,
+                    "value": 8674,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2086,7 +2086,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 2200,
+                    "value": 2391,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2152,7 +2152,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 2200,
+                    "value": 2391,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2413,7 +2413,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 71005,
+                    "value": 71196,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2479,7 +2479,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 71005,
+                    "value": 71196,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
