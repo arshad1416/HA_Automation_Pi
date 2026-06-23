@@ -1,1 +1,160 @@
-[]
+- id: '1777488823738'
+  alias: Turn off everything and lock the doors at 2AM
+  description: ''
+  triggers:
+  - at: 02:00:00
+    trigger: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+    - sat
+    - sun
+  conditions: []
+  actions:
+  - action: light.turn_off
+    data: {}
+    metadata: {}
+    target:
+      device_id:
+      - b14ee7d625a0ff3809819b1e34bf120f
+      - f3755cbdb35f618ec91936be77ab6202
+      - c5ea52e1b30650bafadbb93300c29bac
+      - 3ea95ffddb41332aa882211f7b6dd198
+      entity_id:
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+      - light.kitchen_light
+      - light.curtain_lights_v2
+      - light.garage_wall_light
+  - action: switch.turn_off
+    data: {}
+    target:
+      device_id:
+      - f0d5f18012ebd356bf762797a9a987b3
+      - 7a6132926bb156e67d20d7919e2b0658
+      - fcf0e42cd11c2b0f29d9fbf05817ced2
+      - 22e8f5d283d9554385682fac2825590a
+      - 031b18578817c837fb21b56264c05e38
+      - f7a88e397bc03e51f90cc1d99592e85c
+      - 75b40ba5261f55b533e0bb81272ca624
+      - b05a2c3b2402fa924f605712a7f61dcc
+      - b955374620b0403ebfdda390479746f8
+      - 7bfe15bbf691e36a0e596a59805e458b
+      - 4951f0fa2fd0450527f934e92db3463e
+      - f03f4b0903d84254ea67cb842b8e1337
+      - 95b849d87e12ee7b4a2f6e9b8090f6bd
+      - 14d60491ffd30b3223237bb110803a58
+  - action: switch.turn_off
+    data: {}
+    target:
+      entity_id:
+      - switch.back_hallway_light_switch_1
+      - switch.kitchen_pantry_light
+  - action: lock.lock
+    data: {}
+    metadata: {}
+    target:
+      device_id:
+      - lock.garages_entry_door
+      - lock.front_door
+  - if:
+    - condition: state
+      entity_id: cover.larissa_s_garage_door_door
+      state: open
+    then:
+    - action: cover.close_cover
+      target:
+        entity_id: cover.larissa_s_garage_door_door
+  - if:
+    - condition: state
+      entity_id: cover.garage_door_wa1nvzx3
+      state: open
+    then:
+    - action: cover.close_cover
+      target:
+        entity_id: cover.garage_door_wa1nvzx3
+  - if:
+    - condition: state
+      entity_id: media_player.lg_webos_tv_un8500auj
+      state: 'off'
+    then:
+    - action: light.turn_off
+      data: {}
+      target:
+        device_id: 52b499f498af79b6bea3ab2191a54275
+  - action: adaptive_lighting.set_manual_control
+    data:
+      entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+      manual_control: false
+  - action: light.turn_on
+    data:
+      brightness_pct: 12
+    metadata: {}
+    target:
+      entity_id:
+      - light.elements_b3cd_2
+      - light.izaan_s_lamp
+  - action: light.turn_on
+    data:
+      brightness_pct: 10
+    metadata: {}
+    target:
+      entity_id:
+      - light.lamppost_bulb_1
+      - light.lamppost_bulb_2
+      - light.lamppost_bulb_3
+      - light.front_porch_downlight
+      - light.front_porch_downlight_segment_1
+      - light.front_porch_downlight_segment_2
+      - light.front_porch_downlight_segment_3
+      - light.front_porch_downlight_segment_4
+      - light.front_porch_downlight_segment_5
+      - light.front_porch_downlight_segment_6
+      - light.front_porch_downlight_segment_7
+      - light.front_porch_downlight_segment_8
+      - light.front_porch_downlight_segment_9
+      - light.front_porch_downlight_segment_10
+      - light.front_porch_downlight_segment_11
+      - light.front_porch_downlight_segment_12
+      - light.front_porch_downlight_segment_13
+      - light.front_porch_downlight_segment_14
+      - light.front_porch_downlight_segment_15
+      - light.garage_right_downlight
+      - light.garage_left_downlight
+      - light.garage_left_downlight_segment_1
+      - light.garage_left_downlight_segment_2
+      - light.garage_left_downlight_segment_3
+      - light.garage_left_downlight_segment_4
+      - light.garage_left_downlight_segment_5
+      - light.garage_left_downlight_segment_6
+      - light.garage_left_downlight_segment_7
+      - light.garage_left_downlight_segment_8
+      - light.garage_left_downlight_segment_9
+      - light.garage_left_downlight_segment_10
+      - light.garage_left_downlight_segment_11
+      - light.garage_left_downlight_segment_12
+      - light.garage_left_downlight_segment_13
+      - light.garage_left_downlight_segment_14
+      - light.garage_left_downlight_segment_15
+      - light.garage_right_downlight_segment_1
+      - light.garage_right_downlight_segment_2
+      - light.garage_right_downlight_segment_3
+      - light.garage_right_downlight_segment_4
+      - light.garage_right_downlight_segment_5
+      - light.garage_right_downlight_segment_6
+      - light.garage_right_downlight_segment_7
+      - light.garage_right_downlight_segment_8
+      - light.garage_right_downlight_segment_9
+      - light.garage_right_downlight_segment_10
+      - light.garage_right_downlight_segment_11
+      - light.garage_right_downlight_segment_12
+      - light.garage_right_downlight_segment_13
+      - light.garage_right_downlight_segment_14
+      - light.garage_right_downlight_segment_15
+  mode: single

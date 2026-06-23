@@ -9,7 +9,8 @@
         "name": "arshad14",
         "user_id": "3b4f228b5f7e4c038ec670067287fc67",
         "device_trackers": [
-          "device_tracker.oneplus_13"
+          "device_tracker.oneplus_13",
+          "device_tracker.mbp_m5"
         ]
       }
     ]

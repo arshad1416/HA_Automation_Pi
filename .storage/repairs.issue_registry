@@ -111,7 +111,7 @@
       },
       {
         "created": "2026-06-23T03:43:19.133074+00:00",
-        "dismissed_version": null,
+        "dismissed_version": "2026.6.3",
         "domain": "roborock",
         "is_persistent": false,
         "issue_id": "cloud_api_used_3g29hzjogmaw8hij4tmeud"
