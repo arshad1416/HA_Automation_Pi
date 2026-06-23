@@ -32,6 +32,13 @@
             "should_expose": false
           }
         }
+      },
+      "camera.garage_cam": {
+        "assistants": {
+          "conversation": {
+            "should_expose": false
+          }
+        }
       }
     }
   }
