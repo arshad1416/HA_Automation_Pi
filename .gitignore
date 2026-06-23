@@ -34,3 +34,6 @@ Thumbs.db
 .storage/roborock/
 .storage/core.config_entries
 .storage/google.*
+backups/
+tmp_backups/
+*.tar
