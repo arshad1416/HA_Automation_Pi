@@ -2386,26 +2386,18 @@
       message: |
         Bedtime routine ran (trigger: {{ trigger.id }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.
   mode: single
-# ============================================================
-# 55 Recreated Missing Automations (appended to 01_main.yaml)
-# These existed as "unavailable" ghosts in HA DB after a restore.
-# Recreated based on entity_id names + available entities.
-# Format: HA 2026.x with triggers:/actions:/conditions:
-# ============================================================
-
 - id: airbnb_floodlight_midnight
   alias: Airbnb Floodlight - Midnight
   description: Turn off Airbnb floodlight at midnight every day.
   mode: single
   triggers:
-  - at: '00:00:00'
+  - at: 00:00:00
     trigger: time
   conditions: []
   actions:
   - action: light.turn_off
     target:
       entity_id: light.wasserstein_smart_floodlight_2
-
 - id: airbnb_floodlight_reservation_end
   alias: Airbnb Floodlight - Reservation End
   description: Turn off Airbnb floodlight when Airbnb reservation ends.
@@ -2425,7 +2417,6 @@
   - action: light.turn_off
     target:
       entity_id: light.wasserstein_smart_floodlight_2
-
 - id: airbnb_floodlight_sunset
   alias: Airbnb Floodlight - Sunset
   description: Turn on Airbnb floodlight at sunset when Airbnb is reserved.
@@ -2444,7 +2435,6 @@
       brightness_pct: 100
     target:
       entity_id: light.wasserstein_smart_floodlight_2
-
 - id: airbnb_heater_manual_override
   alias: Airbnb Heater - Manual Override
   description: Detect manual override of Airbnb heater and disable auto mode.
@@ -2464,7 +2454,6 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Airbnb heater manually overridden - auto mode disabled.
-
 - id: airbnb_heater_reservation_end
   alias: Airbnb Heater - Reservation End
   description: Turn off Airbnb infrared heater when reservation ends.
@@ -2487,7 +2476,6 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Airbnb reservation ended - heater turned off.
-
 - id: airbnb_heater_reservation_start
   alias: Airbnb Heater - Reservation Start
   description: Turn on Airbnb infrared heater when reservation starts.
@@ -2508,8 +2496,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Airbnb reservation started - heater enabled.
-
-- id: airbnb_heater_watchdog_max_4h_runtime
+- id: airbnb_heater_watchdog
   alias: 'Airbnb: Heater Watchdog (max 4h runtime)'
   description: Turn off Airbnb heater if it has been running for more than 4 hours continuously.
   mode: single
@@ -2527,8 +2514,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Airbnb heater watchdog - turned off after 4h continuous runtime.
-
-- id: auto_heal_govee_and_local_integrations_after_reboot
+- id: '1779331000000'
   alias: Auto-heal Govee and local integrations after reboot
   description: Reload Govee and LocalTuya integrations after HA restart to restore connectivity.
   mode: single
@@ -2548,7 +2534,6 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Govee/LocalTuya integrations reloaded after HA restart.
-
 - id: auto_restore_ac_after_cold_day
   alias: Auto-restore AC after cold day
   description: Restore AC/cool mode on ecobee after a cold day passes and temperature rises.
@@ -2575,8 +2560,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: AC restored to cool mode after cold day passed.
-
-- id: bathroom_light_timeout_1_5h
+- id: bathroom_light_timeout
   alias: Bathroom Light Timeout (1.5h)
   description: Turn off bathroom light after 1.5 hours to save energy.
   mode: single
@@ -2595,8 +2579,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Bathroom light turned off after 1.5h timeout.
-
-- id: blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart
+- id: blinds_restart_recovery
   alias: Blinds Restart Recovery — unstick all Zigbee blinds after HA restart
   description: After HA restart, cycle all blinds to unstick them from wedged positions.
   mode: single
@@ -2623,7 +2606,6 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-
 - id: blinds_sunset_bond
   alias: blinds_sunset_bond
   description: Close all blinds at sunset via Bond bridge / Tuya Cloud.
@@ -2643,8 +2625,7 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-
-- id: close_blinds_when_sun_is_setting
+- id: '1732520407151'
   alias: When the sun is setting...
   description: Close all blinds when the sun sets.
   mode: single
@@ -2661,18 +2642,22 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-
-- id: daily_random_curtain_scene
+- id: random_daily_curtain_scene
   alias: Daily Random Curtain Scene
   description: Set a random curtain position daily at a random time for variety.
   mode: single
   triggers:
-  - at: '09:00:00'
+  - at: 09:00:00
     trigger: time
   conditions: []
   actions:
   - variables:
-      positions: [0, 25, 50, 75, 100]
+      positions:
+      - 0
+      - 25
+      - 50
+      - 75
+      - 100
       random_pos: '{{ positions | random }}'
   - action: cover.set_cover_position
     data:
@@ -2682,8 +2667,7 @@
       - cover.dining_room_blinds_curtain
       - cover.family_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-
-- id: dim_the_outdoor_lights_at_10pm
+- id: '1778113750432'
   alias: Dim the outdoor lights at 10PM
   description: Dim outdoor lights (lampposts, downlights) to 10% at 10PM.
   mode: single
@@ -2703,8 +2687,7 @@
       - light.front_porch_downlight
       - light.garage_left_downlight
       - light.garage_right_downlight
-
-- id: disk_space_critical_alert
+- id: disk_space_critical
   alias: Disk Space Critical Alert
   description: Send critical alert when disk usage exceeds 95%.
   mode: single
@@ -2716,26 +2699,20 @@
   actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'CRITICAL: Disk usage is at {{ states("sensor.system_monitor_disk_usage") }}%!
-        Immediate action required.'
-      title: '⚠️ Disk Space Critical'
-
+      message: 'CRITICAL: Disk usage is at {{ states("sensor.system_monitor_disk_usage") }}%! Immediate action required.'
+      title: ⚠️ Disk Space Critical
 - id: disk_space_daily_report
   alias: Disk Space Daily Report
   description: Daily report of disk usage at 8AM.
   mode: single
   triggers:
-  - at: '08:00:00'
+  - at: 08:00:00
     trigger: time
   conditions: []
   actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'Daily Disk Report: {{ states("sensor.system_monitor_disk_usage")
-        }}% used, {{ states("sensor.system_monitor_memory_usage") }}% memory, CPU
-        {{ states("sensor.system_monitor_processor_use") }}%, Temp {{ states("sensor.system_monitor_processor_temperature")
-        }}°C'
-
+      message: 'Daily Disk Report: {{ states("sensor.system_monitor_disk_usage") }}% used, {{ states("sensor.system_monitor_memory_usage") }}% memory, CPU {{ states("sensor.system_monitor_processor_use") }}%, Temp {{ states("sensor.system_monitor_processor_temperature") }}°C'
 - id: disk_space_warning
   alias: Disk Space Warning
   description: Send warning when disk usage exceeds 85%.
@@ -2748,11 +2725,9 @@
   actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'Warning: Disk usage is at {{ states("sensor.system_monitor_disk_usage")
-        }}%. Consider cleaning up.'
-      title: '💾 Disk Space Warning'
-
-- id: downstairs_cabinet_auto_on_off_echo_occupancy
+      message: 'Warning: Disk usage is at {{ states("sensor.system_monitor_disk_usage") }}%. Consider cleaning up.'
+      title: 💾 Disk Space Warning
+- id: downstairs_cabinet_occupancy_auto
   alias: Downstairs Kitchen Auto On/Off (mmWave + Manual Override)
   description: Turn kitchen cabinet lights on/off based on Echo occupancy sensor.
   mode: restart
@@ -2797,11 +2772,9 @@
           - light.cabinet_light_strip_right_nanoleaf_light_strip
           - light.nanoleaf_multicolor_ls
           - light.nanoleaf_multicolor_ls_2
-
-- id: downstairs_kitchen_safety_off_wedged_sensor_recovery
+- id: downstairs_kitchen_safety_off
   alias: Downstairs Kitchen Safety Off (wedged sensor recovery)
-  description: Recover from wedged kitchen occupancy sensor by forcing lights off
-    if sensor is stuck on for 2 hours.
+  description: Recover from wedged kitchen occupancy sensor by forcing lights off if sensor is stuck on for 2 hours.
   mode: single
   triggers:
   - entity_id: switch.kitchen_occupancy
@@ -2827,7 +2800,6 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Kitchen occupancy sensor wedged for 2h - lights forced off for safety.
-
 - id: family_room_tv_bias_light
   alias: Family Room TV Bias Light
   description: Turn on family room bias light when TV turns on.
@@ -2848,8 +2820,7 @@
       brightness_pct: 25
     target:
       entity_id: light.family_room_light
-
-- id: front_door_left_open_10_min
+- id: front_door_left_open_10min
   alias: Front Door Left Open (10 min)
   description: Alert if the front door is left open for more than 10 minutes.
   mode: single
@@ -2864,7 +2835,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: The front door has been left open for 10 minutes!
-      title: '🚪 Front Door Open'
+      title: 🚪 Front Door Open
   - action: notify.alexa_media
     data:
       data:
@@ -2873,8 +2844,7 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: garage_entry_door_left_open
+- id: garage_door_left_open
   alias: Garage Entry Door Left Open
   description: Alert if the garage entry door is left open for more than 10 minutes.
   mode: single
@@ -2889,9 +2859,8 @@
   - action: notify.mobile_app_cph2655
     data:
       message: The garage entry door has been left open for 10 minutes!
-      title: '🚪 Garage Entry Door Open'
-
-- id: kitchen_nest_hub_motion_occupancy
+      title: 🚪 Garage Entry Door Open
+- id: kitchen_nest_motion_to_occupancy
   alias: Kitchen Nest Hub Motion → Occupancy
   description: Set kitchen occupancy boolean when Nest Hub motion is detected.
   mode: restart
@@ -2921,18 +2890,17 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.kitchen_occupied_motion
-
-- id: low_battery_alert_daily
+- id: low_battery_alert
   alias: Low Battery Alert - Daily
   description: Daily check of all battery sensors and alert if any are below 20%.
   mode: single
   triggers:
-  - at: '09:00:00'
+  - at: 09:00:00
     trigger: time
   conditions: []
   actions:
   - variables:
-      low_batteries: >-
+      low_batteries: |-
         {% set sensors = [
           'sensor.front_door_battery',
           'sensor.front_door_battery_2',
@@ -2950,22 +2918,18 @@
           'sensor.izaans_room_battery',
           'sensor.minas_room_battery',
           'sensor.cat_feeder_battery'
-        ] %}
-        {% set ns = namespace(low=[]) %}
-        {% for s in sensors %}
+        ] %} {% set ns = namespace(low=[]) %} {% for s in sensors %}
           {% set val = states(s) | int(-1) %}
           {% if val >= 0 and val < 20 %}
             {% set ns.low = ns.low + [s ~ ' (' ~ val ~ '%)'] %}
           {% endif %}
-        {% endfor %}
-        {{ ns.low | join(', ') }}
+        {% endfor %} {{ ns.low | join(', ') }}
   - condition: template
     value_template: '{{ low_batteries | length > 0 }}'
   - action: notify.mobile_app_cph2655
     data:
       message: 'Low battery alert: {{ low_batteries }}'
-      title: '🔋 Low Battery Alert'
-
+      title: 🔋 Low Battery Alert
 - id: office_heater_smart_control
   alias: Office Heater Smart Control
   description: Smart control for office heater based on temperature and occupancy.
@@ -3008,8 +2972,7 @@
     - action: switch.turn_off
       target:
         entity_id: switch.office_heater_child_lock
-
-- id: pi_5_thermal_critical
+- id: '1779332000002'
   alias: Pi 5 thermal critical
   description: Critical alert when Pi 5 CPU temperature exceeds 80°C.
   mode: single
@@ -3021,11 +2984,9 @@
   actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'CRITICAL: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature")
-        }}°C! Check cooling immediately.'
-      title: '🔥 Pi 5 Thermal Critical'
-
-- id: pi_5_thermal_warning
+      message: 'CRITICAL: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature") }}°C! Check cooling immediately.'
+      title: 🔥 Pi 5 Thermal Critical
+- id: '1779332000001'
   alias: Pi 5 thermal warning
   description: Warning when Pi 5 CPU temperature exceeds 70°C.
   mode: single
@@ -3037,19 +2998,17 @@
   actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'Warning: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature")
-        }}°C.'
-      title: '🌡️ Pi 5 Thermal Warning'
-
-- id: pool_pump_off_peak_overnight
+      message: 'Warning: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature") }}°C.'
+      title: 🌡️ Pi 5 Thermal Warning
+- id: pool_pump_offpeak
   alias: Pool Pump - Off-Peak Overnight
   description: Run pool pump during off-peak electricity hours overnight (12am-6am).
   mode: single
   triggers:
-  - at: '00:00:00'
+  - at: 00:00:00
     id: off_peak_start
     trigger: time
-  - at: '06:00:00'
+  - at: 06:00:00
     id: off_peak_end
     trigger: time
   conditions: []
@@ -3073,7 +3032,6 @@
           entity_id:
           - switch.pool_pump_2
           - switch.pool_pump_heater_socket_1
-
 - id: pool_pump_solar_align
   alias: Pool Pump - Solar Align
   description: Run pool pump when solar power is available to align with solar generation.
@@ -3108,8 +3066,7 @@
           entity_id:
           - switch.pool_pump_2
           - switch.salt_chlorinator
-
-- id: stairs_light_auto_on_off_echo_occupancy
+- id: stairs_occupancy_auto
   alias: Stairs Light Auto On/Off
   description: Turn stair lights on when echo stairs occupancy detected, off when cleared.
   mode: restart
@@ -3137,8 +3094,7 @@
           sequence:
           - action: light.turn_on
             data:
-              brightness_pct: '{{ states(''input_number.stairs_late_night_brightness'')
-                | int }}'
+              brightness_pct: '{{ states(''input_number.stairs_late_night_brightness'') | int }}'
             target:
               entity_id:
               - light.stair_light
@@ -3150,8 +3106,7 @@
           sequence:
           - action: light.turn_on
             data:
-              brightness_pct: '{{ states(''input_number.stairs_day_brightness'')
-                | int }}'
+              brightness_pct: '{{ states(''input_number.stairs_day_brightness'') | int }}'
             target:
               entity_id:
               - light.stair_light
@@ -3173,8 +3128,7 @@
           entity_id:
           - light.stair_light
           - light.stair_light_2
-
-- id: sunset_turn_on_outdoor_lights
+- id: sunset_outdoor_lights
   alias: 'Sunset: Turn on outdoor lights'
   description: Turn on outdoor lights at sunset.
   mode: single
@@ -3200,8 +3154,7 @@
       entity_id:
       - switch.patio_door_light
       - switch.foyer_light
-
-- id: turn_of_side_entrance_light_when_airbnb_is_empty
+- id: '1777271290234'
   alias: Turn off Side Entrance light when Airbnb is empty
   description: Turn off side entrance light when Airbnb is not reserved.
   mode: single
@@ -3222,8 +3175,7 @@
       entity_id:
       - switch.side_rain_barrel_switch
       - switch.side_rain_barrel_socket_1_2
-
-- id: turn_off_izaan_s_vent_fan_when_furnace_is_off
+- id: '1731550977605'
   alias: Turn off Izaan's vent fan when furnace is off
   description: Turn off Izaan's vent fan when the furnace/climate stops heating.
   mode: single
@@ -3241,8 +3193,7 @@
   - action: fan.turn_off
     target:
       entity_id: fan.izaan_s_room_20a970
-
-- id: turn_off_mina_s_vent_fan
+- id: '1731551071348'
   alias: Turn off Mina's vent fan
   description: Turn off Mina's vent fan (manual trigger or when conditions warrant).
   mode: single
@@ -3258,8 +3209,7 @@
   - action: fan.turn_off
     target:
       entity_id: fan.mina_s_room_f851f4
-
-- id: turn_off_powder_room_mirror_when_powder_room_light_turned_off
+- id: '1778464058785'
   alias: Turn off powder room mirror when powder room light turned off
   description: Turn off powder room mirror light when powder room light is turned off.
   mode: single
@@ -3275,8 +3225,7 @@
   - action: switch.turn_off
     target:
       entity_id: switch.powder_room_mirror
-
-- id: turn_off_side_entrance_light_and_heater
+- id: '1731006435330'
   alias: Turn off Side Entrance light and heater
   description: Turn off side entrance light and any connected heater.
   mode: single
@@ -3288,8 +3237,7 @@
       entity_id:
       - switch.side_rain_barrel_switch
       - switch.side_rain_barrel_socket_1_2
-
-- id: turn_off_vent_fans
+- id: '1732658443406'
   alias: Turn off Vent Fans
   description: Turn off all SmartCocoon vent fans.
   mode: single
@@ -3301,8 +3249,7 @@
       entity_id:
       - fan.izaan_s_room_20a970
       - fan.mina_s_room_f851f4
-
-- id: turn_on_heater
+- id: '1730999662318'
   alias: Turn on Heater
   description: Turn on the main heater (ecobee to heat mode).
   mode: single
@@ -3319,8 +3266,7 @@
       temperature: 22
     target:
       entity_id: climate.ecobee
-
-- id: turn_on_izaan_s_vent_fan
+- id: '1731473309144'
   alias: Turn on Izaan's vent fan (Winter)
   description: Turn on Izaan's vent fan when temperature drops below heat threshold (winter).
   mode: single
@@ -3339,8 +3285,7 @@
   - action: fan.turn_on
     target:
       entity_id: fan.izaan_s_room_20a970
-
-- id: turn_on_izaan_s_vent_fan_when_too_hot_summer
+- id: '1749089443236'
   alias: Turn on Izaan's Vent fan when too hot (summer)
   description: Turn on Izaan's vent fan when room temperature exceeds cool threshold (summer).
   mode: single
@@ -3359,8 +3304,7 @@
   - action: fan.turn_on
     target:
       entity_id: fan.izaan_s_room_20a970
-
-- id: turn_on_mina_s_vent_fan
+- id: '1731473451966'
   alias: Turn on Mina's vent fan (Winter)
   description: Turn on Mina's vent fan when temperature drops below heat threshold (winter).
   mode: single
@@ -3379,8 +3323,7 @@
   - action: fan.turn_on
     target:
       entity_id: fan.mina_s_room_f851f4
-
-- id: turn_on_mina_s_vent_fan_when_too_hot_summer
+- id: '1749089561856'
   alias: Turn on Mina's vent fan when too hot (summer)
   description: Turn on Mina's vent fan when room temperature exceeds cool threshold (summer).
   mode: single
@@ -3399,8 +3342,7 @@
   - action: fan.turn_on
     target:
       entity_id: fan.mina_s_room_f851f4
-
-- id: turn_on_nanoleaf_element_at_night
+- id: '1777270174266'
   alias: Turn on Nanoleaf Element at night
   description: Turn on Nanoleaf Elements light at night (sunset).
   mode: single
@@ -3417,8 +3359,7 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-
-- id: turn_on_side_entrance_light_and_heater
+- id: '1731006311562'
   alias: Turn on Side Entrance Light and Heater
   description: Turn on side entrance light and heater.
   mode: single
@@ -3430,8 +3371,7 @@
       entity_id:
       - switch.side_rain_barrel_switch
       - switch.side_rain_barrel_socket_1_2
-
-- id: turn_on_supernova_with_master_bedroom_light_switch
+- id: '1777600410190'
   alias: Turn on Supernova with Master bedroom light switch
   description: Turn on Supernova and Elements when master bedroom light switch is turned on.
   mode: restart
@@ -3468,8 +3408,7 @@
       - action: switch.turn_off
         target:
           entity_id: switch.sonoff_10001d2a24
-
-- id: when_arshad_leaves_home_turn_off_office_heater_2
+- id: '1777564702537'
   alias: When Arshad leaves home, turn off Office heater
   description: Turn off office heater when Arshad leaves home (device tracker changes to not_home).
   mode: single
@@ -3488,8 +3427,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Arshad left home - office heater turned off.
-
-- id: when_leak_is_detected_in_the_basement_bathroom
+- id: leak_basement_bathroom
   alias: When leak is detected in the Basement Bathroom
   description: Alert when leak is detected in the basement bathroom.
   mode: single
@@ -3502,7 +3440,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Basement Bathroom!
-      title: '💧 Leak Detected'
+      title: 💧 Leak Detected
   - action: notify.alexa_media
     data:
       data:
@@ -3511,8 +3449,7 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: when_leak_is_detected_in_the_ensuite
+- id: leak_ensuite
   alias: When leak is detected in the Ensuite
   description: Alert when leak is detected in the ensuite.
   mode: single
@@ -3525,7 +3462,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Ensuite!
-      title: '💧 Leak Detected'
+      title: 💧 Leak Detected
   - action: notify.alexa_media
     data:
       data:
@@ -3534,8 +3471,7 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: when_leak_is_detected_in_the_kitchen
+- id: leak_kitchen
   alias: When leak is detected in the Kitchen
   description: Alert when leak is detected in the kitchen.
   mode: single
@@ -3548,7 +3484,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Kitchen!
-      title: '💧 Leak Detected'
+      title: 💧 Leak Detected
   - action: notify.alexa_media
     data:
       data:
@@ -3557,8 +3493,7 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: when_leak_is_detected_in_the_laundry_room
+- id: leak_laundry_room
   alias: When leak is detected in the Laundry Room
   description: Alert when leak is detected in the laundry room.
   mode: single
@@ -3571,7 +3506,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Laundry Room!
-      title: '💧 Leak Detected'
+      title: 💧 Leak Detected
   - action: notify.alexa_media
     data:
       data:
@@ -3580,8 +3515,7 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: when_leak_is_detected_in_the_sump_pump
+- id: leak_sump_pump
   alias: When leak is detected in the Sump Pump
   description: Alert when leak is detected near the sump pump.
   mode: single
@@ -3594,7 +3528,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak near the Sump Pump!
-      title: '💧 Leak Detected'
+      title: 💧 Leak Detected
   - action: notify.alexa_media
     data:
       data:
@@ -3603,8 +3537,7 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: when_master_bedroom_light_switch_is_turned_off
+- id: '1778120067618'
   alias: When Master bedroom light switch is turned off...
   description: Actions when master bedroom light switch is turned off - turn off supernova and dim elements.
   mode: single
@@ -3624,8 +3557,7 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-
-- id: when_master_bedroom_light_switch_is_turned_on
+- id: '1778119862587'
   alias: When Master bedroom light switch is turned on...
   description: Actions when master bedroom light switch is turned on - turn on supernova and brighten elements.
   mode: single
@@ -3645,8 +3577,7 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-
-- id: when_there_s_a_leak_by_the_dishwasher
+- id: '1777566328006'
   alias: When there's a leak by the dishwasher
   description: Alert when leak is detected by the dishwasher (kitchen leak sensor).
   mode: single
@@ -3659,7 +3590,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak by the dishwasher!
-      title: '💧 Leak Detected'
+      title: 💧 Leak Detected
   - action: notify.alexa_media
     data:
       data:
@@ -3668,8 +3599,7 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: when_there_s_a_leak_by_the_laundry_sink
+- id: '1777566454340'
   alias: When there's a leak by the laundry sink
   description: Alert when leak is detected by the laundry sink (laundry room leak sensor).
   mode: single
@@ -3682,7 +3612,7 @@
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak by the laundry sink!
-      title: '💧 Leak Detected'
+      title: 💧 Leak Detected
   - action: notify.alexa_media
     data:
       data:

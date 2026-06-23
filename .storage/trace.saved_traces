@@ -7,12 +7,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "41a8c1edd46dca831e214fa62e8b14e2",
+          "run_id": "94f6e072c053d14837c0bad2e604c1e3",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:27:26.772040+00:00",
-            "finish": "2026-06-23T13:27:26.773614+00:00"
+            "start": "2026-06-23T13:34:51.768443+00:00",
+            "finish": "2026-06-23T13:34:51.770253+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -21,23 +21,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T13:27:26.772086+00:00",
+                "timestamp": "2026-06-23T13:34:51.768492+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.restore_govee_outdoor_lights_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "govee_restore_after_restart",
-                      "last_triggered": "2026-06-23T13:24:16.384533+00:00",
+                      "last_triggered": "2026-06-23T13:27:26.772175+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Restore Govee outdoor lights after HA restart"
                     },
-                    "last_changed": "2026-06-23T13:26:54.317619+00:00",
-                    "last_reported": "2026-06-23T13:26:54.317619+00:00",
-                    "last_updated": "2026-06-23T13:26:54.317619+00:00",
+                    "last_changed": "2026-06-23T13:34:25.138338+00:00",
+                    "last_reported": "2026-06-23T13:34:25.138338+00:00",
+                    "last_updated": "2026-06-23T13:34:25.138338+00:00",
                     "context": {
-                      "id": "01KVTAK4KDBK4SFJ6CXWYJDB5N",
+                      "id": "01KVTB0WVJFNPJ20BV1RP0Z8ET",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -56,10 +56,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:27:26.772316+00:00",
+                "timestamp": "2026-06-23T13:34:51.768738+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAM49MZB8931G08HWVYZ3S",
+                    "id": "01KVTB1PVR4GX3GX8QHS85FG6F",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -72,7 +72,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:27:26.772522+00:00",
+                "timestamp": "2026-06-23T13:34:51.768950+00:00",
                 "result": {
                   "result": false
                 }
@@ -81,7 +81,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:27:26.772561+00:00",
+                "timestamp": "2026-06-23T13:34:51.768987+00:00",
                 "result": {
                   "wanted_time_after": "2026-06-24T01:06:22.662203+00:00",
                   "result": false
@@ -91,7 +91,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:27:26.772742+00:00",
+                "timestamp": "2026-06-23T13:34:51.769186+00:00",
                 "result": {
                   "result": false
                 }
@@ -100,7 +100,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:27:26.772767+00:00",
+                "timestamp": "2026-06-23T13:34:51.769224+00:00",
                 "result": {
                   "wanted_time_after": "2026-06-24T01:06:22.662203+00:00",
                   "result": false
@@ -110,7 +110,7 @@
             "action/0/default/0": [
               {
                 "path": "action/0/default/0",
-                "timestamp": "2026-06-23T13:27:26.772945+00:00",
+                "timestamp": "2026-06-23T13:34:51.769487+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -225,22 +225,373 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAM49MZB8931G08HWVYZ3S",
+            "id": "01KVTB1PVR4GX3GX8QHS85FG6F",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "41a8c1edd46dca831e214fa62e8b14e2",
+          "run_id": "94f6e072c053d14837c0bad2e604c1e3",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:27:26.772040+00:00",
-            "finish": "2026-06-23T13:27:26.773614+00:00"
+            "start": "2026-06-23T13:34:51.768443+00:00",
+            "finish": "2026-06-23T13:34:51.770253+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
+          "trigger": "Home Assistant starting"
+        }
+      }
+    ],
+    "automation.auto_heal_govee_and_local_integrations_after_reboot": [
+      {
+        "extended_dict": {
+          "last_step": "action/1",
+          "run_id": "4071b5f74910f4b422e72473aa152722",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T13:34:51.775667+00:00",
+            "finish": "2026-06-23T13:35:21.785716+00:00"
+          },
+          "domain": "automation",
+          "item_id": "auto_heal_govee_and_local_integrations_after_reboot",
+          "error": "There were no matching config entries to reload",
+          "trigger": "Home Assistant starting",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-06-23T13:34:51.775707+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.auto_heal_govee_and_local_integrations_after_reboot_2",
+                    "state": "on",
+                    "attributes": {
+                      "id": "auto_heal_govee_and_local_integrations_after_reboot",
+                      "last_triggered": null,
+                      "mode": "single",
+                      "current": 0,
+                      "friendly_name": "Auto-heal Govee and local integrations after reboot"
+                    },
+                    "last_changed": "2026-06-23T13:34:25.140430+00:00",
+                    "last_reported": "2026-06-23T13:34:25.140430+00:00",
+                    "last_updated": "2026-06-23T13:34:25.140430+00:00",
+                    "context": {
+                      "id": "01KVTB0WVM7W8749118Z4BQDDW",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "homeassistant",
+                    "event": "start",
+                    "description": "Home Assistant starting"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T13:34:51.775903+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVTB1PVZQRB8CPWBFYDA5KYZ",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "delay": 30.0,
+                  "done": true
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-06-23T13:35:21.777662+00:00",
+                "error": "There were no matching config entries to reload",
+                "result": {
+                  "params": {
+                    "domain": "homeassistant",
+                    "service": "reload_config_entry",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "light.lamppost_bulb_1"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "auto_heal_govee_and_local_integrations_after_reboot",
+            "alias": "Auto-heal Govee and local integrations after reboot",
+            "description": "Reload Govee and LocalTuya integrations after HA restart to restore connectivity.",
+            "mode": "single",
+            "triggers": [
+              {
+                "event": "start",
+                "trigger": "homeassistant"
+              }
+            ],
+            "conditions": [],
+            "actions": [
+              {
+                "delay": {
+                  "seconds": 30
+                }
+              },
+              {
+                "action": "homeassistant.reload_config_entry",
+                "target": {
+                  "entity_id": "light.lamppost_bulb_1"
+                }
+              },
+              {
+                "action": "homeassistant.reload_config_entry",
+                "target": {
+                  "entity_id": "light.nanoleaf_multicolor_ls_2"
+                }
+              },
+              {
+                "action": "notify.mobile_app_cph2655",
+                "data": {
+                  "message": "Govee/LocalTuya integrations reloaded after HA restart."
+                }
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVTB1PVZQRB8CPWBFYDA5KYZ",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/1",
+          "run_id": "4071b5f74910f4b422e72473aa152722",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T13:34:51.775667+00:00",
+            "finish": "2026-06-23T13:35:21.785716+00:00"
+          },
+          "domain": "automation",
+          "item_id": "auto_heal_govee_and_local_integrations_after_reboot",
+          "error": "There were no matching config entries to reload",
+          "trigger": "Home Assistant starting"
+        }
+      }
+    ],
+    "automation.blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart": [
+      {
+        "extended_dict": {
+          "last_step": "action/3",
+          "run_id": "1f2b7a7d0988f30fb74f38b36b8c91ff",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T13:34:51.777129+00:00",
+            "finish": "2026-06-23T13:35:57.170325+00:00"
+          },
+          "domain": "automation",
+          "item_id": "blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
+          "trigger": "Home Assistant starting",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-06-23T13:34:51.777162+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart_2",
+                    "state": "on",
+                    "attributes": {
+                      "id": "blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
+                      "last_triggered": null,
+                      "mode": "single",
+                      "current": 0,
+                      "friendly_name": "Blinds Restart Recovery \u2014 unstick all Zigbee blinds after HA restart"
+                    },
+                    "last_changed": "2026-06-23T13:34:25.140730+00:00",
+                    "last_reported": "2026-06-23T13:34:25.140730+00:00",
+                    "last_updated": "2026-06-23T13:34:25.140730+00:00",
+                    "context": {
+                      "id": "01KVTB0WVM0PZVQQ7DPQYCVQE9",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "homeassistant",
+                    "event": "start",
+                    "description": "Home Assistant starting"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T13:34:51.777381+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVTB1PW16DH13QJGMC9P09HQ",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "delay": 60.0,
+                  "done": true
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-06-23T13:35:51.778660+00:00",
+                "child_id": {
+                  "domain": "automation",
+                  "item_id": "audit_cover_commands",
+                  "run_id": "d0647212ce3ea7818b14bbfdde8b71ad"
+                },
+                "result": {
+                  "params": {
+                    "domain": "cover",
+                    "service": "open_cover",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "cover.dining_room_blinds_curtain",
+                        "cover.family_room_blinds_curtain",
+                        "cover.living_room_blinds_curtain",
+                        "cover.mina_s_blinds_curtain"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/2": [
+              {
+                "path": "action/2",
+                "timestamp": "2026-06-23T13:35:52.058862+00:00",
+                "result": {
+                  "delay": 5.0,
+                  "done": true
+                }
+              }
+            ],
+            "action/3": [
+              {
+                "path": "action/3",
+                "timestamp": "2026-06-23T13:35:57.060885+00:00",
+                "child_id": {
+                  "domain": "automation",
+                  "item_id": "audit_cover_commands",
+                  "run_id": "3b301d3981f132d6525f8177286a4d6e"
+                },
+                "result": {
+                  "params": {
+                    "domain": "cover",
+                    "service": "stop_cover",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "cover.dining_room_blinds_curtain",
+                        "cover.family_room_blinds_curtain",
+                        "cover.living_room_blinds_curtain",
+                        "cover.mina_s_blinds_curtain"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
+            "alias": "Blinds Restart Recovery \u2014 unstick all Zigbee blinds after HA restart",
+            "description": "After HA restart, cycle all blinds to unstick them from wedged positions.",
+            "mode": "single",
+            "triggers": [
+              {
+                "event": "start",
+                "trigger": "homeassistant"
+              }
+            ],
+            "conditions": [],
+            "actions": [
+              {
+                "delay": {
+                  "seconds": 60
+                }
+              },
+              {
+                "action": "cover.open_cover",
+                "target": {
+                  "entity_id": [
+                    "cover.dining_room_blinds_curtain",
+                    "cover.family_room_blinds_curtain",
+                    "cover.living_room_blinds_curtain",
+                    "cover.mina_s_blinds_curtain"
+                  ]
+                }
+              },
+              {
+                "delay": {
+                  "seconds": 5
+                }
+              },
+              {
+                "action": "cover.stop_cover",
+                "target": {
+                  "entity_id": [
+                    "cover.dining_room_blinds_curtain",
+                    "cover.family_room_blinds_curtain",
+                    "cover.living_room_blinds_curtain",
+                    "cover.mina_s_blinds_curtain"
+                  ]
+                }
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVTB1PW16DH13QJGMC9P09HQ",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/3",
+          "run_id": "1f2b7a7d0988f30fb74f38b36b8c91ff",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T13:34:51.777129+00:00",
+            "finish": "2026-06-23T13:35:57.170325+00:00"
+          },
+          "domain": "automation",
+          "item_id": "blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
           "trigger": "Home Assistant starting"
         }
       }
@@ -249,12 +600,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/choose/3/sequence/0/else/1",
-          "run_id": "262a481668af3d2b3dae0d4c18832614",
+          "run_id": "30e989b9afb1fe43e826cc4bcedc3015",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:27:26.777297+00:00",
-            "finish": "2026-06-23T13:27:27.264318+00:00"
+            "start": "2026-06-23T13:34:51.784053+00:00",
+            "finish": "2026-06-23T13:34:52.125405+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
@@ -263,24 +614,24 @@
             "trigger/6": [
               {
                 "path": "trigger/6",
-                "timestamp": "2026-06-23T13:27:26.777333+00:00",
+                "timestamp": "2026-06-23T13:34:51.784087+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.downstairs_occupancy_lighting",
                     "state": "on",
                     "attributes": {
                       "id": "downstairs_occupancy_lighting",
-                      "last_triggered": "2026-06-23T13:24:16.390409+00:00",
+                      "last_triggered": "2026-06-23T13:27:26.777397+00:00",
                       "mode": "queued",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Downstairs Occupancy Lighting"
                     },
-                    "last_changed": "2026-06-23T13:26:54.318866+00:00",
-                    "last_reported": "2026-06-23T13:26:54.318866+00:00",
-                    "last_updated": "2026-06-23T13:26:54.318866+00:00",
+                    "last_changed": "2026-06-23T13:34:25.145599+00:00",
+                    "last_reported": "2026-06-23T13:34:25.145599+00:00",
+                    "last_updated": "2026-06-23T13:34:25.145599+00:00",
                     "context": {
-                      "id": "01KVTAK4KECRK6Q42BRG8D4NPW",
+                      "id": "01KVTB0WVSQKDJRDX0TZ3EBYSK",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -299,10 +650,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:27:26.777528+00:00",
+                "timestamp": "2026-06-23T13:34:51.784388+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAM49S6XTRXEXDTDY5G9GR",
+                    "id": "01KVTB1PW8ST6CSQ8HWCZANWH8",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -315,7 +666,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:27:26.777829+00:00",
+                "timestamp": "2026-06-23T13:34:51.784726+00:00",
                 "result": {
                   "result": false
                 }
@@ -324,7 +675,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:27:26.777861+00:00",
+                "timestamp": "2026-06-23T13:34:51.784764+00:00",
                 "result": {
                   "result": false
                 }
@@ -333,7 +684,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:27:26.777904+00:00",
+                "timestamp": "2026-06-23T13:34:51.784809+00:00",
                 "result": {
                   "result": false
                 }
@@ -342,7 +693,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:27:26.777923+00:00",
+                "timestamp": "2026-06-23T13:34:51.784830+00:00",
                 "result": {
                   "result": false
                 }
@@ -351,7 +702,7 @@
             "action/0/choose/2": [
               {
                 "path": "action/0/choose/2",
-                "timestamp": "2026-06-23T13:27:26.777954+00:00",
+                "timestamp": "2026-06-23T13:34:51.784863+00:00",
                 "result": {
                   "result": false
                 }
@@ -360,7 +711,7 @@
             "action/0/choose/2/conditions/0": [
               {
                 "path": "action/0/choose/2/conditions/0",
-                "timestamp": "2026-06-23T13:27:26.777971+00:00",
+                "timestamp": "2026-06-23T13:34:51.784880+00:00",
                 "result": {
                   "result": false
                 }
@@ -369,7 +720,7 @@
             "action/0/choose/3": [
               {
                 "path": "action/0/choose/3",
-                "timestamp": "2026-06-23T13:27:26.777998+00:00",
+                "timestamp": "2026-06-23T13:34:51.784907+00:00",
                 "result": {
                   "result": true
                 }
@@ -378,7 +729,7 @@
             "action/0/choose/3/conditions/0": [
               {
                 "path": "action/0/choose/3/conditions/0",
-                "timestamp": "2026-06-23T13:27:26.778013+00:00",
+                "timestamp": "2026-06-23T13:34:51.784923+00:00",
                 "result": {
                   "result": true
                 }
@@ -387,7 +738,7 @@
             "action/0/choose/3/sequence/0": [
               {
                 "path": "action/0/choose/3/sequence/0",
-                "timestamp": "2026-06-23T13:27:26.778100+00:00",
+                "timestamp": "2026-06-23T13:34:51.785023+00:00",
                 "result": {
                   "choice": "else"
                 }
@@ -396,7 +747,7 @@
             "action/0/choose/3/sequence/0/if": [
               {
                 "path": "action/0/choose/3/sequence/0/if",
-                "timestamp": "2026-06-23T13:27:26.778194+00:00",
+                "timestamp": "2026-06-23T13:34:51.785132+00:00",
                 "result": {
                   "result": false
                 }
@@ -405,7 +756,7 @@
             "action/0/choose/3/sequence/0/if/condition/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0",
-                "timestamp": "2026-06-23T13:27:26.778214+00:00",
+                "timestamp": "2026-06-23T13:34:51.785167+00:00",
                 "result": {
                   "result": false
                 }
@@ -414,7 +765,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0",
-                "timestamp": "2026-06-23T13:27:26.778234+00:00",
+                "timestamp": "2026-06-23T13:34:51.785195+00:00",
                 "result": {
                   "result": false
                 }
@@ -423,7 +774,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:27:26.778251+00:00",
+                "timestamp": "2026-06-23T13:34:51.785219+00:00",
                 "result": {
                   "result": false,
                   "state": "off",
@@ -434,7 +785,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1",
-                "timestamp": "2026-06-23T13:27:26.778286+00:00",
+                "timestamp": "2026-06-23T13:34:51.785270+00:00",
                 "result": {
                   "result": false
                 }
@@ -443,7 +794,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0",
-                "timestamp": "2026-06-23T13:27:26.778302+00:00",
+                "timestamp": "2026-06-23T13:34:51.785290+00:00",
                 "result": {
                   "result": false,
                   "state": "unknown",
@@ -454,7 +805,7 @@
             "action/0/choose/3/sequence/0/else/0": [
               {
                 "path": "action/0/choose/3/sequence/0/else/0",
-                "timestamp": "2026-06-23T13:27:26.778387+00:00",
+                "timestamp": "2026-06-23T13:34:51.785396+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -480,7 +831,7 @@
             "action/0/choose/3/sequence/0/else/1": [
               {
                 "path": "action/0/choose/3/sequence/0/else/1",
-                "timestamp": "2026-06-23T13:27:27.252582+00:00",
+                "timestamp": "2026-06-23T13:34:52.122456+00:00",
                 "result": {
                   "params": {
                     "domain": "switch",
@@ -992,19 +1343,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAM49S6XTRXEXDTDY5G9GR",
+            "id": "01KVTB1PW8ST6CSQ8HWCZANWH8",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/choose/3/sequence/0/else/1",
-          "run_id": "262a481668af3d2b3dae0d4c18832614",
+          "run_id": "30e989b9afb1fe43e826cc4bcedc3015",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:27:26.777297+00:00",
-            "finish": "2026-06-23T13:27:27.264318+00:00"
+            "start": "2026-06-23T13:34:51.784053+00:00",
+            "finish": "2026-06-23T13:34:52.125405+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
@@ -1016,12 +1367,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "47fabdb125b4d8f6ce66b0203cab0fb9",
+          "run_id": "044ac379147d496d26d5c284d1f5000e",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:27:26.779474+00:00",
-            "finish": "2026-06-23T13:27:26.926219+00:00"
+            "start": "2026-06-23T13:34:51.786612+00:00",
+            "finish": "2026-06-23T13:34:51.924594+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -1030,23 +1381,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T13:27:26.779498+00:00",
+                "timestamp": "2026-06-23T13:34:51.786636+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-06-23T13:24:16.392236+00:00",
+                      "last_triggered": "2026-06-23T13:27:26.779535+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-06-23T13:26:54.318985+00:00",
-                    "last_reported": "2026-06-23T13:26:54.318985+00:00",
-                    "last_updated": "2026-06-23T13:26:54.318985+00:00",
+                    "last_changed": "2026-06-23T13:34:25.145707+00:00",
+                    "last_reported": "2026-06-23T13:34:25.145707+00:00",
+                    "last_updated": "2026-06-23T13:34:25.145707+00:00",
                     "context": {
-                      "id": "01KVTAK4KE80TTQ7FTHQMH4BCV",
+                      "id": "01KVTB0WVSRWW90D3CN8ZMMTPM",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -1065,10 +1416,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:27:26.779644+00:00",
+                "timestamp": "2026-06-23T13:34:51.786801+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAM49VTEPR5N3XZZBV73MX",
+                    "id": "01KVTB1PWA0CEJ3T3R6CHE65SV",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -1103,19 +1454,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAM49VTEPR5N3XZZBV73MX",
+            "id": "01KVTB1PWA0CEJ3T3R6CHE65SV",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "47fabdb125b4d8f6ce66b0203cab0fb9",
+          "run_id": "044ac379147d496d26d5c284d1f5000e",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:27:26.779474+00:00",
-            "finish": "2026-06-23T13:27:26.926219+00:00"
+            "start": "2026-06-23T13:34:51.786612+00:00",
+            "finish": "2026-06-23T13:34:51.924594+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -1123,570 +1474,42 @@
         }
       }
     ],
-    "automation.smart_vent_fan_control": [
-      {
-        "extended_dict": {
-          "last_step": "action/1/default/0",
-          "run_id": "3e7bc1e4ab5c7d1b8098442def5cabee",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-06-23T13:30:00.052957+00:00",
-            "finish": "2026-06-23T13:30:00.460581+00:00"
-          },
-          "domain": "automation",
-          "item_id": "smart_vent_fan_control",
-          "trigger": "time pattern",
-          "trace": {
-            "trigger/1": [
-              {
-                "path": "trigger/1",
-                "timestamp": "2026-06-23T13:30:00.053012+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.smart_vent_fan_control",
-                    "state": "on",
-                    "attributes": {
-                      "id": "smart_vent_fan_control",
-                      "last_triggered": null,
-                      "mode": "restart",
-                      "current": 0,
-                      "friendly_name": "Smart Vent Fan Control"
-                    },
-                    "last_changed": "2026-06-23T13:26:54.318337+00:00",
-                    "last_reported": "2026-06-23T13:26:54.318337+00:00",
-                    "last_updated": "2026-06-23T13:26:54.318337+00:00",
-                    "context": {
-                      "id": "01KVTAK4KEB57BME23QEFAXBQR",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "periodic",
-                    "idx": "1",
-                    "alias": null,
-                    "platform": "time_pattern",
-                    "now": "2026-06-23T09:30:00.052729-04:00",
-                    "description": "time pattern"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-06-23T13:30:00.053393+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KVTARSZM834SHBBKQBFZQNAS",
-                    "parent_id": null,
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "choice": "default"
-                }
-              }
-            ],
-            "action/0/choose/0": [
-              {
-                "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:30:00.053701+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/0/conditions/0": [
-              {
-                "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:30:00.053758+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/0/conditions/0/entity_id/0": [
-              {
-                "path": "action/0/choose/0/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:30:00.053793+00:00",
-                "result": {
-                  "result": false,
-                  "state": "idle",
-                  "wanted_state": "heating"
-                }
-              }
-            ],
-            "action/0/choose/1": [
-              {
-                "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:30:00.053877+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/1/conditions/0": [
-              {
-                "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:30:00.053908+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/1/conditions/0/entity_id/0": [
-              {
-                "path": "action/0/choose/1/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:30:00.053934+00:00",
-                "result": {
-                  "result": false,
-                  "state": "idle",
-                  "wanted_state": "cooling"
-                }
-              }
-            ],
-            "action/0/default/0": [
-              {
-                "path": "action/0/default/0",
-                "timestamp": "2026-06-23T13:30:00.054124+00:00",
-                "result": {
-                  "params": {
-                    "domain": "fan",
-                    "service": "turn_off",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "fan.izaan_s_room_20a970"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ],
-            "action/1": [
-              {
-                "path": "action/1",
-                "timestamp": "2026-06-23T13:30:00.327925+00:00",
-                "result": {
-                  "choice": "default"
-                }
-              }
-            ],
-            "action/1/choose/0": [
-              {
-                "path": "action/1/choose/0",
-                "timestamp": "2026-06-23T13:30:00.328152+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/1/choose/0/conditions/0": [
-              {
-                "path": "action/1/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:30:00.328195+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/1/choose/0/conditions/0/entity_id/0": [
-              {
-                "path": "action/1/choose/0/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:30:00.328223+00:00",
-                "result": {
-                  "result": false,
-                  "state": "idle",
-                  "wanted_state": "heating"
-                }
-              }
-            ],
-            "action/1/choose/1": [
-              {
-                "path": "action/1/choose/1",
-                "timestamp": "2026-06-23T13:30:00.328290+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/1/choose/1/conditions/0": [
-              {
-                "path": "action/1/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:30:00.328317+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/1/choose/1/conditions/0/entity_id/0": [
-              {
-                "path": "action/1/choose/1/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:30:00.328342+00:00",
-                "result": {
-                  "result": false,
-                  "state": "idle",
-                  "wanted_state": "cooling"
-                }
-              }
-            ],
-            "action/1/default/0": [
-              {
-                "path": "action/1/default/0",
-                "timestamp": "2026-06-23T13:30:00.328523+00:00",
-                "result": {
-                  "params": {
-                    "domain": "fan",
-                    "service": "turn_off",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "fan.mina_s_room_f851f4"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "smart_vent_fan_control",
-            "alias": "Smart Vent Fan Control",
-            "description": "Unified vent fan control for Izaan and Mina. Heating + room < 21C -> fan ON. Cooling + room > 23C -> fan OFF. Idle or temp in range -> fan OFF. Re-evaluates every 10 min.",
-            "mode": "restart",
-            "triggers": [
-              {
-                "trigger": "state",
-                "entity_id": "climate.ecobee",
-                "attribute": "hvac_action",
-                "id": "hvac_change"
-              },
-              {
-                "trigger": "time_pattern",
-                "minutes": "/10",
-                "id": "periodic"
-              }
-            ],
-            "conditions": [],
-            "actions": [
-              {
-                "choose": [
-                  {
-                    "conditions": [
-                      {
-                        "condition": "state",
-                        "entity_id": "climate.ecobee",
-                        "attribute": "hvac_action",
-                        "state": "heating"
-                      },
-                      {
-                        "condition": "template",
-                        "value_template": "{{ states('sensor.izaans_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}\n"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "fan.turn_on",
-                        "target": {
-                          "entity_id": "fan.izaan_s_room_20a970"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "conditions": [
-                      {
-                        "condition": "state",
-                        "entity_id": "climate.ecobee",
-                        "attribute": "hvac_action",
-                        "state": "cooling"
-                      },
-                      {
-                        "condition": "template",
-                        "value_template": "{{ states('sensor.izaans_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}\n"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "fan.turn_on",
-                        "target": {
-                          "entity_id": "fan.izaan_s_room_20a970"
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "default": [
-                  {
-                    "action": "fan.turn_off",
-                    "target": {
-                      "entity_id": "fan.izaan_s_room_20a970"
-                    }
-                  }
-                ]
-              },
-              {
-                "choose": [
-                  {
-                    "conditions": [
-                      {
-                        "condition": "state",
-                        "entity_id": "climate.ecobee",
-                        "attribute": "hvac_action",
-                        "state": "heating"
-                      },
-                      {
-                        "condition": "template",
-                        "value_template": "{{ states('sensor.minas_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}\n"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "fan.turn_on",
-                        "target": {
-                          "entity_id": "fan.mina_s_room_f851f4"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "conditions": [
-                      {
-                        "condition": "state",
-                        "entity_id": "climate.ecobee",
-                        "attribute": "hvac_action",
-                        "state": "cooling"
-                      },
-                      {
-                        "condition": "template",
-                        "value_template": "{{ states('sensor.minas_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}\n"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "fan.turn_on",
-                        "target": {
-                          "entity_id": "fan.mina_s_room_f851f4"
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "default": [
-                  {
-                    "action": "fan.turn_off",
-                    "target": {
-                      "entity_id": "fan.mina_s_room_f851f4"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KVTARSZM834SHBBKQBFZQNAS",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/1/default/0",
-          "run_id": "3e7bc1e4ab5c7d1b8098442def5cabee",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-06-23T13:30:00.052957+00:00",
-            "finish": "2026-06-23T13:30:00.460581+00:00"
-          },
-          "domain": "automation",
-          "item_id": "smart_vent_fan_control",
-          "trigger": "time pattern"
-        }
-      }
-    ],
-    "automation.auto_heat_on_cold_day": [
-      {
-        "extended_dict": {
-          "last_step": "condition/0/entity_id/0",
-          "run_id": "d122a3ecfd33452221917e24413646f0",
-          "state": "stopped",
-          "script_execution": "failed_conditions",
-          "timestamp": {
-            "start": "2026-06-23T13:30:00.338545+00:00",
-            "finish": "2026-06-23T13:30:00.338683+00:00"
-          },
-          "domain": "automation",
-          "item_id": "auto_heat_on_cold_day",
-          "trigger": "time pattern",
-          "trace": {
-            "trigger/1": [
-              {
-                "path": "trigger/1",
-                "timestamp": "2026-06-23T13:30:00.338589+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.auto_switch_to_heat_when_indoor_drops_to_21degc_on_cold_days",
-                    "state": "on",
-                    "attributes": {
-                      "id": "auto_heat_on_cold_day",
-                      "last_triggered": null,
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Auto-switch to Heat when indoor drops to 21\u00b0C on cold days"
-                    },
-                    "last_changed": "2026-06-23T13:26:54.316825+00:00",
-                    "last_reported": "2026-06-23T13:26:54.316825+00:00",
-                    "last_updated": "2026-06-23T13:26:54.316825+00:00",
-                    "context": {
-                      "id": "01KVTAK4KCM763PYNGCRFK0X1H",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "1",
-                    "idx": "1",
-                    "alias": null,
-                    "platform": "time_pattern",
-                    "now": "2026-06-23T09:30:00.338382-04:00",
-                    "description": "time pattern"
-                  }
-                }
-              }
-            ],
-            "condition/0": [
-              {
-                "path": "condition/0",
-                "timestamp": "2026-06-23T13:30:00.338619+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "condition/0/entity_id/0": [
-              {
-                "path": "condition/0/entity_id/0",
-                "timestamp": "2026-06-23T13:30:00.338640+00:00",
-                "result": {
-                  "result": false,
-                  "state": 17.7,
-                  "wanted_state_below": 15.0
-                }
-              }
-            ]
-          },
-          "config": {
-            "actions": [
-              {
-                "action": "climate.set_hvac_mode",
-                "data": {
-                  "hvac_mode": "heat"
-                },
-                "target": {
-                  "entity_id": "climate.ecobee"
-                }
-              },
-              {
-                "action": "climate.set_temperature",
-                "data": {
-                  "temperature": 22.0
-                },
-                "target": {
-                  "entity_id": "climate.ecobee"
-                }
-              }
-            ],
-            "alias": "Auto-switch to Heat when indoor drops to 21\u00b0C on cold days",
-            "conditions": [
-              {
-                "attribute": "temperature",
-                "below": 15.0,
-                "condition": "numeric_state",
-                "entity_id": "weather.forecast_home"
-              },
-              {
-                "condition": "template",
-                "value_template": "{{ state_attr('climate.ecobee', 'hvac_action') != 'heating' }}"
-              }
-            ],
-            "description": "If outdoor temp < 15\u00b0C and indoor temp drops to 21\u00b0C, switch ecobee to Heat mode at 22\u00b0C",
-            "id": "auto_heat_on_cold_day",
-            "mode": "single",
-            "triggers": [
-              {
-                "below": 21.0,
-                "entity_id": "sensor.ecobee_current_temperature",
-                "trigger": "numeric_state"
-              },
-              {
-                "minutes": "/15",
-                "trigger": "time_pattern"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KVTART8JAY728JNM0VAHKA2D",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "condition/0/entity_id/0",
-          "run_id": "d122a3ecfd33452221917e24413646f0",
-          "state": "stopped",
-          "script_execution": "failed_conditions",
-          "timestamp": {
-            "start": "2026-06-23T13:30:00.338545+00:00",
-            "finish": "2026-06-23T13:30:00.338683+00:00"
-          },
-          "domain": "automation",
-          "item_id": "auto_heat_on_cold_day",
-          "trigger": "time pattern"
-        }
-      }
-    ],
-    "automation.ceiling_fan_boost": [
+    "automation.audit_cover_commands": [
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "c916d221a9d009dcb69bb7afcb670557",
+          "run_id": "d0647212ce3ea7818b14bbfdde8b71ad",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:30:00.417096+00:00",
-            "finish": "2026-06-23T13:30:00.423121+00:00"
+            "start": "2026-06-23T13:35:51.779435+00:00",
+            "finish": "2026-06-23T13:35:51.781383+00:00"
           },
           "domain": "automation",
-          "item_id": "ceiling_fan_boost",
-          "error": "TypeError: 'int' object is not iterable",
-          "trigger": "time pattern",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'",
           "trace": {
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T13:30:00.417144+00:00",
+                "timestamp": "2026-06-23T13:35:51.779491+00:00",
                 "changed_variables": {
                   "this": {
-                    "entity_id": "automation.ceiling_fan_boost",
+                    "entity_id": "automation.audit_log_all_cover_service_calls",
                     "state": "on",
                     "attributes": {
-                      "id": "ceiling_fan_boost",
-                      "last_triggered": "2026-06-23T13:15:00.362098+00:00",
-                      "mode": "restart",
+                      "id": "audit_cover_commands",
+                      "last_triggered": "2026-06-23T13:00:10.989830+00:00",
+                      "mode": "parallel",
                       "current": 0,
-                      "friendly_name": "ceiling_fan_boost"
+                      "max": 10,
+                      "friendly_name": "Audit Log - All Cover Service Calls"
                     },
-                    "last_changed": "2026-06-23T13:26:54.316702+00:00",
-                    "last_reported": "2026-06-23T13:26:54.316702+00:00",
-                    "last_updated": "2026-06-23T13:26:54.316702+00:00",
+                    "last_changed": "2026-06-23T13:34:25.138762+00:00",
+                    "last_reported": "2026-06-23T13:34:25.138762+00:00",
+                    "last_updated": "2026-06-23T13:34:25.138762+00:00",
                     "context": {
-                      "id": "01KVTAK4KCA1V58V03E7284MK0",
+                      "id": "01KVTB0WVJR5E8238D3GSJQ1TA",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -1695,347 +1518,243 @@
                     "id": "0",
                     "idx": "0",
                     "alias": null,
-                    "platform": "time_pattern",
-                    "now": "2026-06-23T09:30:00.416884-04:00",
-                    "description": "time pattern"
+                    "platform": "event",
+                    "event": {
+                      "event_type": "call_service",
+                      "data": {
+                        "domain": "cover",
+                        "service": "open_cover",
+                        "service_data": {
+                          "entity_id": [
+                            "cover.dining_room_blinds_curtain",
+                            "cover.family_room_blinds_curtain",
+                            "cover.living_room_blinds_curtain",
+                            "cover.mina_s_blinds_curtain"
+                          ]
+                        }
+                      },
+                      "origin": "LOCAL",
+                      "time_fired": "2026-06-23T13:35:51.779032+00:00",
+                      "context": {
+                        "id": "01KVTB1PW16DH13QJGMC9P09HQ",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "description": "event 'call_service'"
                   }
-                }
-              }
-            ],
-            "condition/0": [
-              {
-                "path": "condition/0",
-                "timestamp": "2026-06-23T13:30:00.417181+00:00",
-                "result": {
-                  "result": true
-                }
-              }
-            ],
-            "condition/0/entity_id/0": [
-              {
-                "path": "condition/0/entity_id/0",
-                "timestamp": "2026-06-23T13:30:00.417201+00:00",
-                "result": {
-                  "result": true,
-                  "state": "on",
-                  "wanted_state": "on"
-                }
-              }
-            ],
-            "condition/1": [
-              {
-                "path": "condition/1",
-                "timestamp": "2026-06-23T13:30:00.417247+00:00",
-                "result": {
-                  "result": true
-                }
-              }
-            ],
-            "condition/1/conditions/0": [
-              {
-                "path": "condition/1/conditions/0",
-                "timestamp": "2026-06-23T13:30:00.417264+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "condition/1/conditions/0/entity_id/0": [
-              {
-                "path": "condition/1/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:30:00.417277+00:00",
-                "result": {
-                  "result": false,
-                  "state": "idle",
-                  "wanted_state": "cooling"
                 }
               }
             ],
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:30:00.417615+00:00",
+                "timestamp": "2026-06-23T13:35:51.779870+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTARTB14YB2SHS6NC3P790J",
-                    "parent_id": null,
+                    "id": "01KVTB3HF32N4HBJSRQTN0W39H",
+                    "parent_id": "01KVTB1PW16DH13QJGMC9P09HQ",
                     "user_id": null
                   }
                 },
-                "error": "TypeError: 'int' object is not iterable"
+                "result": {
+                  "params": {
+                    "domain": "system_log",
+                    "service": "write",
+                    "service_data": {
+                      "logger": "audit_cover",
+                      "message": "COVER: open_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-06-23 09:35:51.780724-04:00"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
               }
             ]
           },
           "config": {
-            "actions": [
+            "id": "audit_cover_commands",
+            "alias": "Audit Log - All Cover Service Calls",
+            "mode": "parallel",
+            "trigger": [
               {
-                "variables": {
-                  "izaan_speed": "{{ ([states('sensor.izaans_room_temperature') | float(23.5), states('sensor.izaan_s_echo_dot_temperature') | float(23.5)] | max - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}",
-                  "kitchen_speed": "{{ ((states('sensor.downstairs_echo_dot_temperature') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}",
-                  "master_speed": "{{ ((states('sensor.upstairs_echo_dot_temperature') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}",
-                  "mina_speed": "{{ ([states('sensor.minas_room_temperature') | float(23.5), states('sensor.mina_s_echo_dot_temperature') | float(23.5)] | max - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}"
+                "platform": "event",
+                "event_type": "call_service",
+                "event_data": {
+                  "domain": "cover"
                 }
-              },
-              {
-                "else": [
-                  {
-                    "action": "fan.turn_off",
-                    "data": {},
-                    "target": {
-                      "entity_id": "fan.kitchen_ceiling_fan"
-                    }
-                  }
-                ],
-                "if": [
-                  {
-                    "above": 23.5,
-                    "condition": "numeric_state",
-                    "entity_id": "sensor.downstairs_echo_dot_temperature"
-                  }
-                ],
-                "then": [
-                  {
-                    "action": "switch.turn_on",
-                    "target": {
-                      "entity_id": "switch.kitchen_fan"
-                    }
-                  },
-                  {
-                    "action": "fan.set_percentage",
-                    "data": {
-                      "percentage": "{{ kitchen_speed }}"
-                    },
-                    "target": {
-                      "entity_id": "fan.kitchen_ceiling_fan"
-                    }
-                  }
-                ]
-              },
-              {
-                "else": [
-                  {
-                    "action": "fan.turn_off",
-                    "data": {},
-                    "target": {
-                      "entity_id": "fan.master_bedroom_ceiling_fan"
-                    }
-                  }
-                ],
-                "if": [
-                  {
-                    "condition": "state",
-                    "entity_id": "person.home",
-                    "state": "home"
-                  },
-                  {
-                    "after": "21:00:00",
-                    "before": "07:00:00",
-                    "condition": "time"
-                  },
-                  {
-                    "above": 23.5,
-                    "condition": "numeric_state",
-                    "entity_id": "sensor.upstairs_echo_dot_temperature"
-                  }
-                ],
-                "then": [
-                  {
-                    "action": "switch.turn_on",
-                    "target": {
-                      "entity_id": "switch.master_bedroom_fan_light"
-                    }
-                  },
-                  {
-                    "action": "fan.set_percentage",
-                    "data": {
-                      "percentage": "{{ master_speed }}"
-                    },
-                    "target": {
-                      "entity_id": "fan.master_bedroom_ceiling_fan"
-                    }
-                  }
-                ]
-              },
-              {
-                "else": [
-                  {
-                    "action": "fan.turn_off",
-                    "data": {},
-                    "target": {
-                      "entity_id": "fan.mina_s_ceiling_fan"
-                    }
-                  }
-                ],
-                "if": [
-                  {
-                    "condition": "or",
-                    "conditions": [
-                      {
-                        "above": 23.5,
-                        "condition": "numeric_state",
-                        "entity_id": "sensor.minas_room_temperature"
-                      },
-                      {
-                        "above": 23.5,
-                        "condition": "numeric_state",
-                        "entity_id": "sensor.mina_s_echo_dot_temperature"
-                      }
-                    ]
-                  }
-                ],
-                "then": [
-                  {
-                    "action": "switch.turn_on",
-                    "target": {
-                      "entity_id": "switch.mina_s_light"
-                    }
-                  },
-                  {
-                    "action": "fan.set_percentage",
-                    "data": {
-                      "percentage": "{{ mina_speed }}"
-                    },
-                    "target": {
-                      "entity_id": "fan.mina_s_ceiling_fan"
-                    }
-                  }
-                ]
-              },
-              {
-                "else": [
-                  {
-                    "action": "fan.turn_off",
-                    "data": {},
-                    "target": {
-                      "entity_id": "fan.izaan_s_ceiling_fan"
-                    }
-                  }
-                ],
-                "if": [
-                  {
-                    "condition": "or",
-                    "conditions": [
-                      {
-                        "above": 23.5,
-                        "condition": "numeric_state",
-                        "entity_id": "sensor.izaans_room_temperature"
-                      },
-                      {
-                        "above": 23.5,
-                        "condition": "numeric_state",
-                        "entity_id": "sensor.izaan_s_echo_dot_temperature"
-                      }
-                    ]
-                  }
-                ],
-                "then": [
-                  {
-                    "action": "switch.turn_on",
-                    "target": {
-                      "entity_id": "switch.izaan_s_bedroom_light"
-                    }
-                  },
-                  {
-                    "action": "fan.set_percentage",
-                    "data": {
-                      "percentage": "{{ izaan_speed }}"
-                    },
-                    "target": {
-                      "entity_id": "fan.izaan_s_ceiling_fan"
-                    }
-                  }
-                ]
-              },
-              {
-                "else": [
-                  {
-                    "action": "fan.turn_off",
-                    "data": {},
-                    "target": {
-                      "entity_id": "fan.guest_room_ceiling_fan"
-                    }
-                  }
-                ],
-                "if": [
-                  {
-                    "condition": "state",
-                    "entity_id": "switch.airbnb_reserved",
-                    "state": "on"
-                  },
-                  {
-                    "above": 23.5,
-                    "condition": "numeric_state",
-                    "entity_id": "sensor.ecobee_current_temperature"
-                  }
-                ],
-                "then": [
-                  {
-                    "action": "switch.turn_on",
-                    "target": {
-                      "entity_id": "switch.guest_room_light"
-                    }
-                  },
-                  {
-                    "action": "fan.set_percentage",
-                    "data": {
-                      "percentage": "{{ kitchen_speed }}"
-                    },
-                    "target": {
-                      "entity_id": "fan.guest_room_ceiling_fan"
-                    }
-                  }
-                ]
               }
             ],
-            "alias": "ceiling_fan_boost",
-            "conditions": [
+            "action": [
               {
-                "condition": "state",
-                "entity_id": "input_boolean.climate_summer_mode",
-                "state": "on"
-              },
-              {
-                "condition": "not",
-                "conditions": [
-                  {
-                    "attribute": "hvac_action",
-                    "condition": "state",
-                    "entity_id": "climate.ecobee",
-                    "state": "cooling"
-                  }
-                ]
-              }
-            ],
-            "description": "Every 15 min in summer, if AC not cooling and rooms >23.5C, run ceiling fans. Uses Echo Dot temps for kitchen/master, max of SmartCocoon+Echo for Mina/Izaan rooms.",
-            "id": "ceiling_fan_boost",
-            "mode": "restart",
-            "triggers": [
-              {
-                "minutes": "/15",
-                "trigger": "time_pattern"
+                "data": {
+                  "logger": "audit_cover",
+                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
+                },
+                "action": "system_log.write"
               }
             ]
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTARTB14YB2SHS6NC3P790J",
-            "parent_id": null,
+            "id": "01KVTB3HF32N4HBJSRQTN0W39H",
+            "parent_id": "01KVTB1PW16DH13QJGMC9P09HQ",
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "c916d221a9d009dcb69bb7afcb670557",
+          "run_id": "d0647212ce3ea7818b14bbfdde8b71ad",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:30:00.417096+00:00",
-            "finish": "2026-06-23T13:30:00.423121+00:00"
+            "start": "2026-06-23T13:35:51.779435+00:00",
+            "finish": "2026-06-23T13:35:51.781383+00:00"
           },
           "domain": "automation",
-          "item_id": "ceiling_fan_boost",
-          "error": "TypeError: 'int' object is not iterable",
-          "trigger": "time pattern"
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'"
+        }
+      },
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "3b301d3981f132d6525f8177286a4d6e",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T13:35:57.061542+00:00",
+            "finish": "2026-06-23T13:35:57.062761+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-06-23T13:35:57.061621+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.audit_log_all_cover_service_calls",
+                    "state": "on",
+                    "attributes": {
+                      "id": "audit_cover_commands",
+                      "last_triggered": "2026-06-23T13:35:51.779615+00:00",
+                      "mode": "parallel",
+                      "current": 0,
+                      "max": 10,
+                      "friendly_name": "Audit Log - All Cover Service Calls"
+                    },
+                    "last_changed": "2026-06-23T13:34:25.138762+00:00",
+                    "last_reported": "2026-06-23T13:35:51.781240+00:00",
+                    "last_updated": "2026-06-23T13:35:51.781240+00:00",
+                    "context": {
+                      "id": "01KVTB3HF32N4HBJSRQTN0W39H",
+                      "parent_id": "01KVTB1PW16DH13QJGMC9P09HQ",
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "event",
+                    "event": {
+                      "event_type": "call_service",
+                      "data": {
+                        "domain": "cover",
+                        "service": "stop_cover",
+                        "service_data": {
+                          "entity_id": [
+                            "cover.dining_room_blinds_curtain",
+                            "cover.family_room_blinds_curtain",
+                            "cover.living_room_blinds_curtain",
+                            "cover.mina_s_blinds_curtain"
+                          ]
+                        }
+                      },
+                      "origin": "LOCAL",
+                      "time_fired": "2026-06-23T13:35:57.061223+00:00",
+                      "context": {
+                        "id": "01KVTB1PW16DH13QJGMC9P09HQ",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "description": "event 'call_service'"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T13:35:57.061910+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVTB3PM55YRKC4ANBYQMNN00",
+                    "parent_id": "01KVTB1PW16DH13QJGMC9P09HQ",
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "system_log",
+                    "service": "write",
+                    "service_data": {
+                      "logger": "audit_cover",
+                      "message": "COVER: stop_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-06-23 09:35:57.062162-04:00"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "audit_cover_commands",
+            "alias": "Audit Log - All Cover Service Calls",
+            "mode": "parallel",
+            "trigger": [
+              {
+                "platform": "event",
+                "event_type": "call_service",
+                "event_data": {
+                  "domain": "cover"
+                }
+              }
+            ],
+            "action": [
+              {
+                "data": {
+                  "logger": "audit_cover",
+                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
+                },
+                "action": "system_log.write"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVTB3PM55YRKC4ANBYQMNN00",
+            "parent_id": "01KVTB1PW16DH13QJGMC9P09HQ",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "3b301d3981f132d6525f8177286a4d6e",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T13:35:57.061542+00:00",
+            "finish": "2026-06-23T13:35:57.062761+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'"
         }
       }
     ]
