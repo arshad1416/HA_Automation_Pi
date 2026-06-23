@@ -37,3 +37,13 @@ Thumbs.db
 backups/
 tmp_backups/
 *.tar
+.storage/application_credentials
+.storage/backup
+.storage/mobile_app
+.storage/core.restore_state
+.storage/*.pickle
+.storage/*.pem
+.storage/*.key
+.storage/esphome.*
+.storage/sonoff/
+.storage/alexa_media.*
