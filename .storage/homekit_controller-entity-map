@@ -8,126 +8,6 @@
         "config_num": 13,
         "accessories": [
           {
-            "aid": 21474836484,
-            "services": [
-              {
-                "iid": 1,
-                "type": "0000003E-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000014-0000-1000-8000-0026BB765291",
-                    "iid": 85899345921,
-                    "perms": [
-                      "pw"
-                    ],
-                    "format": "bool",
-                    "description": "Identify"
-                  },
-                  {
-                    "type": "00000020-0000-1000-8000-0026BB765291",
-                    "iid": 137438953473,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Lutron Electronics Co., Inc",
-                    "description": "Manufacturer",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000021-0000-1000-8000-0026BB765291",
-                    "iid": 141733920769,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "PD-6WCL-XX",
-                    "description": "Model",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000023-0000-1000-8000-0026BB765291",
-                    "iid": 150323855361,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Caséta® Wireless In-wall Dimmer",
-                    "description": "Name",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000030-0000-1000-8000-0026BB765291",
-                    "iid": 206158430209,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "653B8DD",
-                    "description": "Serial Number",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000052-0000-1000-8000-0026BB765291",
-                    "iid": 352187318273,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "003.001",
-                    "description": "Firmware Revision",
-                    "maxLen": 64
-                  }
-                ]
-              },
-              {
-                "iid": 2,
-                "type": "00000043-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000008-0000-1000-8000-0026BB765291",
-                    "iid": 34359738370,
-                    "perms": [
-                      "pr",
-                      "pw",
-                      "ev"
-                    ],
-                    "format": "int",
-                    "value": 0,
-                    "description": "Brightness",
-                    "unit": "percentage",
-                    "minValue": 0,
-                    "maxValue": 100,
-                    "minStep": 1
-                  },
-                  {
-                    "type": "00000025-0000-1000-8000-0026BB765291",
-                    "iid": 158913789954,
-                    "perms": [
-                      "pr",
-                      "pw",
-                      "ev"
-                    ],
-                    "format": "bool",
-                    "value": false,
-                    "description": "On"
-                  },
-                  {
-                    "type": "00000023-0000-1000-8000-0026BB765291",
-                    "iid": 150323855362,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Caséta® Wireless In-wall Dimmer",
-                    "description": "Name",
-                    "maxLen": 64
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "aid": 1,
             "services": [
               {
@@ -331,6 +211,126 @@
                 ]
               }
             ]
+          },
+          {
+            "aid": 21474836484,
+            "services": [
+              {
+                "iid": 1,
+                "type": "0000003E-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000014-0000-1000-8000-0026BB765291",
+                    "iid": 85899345921,
+                    "perms": [
+                      "pw"
+                    ],
+                    "format": "bool",
+                    "description": "Identify"
+                  },
+                  {
+                    "type": "00000020-0000-1000-8000-0026BB765291",
+                    "iid": 137438953473,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Lutron Electronics Co., Inc",
+                    "description": "Manufacturer",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000021-0000-1000-8000-0026BB765291",
+                    "iid": 141733920769,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "PD-6WCL-XX",
+                    "description": "Model",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 150323855361,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Caséta® Wireless In-wall Dimmer",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000030-0000-1000-8000-0026BB765291",
+                    "iid": 206158430209,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "653B8DD",
+                    "description": "Serial Number",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000052-0000-1000-8000-0026BB765291",
+                    "iid": 352187318273,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "003.001",
+                    "description": "Firmware Revision",
+                    "maxLen": 64
+                  }
+                ]
+              },
+              {
+                "iid": 2,
+                "type": "00000043-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000008-0000-1000-8000-0026BB765291",
+                    "iid": 34359738370,
+                    "perms": [
+                      "pr",
+                      "pw",
+                      "ev"
+                    ],
+                    "format": "int",
+                    "value": 0,
+                    "description": "Brightness",
+                    "unit": "percentage",
+                    "minValue": 0,
+                    "maxValue": 100,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000025-0000-1000-8000-0026BB765291",
+                    "iid": 158913789954,
+                    "perms": [
+                      "pr",
+                      "pw",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": false,
+                    "description": "On"
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 150323855362,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Caséta® Wireless In-wall Dimmer",
+                    "description": "Name",
+                    "maxLen": 64
+                  }
+                ]
+              }
+            ]
           }
         ],
         "broadcast_key": null,
@@ -473,7 +473,7 @@
                       "ev"
                     ],
                     "format": "uint8",
-                    "value": 2,
+                    "value": 0,
                     "description": "Current Heating Cooling State",
                     "minValue": 0,
                     "maxValue": 2,
@@ -513,7 +513,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 22.6,
+                    "value": 22.4,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -529,7 +529,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 22.5,
+                    "value": 24.0,
                     "description": "Target Temperature",
                     "unit": "celsius",
                     "minValue": 7.5,
@@ -595,7 +595,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 45.0,
+                    "value": 44.0,
                     "description": "Current Relative Humidity",
                     "unit": "percentage",
                     "minValue": 0,
@@ -652,7 +652,7 @@
                       "ev"
                     ],
                     "format": "uint8",
-                    "value": 2,
+                    "value": 0,
                     "description": "Current Fan State",
                     "minValue": 0,
                     "maxValue": 2,
@@ -838,7 +838,7 @@
                       "pr"
                     ],
                     "format": "uint8",
-                    "value": 100,
+                    "value": 0,
                     "unit": "percentage",
                     "minValue": 0,
                     "maxValue": 100,
@@ -879,7 +879,7 @@
                       "ev"
                     ],
                     "format": "bool",
-                    "value": true,
+                    "value": false,
                     "description": "Motion Detected"
                   },
                   {
@@ -890,7 +890,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 161,
+                    "value": 1016,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -935,7 +935,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 192,
+                    "value": 1100,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1653,7 +1653,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 22.4,
+                    "value": 22.6,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -1759,7 +1759,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 21768,
+                    "value": 32671,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1825,7 +1825,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 21768,
+                    "value": 32671,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1980,7 +1980,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 23.0,
+                    "value": 23.1,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -2086,7 +2086,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 15485,
+                    "value": 26387,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2152,7 +2152,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 15485,
+                    "value": 26388,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2307,7 +2307,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 21.5,
+                    "value": 21.0,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -2413,7 +2413,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 157,
+                    "value": 1010,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2433,7 +2433,7 @@
                       "ev"
                     ],
                     "format": "bool",
-                    "value": true,
+                    "value": false,
                     "description": "Motion Detected"
                   },
                   {
@@ -2479,7 +2479,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 157,
+                    "value": 973,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2697,7 +2697,7 @@
                       "ev"
                     ],
                     "format": "bool",
-                    "value": false,
+                    "value": true,
                     "description": "On"
                   },
                   {
@@ -2709,7 +2709,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 155,
+                    "value": 166,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -2782,7 +2782,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 38.0,
+                    "value": 32.0,
                     "description": "Hue",
                     "unit": "arcdegrees",
                     "minValue": 0.0,
@@ -2798,7 +2798,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 3.0,
+                    "value": 7.0,
                     "description": "Saturation",
                     "unit": "percentage",
                     "minValue": 0.0,
@@ -3131,7 +3131,7 @@
                       "ev"
                     ],
                     "format": "bool",
-                    "value": false,
+                    "value": true,
                     "description": "On"
                   },
                   {
@@ -3143,7 +3143,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 155,
+                    "value": 166,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -3216,7 +3216,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 38.0,
+                    "value": 32.0,
                     "description": "Hue",
                     "unit": "arcdegrees",
                     "minValue": 0.0,
@@ -3232,7 +3232,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 3.0,
+                    "value": 7.0,
                     "description": "Saturation",
                     "unit": "percentage",
                     "minValue": 0.0,
@@ -3351,7 +3351,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 25
+                    "value": 26
                   }
                 ]
               }
@@ -3565,7 +3565,7 @@
                       "ev"
                     ],
                     "format": "bool",
-                    "value": false,
+                    "value": true,
                     "description": "On"
                   },
                   {
@@ -3577,7 +3577,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 155,
+                    "value": 166,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -3650,7 +3650,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 38.0,
+                    "value": 32.0,
                     "description": "Hue",
                     "unit": "arcdegrees",
                     "minValue": 0.0,
@@ -3666,7 +3666,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 3.0,
+                    "value": 7.0,
                     "description": "Saturation",
                     "unit": "percentage",
                     "minValue": 0.0,
@@ -4067,7 +4067,7 @@
                       "ev"
                     ],
                     "format": "uint8",
-                    "value": 11,
+                    "value": 8,
                     "description": "Volume",
                     "unit": "percentage",
                     "minValue": 0,
