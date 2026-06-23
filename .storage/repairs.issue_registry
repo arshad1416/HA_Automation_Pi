@@ -129,6 +129,20 @@
         "domain": "automation",
         "is_persistent": false,
         "issue_id": "automation.climate_ai_advisor_validation_failed_schema"
+      },
+      {
+        "created": "2026-06-23T12:17:18.256946+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.lock_front_and_garage_doors_at_9pm_validation_failed_conditions"
+      },
+      {
+        "created": "2026-06-23T12:17:18.257231+00:00",
+        "dismissed_version": null,
+        "domain": "automation",
+        "is_persistent": false,
+        "issue_id": "automation.smart_vent_fan_control_validation_failed_actions"
       }
     ]
   }
