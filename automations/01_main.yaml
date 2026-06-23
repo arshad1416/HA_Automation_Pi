@@ -3385,3 +3385,12 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
+
+- id: esphome_kitchen_bridge_startup
+  alias: ESPHome Kitchen Bridge Startup
+  description: Starts the ESPHome-HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.
+  triggers:
+  - trigger: homeassistant
+    event: start
+  actions:
+  - action: shell_command.start_esphome_kitchen_bridge
