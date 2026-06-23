@@ -595,7 +595,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 45.0,
+                    "value": 46.0,
                     "description": "Current Relative Humidity",
                     "unit": "percentage",
                     "minValue": 0,
@@ -890,7 +890,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 2592,
+                    "value": 2852,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -935,7 +935,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 2592,
+                    "value": 2852,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1759,7 +1759,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 8674,
+                    "value": 8934,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1825,7 +1825,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 8674,
+                    "value": 8934,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2086,7 +2086,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 2391,
+                    "value": 2651,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2152,7 +2152,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 2391,
+                    "value": 2651,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2413,7 +2413,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 71196,
+                    "value": 71456,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2479,7 +2479,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 71196,
+                    "value": 71456,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,

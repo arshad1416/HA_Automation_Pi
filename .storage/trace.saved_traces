@@ -7,12 +7,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "b7e82224d555e4785b925f6ea86f060a",
+          "run_id": "41a8c1edd46dca831e214fa62e8b14e2",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:24:16.384394+00:00",
-            "finish": "2026-06-23T13:24:16.385999+00:00"
+            "start": "2026-06-23T13:27:26.772040+00:00",
+            "finish": "2026-06-23T13:27:26.773614+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -21,23 +21,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T13:24:16.384441+00:00",
+                "timestamp": "2026-06-23T13:27:26.772086+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.restore_govee_outdoor_lights_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "govee_restore_after_restart",
-                      "last_triggered": "2026-06-23T13:21:55.780923+00:00",
+                      "last_triggered": "2026-06-23T13:24:16.384533+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Restore Govee outdoor lights after HA restart"
                     },
-                    "last_changed": "2026-06-23T13:23:43.074487+00:00",
-                    "last_reported": "2026-06-23T13:23:43.074487+00:00",
-                    "last_updated": "2026-06-23T13:23:43.074487+00:00",
+                    "last_changed": "2026-06-23T13:26:54.317619+00:00",
+                    "last_reported": "2026-06-23T13:26:54.317619+00:00",
+                    "last_updated": "2026-06-23T13:26:54.317619+00:00",
                     "context": {
-                      "id": "01KVTAD9V25BS7A7H1HMM48M78",
+                      "id": "01KVTAK4KDBK4SFJ6CXWYJDB5N",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -56,10 +56,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:24:16.384681+00:00",
+                "timestamp": "2026-06-23T13:27:26.772316+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAEAC0AT4V50C7YRWGBTMR",
+                    "id": "01KVTAM49MZB8931G08HWVYZ3S",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -72,7 +72,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:24:16.384893+00:00",
+                "timestamp": "2026-06-23T13:27:26.772522+00:00",
                 "result": {
                   "result": false
                 }
@@ -81,7 +81,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:24:16.384931+00:00",
+                "timestamp": "2026-06-23T13:27:26.772561+00:00",
                 "result": {
                   "wanted_time_after": "2026-06-24T01:06:22.662203+00:00",
                   "result": false
@@ -91,7 +91,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:24:16.385112+00:00",
+                "timestamp": "2026-06-23T13:27:26.772742+00:00",
                 "result": {
                   "result": false
                 }
@@ -100,7 +100,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:24:16.385137+00:00",
+                "timestamp": "2026-06-23T13:27:26.772767+00:00",
                 "result": {
                   "wanted_time_after": "2026-06-24T01:06:22.662203+00:00",
                   "result": false
@@ -110,7 +110,7 @@
             "action/0/default/0": [
               {
                 "path": "action/0/default/0",
-                "timestamp": "2026-06-23T13:24:16.385316+00:00",
+                "timestamp": "2026-06-23T13:27:26.772945+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -225,19 +225,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAEAC0AT4V50C7YRWGBTMR",
+            "id": "01KVTAM49MZB8931G08HWVYZ3S",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "b7e82224d555e4785b925f6ea86f060a",
+          "run_id": "41a8c1edd46dca831e214fa62e8b14e2",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:24:16.384394+00:00",
-            "finish": "2026-06-23T13:24:16.385999+00:00"
+            "start": "2026-06-23T13:27:26.772040+00:00",
+            "finish": "2026-06-23T13:27:26.773614+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -248,40 +248,39 @@
     "automation.downstairs_occupancy_lighting": [
       {
         "extended_dict": {
-          "last_step": "action/0/choose/3/sequence/0/else/0",
-          "run_id": "101a2358193a9e4ce79afd7af2f32021",
+          "last_step": "action/0/choose/3/sequence/0/else/1",
+          "run_id": "262a481668af3d2b3dae0d4c18832614",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:24:16.390292+00:00",
-            "finish": "2026-06-23T13:24:32.434696+00:00"
+            "start": "2026-06-23T13:27:26.777297+00:00",
+            "finish": "2026-06-23T13:27:27.264318+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
-          "error": "Request timeout",
           "trigger": "Home Assistant starting",
           "trace": {
             "trigger/6": [
               {
                 "path": "trigger/6",
-                "timestamp": "2026-06-23T13:24:16.390336+00:00",
+                "timestamp": "2026-06-23T13:27:26.777333+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.downstairs_occupancy_lighting",
                     "state": "on",
                     "attributes": {
                       "id": "downstairs_occupancy_lighting",
-                      "last_triggered": "2026-06-23T13:21:55.786419+00:00",
+                      "last_triggered": "2026-06-23T13:24:16.390409+00:00",
                       "mode": "queued",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Downstairs Occupancy Lighting"
                     },
-                    "last_changed": "2026-06-23T13:23:43.076886+00:00",
-                    "last_reported": "2026-06-23T13:23:43.076886+00:00",
-                    "last_updated": "2026-06-23T13:23:43.076886+00:00",
+                    "last_changed": "2026-06-23T13:26:54.318866+00:00",
+                    "last_reported": "2026-06-23T13:26:54.318866+00:00",
+                    "last_updated": "2026-06-23T13:26:54.318866+00:00",
                     "context": {
-                      "id": "01KVTAD9V40Z4X2CT10B02YH2H",
+                      "id": "01KVTAK4KECRK6Q42BRG8D4NPW",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -300,15 +299,14 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:24:16.390562+00:00",
+                "timestamp": "2026-06-23T13:27:26.777528+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAEAC6E28AENYFCG0KMXTQ",
+                    "id": "01KVTAM49S6XTRXEXDTDY5G9GR",
                     "parent_id": null,
                     "user_id": null
                   }
                 },
-                "error": "Request timeout",
                 "result": {
                   "choice": 3
                 }
@@ -317,7 +315,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T13:24:16.390876+00:00",
+                "timestamp": "2026-06-23T13:27:26.777829+00:00",
                 "result": {
                   "result": false
                 }
@@ -326,7 +324,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T13:24:16.390909+00:00",
+                "timestamp": "2026-06-23T13:27:26.777861+00:00",
                 "result": {
                   "result": false
                 }
@@ -335,7 +333,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T13:24:16.390953+00:00",
+                "timestamp": "2026-06-23T13:27:26.777904+00:00",
                 "result": {
                   "result": false
                 }
@@ -344,7 +342,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T13:24:16.390971+00:00",
+                "timestamp": "2026-06-23T13:27:26.777923+00:00",
                 "result": {
                   "result": false
                 }
@@ -353,7 +351,7 @@
             "action/0/choose/2": [
               {
                 "path": "action/0/choose/2",
-                "timestamp": "2026-06-23T13:24:16.391002+00:00",
+                "timestamp": "2026-06-23T13:27:26.777954+00:00",
                 "result": {
                   "result": false
                 }
@@ -362,7 +360,7 @@
             "action/0/choose/2/conditions/0": [
               {
                 "path": "action/0/choose/2/conditions/0",
-                "timestamp": "2026-06-23T13:24:16.391019+00:00",
+                "timestamp": "2026-06-23T13:27:26.777971+00:00",
                 "result": {
                   "result": false
                 }
@@ -371,7 +369,7 @@
             "action/0/choose/3": [
               {
                 "path": "action/0/choose/3",
-                "timestamp": "2026-06-23T13:24:16.391046+00:00",
+                "timestamp": "2026-06-23T13:27:26.777998+00:00",
                 "result": {
                   "result": true
                 }
@@ -380,7 +378,7 @@
             "action/0/choose/3/conditions/0": [
               {
                 "path": "action/0/choose/3/conditions/0",
-                "timestamp": "2026-06-23T13:24:16.391090+00:00",
+                "timestamp": "2026-06-23T13:27:26.778013+00:00",
                 "result": {
                   "result": true
                 }
@@ -389,8 +387,7 @@
             "action/0/choose/3/sequence/0": [
               {
                 "path": "action/0/choose/3/sequence/0",
-                "timestamp": "2026-06-23T13:24:16.391190+00:00",
-                "error": "Request timeout",
+                "timestamp": "2026-06-23T13:27:26.778100+00:00",
                 "result": {
                   "choice": "else"
                 }
@@ -399,7 +396,7 @@
             "action/0/choose/3/sequence/0/if": [
               {
                 "path": "action/0/choose/3/sequence/0/if",
-                "timestamp": "2026-06-23T13:24:16.391289+00:00",
+                "timestamp": "2026-06-23T13:27:26.778194+00:00",
                 "result": {
                   "result": false
                 }
@@ -408,7 +405,7 @@
             "action/0/choose/3/sequence/0/if/condition/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0",
-                "timestamp": "2026-06-23T13:24:16.391310+00:00",
+                "timestamp": "2026-06-23T13:27:26.778214+00:00",
                 "result": {
                   "result": false
                 }
@@ -417,7 +414,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0",
-                "timestamp": "2026-06-23T13:24:16.391330+00:00",
+                "timestamp": "2026-06-23T13:27:26.778234+00:00",
                 "result": {
                   "result": false
                 }
@@ -426,7 +423,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T13:24:16.391348+00:00",
+                "timestamp": "2026-06-23T13:27:26.778251+00:00",
                 "result": {
                   "result": false,
                   "state": "off",
@@ -437,7 +434,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1",
-                "timestamp": "2026-06-23T13:24:16.391384+00:00",
+                "timestamp": "2026-06-23T13:27:26.778286+00:00",
                 "result": {
                   "result": false
                 }
@@ -446,7 +443,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0",
-                "timestamp": "2026-06-23T13:24:16.391400+00:00",
+                "timestamp": "2026-06-23T13:27:26.778302+00:00",
                 "result": {
                   "result": false,
                   "state": "unknown",
@@ -457,8 +454,7 @@
             "action/0/choose/3/sequence/0/else/0": [
               {
                 "path": "action/0/choose/3/sequence/0/else/0",
-                "timestamp": "2026-06-23T13:24:16.391491+00:00",
-                "error": "Request timeout",
+                "timestamp": "2026-06-23T13:27:26.778387+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -474,6 +470,25 @@
                         "light.cabinet_light_strip_right_nanoleaf_light_strip",
                         "light.nanoleaf_multicolor_ls",
                         "light.nanoleaf_multicolor_ls_2"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/0/choose/3/sequence/0/else/1": [
+              {
+                "path": "action/0/choose/3/sequence/0/else/1",
+                "timestamp": "2026-06-23T13:27:27.252582+00:00",
+                "result": {
+                  "params": {
+                    "domain": "switch",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "switch.kitchen_pantry_light"
                       ]
                     }
                   },
@@ -977,23 +992,22 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAEAC6E28AENYFCG0KMXTQ",
+            "id": "01KVTAM49S6XTRXEXDTDY5G9GR",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0/choose/3/sequence/0/else/0",
-          "run_id": "101a2358193a9e4ce79afd7af2f32021",
+          "last_step": "action/0/choose/3/sequence/0/else/1",
+          "run_id": "262a481668af3d2b3dae0d4c18832614",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:24:16.390292+00:00",
-            "finish": "2026-06-23T13:24:32.434696+00:00"
+            "start": "2026-06-23T13:27:26.777297+00:00",
+            "finish": "2026-06-23T13:27:27.264318+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
-          "error": "Request timeout",
           "trigger": "Home Assistant starting"
         }
       }
@@ -1002,12 +1016,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "0d853f6af02619a413859d123efe6e30",
+          "run_id": "47fabdb125b4d8f6ce66b0203cab0fb9",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:24:16.392179+00:00",
-            "finish": "2026-06-23T13:24:16.505681+00:00"
+            "start": "2026-06-23T13:27:26.779474+00:00",
+            "finish": "2026-06-23T13:27:26.926219+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -1016,23 +1030,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T13:24:16.392201+00:00",
+                "timestamp": "2026-06-23T13:27:26.779498+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-06-23T13:21:55.788677+00:00",
+                      "last_triggered": "2026-06-23T13:24:16.392236+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-06-23T13:23:43.076996+00:00",
-                    "last_reported": "2026-06-23T13:23:43.076996+00:00",
-                    "last_updated": "2026-06-23T13:23:43.076996+00:00",
+                    "last_changed": "2026-06-23T13:26:54.318985+00:00",
+                    "last_reported": "2026-06-23T13:26:54.318985+00:00",
+                    "last_updated": "2026-06-23T13:26:54.318985+00:00",
                     "context": {
-                      "id": "01KVTAD9V4Q1JY1CKP7EDRNQ33",
+                      "id": "01KVTAK4KE80TTQ7FTHQMH4BCV",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -1051,10 +1065,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T13:24:16.392338+00:00",
+                "timestamp": "2026-06-23T13:27:26.779644+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVTAEAC83E1QCD7JBRV24E4H",
+                    "id": "01KVTAM49VTEPR5N3XZZBV73MX",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -1089,23 +1103,939 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVTAEAC83E1QCD7JBRV24E4H",
+            "id": "01KVTAM49VTEPR5N3XZZBV73MX",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "0d853f6af02619a413859d123efe6e30",
+          "run_id": "47fabdb125b4d8f6ce66b0203cab0fb9",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T13:24:16.392179+00:00",
-            "finish": "2026-06-23T13:24:16.505681+00:00"
+            "start": "2026-06-23T13:27:26.779474+00:00",
+            "finish": "2026-06-23T13:27:26.926219+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
           "trigger": "Home Assistant starting"
+        }
+      }
+    ],
+    "automation.smart_vent_fan_control": [
+      {
+        "extended_dict": {
+          "last_step": "action/1/default/0",
+          "run_id": "3e7bc1e4ab5c7d1b8098442def5cabee",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T13:30:00.052957+00:00",
+            "finish": "2026-06-23T13:30:00.460581+00:00"
+          },
+          "domain": "automation",
+          "item_id": "smart_vent_fan_control",
+          "trigger": "time pattern",
+          "trace": {
+            "trigger/1": [
+              {
+                "path": "trigger/1",
+                "timestamp": "2026-06-23T13:30:00.053012+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.smart_vent_fan_control",
+                    "state": "on",
+                    "attributes": {
+                      "id": "smart_vent_fan_control",
+                      "last_triggered": null,
+                      "mode": "restart",
+                      "current": 0,
+                      "friendly_name": "Smart Vent Fan Control"
+                    },
+                    "last_changed": "2026-06-23T13:26:54.318337+00:00",
+                    "last_reported": "2026-06-23T13:26:54.318337+00:00",
+                    "last_updated": "2026-06-23T13:26:54.318337+00:00",
+                    "context": {
+                      "id": "01KVTAK4KEB57BME23QEFAXBQR",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "periodic",
+                    "idx": "1",
+                    "alias": null,
+                    "platform": "time_pattern",
+                    "now": "2026-06-23T09:30:00.052729-04:00",
+                    "description": "time pattern"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T13:30:00.053393+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVTARSZM834SHBBKQBFZQNAS",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "choice": "default"
+                }
+              }
+            ],
+            "action/0/choose/0": [
+              {
+                "path": "action/0/choose/0",
+                "timestamp": "2026-06-23T13:30:00.053701+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/0/conditions/0": [
+              {
+                "path": "action/0/choose/0/conditions/0",
+                "timestamp": "2026-06-23T13:30:00.053758+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/0/conditions/0/entity_id/0": [
+              {
+                "path": "action/0/choose/0/conditions/0/entity_id/0",
+                "timestamp": "2026-06-23T13:30:00.053793+00:00",
+                "result": {
+                  "result": false,
+                  "state": "idle",
+                  "wanted_state": "heating"
+                }
+              }
+            ],
+            "action/0/choose/1": [
+              {
+                "path": "action/0/choose/1",
+                "timestamp": "2026-06-23T13:30:00.053877+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/1/conditions/0": [
+              {
+                "path": "action/0/choose/1/conditions/0",
+                "timestamp": "2026-06-23T13:30:00.053908+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/0/choose/1/conditions/0/entity_id/0": [
+              {
+                "path": "action/0/choose/1/conditions/0/entity_id/0",
+                "timestamp": "2026-06-23T13:30:00.053934+00:00",
+                "result": {
+                  "result": false,
+                  "state": "idle",
+                  "wanted_state": "cooling"
+                }
+              }
+            ],
+            "action/0/default/0": [
+              {
+                "path": "action/0/default/0",
+                "timestamp": "2026-06-23T13:30:00.054124+00:00",
+                "result": {
+                  "params": {
+                    "domain": "fan",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "fan.izaan_s_room_20a970"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-06-23T13:30:00.327925+00:00",
+                "result": {
+                  "choice": "default"
+                }
+              }
+            ],
+            "action/1/choose/0": [
+              {
+                "path": "action/1/choose/0",
+                "timestamp": "2026-06-23T13:30:00.328152+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/1/choose/0/conditions/0": [
+              {
+                "path": "action/1/choose/0/conditions/0",
+                "timestamp": "2026-06-23T13:30:00.328195+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/1/choose/0/conditions/0/entity_id/0": [
+              {
+                "path": "action/1/choose/0/conditions/0/entity_id/0",
+                "timestamp": "2026-06-23T13:30:00.328223+00:00",
+                "result": {
+                  "result": false,
+                  "state": "idle",
+                  "wanted_state": "heating"
+                }
+              }
+            ],
+            "action/1/choose/1": [
+              {
+                "path": "action/1/choose/1",
+                "timestamp": "2026-06-23T13:30:00.328290+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/1/choose/1/conditions/0": [
+              {
+                "path": "action/1/choose/1/conditions/0",
+                "timestamp": "2026-06-23T13:30:00.328317+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/1/choose/1/conditions/0/entity_id/0": [
+              {
+                "path": "action/1/choose/1/conditions/0/entity_id/0",
+                "timestamp": "2026-06-23T13:30:00.328342+00:00",
+                "result": {
+                  "result": false,
+                  "state": "idle",
+                  "wanted_state": "cooling"
+                }
+              }
+            ],
+            "action/1/default/0": [
+              {
+                "path": "action/1/default/0",
+                "timestamp": "2026-06-23T13:30:00.328523+00:00",
+                "result": {
+                  "params": {
+                    "domain": "fan",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "fan.mina_s_room_f851f4"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "smart_vent_fan_control",
+            "alias": "Smart Vent Fan Control",
+            "description": "Unified vent fan control for Izaan and Mina. Heating + room < 21C -> fan ON. Cooling + room > 23C -> fan OFF. Idle or temp in range -> fan OFF. Re-evaluates every 10 min.",
+            "mode": "restart",
+            "triggers": [
+              {
+                "trigger": "state",
+                "entity_id": "climate.ecobee",
+                "attribute": "hvac_action",
+                "id": "hvac_change"
+              },
+              {
+                "trigger": "time_pattern",
+                "minutes": "/10",
+                "id": "periodic"
+              }
+            ],
+            "conditions": [],
+            "actions": [
+              {
+                "choose": [
+                  {
+                    "conditions": [
+                      {
+                        "condition": "state",
+                        "entity_id": "climate.ecobee",
+                        "attribute": "hvac_action",
+                        "state": "heating"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{{ states('sensor.izaans_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}\n"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "fan.turn_on",
+                        "target": {
+                          "entity_id": "fan.izaan_s_room_20a970"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "state",
+                        "entity_id": "climate.ecobee",
+                        "attribute": "hvac_action",
+                        "state": "cooling"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{{ states('sensor.izaans_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}\n"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "fan.turn_on",
+                        "target": {
+                          "entity_id": "fan.izaan_s_room_20a970"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "default": [
+                  {
+                    "action": "fan.turn_off",
+                    "target": {
+                      "entity_id": "fan.izaan_s_room_20a970"
+                    }
+                  }
+                ]
+              },
+              {
+                "choose": [
+                  {
+                    "conditions": [
+                      {
+                        "condition": "state",
+                        "entity_id": "climate.ecobee",
+                        "attribute": "hvac_action",
+                        "state": "heating"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{{ states('sensor.minas_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}\n"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "fan.turn_on",
+                        "target": {
+                          "entity_id": "fan.mina_s_room_f851f4"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "conditions": [
+                      {
+                        "condition": "state",
+                        "entity_id": "climate.ecobee",
+                        "attribute": "hvac_action",
+                        "state": "cooling"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{{ states('sensor.minas_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}\n"
+                      }
+                    ],
+                    "sequence": [
+                      {
+                        "action": "fan.turn_on",
+                        "target": {
+                          "entity_id": "fan.mina_s_room_f851f4"
+                        }
+                      }
+                    ]
+                  }
+                ],
+                "default": [
+                  {
+                    "action": "fan.turn_off",
+                    "target": {
+                      "entity_id": "fan.mina_s_room_f851f4"
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVTARSZM834SHBBKQBFZQNAS",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/1/default/0",
+          "run_id": "3e7bc1e4ab5c7d1b8098442def5cabee",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-06-23T13:30:00.052957+00:00",
+            "finish": "2026-06-23T13:30:00.460581+00:00"
+          },
+          "domain": "automation",
+          "item_id": "smart_vent_fan_control",
+          "trigger": "time pattern"
+        }
+      }
+    ],
+    "automation.auto_heat_on_cold_day": [
+      {
+        "extended_dict": {
+          "last_step": "condition/0/entity_id/0",
+          "run_id": "d122a3ecfd33452221917e24413646f0",
+          "state": "stopped",
+          "script_execution": "failed_conditions",
+          "timestamp": {
+            "start": "2026-06-23T13:30:00.338545+00:00",
+            "finish": "2026-06-23T13:30:00.338683+00:00"
+          },
+          "domain": "automation",
+          "item_id": "auto_heat_on_cold_day",
+          "trigger": "time pattern",
+          "trace": {
+            "trigger/1": [
+              {
+                "path": "trigger/1",
+                "timestamp": "2026-06-23T13:30:00.338589+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.auto_switch_to_heat_when_indoor_drops_to_21degc_on_cold_days",
+                    "state": "on",
+                    "attributes": {
+                      "id": "auto_heat_on_cold_day",
+                      "last_triggered": null,
+                      "mode": "single",
+                      "current": 0,
+                      "friendly_name": "Auto-switch to Heat when indoor drops to 21\u00b0C on cold days"
+                    },
+                    "last_changed": "2026-06-23T13:26:54.316825+00:00",
+                    "last_reported": "2026-06-23T13:26:54.316825+00:00",
+                    "last_updated": "2026-06-23T13:26:54.316825+00:00",
+                    "context": {
+                      "id": "01KVTAK4KCM763PYNGCRFK0X1H",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "1",
+                    "idx": "1",
+                    "alias": null,
+                    "platform": "time_pattern",
+                    "now": "2026-06-23T09:30:00.338382-04:00",
+                    "description": "time pattern"
+                  }
+                }
+              }
+            ],
+            "condition/0": [
+              {
+                "path": "condition/0",
+                "timestamp": "2026-06-23T13:30:00.338619+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "condition/0/entity_id/0": [
+              {
+                "path": "condition/0/entity_id/0",
+                "timestamp": "2026-06-23T13:30:00.338640+00:00",
+                "result": {
+                  "result": false,
+                  "state": 17.7,
+                  "wanted_state_below": 15.0
+                }
+              }
+            ]
+          },
+          "config": {
+            "actions": [
+              {
+                "action": "climate.set_hvac_mode",
+                "data": {
+                  "hvac_mode": "heat"
+                },
+                "target": {
+                  "entity_id": "climate.ecobee"
+                }
+              },
+              {
+                "action": "climate.set_temperature",
+                "data": {
+                  "temperature": 22.0
+                },
+                "target": {
+                  "entity_id": "climate.ecobee"
+                }
+              }
+            ],
+            "alias": "Auto-switch to Heat when indoor drops to 21\u00b0C on cold days",
+            "conditions": [
+              {
+                "attribute": "temperature",
+                "below": 15.0,
+                "condition": "numeric_state",
+                "entity_id": "weather.forecast_home"
+              },
+              {
+                "condition": "template",
+                "value_template": "{{ state_attr('climate.ecobee', 'hvac_action') != 'heating' }}"
+              }
+            ],
+            "description": "If outdoor temp < 15\u00b0C and indoor temp drops to 21\u00b0C, switch ecobee to Heat mode at 22\u00b0C",
+            "id": "auto_heat_on_cold_day",
+            "mode": "single",
+            "triggers": [
+              {
+                "below": 21.0,
+                "entity_id": "sensor.ecobee_current_temperature",
+                "trigger": "numeric_state"
+              },
+              {
+                "minutes": "/15",
+                "trigger": "time_pattern"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVTART8JAY728JNM0VAHKA2D",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "condition/0/entity_id/0",
+          "run_id": "d122a3ecfd33452221917e24413646f0",
+          "state": "stopped",
+          "script_execution": "failed_conditions",
+          "timestamp": {
+            "start": "2026-06-23T13:30:00.338545+00:00",
+            "finish": "2026-06-23T13:30:00.338683+00:00"
+          },
+          "domain": "automation",
+          "item_id": "auto_heat_on_cold_day",
+          "trigger": "time pattern"
+        }
+      }
+    ],
+    "automation.ceiling_fan_boost": [
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "c916d221a9d009dcb69bb7afcb670557",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T13:30:00.417096+00:00",
+            "finish": "2026-06-23T13:30:00.423121+00:00"
+          },
+          "domain": "automation",
+          "item_id": "ceiling_fan_boost",
+          "error": "TypeError: 'int' object is not iterable",
+          "trigger": "time pattern",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-06-23T13:30:00.417144+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.ceiling_fan_boost",
+                    "state": "on",
+                    "attributes": {
+                      "id": "ceiling_fan_boost",
+                      "last_triggered": "2026-06-23T13:15:00.362098+00:00",
+                      "mode": "restart",
+                      "current": 0,
+                      "friendly_name": "ceiling_fan_boost"
+                    },
+                    "last_changed": "2026-06-23T13:26:54.316702+00:00",
+                    "last_reported": "2026-06-23T13:26:54.316702+00:00",
+                    "last_updated": "2026-06-23T13:26:54.316702+00:00",
+                    "context": {
+                      "id": "01KVTAK4KCA1V58V03E7284MK0",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "time_pattern",
+                    "now": "2026-06-23T09:30:00.416884-04:00",
+                    "description": "time pattern"
+                  }
+                }
+              }
+            ],
+            "condition/0": [
+              {
+                "path": "condition/0",
+                "timestamp": "2026-06-23T13:30:00.417181+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/0/entity_id/0": [
+              {
+                "path": "condition/0/entity_id/0",
+                "timestamp": "2026-06-23T13:30:00.417201+00:00",
+                "result": {
+                  "result": true,
+                  "state": "on",
+                  "wanted_state": "on"
+                }
+              }
+            ],
+            "condition/1": [
+              {
+                "path": "condition/1",
+                "timestamp": "2026-06-23T13:30:00.417247+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/1/conditions/0": [
+              {
+                "path": "condition/1/conditions/0",
+                "timestamp": "2026-06-23T13:30:00.417264+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "condition/1/conditions/0/entity_id/0": [
+              {
+                "path": "condition/1/conditions/0/entity_id/0",
+                "timestamp": "2026-06-23T13:30:00.417277+00:00",
+                "result": {
+                  "result": false,
+                  "state": "idle",
+                  "wanted_state": "cooling"
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-06-23T13:30:00.417615+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KVTARTB14YB2SHS6NC3P790J",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "error": "TypeError: 'int' object is not iterable"
+              }
+            ]
+          },
+          "config": {
+            "actions": [
+              {
+                "variables": {
+                  "izaan_speed": "{{ ([states('sensor.izaans_room_temperature') | float(23.5), states('sensor.izaan_s_echo_dot_temperature') | float(23.5)] | max - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}",
+                  "kitchen_speed": "{{ ((states('sensor.downstairs_echo_dot_temperature') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}",
+                  "master_speed": "{{ ((states('sensor.upstairs_echo_dot_temperature') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}",
+                  "mina_speed": "{{ ([states('sensor.minas_room_temperature') | float(23.5), states('sensor.mina_s_echo_dot_temperature') | float(23.5)] | max - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}"
+                }
+              },
+              {
+                "else": [
+                  {
+                    "action": "fan.turn_off",
+                    "data": {},
+                    "target": {
+                      "entity_id": "fan.kitchen_ceiling_fan"
+                    }
+                  }
+                ],
+                "if": [
+                  {
+                    "above": 23.5,
+                    "condition": "numeric_state",
+                    "entity_id": "sensor.downstairs_echo_dot_temperature"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "switch.turn_on",
+                    "target": {
+                      "entity_id": "switch.kitchen_fan"
+                    }
+                  },
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ kitchen_speed }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.kitchen_ceiling_fan"
+                    }
+                  }
+                ]
+              },
+              {
+                "else": [
+                  {
+                    "action": "fan.turn_off",
+                    "data": {},
+                    "target": {
+                      "entity_id": "fan.master_bedroom_ceiling_fan"
+                    }
+                  }
+                ],
+                "if": [
+                  {
+                    "condition": "state",
+                    "entity_id": "person.home",
+                    "state": "home"
+                  },
+                  {
+                    "after": "21:00:00",
+                    "before": "07:00:00",
+                    "condition": "time"
+                  },
+                  {
+                    "above": 23.5,
+                    "condition": "numeric_state",
+                    "entity_id": "sensor.upstairs_echo_dot_temperature"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "switch.turn_on",
+                    "target": {
+                      "entity_id": "switch.master_bedroom_fan_light"
+                    }
+                  },
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ master_speed }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.master_bedroom_ceiling_fan"
+                    }
+                  }
+                ]
+              },
+              {
+                "else": [
+                  {
+                    "action": "fan.turn_off",
+                    "data": {},
+                    "target": {
+                      "entity_id": "fan.mina_s_ceiling_fan"
+                    }
+                  }
+                ],
+                "if": [
+                  {
+                    "condition": "or",
+                    "conditions": [
+                      {
+                        "above": 23.5,
+                        "condition": "numeric_state",
+                        "entity_id": "sensor.minas_room_temperature"
+                      },
+                      {
+                        "above": 23.5,
+                        "condition": "numeric_state",
+                        "entity_id": "sensor.mina_s_echo_dot_temperature"
+                      }
+                    ]
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "switch.turn_on",
+                    "target": {
+                      "entity_id": "switch.mina_s_light"
+                    }
+                  },
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ mina_speed }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.mina_s_ceiling_fan"
+                    }
+                  }
+                ]
+              },
+              {
+                "else": [
+                  {
+                    "action": "fan.turn_off",
+                    "data": {},
+                    "target": {
+                      "entity_id": "fan.izaan_s_ceiling_fan"
+                    }
+                  }
+                ],
+                "if": [
+                  {
+                    "condition": "or",
+                    "conditions": [
+                      {
+                        "above": 23.5,
+                        "condition": "numeric_state",
+                        "entity_id": "sensor.izaans_room_temperature"
+                      },
+                      {
+                        "above": 23.5,
+                        "condition": "numeric_state",
+                        "entity_id": "sensor.izaan_s_echo_dot_temperature"
+                      }
+                    ]
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "switch.turn_on",
+                    "target": {
+                      "entity_id": "switch.izaan_s_bedroom_light"
+                    }
+                  },
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ izaan_speed }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.izaan_s_ceiling_fan"
+                    }
+                  }
+                ]
+              },
+              {
+                "else": [
+                  {
+                    "action": "fan.turn_off",
+                    "data": {},
+                    "target": {
+                      "entity_id": "fan.guest_room_ceiling_fan"
+                    }
+                  }
+                ],
+                "if": [
+                  {
+                    "condition": "state",
+                    "entity_id": "switch.airbnb_reserved",
+                    "state": "on"
+                  },
+                  {
+                    "above": 23.5,
+                    "condition": "numeric_state",
+                    "entity_id": "sensor.ecobee_current_temperature"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "switch.turn_on",
+                    "target": {
+                      "entity_id": "switch.guest_room_light"
+                    }
+                  },
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ kitchen_speed }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.guest_room_ceiling_fan"
+                    }
+                  }
+                ]
+              }
+            ],
+            "alias": "ceiling_fan_boost",
+            "conditions": [
+              {
+                "condition": "state",
+                "entity_id": "input_boolean.climate_summer_mode",
+                "state": "on"
+              },
+              {
+                "condition": "not",
+                "conditions": [
+                  {
+                    "attribute": "hvac_action",
+                    "condition": "state",
+                    "entity_id": "climate.ecobee",
+                    "state": "cooling"
+                  }
+                ]
+              }
+            ],
+            "description": "Every 15 min in summer, if AC not cooling and rooms >23.5C, run ceiling fans. Uses Echo Dot temps for kitchen/master, max of SmartCocoon+Echo for Mina/Izaan rooms.",
+            "id": "ceiling_fan_boost",
+            "mode": "restart",
+            "triggers": [
+              {
+                "minutes": "/15",
+                "trigger": "time_pattern"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KVTARTB14YB2SHS6NC3P790J",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "c916d221a9d009dcb69bb7afcb670557",
+          "state": "stopped",
+          "script_execution": "error",
+          "timestamp": {
+            "start": "2026-06-23T13:30:00.417096+00:00",
+            "finish": "2026-06-23T13:30:00.423121+00:00"
+          },
+          "domain": "automation",
+          "item_id": "ceiling_fan_boost",
+          "error": "TypeError: 'int' object is not iterable",
+          "trigger": "time pattern"
         }
       }
     ]
