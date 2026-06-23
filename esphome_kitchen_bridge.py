@@ -48,6 +48,7 @@ HA_AUTH_STORAGE = "/config/.storage/auth"
 PRESENCE_ENTITY = "binary_sensor.kitchen_mmwave_presence_sensor_presence"
 MOVING_DISTANCE_ENTITY = "sensor.kitchen_mmwave_presence_sensor_moving_distance"
 OCCUPANCY_BOOLEAN = "input_boolean.kitchen_occupied_motion"
+FAULT_ENTITY = "binary_sensor.kitchen_mmwave_radar_fault"
 
 # Debounce: how long to wait after presence goes OFF before pushing the OFF to HA.
 # The LD2420 radar can rapidly flip on/off when someone is stationary or at the
@@ -166,6 +167,11 @@ class ESPHomeBridge:
         self.last_presence = None
         self.running = True
         self._off_debounce_task = None
+        # UART fault detection
+        self.firmware_key = None
+        self.last_firmware = None
+        self.last_fault = None
+        self._connected_at = 0
 
     async def connect(self):
         """Connect to ESP32 and subscribe to state updates."""
@@ -187,6 +193,9 @@ class ESPHomeBridge:
             elif e.object_id == "moving_distance":
                 self.distance_key = e.key
                 log.info(f"  Moving Distance key: {e.key} ({e.name})")
+            elif e.object_id == "ld2420_firmware":
+                self.firmware_key = e.key
+                log.info(f"  Firmware key: {e.key} ({e.name})")
 
     def on_state(self, state):
         """Sync callback for ESPHome state updates. Schedules async handling."""
@@ -249,6 +258,9 @@ class ESPHomeBridge:
                 "friendly_name": "Kitchen mmWave Presence Sensor Moving Distance",
             })
 
+        elif obj_id == "ld2420_firmware":
+            self.last_firmware = val
+
     async def _debounced_off(self, ts):
         """Wait PRESENCE_OFF_DEBOUNCE_SECONDS, then turn OFF the input_boolean.
         If presence comes back ON during the wait, this task is cancelled."""
@@ -262,6 +274,33 @@ class ESPHomeBridge:
         except asyncio.CancelledError:
             log.info(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Debounce cancelled — presence came back")
 
+    def check_uart_health(self):
+        """Flag a dead LD2420 UART link (firmware unreadable) in HA + notify."""
+        if time.time() - self._connected_at < 30:
+            return  # grace period for firmware state to arrive after connect
+        fw = self.last_firmware
+        dead = fw is None or str(fw).strip().lower() in ("", "unknown", "nan", "none")
+        if dead and self.last_fault is not True:
+            self.last_fault = True
+            log.error("UART FAULT: LD2420 firmware unreadable -- radar not communicating. "
+                      "Power-cycle the sensor (unplug ~10s).")
+            set_state(FAULT_ENTITY, "on", {"device_class": "problem",
+                      "friendly_name": "Kitchen mmWave Radar Fault"})
+            call_service("persistent_notification", "create", {
+                "title": "Kitchen mmWave radar fault",
+                "message": "The LD2420 radar stopped responding (firmware unreadable / UART dead). "
+                           "Power-cycle the sensor (unplug ~10s) -- a software reboot will not fix it.",
+                "notification_id": "kitchen_mmwave_uart_fault"})
+            call_service("notify", "mobile_app_cph2655", {
+                "message": "Kitchen mmWave radar fault -- power-cycle the sensor (unplug ~10s)."})
+        elif not dead and self.last_fault is not False:
+            self.last_fault = False
+            log.info(f"UART OK: LD2420 firmware readable ({fw}).")
+            set_state(FAULT_ENTITY, "off", {"device_class": "problem",
+                      "friendly_name": "Kitchen mmWave Radar Fault"})
+            call_service("persistent_notification", "dismiss",
+                         {"notification_id": "kitchen_mmwave_uart_fault"})
+
     async def run(self):
         """Main loop: connect, subscribe, auto-reconnect."""
         while self.running:
@@ -272,10 +311,15 @@ class ESPHomeBridge:
                 self.client.subscribe_states(self.on_state)
                 log.info("Subscribed to state updates. Bridge is live.")
                 log.info("Waiting for presence events...")
+                self._connected_at = time.time()
 
-                # Keep the connection alive
+                # Keep the connection alive + periodic UART health check
+                last_health = 0.0
                 while self.running:
                     await asyncio.sleep(1)
+                    if time.time() - last_health >= 30:
+                        last_health = time.time()
+                        self.check_uart_health()
 
             except Exception as e:
                 log.error(f"Connection error: {type(e).__name__}: {e}")

@@ -39,6 +39,13 @@
             "should_expose": false
           }
         }
+      },
+      "binary_sensor.kitchen_mmwave_radar_fault": {
+        "assistants": {
+          "conversation": {
+            "should_expose": false
+          }
+        }
       }
     }
   }
