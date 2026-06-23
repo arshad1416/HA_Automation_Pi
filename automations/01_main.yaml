@@ -1277,3 +1277,1137 @@
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.kitchen_occupied_motion
+- actions:
+  - if:
+    - condition: trigger
+      id: precool
+    then:
+    - action: climate.set_temperature
+      data:
+        hvac_mode: cool
+        temperature: 22.0
+      target:
+        entity_id: climate.ecobee
+  - if:
+    - condition: trigger
+      id: coast
+    then:
+    - action: climate.set_temperature
+      data:
+        temperature: 24.5
+      target:
+        entity_id: climate.ecobee
+  alias: Climate Peak Protection
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_summer_mode
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'on'
+  description: During summer mode, precool the house to 22.0C at 5am, then coast at 24.5C from 7am.
+  id: climate_ulo_precool
+  triggers:
+  - at: 05:00:00
+    id: precool
+    trigger: time
+  - at: 07:00:00
+    id: coast
+    trigger: time
+- actions:
+  - if:
+    - condition: trigger
+      id: peak_start
+    then:
+    - action: climate.set_temperature
+      data:
+        temperature: 25.5
+      target:
+        entity_id: climate.ecobee
+  - if:
+    - condition: trigger
+      id: peak_end
+    then:
+    - action: climate.set_temperature
+      data:
+        temperature: 22.0
+      target:
+        entity_id: climate.ecobee
+  alias: climate_peak_protect
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_summer_mode
+    state: 'on'
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'on'
+  - condition: time
+    weekday:
+    - mon
+    - tue
+    - wed
+    - thu
+    - fri
+  description: Summer weekdays raise to 25.5C at 4pm (on-peak), cool to 22C at 9pm.
+  id: climate_peak_protect
+  mode: single
+  triggers:
+  - at: '16:00:00'
+    id: peak_start
+    trigger: time
+  - at: '21:00:00'
+    id: peak_end
+    trigger: time
+- actions:
+  - variables:
+      izaan_speed: '{{ ([states(''sensor.izaans_room_temperature'') | float(23.5), states(''sensor.izaan_s_echo_dot_temperature'') | float(23.5)] | max - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}'
+      kitchen_speed: '{{ ((states(''sensor.downstairs_echo_dot_temperature'') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}'
+      master_speed: '{{ ((states(''sensor.upstairs_echo_dot_temperature'') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}'
+      mina_speed: '{{ ([states(''sensor.minas_room_temperature'') | float(23.5), states(''sensor.mina_s_echo_dot_temperature'') | float(23.5)] | max - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}'
+  - else:
+    - action: fan.turn_off
+      data: {}
+      target:
+        entity_id: fan.kitchen_ceiling_fan
+    if:
+    - above: 23.5
+      condition: numeric_state
+      entity_id: sensor.downstairs_echo_dot_temperature
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.kitchen_fan
+    - action: fan.set_percentage
+      data:
+        percentage: '{{ kitchen_speed }}'
+      target:
+        entity_id: fan.kitchen_ceiling_fan
+  - else:
+    - action: fan.turn_off
+      data: {}
+      target:
+        entity_id: fan.master_bedroom_ceiling_fan
+    if:
+    - condition: state
+      entity_id: person.home
+      state: home
+    - after: '21:00:00'
+      before: 07:00:00
+      condition: time
+    - above: 23.5
+      condition: numeric_state
+      entity_id: sensor.upstairs_echo_dot_temperature
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.master_bedroom_fan_light
+    - action: fan.set_percentage
+      data:
+        percentage: '{{ master_speed }}'
+      target:
+        entity_id: fan.master_bedroom_ceiling_fan
+  - else:
+    - action: fan.turn_off
+      data: {}
+      target:
+        entity_id: fan.mina_s_ceiling_fan
+    if:
+    - condition: or
+      conditions:
+      - above: 23.5
+        condition: numeric_state
+        entity_id: sensor.minas_room_temperature
+      - above: 23.5
+        condition: numeric_state
+        entity_id: sensor.mina_s_echo_dot_temperature
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.mina_s_light
+    - action: fan.set_percentage
+      data:
+        percentage: '{{ mina_speed }}'
+      target:
+        entity_id: fan.mina_s_ceiling_fan
+  - else:
+    - action: fan.turn_off
+      data: {}
+      target:
+        entity_id: fan.izaan_s_ceiling_fan
+    if:
+    - condition: or
+      conditions:
+      - above: 23.5
+        condition: numeric_state
+        entity_id: sensor.izaans_room_temperature
+      - above: 23.5
+        condition: numeric_state
+        entity_id: sensor.izaan_s_echo_dot_temperature
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.izaan_s_bedroom_light
+    - action: fan.set_percentage
+      data:
+        percentage: '{{ izaan_speed }}'
+      target:
+        entity_id: fan.izaan_s_ceiling_fan
+  - else:
+    - action: fan.turn_off
+      data: {}
+      target:
+        entity_id: fan.guest_room_ceiling_fan
+    if:
+    - condition: state
+      entity_id: switch.airbnb_reserved
+      state: 'on'
+    - above: 23.5
+      condition: numeric_state
+      entity_id: sensor.ecobee_current_temperature
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.guest_room_light
+    - action: fan.set_percentage
+      data:
+        percentage: '{{ kitchen_speed }}'
+      target:
+        entity_id: fan.guest_room_ceiling_fan
+  alias: ceiling_fan_boost
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_summer_mode
+    state: 'on'
+  - condition: not
+    conditions:
+    - attribute: hvac_action
+      condition: state
+      entity_id: climate.ecobee
+      state: cooling
+  description: Every 15 min in summer, if AC not cooling and rooms >23.5C, run ceiling fans. Uses Echo Dot temps for kitchen/master, max of SmartCocoon+Echo for Mina/Izaan rooms.
+  id: ceiling_fan_boost
+  mode: restart
+  triggers:
+  - minutes: /15
+    trigger: time_pattern
+- actions:
+  - action: climate.set_hvac_mode
+    data:
+      hvac_mode: heat
+    target:
+      entity_id: climate.ecobee
+  - action: climate.set_temperature
+    data:
+      temperature: 22.0
+    target:
+      entity_id: climate.ecobee
+  alias: Auto-switch to Heat when indoor drops to 21°C on cold days
+  conditions:
+  - attribute: temperature
+    below: 15.0
+    condition: numeric_state
+    entity_id: weather.forecast_home
+  - condition: template
+    value_template: '{{ state_attr(''climate.ecobee'', ''hvac_action'') != ''heating'' }}'
+  description: If outdoor temp < 15°C and indoor temp drops to 21°C, switch ecobee to Heat mode at 22°C
+  id: auto_heat_on_cold_day
+  mode: single
+  triggers:
+  - below: 21.0
+    entity_id: sensor.ecobee_current_temperature
+    trigger: numeric_state
+  - minutes: /15
+    trigger: time_pattern
+- actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: stairs_on
+      sequence:
+      - choose:
+        - conditions:
+          - after: '22:00:00'
+            before: 07:00:00
+            condition: time
+          sequence:
+          - action: light.turn_on
+            data:
+              brightness_pct: '{{ states(''input_number.stairs_late_night_brightness'') | int }}'
+            target:
+              entity_id:
+              - light.stair_light
+              - light.stair_light_2
+        - conditions:
+          - after: 07:00:00
+            before: '22:00:00'
+            condition: time
+          sequence:
+          - action: light.turn_on
+            data:
+              brightness_pct: '{{ states(''input_number.stairs_day_brightness'') | int }}'
+            target:
+              entity_id:
+              - light.stair_light
+              - light.stair_light_2
+        default:
+        - action: light.turn_on
+          data:
+            brightness_pct: 100
+          target:
+            entity_id:
+            - light.stair_light
+            - light.stair_light_2
+    - conditions:
+      - condition: trigger
+        id: stairs_off
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id:
+          - light.stair_light
+          - light.stair_light_2
+  alias: Stairs Light Auto On/Off
+  conditions: []
+  description: Turns stair lights on when echo stairs occupancy detected, off when cleared. Late-night mode uses dim brightness.
+  id: stairs_light_auto
+  mode: restart
+  triggers:
+  - entity_id: switch.stairs_occupancy
+    id: stairs_on
+    to: 'on'
+    trigger: state
+  - entity_id: switch.stairs_occupancy
+    id: stairs_off
+    to: 'off'
+    trigger: state
+- actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: kitchen_on
+      sequence:
+      - condition: state
+        entity_id: input_boolean.kitchen_auto_lights_disable
+        state: 'off'
+      - action: light.turn_on
+        data:
+          brightness_pct: 100
+        target:
+          entity_id:
+          - light.cabinet_light_strip_left_nanoleaf_light_strip
+          - light.cabinet_light_strip_center_nanoleaf_light_strip
+          - light.cabinet_light_strip_right_nanoleaf_light_strip
+          - light.nanoleaf_multicolor_ls
+          - light.nanoleaf_multicolor_ls_2
+          - light.kitchen_light
+          - light.kitchen_light_light_1
+    - conditions:
+      - condition: trigger
+        id: kitchen_off
+      sequence:
+      - action: light.turn_off
+        data: {}
+        target:
+          entity_id:
+          - light.cabinet_light_strip_left_nanoleaf_light_strip
+          - light.cabinet_light_strip_center_nanoleaf_light_strip
+          - light.cabinet_light_strip_right_nanoleaf_light_strip
+          - light.nanoleaf_multicolor_ls
+          - light.nanoleaf_multicolor_ls_2
+          - light.kitchen_light
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.kitchen_auto_lights_disable
+  alias: Downstairs Kitchen Auto On/Off (Echo + Manual Control)
+  conditions: []
+  description: Turns kitchen/cabinet lights on when echo kitchen occupancy detected, off when cleared. Manual override via input_boolean.kitchen_auto_lights_disable with 15-min cooldown.
+  id: downstairs_cabinet_auto
+  mode: restart
+  triggers:
+  - entity_id: switch.kitchen_occupancy
+    id: kitchen_on
+    to: 'on'
+    trigger: state
+  - entity_id: switch.kitchen_occupancy
+    id: kitchen_off
+    to: 'off'
+    trigger: state
+- actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.stairs_occupancy
+  alias: Stairs Presence Auto-Reset
+  conditions: []
+  description: Resets stairs_occupancy to off after 2 min — prevents sensor from getting stuck on.
+  id: stairs_presence_timeout
+  mode: single
+  triggers:
+  - entity_id: switch.stairs_occupancy
+    for:
+      minutes: 2
+    to: 'on'
+    trigger: state
+- actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.kitchen_occupancy
+  alias: Kitchen Presence Auto-Reset
+  conditions: []
+  description: Resets kitchen_occupancy to off after 5 min — prevents sensor from getting stuck on.
+  id: kitchen_presence_timeout
+  mode: single
+  triggers:
+  - entity_id: switch.kitchen_occupancy
+    for:
+      minutes: 5
+    to: 'on'
+    trigger: state
+- actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: switch_on
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_pct: 100
+        target:
+          entity_id: light.elements_b3cd_2
+      - action: switch.turn_on
+        target:
+          entity_id: switch.sonoff_10001d2a24
+    - conditions:
+      - condition: trigger
+        id: switch_off
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id: switch.sonoff_10001d2a24
+      - action: light.turn_on
+        data:
+          brightness_pct: 10
+        target:
+          entity_id: light.elements_b3cd_2
+      - delay:
+          seconds: 1
+      - action: adaptive_lighting.set_manual_control
+        data:
+          entity_id: switch.whole_house_adaptive_lighting_whole_house
+          lights:
+          - light.elements_b3cd_2
+          manual_control: false
+      - action: adaptive_lighting.apply
+        data:
+          entity_id: switch.whole_house_adaptive_lighting_whole_house
+          lights:
+          - light.elements_b3cd_2
+  alias: 'Master Bedroom: Supernova + Elements Override'
+  conditions: []
+  description: 'ON: sets Elements to 100% + Supernova ON. OFF: Supernova OFF, Elements 10% + re-enable adaptive lighting.'
+  id: turn_on_supernova_with_master_bedroom_light
+  mode: restart
+  triggers:
+  - entity_id: switch.master_bedroom_fan_light
+    id: switch_on
+    to: 'on'
+    trigger: state
+  - entity_id: switch.master_bedroom_fan_light
+    id: switch_off
+    to: 'off'
+    trigger: state
+- actions:
+  - variables:
+      device: '{{ trigger.to_state.attributes.friendly_name | default(trigger.entity_id) }}'
+  - action: notify.mobile_app_oneplus13_tailscale
+    data:
+      message: '{{ device }} reported a fault'
+      title: ⚠️ Device Fault
+  - action: notify.mobile_app_sm_s926w
+    data:
+      message: '{{ device }} reported a fault'
+      title: ⚠️ Device Fault
+  - action: notify.alexa_media
+    data:
+      data:
+        type: announce
+      message: 'Attention: {{ device }} is reporting a hardware fault. Please check it.'
+      target:
+      - media_player.downstairs_echo_dot
+      - media_player.upstairs_echo_dot
+      - media_player.ecobee
+  alias: Device Fault Alert
+  conditions: []
+  description: Notifies when any LocalTuya device reports a fault (blinds, cat feeder, etc.)
+  id: device_fault_alert
+  mode: single
+  triggers:
+  - entity_id:
+    - binary_sensor.cat_feeder_fault
+    - binary_sensor.dining_room_blinds_fault
+    - binary_sensor.mina_s_blinds_fault
+    - binary_sensor.family_room_blinds_fault
+    - binary_sensor.living_room_blinds_fault
+    to: 'on'
+    trigger: state
+- actions:
+  - choose:
+    - conditions:
+      - after: sunset
+        condition: sun
+      - after: 02:00:00
+        before: 06:00:00
+        condition: time
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_pct: 10
+        target:
+          entity_id:
+          - light.lamppost_bulb_1
+          - light.lamppost_bulb_2
+          - light.lamppost_bulb_3
+          - light.front_porch_downlight
+          - light.garage_left_downlight
+          - light.garage_right_downlight
+    - conditions:
+      - after: sunset
+        condition: sun
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_pct: 90
+        target:
+          entity_id:
+          - light.lamppost_bulb_1
+          - light.lamppost_bulb_2
+          - light.lamppost_bulb_3
+          - light.front_porch_downlight
+          - light.garage_left_downlight
+          - light.garage_right_downlight
+    default:
+    - action: light.turn_off
+      target:
+        entity_id:
+        - light.lamppost_bulb_1
+        - light.lamppost_bulb_2
+        - light.lamppost_bulb_3
+        - light.front_porch_downlight
+        - light.garage_left_downlight
+        - light.garage_right_downlight
+  alias: Restore Govee outdoor lights after HA restart
+  conditions: []
+  description: Govee lights lose state on restart. Restore based on time of day.
+  id: govee_restore_after_restart
+  mode: single
+  triggers:
+  - event: start
+    trigger: homeassistant
+- id: sunset_lights_on_blinds_closed
+  alias: 'Sunset: Lights On, Blinds Closed'
+  description: Close all blinds, turn on outdoor and indoor lights at sunset
+  triggers:
+  - event: sunset
+    offset: 0
+    trigger: sun
+  conditions: []
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.adaptive_lighting_whole_house_adaptive_lighting_adapt_brightness_whole_house
+  - action: cover.set_cover_position
+    data:
+      position: 0
+    target:
+      entity_id:
+      - cover.living_room_blinds_curtain
+      - cover.dining_room_blinds_curtain
+      - cover.family_room_blinds_curtain
+      - cover.mina_s_blinds_curtain
+  - action: switch.turn_on
+    data: {}
+    target:
+      entity_id:
+      - switch.back_hallway_light_main_switch
+      - switch.foyer_light_switch_1
+      - switch.kitchen_pantry_light
+      - switch.izaan_s_lamp
+      - switch.house_address
+      - switch.mina_s_lamp_switch
+  - action: light.turn_on
+    data:
+      brightness_pct: 90
+    target:
+      entity_id:
+      - light.lamppost_bulb_1
+      - light.lamppost_bulb_2
+      - light.lamppost_bulb_3
+      - light.front_porch_downlight
+      - light.garage_right_downlight
+      - light.garage_left_downlight
+      - light.elements_b3cd_2
+      - light.izaan_s_lamp
+  - action: light.turn_on
+    data: {}
+    target:
+      entity_id:
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+  - action: adaptive_lighting.set_manual_control
+    data:
+      entity_id: switch.whole_house_adaptive_lighting_whole_house
+      manual_control: false
+  mode: single
+- actions:
+  - else:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.back_hallway_light_switch_1
+    if:
+    - condition: state
+      entity_id: switch.back_hallway_light_main_switch
+      state: 'on'
+    then:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.back_hallway_light_switch_1
+  alias: Back Hallway Light 3-Way Sync
+  conditions:
+  - condition: template
+    value_template: '{{ states(''switch.back_hallway_light_main_switch'') in [''on'', ''off''] }}'
+  description: Sync the secondary 3-way switch with the primary back hallway switch
+  id: back_hallway_3way_sync
+  mode: single
+  triggers:
+  - entity_id: switch.back_hallway_light_main_switch
+    trigger: state
+- id: security_watchdog_nighttime
+  alias: Security Watchdog - Night-time Blind & Light Guard
+  trigger:
+  - platform: state
+    entity_id:
+    - cover.dining_room_blinds
+    - cover.dining_room_blinds_curtain
+    - cover.dining_room_blinds_curtain_2
+    - cover.family_room_blinds
+    - cover.family_room_blinds_curtain
+    - cover.family_room_blinds_curtain_2
+    - cover.living_room_blinds_curtain
+    - cover.living_room_blinds_curtain_2
+    - cover.mina_s_blinds_curtain
+    - cover.mina_s_blinds_curtain_2
+    - light.front_porch_downlight
+    - light.back_yard_lamp_socket
+    to: 'on'
+  condition:
+  - condition: time
+    after: 00:00:00
+  - condition: sun
+    before: sunrise
+  action:
+  - service: system_log.write
+    data:
+      logger: security_watchdog
+      message: 'NIGHT GUARD: {{ trigger.entity_id }} to {{ trigger.to_state.state }} at {{ now() }}'
+  - service: cover.close_cover
+    target:
+      entity_id: '{{ trigger.entity_id }}'
+- id: audit_cover_commands
+  alias: Audit Log - All Cover Service Calls
+  mode: parallel
+  trigger:
+  - platform: event
+    event_type: call_service
+    event_data:
+      domain: cover
+  action:
+  - service: system_log.write
+    data:
+      logger: audit_cover
+      message: 'COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default(''none'') }} at {{ now() }}'
+- id: '1777445260568'
+  alias: Lock Front and Garage Doors at 9PM
+  description: ''
+  triggers:
+  - trigger: time
+    at: '21:00:00'
+  conditions:
+  - type: is_not_open
+    condition: device
+    device_id: 80f08d6bab982a67302cf6d6d155ee8f
+    entity_id: ddf1c5b529ed3a2cdb8593fbc427fcc7
+    domain: binary_sensor
+  - condition: device
+    device_id: 80f08d6bab982a67302cf6d6d155ee8f
+    domain: lock
+    entity_id: 317f8e7576751b55afff3ad27adb32c6
+    type: is_unlocked
+  - type: is_not_open
+    condition: device
+    device_id: 900fe2e9075cf966faa4b915df82d83c
+    entity_id: b4458963b6e4753ca30fd9ce50de9345
+    domain: binary_sensor
+  - condition: device
+    device_id: 900fe2e9075cf966faa4b915df82d83c
+    domain: lock
+    entity_id: 81eb6accd0e118d83a821bfef6f684db
+    type: is_unlocked
+  actions:
+  - device_id: 80f08d6bab982a67302cf6d6d155ee8f
+    domain: lock
+    entity_id: 317f8e7576751b55afff3ad27adb32c6
+    type: lock
+  - device_id: 900fe2e9075cf966faa4b915df82d83c
+    domain: lock
+    entity_id: 81eb6accd0e118d83a821bfef6f684db
+    type: lock
+  mode: single
+- id: smartthings_nightly_token_refresh
+  alias: Nightly SmartThings Token Refresh
+  description: Reloads the SmartThings integration daily at 3 AM to force an OAuth token refresh before the token expires.
+  mode: single
+  triggers:
+  - trigger: time
+    at: 03:00:00
+  actions:
+  - action: homeassistant.reload_config_entry
+    data:
+      entry_id: 01KQE0MPFNX2G9DQYR1H77867V
+- id: smart_vent_fan_control
+  alias: Smart Vent Fan Control
+  description: Unified vent fan control for Izaan and Mina. Heating + room < 21C -> fan ON. Cooling + room > 23C -> fan OFF. Idle or temp in range -> fan OFF. Re-evaluates every 10 min.
+  mode: restart
+  triggers:
+  - trigger: state
+    entity_id: climate.ecobee
+    attribute: hvac_action
+    id: hvac_change
+  - trigger: time_pattern
+    minutes: /10
+    id: periodic
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: climate.ecobee
+        attribute: hvac_action
+        state: heating
+      - condition: template
+        value_template: |
+          {{ states('sensor.izaans_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}
+      sequence:
+      - type: turn_on
+        device_id: 25dad770b527d5c6d6baf47584abe766
+        entity_id: e519bde78b1134019fb0c4d4564b39d1
+        domain: fan
+    - conditions:
+      - condition: state
+        entity_id: climate.ecobee
+        attribute: hvac_action
+        state: cooling
+      - condition: template
+        value_template: |
+          {{ states('sensor.izaans_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}
+      sequence:
+      - type: turn_on
+        device_id: 25dad770b527d5c6d6baf47584abe766
+        entity_id: e519bde78b1134019fb0c4d4564b39d1
+        domain: fan
+    default:
+    - type: turn_off
+      device_id: 25dad770b527d5c6d6baf47584abe766
+      entity_id: e519bde78b1134019fb0c4d4564b39d1
+      domain: fan
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: climate.ecobee
+        attribute: hvac_action
+        state: heating
+      - condition: template
+        value_template: |
+          {{ states('sensor.minas_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}
+      sequence:
+      - type: turn_on
+        device_id: 1b59edc4ace13071d3afa094610548cd
+        entity_id: 180cc60c0138a13c41bab968f6b33054
+        domain: fan
+    - conditions:
+      - condition: state
+        entity_id: climate.ecobee
+        attribute: hvac_action
+        state: cooling
+      - condition: template
+        value_template: |
+          {{ states('sensor.minas_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}
+      sequence:
+      - type: turn_on
+        device_id: 1b59edc4ace13071d3afa094610548cd
+        entity_id: 180cc60c0138a13c41bab968f6b33054
+        domain: fan
+    default:
+    - type: turn_off
+      device_id: 1b59edc4ace13071d3afa094610548cd
+      entity_id: 180cc60c0138a13c41bab968f6b33054
+      domain: fan
+- id: blinds_solar_shutter
+  alias: blinds_solar_shutter
+  description: Open all blinds at sunrise. In summer, close sun-facing blinds during direct-sun hours to block solar gain — only when sunny (cloud <60%, no rain). Reopen after sun passes window.
+  mode: single
+  triggers:
+  - trigger: sun
+    event: sunrise
+    id: sunrise
+  - trigger: time
+    at: '12:00:00'
+    id: dining_solar_close
+  - trigger: time
+    at: '16:00:00'
+    id: nw_solar_close
+  - trigger: time
+    at: '18:00:00'
+    id: dining_solar_open
+  - trigger: time
+    at: '20:00:00'
+    id: nw_solar_open
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'on'
+  actions:
+  - if:
+    - condition: trigger
+      id: sunrise
+    then:
+    - action: cover.set_cover_position
+      data:
+        position: 100
+      target:
+        entity_id:
+        - cover.living_room_blinds_curtain
+        - cover.dining_room_blinds
+        - cover.dining_room_blinds_curtain
+        - cover.family_room_blinds
+        - cover.family_room_blinds_curtain
+        - cover.mina_s_blinds_curtain
+  - if:
+    - condition: trigger
+      id: dining_solar_close
+    - condition: state
+      entity_id: input_boolean.climate_summer_mode
+      state: 'on'
+    - condition: template
+      value_template: '{{ state_attr(''weather.forecast_home'', ''cloud_coverage'') | float(100) < 60 }}'
+    - condition: template
+      value_template: '{{ states(''weather.forecast_home'') not in [''rainy'', ''pouring''] }}'
+    then:
+    - action: cover.close_cover
+      target:
+        entity_id:
+        - cover.dining_room_blinds_curtain
+  - if:
+    - condition: trigger
+      id: nw_solar_close
+    - condition: state
+      entity_id: input_boolean.climate_summer_mode
+      state: 'on'
+    - condition: template
+      value_template: '{{ state_attr(''weather.forecast_home'', ''cloud_coverage'') | float(100) < 60 }}'
+    - condition: template
+      value_template: '{{ states(''weather.forecast_home'') not in [''rainy'', ''pouring''] }}'
+    then:
+    - action: cover.close_cover
+      target:
+        entity_id:
+        - cover.family_room_blinds_curtain
+        - cover.mina_s_blinds_curtain
+  - if:
+    - condition: trigger
+      id: dining_solar_open
+    - condition: state
+      entity_id: input_boolean.climate_summer_mode
+      state: 'on'
+    then:
+    - action: cover.set_cover_position
+      data:
+        position: 100
+      target:
+        entity_id:
+        - cover.dining_room_blinds
+        - cover.dining_room_blinds_curtain
+  - if:
+    - condition: trigger
+      id: nw_solar_open
+    - condition: state
+      entity_id: input_boolean.climate_summer_mode
+      state: 'on'
+    then:
+    - action: cover.set_cover_position
+      data:
+        position: 100
+      target:
+        entity_id:
+        - cover.family_room_blinds
+        - cover.family_room_blinds_curtain
+        - cover.mina_s_blinds_curtain
+- id: blinds_sunset_close
+  alias: When the sun is setting...
+  description: Close all blinds at sunset with Bond RF/Tuya Cloud retry and turn on the lights
+  triggers:
+  - trigger: sun
+    event: sunset
+    offset: 0
+  conditions: []
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id:
+      - switch.back_hallway_light_main_switch
+      - switch.foyer_light
+      - switch.izaan_s_lamp
+      - switch.mina_s_lamp
+      - switch.house_address
+      - switch.kitchen_pantry_light
+      - switch.sonoff_10001dccdc
+      - switch.kitchen_pantry_light_socket_1
+    data: {}
+  - action: light.turn_on
+    target:
+      entity_id:
+      - light.izaan_s_lamp
+      - light.stair_light_2
+    data: {}
+  - action: light.turn_on
+    target:
+      entity_id:
+      - light.elements_b3cd_2
+    data:
+      brightness_pct: 12
+  - action: light.turn_on
+    target:
+      entity_id:
+      - light.lamppost_bulb_1
+      - light.lamppost_bulb_2
+      - light.lamppost_bulb_3
+      - light.front_porch_downlight
+      - light.garage_left_downlight
+      - light.garage_right_downlight
+    data:
+      brightness_pct: 90
+  - action: cover.set_cover_position
+    data:
+      position: 0
+    target:
+      entity_id:
+      - cover.living_room_blinds_curtain
+      - cover.dining_room_blinds_curtain
+      - cover.family_room_blinds_curtain
+      - cover.mina_s_blinds_curtain
+  - delay:
+      seconds: 30
+  - if:
+    - condition: state
+      entity_id: cover.living_room_blinds_curtain_2
+      state: open
+      for:
+        seconds: 5
+    then:
+    - action: cover.set_cover_position
+      data:
+        position: 0
+      target:
+        entity_id: cover.living_room_blinds_curtain_2
+  - if:
+    - condition: state
+      entity_id: cover.dining_room_blinds_curtain_2
+      state: open
+      for:
+        seconds: 5
+    then:
+    - action: cover.set_cover_position
+      data:
+        position: 0
+      target:
+        entity_id: cover.dining_room_blinds
+  - if:
+    - condition: state
+      entity_id: cover.family_room_blinds_curtain_2
+      state: open
+      for:
+        seconds: 5
+    then:
+    - action: cover.set_cover_position
+      data:
+        position: 0
+      target:
+        entity_id: cover.family_room_blinds
+  - if:
+    - condition: state
+      entity_id: cover.mina_s_blinds_curtain_2
+      state: open
+      for:
+        seconds: 5
+    then:
+    - action: cover.set_cover_position
+      data:
+        position: 0
+      target:
+        entity_id: cover.mina_s_blinds_curtain_2
+  mode: single
+- id: climate_season_switch
+  alias: climate_season_switch
+  description: Daily 3am check 7-day mean outdoor temp. 3-day hysteresis with counter tracking.
+  mode: single
+  triggers:
+  - trigger: time
+    at: 03:00:00
+  conditions: []
+  actions:
+  - if:
+    - condition: numeric_state
+      entity_id: sensor.outdoor_temp_7_day_mean_2
+      above: 15
+    then:
+    - action: counter.increment
+      target:
+        entity_id: counter.season_switch_summer
+    - action: counter.reset
+      target:
+        entity_id: counter.season_switch_winter
+    else:
+    - if:
+      - condition: numeric_state
+        entity_id: sensor.outdoor_temp_7_day_mean_2
+        below: 10
+      then:
+      - action: counter.increment
+        target:
+          entity_id: counter.season_switch_winter
+      - action: counter.reset
+        target:
+          entity_id: counter.season_switch_summer
+      else:
+      - action: counter.reset
+        target:
+          entity_id: counter.season_switch_summer
+      - action: counter.reset
+        target:
+          entity_id: counter.season_switch_winter
+  - if:
+    - condition: numeric_state
+      entity_id: counter.season_switch_summer
+      above: 2
+    then:
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.climate_summer_mode
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.climate_winter_mode
+    - action: counter.reset
+      target:
+        entity_id: counter.season_switch_summer
+    - action: counter.reset
+      target:
+        entity_id: counter.season_switch_winter
+  - if:
+    - condition: numeric_state
+      entity_id: counter.season_switch_winter
+      above: 2
+    then:
+    - action: input_boolean.turn_on
+      target:
+        entity_id: input_boolean.climate_winter_mode
+    - action: input_boolean.turn_off
+      target:
+        entity_id: input_boolean.climate_summer_mode
+    - action: counter.reset
+      target:
+        entity_id: counter.season_switch_summer
+    - action: counter.reset
+      target:
+        entity_id: counter.season_switch_winter
+- id: bedtime_routine_auto
+  alias: Bed Time Light Routine
+  description: |
+    Locks doors, shuts garage, turns off inside lights when asleep. Only fires after 21:00 to prevent daytime nap false triggers. 22:00 catch-up trigger handles early bedtimes. TV playing bypasses the sleep-confidence triggers but catch-up at 22:00 always fires regardless of TV state.
+  triggers:
+  - entity_id: sensor.oneplus_13_sleep_confidence
+    above: 80
+    for:
+      minutes: 10
+    trigger: numeric_state
+    id: sleep_detected
+  - entity_id: sensor.oneplus13_sleep_confidence
+    above: 80
+    for:
+      minutes: 10
+    trigger: numeric_state
+    id: sleep_detected
+  - entity_id: calendar.sleep_as_android
+    to: 'on'
+    trigger: state
+    id: sleep_detected
+  - trigger: time
+    at: '22:00:00'
+    id: catch_up
+  conditions:
+  - condition: time
+    after: '21:00:00'
+  - condition: template
+    value_template: '{{ states(''media_player.lg_webos_tv_un8500auj'') not in [''playing'', ''on''] }}'
+  actions:
+  - action: lock.lock
+    target:
+      entity_id:
+      - lock.front_door
+      - lock.garages_entry_door
+      - lock.front_door_2
+      - lock.garage_entry
+  - action: cover.close_cover
+    target:
+      entity_id:
+      - cover.larissa_s_garage_door
+      - cover.larissa_s_garage_door_door
+  - delay:
+      seconds: 10
+  - action: light.turn_off
+    target:
+      entity_id:
+      - light.kitchen_light_light
+      - light.island_light_light
+      - light.stair_light
+      - light.stair_light_2
+      - light.family_room_light
+      - light.basement_tv
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+      - light.master_bedroom_closet_light
+    data: {}
+  - action: switch.turn_off
+    target:
+      entity_id:
+      - switch.kitchen_pantry_light
+      - switch.laundry_room_light
+      - switch.living_room_floor_lamp
+      - switch.dining_room_table_lights
+      - switch.foyer_light
+      - switch.sonoff_10001dccdc
+      - switch.kitchen_pantry_light_socket_1
+      - switch.basement_lights
+      - switch.basement_stair_light
+      - switch.garage_light_switch
+      - switch.master_bedroom_fan_light
+      - switch.back_hallway_light_main_switch
+    data: {}
+  - action: notify.mobile_app_pixel_8_pro
+    data:
+      message: |
+        Bedtime routine ran (trigger: {{ trigger.id }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.
+  mode: single

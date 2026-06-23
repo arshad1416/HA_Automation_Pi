@@ -8,6 +8,107 @@
         "config_num": 13,
         "accessories": [
           {
+            "aid": 1,
+            "services": [
+              {
+                "iid": 1,
+                "type": "0000003E-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000014-0000-1000-8000-0026BB765291",
+                    "iid": 85899345921,
+                    "perms": [
+                      "pw"
+                    ],
+                    "format": "bool",
+                    "description": "Identify"
+                  },
+                  {
+                    "type": "00000020-0000-1000-8000-0026BB765291",
+                    "iid": 137438953473,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Lutron Electronics Co., Inc",
+                    "description": "Manufacturer",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000021-0000-1000-8000-0026BB765291",
+                    "iid": 141733920769,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Smart Bridge 2",
+                    "description": "Model",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 150323855361,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Smart Bridge 2",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000030-0000-1000-8000-0026BB765291",
+                    "iid": 206158430209,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "67F6F6F",
+                    "description": "Serial Number",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000052-0000-1000-8000-0026BB765291",
+                    "iid": 352187318273,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "8.25.0",
+                    "description": "Firmware Revision",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000220-0000-1000-8000-0026BB765291",
+                    "iid": 2336462209025,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "data",
+                    "value": "VpNSpr7nyNA="
+                  }
+                ]
+              },
+              {
+                "iid": 2,
+                "type": "000000A2-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000037-0000-1000-8000-0026BB765291",
+                    "iid": 236223201282,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "1.1.0",
+                    "description": "Version",
+                    "maxLen": 64
+                  }
+                ]
+              }
+            ]
+          },
+          {
             "aid": 21474836482,
             "services": [
               {
@@ -230,107 +331,6 @@
                 ]
               }
             ]
-          },
-          {
-            "aid": 1,
-            "services": [
-              {
-                "iid": 1,
-                "type": "0000003E-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000014-0000-1000-8000-0026BB765291",
-                    "iid": 85899345921,
-                    "perms": [
-                      "pw"
-                    ],
-                    "format": "bool",
-                    "description": "Identify"
-                  },
-                  {
-                    "type": "00000020-0000-1000-8000-0026BB765291",
-                    "iid": 137438953473,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Lutron Electronics Co., Inc",
-                    "description": "Manufacturer",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000021-0000-1000-8000-0026BB765291",
-                    "iid": 141733920769,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Smart Bridge 2",
-                    "description": "Model",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000023-0000-1000-8000-0026BB765291",
-                    "iid": 150323855361,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Smart Bridge 2",
-                    "description": "Name",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000030-0000-1000-8000-0026BB765291",
-                    "iid": 206158430209,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "67F6F6F",
-                    "description": "Serial Number",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000052-0000-1000-8000-0026BB765291",
-                    "iid": 352187318273,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "8.25.0",
-                    "description": "Firmware Revision",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000220-0000-1000-8000-0026BB765291",
-                    "iid": 2336462209025,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "data",
-                    "value": "VpNSpr7nyNA="
-                  }
-                ]
-              },
-              {
-                "iid": 2,
-                "type": "000000A2-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000037-0000-1000-8000-0026BB765291",
-                    "iid": 236223201282,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "1.1.0",
-                    "description": "Version",
-                    "maxLen": 64
-                  }
-                ]
-              }
-            ]
           }
         ],
         "broadcast_key": null,
@@ -513,7 +513,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 21.5,
+                    "value": 21.6,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -879,7 +879,7 @@
                       "ev"
                     ],
                     "format": "bool",
-                    "value": true,
+                    "value": false,
                     "description": "Motion Detected"
                   },
                   {
@@ -890,7 +890,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 280,
+                    "value": 711,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -935,7 +935,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 378,
+                    "value": 809,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1759,7 +1759,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 4067,
+                    "value": 4498,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1825,7 +1825,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 4067,
+                    "value": 4498,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2086,7 +2086,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 37315,
+                    "value": 37746,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2152,7 +2152,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 37315,
+                    "value": 37746,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2413,7 +2413,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 66589,
+                    "value": 67020,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2479,7 +2479,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 66589,
+                    "value": 67020,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2917,7 +2917,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 24
+                    "value": 25
                   }
                 ]
               }

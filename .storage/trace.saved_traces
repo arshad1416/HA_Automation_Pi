@@ -7,12 +7,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/choose/3/sequence/0/else/1",
-          "run_id": "de7d1b3ee7c53836915b2b75945d6de3",
+          "run_id": "b07638568adf20b3a570cc28c13a0d8f",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T04:46:25.757117+00:00",
-            "finish": "2026-06-23T04:46:25.975606+00:00"
+            "start": "2026-06-23T12:10:35.808252+00:00",
+            "finish": "2026-06-23T12:10:35.939133+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
@@ -21,24 +21,24 @@
             "trigger/6": [
               {
                 "path": "trigger/6",
-                "timestamp": "2026-06-23T04:46:25.757166+00:00",
+                "timestamp": "2026-06-23T12:10:35.808299+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.downstairs_occupancy_lighting",
                     "state": "on",
                     "attributes": {
                       "id": "downstairs_occupancy_lighting",
-                      "last_triggered": "2026-06-23T04:44:56.766815+00:00",
+                      "last_triggered": "2026-06-23T04:47:43.402655+00:00",
                       "mode": "queued",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Downstairs Occupancy Lighting"
                     },
-                    "last_changed": "2026-06-23T04:45:58.723608+00:00",
-                    "last_reported": "2026-06-23T04:45:58.723608+00:00",
-                    "last_updated": "2026-06-23T04:45:58.723608+00:00",
+                    "last_changed": "2026-06-23T12:10:06.825662+00:00",
+                    "last_reported": "2026-06-23T12:10:06.825662+00:00",
+                    "last_updated": "2026-06-23T12:10:06.825662+00:00",
                     "context": {
-                      "id": "01KVSCS9J3QSFPF4V2150CT14T",
+                      "id": "01KVT66H39PBPV4HR4EDNS054J",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -57,10 +57,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T04:46:25.757472+00:00",
+                "timestamp": "2026-06-23T12:10:35.808563+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVSCT3YXNS1C75H0VK165Y9D",
+                    "id": "01KVT67DD0HYZ8HX8QXR4TYR6G",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -73,7 +73,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-06-23T04:46:25.758443+00:00",
+                "timestamp": "2026-06-23T12:10:35.808909+00:00",
                 "result": {
                   "result": false
                 }
@@ -82,7 +82,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-06-23T04:46:25.758493+00:00",
+                "timestamp": "2026-06-23T12:10:35.808948+00:00",
                 "result": {
                   "result": false
                 }
@@ -91,7 +91,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-06-23T04:46:25.758548+00:00",
+                "timestamp": "2026-06-23T12:10:35.808999+00:00",
                 "result": {
                   "result": false
                 }
@@ -100,7 +100,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-06-23T04:46:25.758568+00:00",
+                "timestamp": "2026-06-23T12:10:35.809020+00:00",
                 "result": {
                   "result": false
                 }
@@ -109,7 +109,7 @@
             "action/0/choose/2": [
               {
                 "path": "action/0/choose/2",
-                "timestamp": "2026-06-23T04:46:25.758601+00:00",
+                "timestamp": "2026-06-23T12:10:35.809052+00:00",
                 "result": {
                   "result": false
                 }
@@ -118,7 +118,7 @@
             "action/0/choose/2/conditions/0": [
               {
                 "path": "action/0/choose/2/conditions/0",
-                "timestamp": "2026-06-23T04:46:25.758618+00:00",
+                "timestamp": "2026-06-23T12:10:35.809069+00:00",
                 "result": {
                   "result": false
                 }
@@ -127,7 +127,7 @@
             "action/0/choose/3": [
               {
                 "path": "action/0/choose/3",
-                "timestamp": "2026-06-23T04:46:25.758647+00:00",
+                "timestamp": "2026-06-23T12:10:35.809096+00:00",
                 "result": {
                   "result": true
                 }
@@ -136,7 +136,7 @@
             "action/0/choose/3/conditions/0": [
               {
                 "path": "action/0/choose/3/conditions/0",
-                "timestamp": "2026-06-23T04:46:25.758664+00:00",
+                "timestamp": "2026-06-23T12:10:35.809112+00:00",
                 "result": {
                   "result": true
                 }
@@ -145,7 +145,7 @@
             "action/0/choose/3/sequence/0": [
               {
                 "path": "action/0/choose/3/sequence/0",
-                "timestamp": "2026-06-23T04:46:25.758795+00:00",
+                "timestamp": "2026-06-23T12:10:35.809215+00:00",
                 "result": {
                   "choice": "else"
                 }
@@ -154,7 +154,7 @@
             "action/0/choose/3/sequence/0/if": [
               {
                 "path": "action/0/choose/3/sequence/0/if",
-                "timestamp": "2026-06-23T04:46:25.758896+00:00",
+                "timestamp": "2026-06-23T12:10:35.809312+00:00",
                 "result": {
                   "result": false
                 }
@@ -163,7 +163,7 @@
             "action/0/choose/3/sequence/0/if/condition/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0",
-                "timestamp": "2026-06-23T04:46:25.758919+00:00",
+                "timestamp": "2026-06-23T12:10:35.809334+00:00",
                 "result": {
                   "result": false
                 }
@@ -172,7 +172,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0",
-                "timestamp": "2026-06-23T04:46:25.758938+00:00",
+                "timestamp": "2026-06-23T12:10:35.809353+00:00",
                 "result": {
                   "result": false
                 }
@@ -181,7 +181,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/0/entity_id/0",
-                "timestamp": "2026-06-23T04:46:25.758956+00:00",
+                "timestamp": "2026-06-23T12:10:35.809371+00:00",
                 "result": {
                   "result": false,
                   "state": "off",
@@ -192,7 +192,7 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1",
-                "timestamp": "2026-06-23T04:46:25.758992+00:00",
+                "timestamp": "2026-06-23T12:10:35.809408+00:00",
                 "result": {
                   "result": false
                 }
@@ -201,10 +201,10 @@
             "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0": [
               {
                 "path": "action/0/choose/3/sequence/0/if/condition/0/conditions/1/entity_id/0",
-                "timestamp": "2026-06-23T04:46:25.759008+00:00",
+                "timestamp": "2026-06-23T12:10:35.809424+00:00",
                 "result": {
                   "result": false,
-                  "state": "unavailable",
+                  "state": "unknown",
                   "wanted_state": "on"
                 }
               }
@@ -212,7 +212,7 @@
             "action/0/choose/3/sequence/0/else/0": [
               {
                 "path": "action/0/choose/3/sequence/0/else/0",
-                "timestamp": "2026-06-23T04:46:25.759129+00:00",
+                "timestamp": "2026-06-23T12:10:35.809513+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -238,7 +238,7 @@
             "action/0/choose/3/sequence/0/else/1": [
               {
                 "path": "action/0/choose/3/sequence/0/else/1",
-                "timestamp": "2026-06-23T04:46:25.974769+00:00",
+                "timestamp": "2026-06-23T12:10:35.937530+00:00",
                 "result": {
                   "params": {
                     "domain": "switch",
@@ -750,19 +750,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVSCT3YXNS1C75H0VK165Y9D",
+            "id": "01KVT67DD0HYZ8HX8QXR4TYR6G",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/choose/3/sequence/0/else/1",
-          "run_id": "de7d1b3ee7c53836915b2b75945d6de3",
+          "run_id": "b07638568adf20b3a570cc28c13a0d8f",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T04:46:25.757117+00:00",
-            "finish": "2026-06-23T04:46:25.975606+00:00"
+            "start": "2026-06-23T12:10:35.808252+00:00",
+            "finish": "2026-06-23T12:10:35.939133+00:00"
           },
           "domain": "automation",
           "item_id": "downstairs_occupancy_lighting",
@@ -774,12 +774,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "c48acafc591261e4694a183cc20889e2",
+          "run_id": "d98a9f310e6a0df24749900cb9cd497b",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T04:46:25.760009+00:00",
-            "finish": "2026-06-23T04:46:25.785937+00:00"
+            "start": "2026-06-23T12:10:35.810376+00:00",
+            "finish": "2026-06-23T12:10:35.855521+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -788,23 +788,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-06-23T04:46:25.760042+00:00",
+                "timestamp": "2026-06-23T12:10:35.810405+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-06-23T04:44:56.769809+00:00",
+                      "last_triggered": "2026-06-23T04:47:43.404807+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-06-23T04:45:58.723711+00:00",
-                    "last_reported": "2026-06-23T04:45:58.723711+00:00",
-                    "last_updated": "2026-06-23T04:45:58.723711+00:00",
+                    "last_changed": "2026-06-23T12:10:06.825770+00:00",
+                    "last_reported": "2026-06-23T12:10:06.825770+00:00",
+                    "last_updated": "2026-06-23T12:10:06.825770+00:00",
                     "context": {
-                      "id": "01KVSCS9J3JAAVT842QK2BDPW9",
+                      "id": "01KVT66H390MHE9FN41X09B7WC",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -823,10 +823,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-06-23T04:46:25.760196+00:00",
+                "timestamp": "2026-06-23T12:10:35.810552+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KVSCT3YZP0ZJZM1XZW3BCXCT",
+                    "id": "01KVT67DD2752S9CP2KJYBF600",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -861,19 +861,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KVSCT3YZP0ZJZM1XZW3BCXCT",
+            "id": "01KVT67DD2752S9CP2KJYBF600",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "c48acafc591261e4694a183cc20889e2",
+          "run_id": "d98a9f310e6a0df24749900cb9cd497b",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-06-23T04:46:25.760009+00:00",
-            "finish": "2026-06-23T04:46:25.785937+00:00"
+            "start": "2026-06-23T12:10:35.810376+00:00",
+            "finish": "2026-06-23T12:10:35.855521+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
