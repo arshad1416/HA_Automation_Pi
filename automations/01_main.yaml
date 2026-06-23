@@ -1294,10 +1294,10 @@
     trigger: time
 - actions:
   - variables:
-      izaan_speed: '{{ ([states(''sensor.izaans_room_temperature'') | float(23.5), states(''sensor.izaan_s_echo_dot_temperature'') | float(23.5)] | max) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}'
+      izaan_speed: '{{ (([states(''sensor.izaans_room_temperature'') | float(23.5), states(''sensor.izaan_s_echo_dot_temperature'') | float(23.5)] | max) - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}'
       kitchen_speed: '{{ ((states(''sensor.downstairs_echo_dot_temperature'') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}'
       master_speed: '{{ ((states(''sensor.upstairs_echo_dot_temperature'') | float(23.5) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}'
-      mina_speed: '{{ ([states(''sensor.minas_room_temperature'') | float(23.5), states(''sensor.mina_s_echo_dot_temperature'') | float(23.5)] | max) - 23.5) / 2 * 100) | round(0) | min(100) | max(0) }}'
+      mina_speed: '{{ (([states(''sensor.minas_room_temperature'') | float(23.5), states(''sensor.mina_s_echo_dot_temperature'') | float(23.5)] | max) - 23.5) / 2 * 100 | round(0) | min(100) | max(0) }}'
   - else:
     - action: fan.turn_off
       data: {}
