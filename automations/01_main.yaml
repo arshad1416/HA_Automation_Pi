@@ -780,7 +780,7 @@
         - { room: izaan, fan: fan.izaan_s_ceiling_fan, sw: switch.izaan_s_bedroom_light_switch_1, occ: binary_sensor.izaans_room_occupancy }
       sequence:
         - variables:
-            spd: "{{ ai_json.fans[repeat.item.room] | default('no_change') }}"
+            spd: "{{ ai_json.get('fans', {}).get(repeat.item.room, 'no_change') if ai_json is mapping else 'no_change' }}"
             pct: "{{ {'1':33,'2':66,'3':100}.get(spd | string, 0) }}"
         - choose:
             - conditions: "{{ spd not in [none, 'no_change'] and (spd | string) != 'off' }}"
