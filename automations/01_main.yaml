@@ -3306,3 +3306,37 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
+- id: climate_safety_backstop
+  alias: Climate Safety Backstop (overheat/freeze)
+  description: Hardcoded backstop if the AI is unreachable or stale. Forces cool above 27C, heat below 16C.
+  mode: single
+  triggers:
+  - trigger: numeric_state
+    entity_id: sensor.ecobee_current_temperature
+    above: 27
+  - trigger: numeric_state
+    entity_id: sensor.ecobee_current_temperature
+    below: 16
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.ecobee_current_temperature
+        above: 27
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.ecobee
+        data:
+          hvac_mode: cool
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.ecobee_current_temperature
+        below: 16
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.ecobee
+        data:
+          hvac_mode: heat
