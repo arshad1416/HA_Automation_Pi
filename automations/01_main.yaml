@@ -3290,3 +3290,19 @@
   - action: switch.turn_off
     target:
       entity_id: switch.foyer_light_switch_1
+- id: blinds_night_close
+  alias: Blinds — Night Close (consolidated)
+  description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
+  mode: single
+  triggers:
+  - trigger: sun
+    event: sunset
+  conditions: []
+  actions:
+  - action: cover.close_cover
+    target:
+      entity_id:
+      - cover.dining_room_blinds_curtain
+      - cover.family_room_blinds_curtain
+      - cover.living_room_blinds_curtain
+      - cover.mina_s_blinds_curtain
