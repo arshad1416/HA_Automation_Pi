@@ -881,15 +881,15 @@
     then:
     - action: notify.persistent_notification
       data:
-        message: 'Set: {{ setpoint }}C Mode: {{ hvac_mode }} Fan: {{ ai_json.fan.room if ai_json.fan is mapping else ''-'' }}@{{ ai_json.fan.speed if ai_json.fan is mapping else ''-'' }} Vents: Iz={{ ai_json.vent_boosters.izaan if ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined else ''--'' }}% Mi={{ ai_json.vent_boosters.mina if ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined else ''--'' }}% Blinds: {{ ai_json.blinds | to_json if ai_json.blinds is mapping else ''none'' }} - {{ reason }}'
+        message: 'Set: {{ setpoint }}C Mode: {{ hvac_mode }} Fans: {{ ai_json.fans | default({}) }} Vents: Iz={{ ai_json.vent_boosters.izaan if ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined else ''--'' }}% Mi={{ ai_json.vent_boosters.mina if ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined else ''--'' }}% Blinds: {{ ai_json.blinds | to_json if ai_json.blinds is mapping else ''none'' }} - {{ reason }}'
         title: 'Climate AI: {{ setpoint }}C {{ hvac_mode }}'
   - if:
     - condition: template
-      value_template: '{{ setpoint is not none or hvac_mode is not none or (ai_json.fan is mapping and ai_json.fan.room is defined) or (ai_json.blinds is mapping and (ai_json.blinds.dining is defined or ai_json.blinds.family is defined or ai_json.blinds.mina is defined)) }}'
+      value_template: '{{ setpoint is not none or hvac_mode is not none or (ai_json.fans is defined and ai_json.fans is mapping) or (ai_json.blinds is mapping and (ai_json.blinds.dining is defined or ai_json.blinds.family is defined or ai_json.blinds.mina is defined)) }}'
     then:
     - action: notify.mobile_app_cph2655
       data:
-        message: 'Climate AI: {{ ''No change'' if setpoint == ''no_change'' else ''Set '' ~ setpoint ~ ''C '' ~ hvac_mode }}{{ '' Fan: '' ~ ai_json.fan.room ~ ''@'' ~ ai_json.fan.speed if ai_json.fan is mapping else '''' }} - {{ reason }}'
+        message: 'Climate AI: {{ ''No change'' if setpoint == ''no_change'' else ''Set '' ~ setpoint ~ ''C '' ~ hvac_mode }}{{ '' Fans: '' ~ ai_json.fans | string if ai_json.fans is defined and ai_json.fans is mapping else '''' }} - {{ reason }}'
         title: Climate AI
   max: 2
   mode: queued
