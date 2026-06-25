@@ -768,39 +768,42 @@
       data:
         message: Front door is open while HVAC is running. Close it to save energy.
         title: Front Door Open
-  - if:
-    - condition: template
-      value_template: '{{ ai_json.fan is mapping and ai_json.fan.room is defined and ai_json.fan.speed is defined }}'
-    then:
-    - variables:
-        fan_entity: '{{ {''guest'':''fan.guest_room_ceiling_fan'',''izaan'':''fan.izaan_s_ceiling_fan'',''kitchen'':''fan.kitchen_ceiling_fan'',''master'':''fan.master_bedroom_ceiling_fan'',''mina'':''fan.mina_s_ceiling_fan''}.get(ai_json.fan.room, none) }}'
-        fan_speed: '{{ ai_json.fan.speed }}'
-        fan_switch: '{{ {''guest'':''switch.guest_room_light_switch_1'',''izaan'':''switch.izaan_s_bedroom_light_switch_1'',''kitchen'':''switch.kitchen_fan_switch_1'',''master'':''switch.master_bedroom_fan_light_switch_1'',''mina'':''switch.mina_s_light_switch_1''}.get(ai_json.fan.room, none) }}'
-    - else:
-      - if:
-        - condition: template
-          value_template: '{{ fan_switch is not none }}'
-        then:
-        - action: switch.turn_on
-          target:
-            entity_id: '{{ fan_switch }}'
-        - delay:
-            seconds: 2
-      - action: fan.turn_on
-        data:
-          percentage: '{{ fan_speed | int * 33 }}'
-        target:
-          entity_id: '{{ fan_entity }}'
-      if:
-      - condition: template
-        value_template: '{{ fan_speed == ''off'' }}'
-      then:
-      - action: fan.turn_off
-        target:
-          entity_id: '{{ fan_entity }}'
-      - action: switch.turn_off
-        target:
-          entity_id: '{{ fan_switch }}'
+  - repeat:
+      for_each:
+        - { room: kitchen, fan: fan.kitchen_ceiling_fan, sw: switch.kitchen_fan_switch_1, occ: binary_sensor.kitchen_presence }
+        - { room: master, fan: fan.master_bedroom_ceiling_fan, sw: switch.master_bedroom_fan_light_switch_1, occ: binary_sensor.332d_occupancy }
+        - { room: mina, fan: fan.mina_s_ceiling_fan, sw: switch.mina_s_light_switch_1, occ: binary_sensor.minas_room_occupancy }
+        - { room: guest, fan: fan.guest_room_ceiling_fan, sw: switch.guest_room_light_switch_1, occ: binary_sensor.bbwg_occupancy }
+        - { room: izaan, fan: fan.izaan_s_ceiling_fan, sw: switch.izaan_s_bedroom_light_switch_1, occ: binary_sensor.izaans_room_occupancy }
+      sequence:
+        - variables:
+            spd: "{{ ai_json.fans[repeat.item.room] | default('no_change') }}"
+            pct: "{{ {'1':33,'2':66,'3':100}.get(spd | string, 0) }}"
+        - choose:
+            - conditions: "{{ spd not in [none, 'no_change'] and (spd | string) != 'off' }}"
+              sequence:
+                - action: switch.turn_on
+                  target:
+                    entity_id: "{{ repeat.item.sw }}"
+                - delay:
+                    seconds: 2
+                - action: fan.set_percentage
+                  target:
+                    entity_id: "{{ repeat.item.fan }}"
+                  data:
+                    percentage: "{{ pct }}"
+            - conditions: "{{ (spd | string) == 'off' }}"
+              sequence:
+                - action: fan.turn_off
+                  target:
+                    entity_id: "{{ repeat.item.fan }}"
+                - if:
+                    - condition: template
+                      value_template: "{{ states(repeat.item.occ) == 'off' }}"
+                  then:
+                    - action: switch.turn_off
+                      target:
+                        entity_id: "{{ repeat.item.sw }}"
   - if:
     - condition: template
       value_template: '{{ ai_json.blinds is mapping and ai_json.blinds.dining is defined and ai_json.blinds.dining | string | lower != ''no_change'' }}'
