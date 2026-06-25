@@ -880,11 +880,11 @@
         entity_id: climate.ecobee
   - if:
     - condition: template
-      value_template: '{{ setpoint is not none or hvac_mode is not none or ai_json.fan is mapping }}'
+      value_template: '{{ setpoint is not none or hvac_mode is not none or (ai_json.fans is mapping and ai_json.fans | length > 0) }}'
     then:
     - action: notify.persistent_notification
       data:
-        message: 'Set: {{ setpoint }}C Mode: {{ hvac_mode }} Fans: {{ ai_json.fans | default({}) }} Vents: Iz={{ ai_json.vent_boosters.izaan if ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined else ''--'' }}% Mi={{ ai_json.vent_boosters.mina if ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined else ''--'' }}% Blinds: {{ ai_json.blinds | to_json if ai_json.blinds is mapping else ''none'' }} - {{ reason }}'
+        message: 'Set: {{ setpoint }}C Mode: {{ hvac_mode }} Fans: {% set ns = namespace(p=[]) %}{% for k, v in (ai_json.fans | default({})).items() %}{% if v != ''no_change'' %}{% set ns.p = ns.p + [k ~ ''='' ~ v] %}{% endif %}{% endfor %}{{ ns.p | join('', '') }} Vents: Iz={{ ai_json.vent_boosters.izaan if ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined else ''--'' }}% Mi={{ ai_json.vent_boosters.mina if ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined else ''--'' }}% Blinds: {{ ai_json.blinds | to_json if ai_json.blinds is mapping else ''none'' }} - {{ reason }}'
         title: 'Climate AI: {{ setpoint }}C {{ hvac_mode }}'
   - if:
     - condition: template
@@ -892,7 +892,7 @@
     then:
     - action: notify.mobile_app_cph2655
       data:
-        message: 'Climate AI: {{ ''No change'' if setpoint == ''no_change'' else ''Set '' ~ setpoint ~ ''C '' ~ hvac_mode }}{{ '' Fans: '' ~ ai_json.fans | string if ai_json.fans is defined and ai_json.fans is mapping else '''' }} - {{ reason }}'
+        message: 'Climate AI: {{ ''No change'' if setpoint == ''no_change'' else ''Set '' ~ setpoint ~ ''C '' ~ hvac_mode }}{% set ns2 = namespace(p=[]) %}{% for k, v in (ai_json.fans | default({})).items() %}{% if v != ''no_change'' %}{% set ns2.p = ns2.p + [k ~ ''='' ~ v] %}{% endif %}{% endfor %}{{ '' Fans: '' ~ ns2.p | join('', '') if ns2.p | length > 0 else '''' }} - {{ reason }}'
         title: Climate AI
   max: 2
   mode: queued
