@@ -1044,46 +1044,6 @@
         brightness_pct: 50
       target:
         entity_id: light.family_room_light
-    - action: cover.stop_cover
-      target:
-        entity_id: cover.family_room_blinds_curtain
-    - delay:
-        seconds: 1
-    - action: cover.set_cover_position
-      data:
-        position: 0
-      target:
-        entity_id: cover.family_room_blinds_curtain
-    - action: cover.stop_cover
-      target:
-        entity_id: cover.dining_room_blinds_curtain
-    - delay:
-        seconds: 1
-    - action: cover.set_cover_position
-      data:
-        position: 0
-      target:
-        entity_id: cover.dining_room_blinds_curtain
-    - action: cover.stop_cover
-      target:
-        entity_id: cover.living_room_blinds_curtain
-    - delay:
-        seconds: 1
-    - action: cover.set_cover_position
-      data:
-        position: 0
-      target:
-        entity_id: cover.living_room_blinds_curtain
-    - action: cover.stop_cover
-      target:
-        entity_id: cover.mina_s_blinds_curtain
-    - delay:
-        seconds: 1
-    - action: cover.set_cover_position
-      data:
-        position: 0
-      target:
-        entity_id: cover.mina_s_blinds_curtain
   alias: Turn on family room lights
   conditions: []
   description: Turn on outdoor lights unconditionally at sunset. If blinds are closed and TV is on, also turn on family room light and close all blinds.
@@ -1094,10 +1054,6 @@
     offset: 0
     trigger: sun
 - actions:
-  - action: cover.close_cover
-    data: {}
-    target:
-      entity_id: cover.family_room_blinds_curtain
   - action: light.turn_on
     data:
       brightness_pct: 10
@@ -1587,15 +1543,6 @@
   - action: switch.turn_on
     target:
       entity_id: switch.adaptive_lighting_whole_house_adaptive_lighting_adapt_brightness_whole_house
-  - action: cover.set_cover_position
-    data:
-      position: 0
-    target:
-      entity_id:
-      - cover.living_room_blinds_curtain
-      - cover.dining_room_blinds_curtain
-      - cover.family_room_blinds_curtain
-      - cover.mina_s_blinds_curtain
   - action: switch.turn_on
     data: {}
     target:
