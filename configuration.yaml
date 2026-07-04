@@ -1,3 +1,6 @@
+external_url: "https://ha.arshadkazi.ca"
+internal_url: "http://localhost:8123"
+
 default_config:
 
 # Load frontend themes from the themes folder
@@ -199,6 +202,10 @@ input_boolean:
   nest_kitchen_presence:
     name: Nest Kitchen Presence
     icon: mdi:motion-sensor
+  kitchen_tuya_presence:
+    name: Kitchen Tuya Human Presence
+    icon: mdi:motion-sensor
+    initial: false
   climate_ai_enabled:
     name: Climate AI Enabled
     icon: mdi:thermostat-auto
@@ -349,14 +356,16 @@ command_line:
       unit_of_measurement: kWh
       scan_interval: 300
 
+
 template:
   - binary_sensor:
       - name: Kitchen Presence
         unique_id: kitchen_presence_combined
         device_class: occupancy
         state: >
-          {{ is_state('binary_sensor.kitchen_mmwave_presence_sensor_presence', 'on')
-             or (states('sensor.kitchen_mmwave_presence_sensor_moving_distance') | float(0) > 0) }}
+          {{ is_state('input_boolean.kitchen_occupied_motion', 'on')
+             or is_state('input_boolean.nest_kitchen_presence', 'on')
+             or is_state('input_boolean.kitchen_tuya_presence', 'on') }}
   - binary_sensor:
       - name: Garage Door (Vision)
         unique_id: garage_door_vision
@@ -372,6 +381,7 @@ template:
 # ESPHome Kitchen mmWave Bridge — workaround for HA 2026.6.3 + Python 3.14 ESPHome integration bug
 shell_command:
   start_esphome_kitchen_bridge: "for pid in $(pgrep -f esphome_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/esphome_kitchen_bridge.py > /config/esphome_bridge.log 2>&1 &"
+  start_tuya_kitchen_bridge: "for pid in $(pgrep -f tuya_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/tuya_kitchen_bridge.py > /config/tuya_bridge.log 2>&1 &"
 
 
 # Google Assistant — control HA via Google Home speakers

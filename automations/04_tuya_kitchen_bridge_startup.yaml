@@ -1,0 +1,13 @@
+# Tuya Human Presence Sensor Bridge Startup
+# Starts the tuya_kitchen_bridge.py on HA restart — same pattern as esphome_kitchen_bridge
+# The bridge polls the Tuya Human Presence Sensor (protocol 3.5) at 192.168.0.61
+# and pushes presence state to input_boolean.kitchen_tuya_presence
+- id: tuya_kitchen_bridge_startup
+  alias: Tuya Kitchen Bridge Startup
+  description: Starts the Tuya Human Presence Sensor bridge on HA startup
+  trigger:
+    - platform: homeassistant
+      event: start
+  action:
+    - delay: 10
+    - action: shell_command.start_tuya_kitchen_bridge
