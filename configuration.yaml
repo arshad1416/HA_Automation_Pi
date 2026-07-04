@@ -199,9 +199,6 @@ input_boolean:
     name: Kitchen Occupied (Motion)
     icon: mdi:motion-sensor
     initial: false
-  nest_kitchen_presence:
-    name: Nest Kitchen Presence
-    icon: mdi:motion-sensor
   kitchen_tuya_presence:
     name: Kitchen Tuya Human Presence
     icon: mdi:motion-sensor
@@ -364,7 +361,6 @@ template:
         device_class: occupancy
         state: >
           {{ is_state('input_boolean.kitchen_occupied_motion', 'on')
-             or is_state('input_boolean.nest_kitchen_presence', 'on')
              or is_state('input_boolean.kitchen_tuya_presence', 'on') }}
   - binary_sensor:
       - name: Garage Door (Vision)
