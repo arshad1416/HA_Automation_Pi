@@ -44,9 +44,9 @@
   id: '1732306348511'
   mode: single
   triggers:
-  - trigger: numeric_state
+  - below: 10
     entity_id: sensor.garages_entry_door_battery
-    below: 10
+    trigger: numeric_state
 - actions:
   - action: notify.mobile_app_cph2655
     data:
@@ -58,9 +58,9 @@
   id: '1732306475332'
   mode: single
   triggers:
-  - trigger: numeric_state
+  - below: 10
     entity_id: sensor.airbnb_battery
-    below: 10
+    trigger: numeric_state
 - actions:
   - action: switch.turn_off
     data: {}
@@ -140,11 +140,11 @@
     data:
       entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
       manual_control: false
-  alias: When the sun is rising...
+  alias: Turn off outdoor lights and switches at sunrise
   conditions: []
-  description: Turn off lights and switches at sunrise, with Bond RF/Tuya Cloud retry
+  description: Turn off outdoor lights and switches at sunrise. Blinds are handled by climate_ai.
   id: '1732520345733'
-  initial_state: false
+  initial_state: true
   mode: single
   triggers:
   - event: sunrise
@@ -153,8 +153,9 @@
 - actions:
   - data:
       agent_id: conversation.local_chat
-      text: |
-        The front door has been open for 5 minutes. Compose a one-sentence, friendly reminder to close it. Mention the current outdoor temperature ({{ state_attr('weather.forecast_home', 'temperature') }}°C) only if it is below 5 or above 30.
+      text: 'The front door has been open for 5 minutes. Compose a one-sentence, friendly reminder to close it. Mention the current outdoor temperature ({{ state_attr(''weather.forecast_home'', ''temperature'') }}°C) only if it is below 5 or above 30.
+
+        '
     response_variable: agent
     service: conversation.process
   - data:
@@ -176,8 +177,9 @@
 - actions:
   - data:
       agent_id: conversation.local_chat
-      text: |
-        Arshad just got home. Compose a one-sentence greeting using the current weather ({{ states('weather.forecast_home') }}, {{ state_attr('weather.forecast_home', 'temperature') }}°C) and the next calendar event ({{ state_attr('calendar.arshad14_gmail_com', 'message') }}).
+      text: 'Arshad just got home. Compose a one-sentence greeting using the current weather ({{ states(''weather.forecast_home'') }}, {{ state_attr(''weather.forecast_home'', ''temperature'') }}°C) and the next calendar event ({{ state_attr(''calendar.arshad14_gmail_com'', ''message'') }}).
+
+        '
     response_variable: agent
     service: conversation.process
   - data:
@@ -193,8 +195,9 @@
     before: '23:00:00'
     condition: time
   - condition: template
-    value_template: |
-      {{ (now() - (state_attr('automation.proactive_welcome_home', 'last_triggered') or (now() - timedelta(hours=2)))).total_seconds() > 1800 }}
+    value_template: '{{ (now() - (state_attr(''automation.proactive_welcome_home'', ''last_triggered'') or (now() - timedelta(hours=2)))).total_seconds() > 1800 }}
+
+      '
   description: LLM-generated greeting via Alexa when Arshad arrives home. Uses local Ollama agent with weather + calendar context for a personalized message.
   id: proactive_welcome_home
   mode: single
@@ -206,16 +209,12 @@
 - actions:
   - action: lock.lock
     target:
-      entity_id: |
-        {{ states.lock
-           | rejectattr('entity_id', 'eq', 'lock.airbnb')
-           | selectattr('state', 'eq', 'unlocked')
-           | map(attribute='entity_id')
-           | list }}
+      entity_id: "{{ states.lock\n   | rejectattr('entity_id', 'eq', 'lock.airbnb')\n   | selectattr('state', 'eq', 'unlocked')\n   | map(attribute='entity_id')\n   | list }}\n"
   - data:
       agent_id: conversation.local_chat
-      text: |
-        These locks were unlocked and have been automatically locked: {{ unlocked }}. Compose a one-sentence, calm bedtime message confirming the locks are now secure.
+      text: 'These locks were unlocked and have been automatically locked: {{ unlocked }}. Compose a one-sentence, calm bedtime message confirming the locks are now secure.
+
+        '
     response_variable: agent
     service: conversation.process
   - data:
@@ -236,94 +235,101 @@
   - at: '23:30:00'
     trigger: time
   variables:
-    unlocked: |
-      {{ states.lock
-         | rejectattr('entity_id', 'eq', 'lock.airbnb')
-         | selectattr('state', 'eq', 'unlocked')
-         | map(attribute='attributes.friendly_name')
-         | list
-         | join(', ') }}
-- id: airbnb_sunset_logic
-  alias: 'Airbnb: Sunset Logic'
-  description: 'At sunset: reserved -> floodlight ON (scene.manual_on); not reserved -> motion-sensor mode (scene.sensor_mode). Does NOT touch the heater, preserving guest manual control.'
-  mode: single
-  triggers:
-  - trigger: sun
-    event: sunset
-    offset: 0
-  conditions: []
-  actions:
-  - if:
+    unlocked: "{{ states.lock\n   | rejectattr('entity_id', 'eq', 'lock.airbnb')\n   | selectattr('state', 'eq', 'unlocked')\n   | map(attribute='attributes.friendly_name')\n   | list\n   | join(', ') }}\n"
+- actions:
+  - else:
+    - action: scene.turn_on
+      target:
+        entity_id: scene.sensor_mode
+    if:
     - condition: template
-      value_template: "{{ 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+      value_template: '{{ ''reserved'' in (state_attr(''calendar.airbnb'',''message'') | string | lower) }}'
     then:
     - action: scene.turn_on
-      target: {entity_id: scene.manual_on}
-    else:
-    - action: scene.turn_on
-      target: {entity_id: scene.sensor_mode}
-- id: airbnb_midnight_logic
-  alias: 'Airbnb: Midnight Logic'
-  description: 'At midnight, if reserved -> floodlight to motion-sensor mode (scene.sensor_mode + light off).'
+      target:
+        entity_id: scene.manual_on
+  alias: 'Airbnb: Sunset Logic'
+  conditions: []
+  description: 'At sunset: reserved -> floodlight ON (scene.manual_on); not reserved -> motion-sensor mode (scene.sensor_mode). Does NOT touch the heater, preserving guest manual control.'
+  id: airbnb_sunset_logic
   mode: single
   triggers:
-  - trigger: time
-    at: '00:00:00'
-  conditions:
-  - condition: template
-    value_template: "{{ 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
-  actions:
+  - event: sunset
+    offset: 0
+    trigger: sun
+- actions:
   - action: scene.turn_on
-    target: {entity_id: scene.sensor_mode}
+    target:
+      entity_id: scene.sensor_mode
   - action: light.turn_off
-    target: {entity_id: light.wasserstein_smart_floodlight_2}
-- id: airbnb_reservation_start
-  alias: 'Airbnb: Reservation Start'
-  description: 'Calendar shows Reserved -> heater to heat at set temp (default 20C), set ONCE so the guest can still turn it on/off and change temp manually. Floodlight ON if evening (after sunset, before midnight), else motion-sensor mode.'
-  mode: single
-  triggers:
-  - trigger: state
-    entity_id: calendar.airbnb
-    attribute: message
+    target:
+      entity_id: light.wasserstein_smart_floodlight_2
+  alias: 'Airbnb: Midnight Logic'
   conditions:
   - condition: template
-    value_template: "{{ 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
-  actions:
+    value_template: '{{ ''reserved'' in (state_attr(''calendar.airbnb'',''message'') | string | lower) }}'
+  description: At midnight, if reserved -> floodlight to motion-sensor mode (scene.sensor_mode + light off).
+  id: airbnb_midnight_logic
+  mode: single
+  triggers:
+  - at: 00:00:00
+    trigger: time
+- actions:
   - action: climate.set_hvac_mode
-    target: {entity_id: climate.airbnb_infrared_heater_2}
-    data: {hvac_mode: heat}
+    data:
+      hvac_mode: heat
+    target:
+      entity_id: climate.airbnb_infrared_heater_2
   - action: climate.set_temperature
-    target: {entity_id: climate.airbnb_infrared_heater_2}
-    data: {temperature: "{{ states('input_number.airbnb_heater_temperature') | float(20) }}"}
-  - if:
+    data:
+      temperature: '{{ states(''input_number.airbnb_heater_temperature'') | float(20) }}'
+    target:
+      entity_id: climate.airbnb_infrared_heater_2
+  - else:
+    - action: scene.turn_on
+      target:
+        entity_id: scene.sensor_mode
+    if:
     - condition: state
       entity_id: sun.sun
       state: below_horizon
     - condition: template
-      value_template: "{{ now().hour >= 12 }}"
+      value_template: '{{ now().hour >= 12 }}'
     then:
     - action: scene.turn_on
-      target: {entity_id: scene.manual_on}
-    else:
-    - action: scene.turn_on
-      target: {entity_id: scene.sensor_mode}
-- id: airbnb_reservation_end
-  alias: 'Airbnb: Reservation End'
-  description: 'Calendar no longer Reserved (Airbnb Not available or blank) -> heater OFF and floodlight to motion-sensor mode.'
-  mode: single
-  triggers:
-  - trigger: state
-    entity_id: calendar.airbnb
-    attribute: message
+      target:
+        entity_id: scene.manual_on
+  alias: 'Airbnb: Reservation Start'
   conditions:
   - condition: template
-    value_template: "{{ 'reserved' not in (state_attr('calendar.airbnb','message') | string | lower) }}"
-  actions:
+    value_template: '{{ ''reserved'' in (state_attr(''calendar.airbnb'',''message'') | string | lower) }}'
+  description: Calendar shows Reserved -> heater to heat at set temp (default 20C), set ONCE so the guest can still turn it on/off and change temp manually. Floodlight ON if evening (after sunset, before midnight), else motion-sensor mode.
+  id: airbnb_reservation_start
+  mode: single
+  triggers:
+  - attribute: message
+    entity_id: calendar.airbnb
+    trigger: state
+- actions:
   - action: climate.set_hvac_mode
-    target: {entity_id: climate.airbnb_infrared_heater_2}
-    data: {hvac_mode: 'off'}
+    data:
+      hvac_mode: 'off'
+    target:
+      entity_id: climate.airbnb_infrared_heater_2
   - action: scene.turn_on
-    target: {entity_id: scene.sensor_mode}
+    target:
+      entity_id: scene.sensor_mode
+  alias: 'Airbnb: Reservation End'
+  conditions:
+  - condition: template
+    value_template: '{{ ''reserved'' not in (state_attr(''calendar.airbnb'',''message'') | string | lower) }}'
+  description: Calendar no longer Reserved (Airbnb Not available or blank) -> heater OFF and floodlight to motion-sensor mode.
+  id: airbnb_reservation_end
+  mode: single
+  triggers:
+  - attribute: message
+    entity_id: calendar.airbnb
+    trigger: state
 - actions:
   - action: switch.toggle
     target:
@@ -334,8 +340,8 @@
   id: '1777445592532'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: switch.basement_stair_light_switch_1
+  - entity_id: switch.basement_stair_light_switch_1
+    trigger: state
 - actions:
   - action: switch.turn_on
     target:
@@ -346,9 +352,9 @@
   id: '1777445741550'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: lock.garages_entry_door
+  - entity_id: lock.garages_entry_door
     to: open
+    trigger: state
 - actions:
   - action: switch.turn_off
     target:
@@ -356,23 +362,18 @@
   alias: Turn off Garage Light when Laundry Garage Door is closed for 1 hour
   conditions:
   - condition: template
-    value_template: |
-      {{ is_state('switch.garage_light_switch_switch_1', 'on')
-         or is_state('light.garage_left_downlight', 'on')
-         or is_state('light.garage_right_downlight', 'on') }}
+    value_template: "{{ is_state('switch.garage_light_switch_switch_1', 'on')\n   or is_state('light.garage_left_downlight', 'on')\n   or is_state('light.garage_right_downlight', 'on') }}\n"
   - condition: template
-    value_template: |
-      {{ not is_state('cover.larissa_s_garage_door', 'open')
-         and not is_state('cover.larissa_s_garage_door_door', 'open') }}
+    value_template: "{{ not is_state('cover.larissa_s_garage_door', 'open')\n   and not is_state('cover.larissa_s_garage_door_door', 'open') }}\n"
   description: ''
   id: '1777445806770'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: lock.garages_entry_door
-    to: locked
+  - entity_id: lock.garages_entry_door
     for:
       hours: 1
+    to: locked
+    trigger: state
 - actions:
   - action: switch.turn_on
     target:
@@ -383,9 +384,9 @@
   id: '1777445874034'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: cover.larissa_s_garage_door_door
+  - entity_id: cover.larissa_s_garage_door_door
     to: open
+    trigger: state
 - actions:
   - action: switch.turn_off
     target:
@@ -396,121 +397,16 @@
   id: '1777445943948'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: cover.larissa_s_garage_door_door
+  - entity_id: cover.larissa_s_garage_door_door
     to: closed
+    trigger: state
 - actions:
-  - action: light.turn_off
-    data: {}
-    metadata: {}
-    target:
-      entity_id:
-      - light.cabinet_light_strip_center_nanoleaf_light_strip
-      - light.cabinet_light_strip_right_nanoleaf_light_strip
-      - light.cabinet_light_strip_left_nanoleaf_light_strip
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-      - light.kitchen_light_light_1
-      - light.curtain_lights_v2
-      - light.garage_wall_light
   - action: switch.turn_off
     data: {}
     target:
       entity_id:
-      - switch.back_hallway_light_switch_1
-      - switch.kitchen_pantry_light
-  - action: lock.lock
-    data: {}
-    metadata: {}
-    target:
-      entity_id:
-      - lock.front_door
-      - lock.garage_entry
-  - if:
-    - condition: state
-      entity_id: cover.larissa_s_garage_door
-      state: open
-    then:
-    - action: cover.close_cover
-      target:
-        entity_id: cover.larissa_s_garage_door
-  - if:
-    - condition: state
-      entity_id: cover.garage_door_wa1nvzx3
-      state: open
-    then:
-    - action: cover.close_cover
-      target:
-        entity_id: cover.garage_door_wa1nvzx3
-  - action: adaptive_lighting.set_manual_control
-    data:
-      entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
-      manual_control: false
-  - action: light.turn_on
-    data:
-      brightness_pct: 12
-    metadata: {}
-    target:
-      entity_id:
-      - light.elements_b3cd_2
-      - light.izaan_s_lamp
-  - action: light.turn_on
-    data:
-      brightness_pct: 10
-    metadata: {}
-    target:
-      entity_id:
-      - light.lamppost_bulb_1
-      - light.lamppost_bulb_2
-      - light.lamppost_bulb_3
-      - light.front_porch_downlight
-      - light.front_porch_downlight_segment_1
-      - light.front_porch_downlight_segment_2
-      - light.front_porch_downlight_segment_3
-      - light.front_porch_downlight_segment_4
-      - light.front_porch_downlight_segment_5
-      - light.front_porch_downlight_segment_6
-      - light.front_porch_downlight_segment_7
-      - light.front_porch_downlight_segment_8
-      - light.front_porch_downlight_segment_9
-      - light.front_porch_downlight_segment_10
-      - light.front_porch_downlight_segment_11
-      - light.front_porch_downlight_segment_12
-      - light.front_porch_downlight_segment_13
-      - light.front_porch_downlight_segment_14
-      - light.front_porch_downlight_segment_15
-      - light.garage_right_downlight
-      - light.garage_left_downlight
-      - light.garage_left_downlight_segment_1
-      - light.garage_left_downlight_segment_2
-      - light.garage_left_downlight_segment_3
-      - light.garage_left_downlight_segment_4
-      - light.garage_left_downlight_segment_5
-      - light.garage_left_downlight_segment_6
-      - light.garage_left_downlight_segment_7
-      - light.garage_left_downlight_segment_8
-      - light.garage_left_downlight_segment_9
-      - light.garage_left_downlight_segment_10
-      - light.garage_left_downlight_segment_11
-      - light.garage_left_downlight_segment_12
-      - light.garage_left_downlight_segment_13
-      - light.garage_left_downlight_segment_14
-      - light.garage_left_downlight_segment_15
-      - light.garage_right_downlight_segment_1
-      - light.garage_right_downlight_segment_2
-      - light.garage_right_downlight_segment_3
-      - light.garage_right_downlight_segment_4
-      - light.garage_right_downlight_segment_5
-      - light.garage_right_downlight_segment_6
-      - light.garage_right_downlight_segment_7
-      - light.garage_right_downlight_segment_8
-      - light.garage_right_downlight_segment_9
-      - light.garage_right_downlight_segment_10
-      - light.garage_right_downlight_segment_11
-      - light.garage_right_downlight_segment_12
-      - light.garage_right_downlight_segment_13
-      - light.garage_right_downlight_segment_14
-      - light.garage_right_downlight_segment_15
+      - switch.foyer_light_switch_1
+      - switch.back_hallway_light_main_switch
   alias: Turn off everything and lock the doors at 2AM
   conditions: []
   description: ''
@@ -527,28 +423,7 @@
     - fri
     - sat
     - sun
-  actions:
-  - action: switch.turn_off
-    target:
-      entity_id:
-      - switch.foyer_light_switch_1
-      - switch.back_hallway_light_main_switch
-    data: {}
-- id: '1777560826089'
-  alias: Powder Room Mirror Follows Light
-  description: 'Mirror follows the powder room light: light on -> mirror on, light off -> mirror off. Fixed 2026-06-23 (old version toggled non-existent switch.powder_room_mirror_switch_1; folded in the separate off-automation).'
-  mode: single
-  triggers:
-  - trigger: state
-    entity_id: switch.powder_room_light_switch_1
-    to: 'on'
-    id: light_on
-  - trigger: state
-    entity_id: switch.powder_room_light_switch_1
-    to: 'off'
-    id: light_off
-  conditions: []
-  actions:
+- actions:
   - choose:
     - conditions:
       - condition: trigger
@@ -564,6 +439,20 @@
       - action: switch.turn_off
         target:
           entity_id: switch.powder_room_mirror_switch
+  alias: Powder Room Mirror Follows Light
+  conditions: []
+  description: 'Mirror follows the powder room light: light on -> mirror on, light off -> mirror off. Fixed 2026-06-23 (old version toggled non-existent switch.powder_room_mirror_switch_1; folded in the separate off-automation).'
+  id: '1777560826089'
+  mode: single
+  triggers:
+  - entity_id: switch.powder_room_light_switch_1
+    id: light_on
+    to: 'on'
+    trigger: state
+  - entity_id: switch.powder_room_light_switch_1
+    id: light_off
+    to: 'off'
+    trigger: state
 - actions:
   - action: notify.notify
     data:
@@ -600,9 +489,9 @@
   id: '1777564939324'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: binary_sensor.powder_room_leak_sensor_moisture
+  - entity_id: binary_sensor.powder_room_leak_sensor_moisture
     to: 'on'
+    trigger: state
 - actions:
   - action: notify.notify
     data:
@@ -626,9 +515,9 @@
   id: '1777565289336'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: binary_sensor.guest_bathroom_leak_sensor_moisture
+  - entity_id: binary_sensor.guest_bathroom_leak_sensor_moisture
     to: 'on'
+    trigger: state
 - actions:
   - action: light.turn_off
     target:
@@ -702,10 +591,13 @@
       value_template: '{{ outdoor_temp | float < indoor_temp | float and outdoor_temp | float < 24 }}'
     then:
     - variables:
-        msg: |
-          {% set w = state_attr('weather.forecast_home', 'wind_bearing') | float(0) %} {% if w >= 180 and w < 315 %} Wind from W/SW. Open: Izaan bedroom (SE) + Guest bedroom (SE) windows. Also kitchen sliding door (NW). Creates W to E cross-flow. {% elif w >= 315 or w < 45 %} Wind from N/NW. Open: Guest bedroom (SE) + Living room (SE) windows. Pulls air from NW entry. {% elif w >= 45 and w < 180 %} Wind from E/SE. Open: Master bedroom (NW) + Mina bedroom (NW) windows. Also kitchen sliding door (NW). Reverse cross-flow. {% else %} Light/variable wind. Open: Upper SE windows (Izaan + Guest) + Main NW door (kitchen). Stack effect cooling. {% endif %}
+        msg: '{% set w = state_attr(''weather.forecast_home'', ''wind_bearing'') | float(0) %} {% if w >= 180 and w < 315 %} Wind from W/SW. Open: Izaan bedroom (SE) + Guest bedroom (SE) windows. Also kitchen sliding door (NW). Creates W to E cross-flow. {% elif w >= 315 or w < 45 %} Wind from N/NW. Open: Guest bedroom (SE) + Living room (SE) windows. Pulls air from NW entry. {% elif w >= 45 and w < 180 %} Wind from E/SE. Open: Master bedroom (NW) + Mina bedroom (NW) windows. Also kitchen sliding door (NW). Reverse cross-flow. {% else %} Light/variable wind. Open: Upper SE windows (Izaan + Guest) + Main NW door (kitchen). Stack effect cooling. {% endif %}
+
           Indoor: {{ indoor_temp }}C. Out: {{ outdoor_temp }}C.
+
           Blinds are closed for privacy. Open windows behind closed blinds.
+
+          '
     - action: notify.mobile_app_cph2655
       data:
         message: '{{ msg }}'
@@ -724,33 +616,20 @@
   triggers:
   - at: '22:00:00'
     trigger: time
-- id: climate_ai_advisor
-  alias: climate_ai_advisor
-  description: 'Every 60 min: Climate AI via Gemini. Recommends setpoint, HVAC mode, fan speed, blinds.'
-  triggers:
-  - minutes: '/15'
-    trigger: time_pattern
-  conditions:
-  - condition: state
-    entity_id: input_boolean.climate_ai_enabled
-    state: 'on'
-  - condition: template
-    value_template: '{{ now().hour >= 6 }}'
-  actions:
+- actions:
   - variables:
-      prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.home\") }} Larissa={{ states(\"person.larissa\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed.
-                VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan_switch_1\") }} MFn={{ states(\"switch.master_bedroom_fan_light_switch_1\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_cd70\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"\
-        weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15°, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fans\":{\"kitchen\":\"off|1|2|3\",\"master\":\"...\",\"mina\":\"...\",\"guest\":\"...\",\"izaan\":\"...\"}, \"blinds\":{\"dining\":N,\"family\":N,\"living\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun. Blinds covered: dining, family, living, mina. Prefer PARTIAL positions to balance sun/glare/heat. Only move blinds when sun is up; at night a separate automation closes them.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(state_attr('binary_sensor.front_door_door','last_changed') | default(now())) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If FrontOpenDuration > 10 (front door left open >10 min): factor this in — HVAC is being wasted, so ease off cooling/heating (do not run aggressively), recommend closing the door, and note reduced efficiency.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7¢/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1¢/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7¢/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8¢/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8¢. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
+      prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.home\") }} Larissa={{ states(\"person.larissa\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed. VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan_switch_1\") }} MFn={{ states(\"switch.master_bedroom_fan_light_switch_1\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\"\
+        ) }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_cd70\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15°, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fans\":{\"kitchen\":\"off|1|2|3\",\"master\":\"...\",\"mina\":\"...\",\"guest\":\"...\",\"izaan\":\"...\"}, \"blinds\":{\"dining\":N,\"family\":N,\"living\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun. Blinds covered: dining, family, living, mina. Prefer PARTIAL positions to balance sun/glare/heat. Only move blinds when sun is up; at night a separate automation closes them.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(state_attr('binary_sensor.front_door_door','last_changed') | default(now())) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If FrontOpenDuration > 10 (front door left open >10 min): factor this in — HVAC is being wasted, so ease off cooling/heating (do not run aggressively), recommend closing the door, and note reduced efficiency.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7¢/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1¢/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7¢/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8¢/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8¢. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
   - action: rest_command.climate_ai_gemini
     data:
       prompt: '{{ prompt }}'
     response_variable: ai_response
   - variables:
-      ai_raw: '{{ ai_response.content.candidates[0].content.parts[0].text }}'
       ai_json: '{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace(''(?i)```json\s*'', '''') | regex_replace(''(?i)```\s*'', '''') | trim | from_json if ai_raw is string and ai_raw | trim != '''' and (ai_raw | trim | regex_search(''[\{\[]'')) else {}) }}'
+      ai_raw: '{{ ai_response.content.candidates[0].content.parts[0].text }}'
       hvac_mode: '{{ ai_json.hvac_mode | default(none, true) }}'
-      setpoint: '{{ ai_json.setpoint | default(none) }}'
       reason: '{{ ai_json.reason | default(''No recommendation'', true) }}'
+      setpoint: '{{ ai_json.setpoint | default(none) }}'
   - if:
     - condition: template
       value_template: '{{ hvac_mode is not none and hvac_mode | lower != ''none'' }}'
@@ -770,47 +649,62 @@
         title: Front Door Open
   - repeat:
       for_each:
-        - { room: kitchen, fan: fan.kitchen_ceiling_fan, sw: switch.kitchen_fan_switch_1, occ: binary_sensor.kitchen_presence }
-        - { room: master, fan: fan.master_bedroom_ceiling_fan, sw: switch.master_bedroom_fan_light_switch_1, occ: binary_sensor.332d_occupancy }
-        - { room: mina, fan: fan.mina_s_ceiling_fan, sw: switch.mina_s_light_switch_1, occ: binary_sensor.minas_room_occupancy }
-        - { room: guest, fan: fan.guest_room_ceiling_fan, sw: switch.guest_room_light_switch_1, occ: binary_sensor.bbwg_occupancy }
-        - { room: izaan, fan: fan.izaan_s_ceiling_fan, sw: switch.izaan_s_bedroom_light_switch_1, occ: binary_sensor.izaans_room_occupancy }
+      - fan: fan.kitchen_ceiling_fan
+        occ: binary_sensor.kitchen_presence
+        room: kitchen
+        sw: switch.kitchen_fan_switch_1
+      - fan: fan.master_bedroom_ceiling_fan
+        occ: binary_sensor.332d_occupancy
+        room: master
+        sw: switch.master_bedroom_fan_light_switch_1
+      - fan: fan.mina_s_ceiling_fan
+        occ: binary_sensor.minas_room_occupancy
+        room: mina
+        sw: switch.mina_s_light_switch_1
+      - fan: fan.guest_room_ceiling_fan
+        occ: binary_sensor.bbwg_occupancy
+        room: guest
+        sw: switch.guest_room_light_switch_1
+      - fan: fan.izaan_s_ceiling_fan
+        occ: binary_sensor.izaans_room_occupancy
+        room: izaan
+        sw: switch.izaan_s_bedroom_light_switch_1
       sequence:
-        - variables:
-            spd: "{{ ai_json.get('fans', {}).get(repeat.item.room, 'no_change') if ai_json is mapping else 'no_change' }}"
-            pct: "{{ {'1':33,'2':66,'3':100}.get(spd | string, 0) }}"
-        - choose:
-            - conditions: "{{ spd not in [none, 'no_change'] and (spd | string) != 'off' }}"
-              sequence:
-                - action: switch.turn_on
-                  target:
-                    entity_id: "{{ repeat.item.sw }}"
-                - delay:
-                    seconds: 2
-                - action: fan.set_percentage
-                  target:
-                    entity_id: "{{ repeat.item.fan }}"
-                  data:
-                    percentage: "{{ pct }}"
-                - if:
-                    - condition: template
-                      value_template: "{{ repeat.item.room == 'guest' }}"
-                  then:
-                    - action: light.turn_off
-                      target:
-                        entity_id: light.guest_room_ceiling_fan
-            - conditions: "{{ (spd | string) == 'off' }}"
-              sequence:
-                - action: fan.turn_off
-                  target:
-                    entity_id: "{{ repeat.item.fan }}"
-                - if:
-                    - condition: template
-                      value_template: "{{ states(repeat.item.occ) == 'off' }}"
-                  then:
-                    - action: switch.turn_off
-                      target:
-                        entity_id: "{{ repeat.item.sw }}"
+      - variables:
+          pct: '{{ {''1'':33,''2'':66,''3'':100}.get(spd | string, 0) }}'
+          spd: '{{ ai_json.get(''fans'', {}).get(repeat.item.room, ''no_change'') if ai_json is mapping else ''no_change'' }}'
+      - choose:
+        - conditions: '{{ spd not in [none, ''no_change''] and (spd | string) != ''off'' }}'
+          sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: '{{ repeat.item.sw }}'
+          - delay:
+              seconds: 2
+          - action: fan.set_percentage
+            data:
+              percentage: '{{ pct }}'
+            target:
+              entity_id: '{{ repeat.item.fan }}'
+          - if:
+            - condition: template
+              value_template: '{{ repeat.item.room == ''guest'' }}'
+            then:
+            - action: light.turn_off
+              target:
+                entity_id: light.guest_room_ceiling_fan
+        - conditions: '{{ (spd | string) == ''off'' }}'
+          sequence:
+          - action: fan.turn_off
+            target:
+              entity_id: '{{ repeat.item.fan }}'
+          - if:
+            - condition: template
+              value_template: '{{ states(repeat.item.occ) == ''off'' }}'
+            then:
+            - action: switch.turn_off
+              target:
+                entity_id: '{{ repeat.item.sw }}'
   - if:
     - condition: template
       value_template: '{{ ai_json.blinds is mapping and ai_json.blinds.dining is defined and ai_json.blinds.dining | string | lower != ''no_change'' }}'
@@ -898,8 +792,20 @@
       data:
         message: 'Climate AI: {{ ''No change'' if setpoint == ''no_change'' else ''Set '' ~ setpoint ~ ''C '' ~ hvac_mode }}{% set ns2 = namespace(p=[]) %}{% for k, v in (ai_json.fans | default({})).items() %}{% if v != ''no_change'' %}{% set ns2.p = ns2.p + [k ~ ''='' ~ v] %}{% endif %}{% endfor %}{{ '' Fans: '' ~ ns2.p | join('', '') if ns2.p | length > 0 else '''' }} - {{ reason }}'
         title: Climate AI
+  alias: climate_ai_advisor
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'on'
+  - condition: template
+    value_template: '{{ now().hour >= 6 }}'
+  description: 'Every 60 min: Climate AI via Gemini. Recommends setpoint, HVAC mode, fan speed, blinds.'
+  id: climate_ai_advisor
   max: 2
   mode: queued
+  triggers:
+  - minutes: /15
+    trigger: time_pattern
 - actions:
   - choose:
     - conditions:
@@ -1043,8 +949,9 @@
     - condition: template
       value_template: '{{ state_attr(''cover.family_room_blinds_curtain'', ''current_position'') | int(100) == 0 }}'
     - condition: template
-      value_template: >
-        {{ states('media_player.lg_webos_tv_cd70') not in ['off', 'unavailable'] }}
+      value_template: '{{ states(''media_player.lg_webos_tv_cd70'') not in [''off'', ''unavailable''] }}
+
+        '
     then:
     - action: light.turn_on
       data:
@@ -1330,21 +1237,7 @@
     trigger: numeric_state
   - minutes: /15
     trigger: time_pattern
-- id: stairs_light_auto
-  alias: Stairs Light Auto On/Off
-  description: 'Echo presence with ecobee NOT detecting -> dim day/late-night brightness (defers to the 100% rule when the ecobee is detecting). Turns the stair light OFF when the ECOBEE stops detecting motion -- the Echo presence is unreliable, so it does not gate the off.'
-  mode: restart
-  triggers:
-  - entity_id: switch.stairs_occupancy
-    id: stairs_on
-    to: 'on'
-    trigger: state
-  - entity_id: binary_sensor.ecobee_motion
-    id: ecobee_off
-    to: 'off'
-    trigger: state
-  conditions: []
-  actions:
+- actions:
   - choose:
     - conditions:
       - condition: trigger
@@ -1355,9 +1248,9 @@
       sequence:
       - choose:
         - conditions:
-          - condition: time
-            after: '22:00:00'
-            before: '07:00:00'
+          - after: '22:00:00'
+            before: 07:00:00
+            condition: time
           sequence:
           - action: light.turn_on
             data:
@@ -1365,9 +1258,9 @@
             target:
               entity_id: light.stair_light
         - conditions:
-          - condition: time
-            after: '07:00:00'
+          - after: 07:00:00
             before: '22:00:00'
+            condition: time
           sequence:
           - action: light.turn_on
             data:
@@ -1387,6 +1280,20 @@
       - action: light.turn_off
         target:
           entity_id: light.stair_light
+  alias: Stairs Light Auto On/Off
+  conditions: []
+  description: Echo presence with ecobee NOT detecting -> dim day/late-night brightness (defers to the 100% rule when the ecobee is detecting). Turns the stair light OFF when the ECOBEE stops detecting motion -- the Echo presence is unreliable, so it does not gate the off.
+  id: stairs_light_auto
+  mode: restart
+  triggers:
+  - entity_id: switch.stairs_occupancy
+    id: stairs_on
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.ecobee_motion
+    id: ecobee_off
+    to: 'off'
+    trigger: state
 - actions:
   - action: switch.turn_off
     target:
@@ -1542,15 +1449,7 @@
   triggers:
   - event: start
     trigger: homeassistant
-- id: sunset_lights_on_blinds_closed
-  alias: 'Sunset: Lights On, Blinds Closed'
-  description: Close all blinds, turn on outdoor and indoor lights at sunset
-  triggers:
-  - event: sunset
-    offset: 0
-    trigger: sun
-  conditions: []
-  actions:
+- actions:
   - action: switch.turn_on
     target:
       entity_id: switch.adaptive_lighting_whole_house_adaptive_lighting_adapt_brightness_whole_house
@@ -1588,7 +1487,15 @@
     data:
       entity_id: switch.whole_house_adaptive_lighting_whole_house
       manual_control: false
+  alias: 'Sunset: Lights On, Blinds Closed'
+  conditions: []
+  description: Close all blinds, turn on outdoor and indoor lights at sunset
+  id: sunset_lights_on_blinds_closed
   mode: single
+  triggers:
+  - event: sunset
+    offset: 0
+    trigger: sun
 - actions:
   - else:
     - action: switch.turn_off
@@ -1612,11 +1519,23 @@
   triggers:
   - entity_id: switch.back_hallway_light_main_switch
     trigger: state
-- id: security_watchdog_nighttime
+- action:
+  - data:
+      logger: security_watchdog
+      message: 'NIGHT GUARD: {{ trigger.entity_id }} to {{ trigger.to_state.state }} at {{ now() }}'
+    service: system_log.write
+  - service: cover.close_cover
+    target:
+      entity_id: '{{ trigger.entity_id }}'
   alias: Security Watchdog - Night-time Blind & Light Guard
+  condition:
+  - after: 00:00:00
+    condition: time
+  - before: sunrise
+    condition: sun
+  id: security_watchdog_nighttime
   trigger:
-  - platform: state
-    entity_id:
+  - entity_id:
     - cover.dining_room_blinds
     - cover.dining_room_blinds_curtain
     - cover.dining_room_blinds_curtain_2
@@ -1627,98 +1546,74 @@
     - cover.living_room_blinds_curtain_2
     - cover.mina_s_blinds_curtain
     - cover.mina_s_blinds_curtain_2
+    platform: state
     to: 'on'
-  condition:
-  - condition: time
-    after: 00:00:00
-  - condition: sun
-    before: sunrise
-  action:
-  - service: system_log.write
-    data:
-      logger: security_watchdog
-      message: 'NIGHT GUARD: {{ trigger.entity_id }} to {{ trigger.to_state.state }} at {{ now() }}'
-  - service: cover.close_cover
-    target:
-      entity_id: '{{ trigger.entity_id }}'
-- id: audit_cover_commands
-  alias: Audit Log - All Cover Service Calls
-  mode: parallel
-  trigger:
-  - platform: event
-    event_type: call_service
-    event_data:
-      domain: cover
-  action:
-  - service: system_log.write
-    data:
+- action:
+  - data:
       logger: audit_cover
       message: 'COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default(''none'') }} at {{ now() }}'
-- id: '1777445260568'
-  alias: Lock Front and Garage Doors at 9PM
-  description: ''
-  triggers:
-  - trigger: time
-    at: '21:00:00'
-  conditions:
-  - condition: state
-    entity_id: lock.front_door
-    state: unlocked
-  actions:
+    service: system_log.write
+  alias: Audit Log - All Cover Service Calls
+  id: audit_cover_commands
+  mode: parallel
+  trigger:
+  - event_data:
+      domain: cover
+    event_type: call_service
+    platform: event
+- actions:
   - action: lock.lock
     target:
       entity_id: lock.front_door
   - action: lock.lock
     target:
       entity_id: lock.garages_entry_door
-  mode: single
-- id: smartthings_nightly_token_refresh
-  alias: Nightly SmartThings Token Refresh
-  description: Reloads the SmartThings integration daily at 3 AM to force an OAuth token refresh before the token expires.
+  alias: Lock Front and Garage Doors at 9PM
+  conditions:
+  - condition: state
+    entity_id: lock.front_door
+    state: unlocked
+  description: ''
+  id: '1777445260568'
   mode: single
   triggers:
-  - trigger: time
-    at: 03:00:00
-  actions:
+  - at: '21:00:00'
+    trigger: time
+- actions:
   - action: homeassistant.reload_config_entry
     data:
       entry_id: 01KQE0MPFNX2G9DQYR1H77867V
-- id: smart_vent_fan_control
-  initial_state: false
-  alias: Smart Vent Fan Control
-  description: Unified vent fan control for Izaan and Mina. Heating + room < 21C -> fan ON. Cooling + room > 23C -> fan OFF. Idle or temp in range -> fan OFF. Re-evaluates every 10 min.
-  mode: restart
+  alias: Nightly SmartThings Token Refresh
+  description: Reloads the SmartThings integration daily at 3 AM to force an OAuth token refresh before the token expires.
+  id: smartthings_nightly_token_refresh
+  mode: single
   triggers:
-  - trigger: state
-    entity_id: climate.ecobee
-    attribute: hvac_action
-    id: hvac_change
-  - trigger: time_pattern
-    minutes: /10
-    id: periodic
-  conditions: []
-  actions:
+  - at: 03:00:00
+    trigger: time
+- actions:
   - choose:
     - conditions:
-      - condition: state
+      - attribute: hvac_action
+        condition: state
         entity_id: climate.ecobee
-        attribute: hvac_action
         state: heating
       - condition: template
-        value_template: |
-          {{ states('sensor.izaans_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}
+        value_template: '{{ states(''sensor.izaans_room_temperature'') | float(99) < states(''input_number.vent_fan_heat_threshold'') | int(21) }}
+
+          '
       sequence:
       - action: fan.turn_on
         target:
           entity_id: fan.izaan_s_room_20a970
     - conditions:
-      - condition: state
+      - attribute: hvac_action
+        condition: state
         entity_id: climate.ecobee
-        attribute: hvac_action
         state: cooling
       - condition: template
-        value_template: |
-          {{ states('sensor.izaans_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}
+        value_template: '{{ states(''sensor.izaans_room_temperature'') | float(0) > states(''input_number.vent_fan_cool_threshold'') | int(23) }}
+
+          '
       sequence:
       - action: fan.turn_on
         target:
@@ -1729,25 +1624,27 @@
         entity_id: fan.izaan_s_room_20a970
   - choose:
     - conditions:
-      - condition: state
+      - attribute: hvac_action
+        condition: state
         entity_id: climate.ecobee
-        attribute: hvac_action
         state: heating
       - condition: template
-        value_template: |
-          {{ states('sensor.minas_room_temperature') | float(99) < states('input_number.vent_fan_heat_threshold') | int(21) }}
+        value_template: '{{ states(''sensor.minas_room_temperature'') | float(99) < states(''input_number.vent_fan_heat_threshold'') | int(21) }}
+
+          '
       sequence:
       - action: fan.turn_on
         target:
           entity_id: fan.mina_s_room_f851f4
     - conditions:
-      - condition: state
+      - attribute: hvac_action
+        condition: state
         entity_id: climate.ecobee
-        attribute: hvac_action
         state: cooling
       - condition: template
-        value_template: |
-          {{ states('sensor.minas_room_temperature') | float(0) > states('input_number.vent_fan_cool_threshold') | int(23) }}
+        value_template: '{{ states(''sensor.minas_room_temperature'') | float(0) > states(''input_number.vent_fan_cool_threshold'') | int(23) }}
+
+          '
       sequence:
       - action: fan.turn_on
         target:
@@ -1756,32 +1653,21 @@
     - action: fan.turn_off
       target:
         entity_id: fan.mina_s_room_f851f4
-- id: blinds_solar_shutter
+  alias: Smart Vent Fan Control
+  conditions: []
+  description: Unified vent fan control for Izaan and Mina. Heating + room < 21C -> fan ON. Cooling + room > 23C -> fan OFF. Idle or temp in range -> fan OFF. Re-evaluates every 10 min.
+  id: smart_vent_fan_control
   initial_state: false
-  alias: blinds_solar_shutter
-  description: Open all blinds at sunrise. In summer, close sun-facing blinds during direct-sun hours to block solar gain — only when sunny (cloud <60%, no rain). Reopen after sun passes window.
-  mode: single
+  mode: restart
   triggers:
-  - trigger: sun
-    event: sunrise
-    id: sunrise
-  - trigger: time
-    at: '12:00:00'
-    id: dining_solar_close
-  - trigger: time
-    at: '16:00:00'
-    id: nw_solar_close
-  - trigger: time
-    at: '18:00:00'
-    id: dining_solar_open
-  - trigger: time
-    at: '20:00:00'
-    id: nw_solar_open
-  conditions:
-  - condition: state
-    entity_id: input_boolean.climate_ai_enabled
-    state: 'on'
-  actions:
+  - attribute: hvac_action
+    entity_id: climate.ecobee
+    id: hvac_change
+    trigger: state
+  - id: periodic
+    minutes: /10
+    trigger: time_pattern
+- actions:
   - if:
     - condition: trigger
       id: sunrise
@@ -1857,17 +1743,34 @@
         - cover.family_room_blinds
         - cover.family_room_blinds_curtain
         - cover.mina_s_blinds_curtain
-- id: blinds_sunset_close
+  alias: blinds_solar_shutter
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'on'
+  description: Open all blinds at sunrise. In summer, close sun-facing blinds during direct-sun hours to block solar gain — only when sunny (cloud <60%, no rain). Reopen after sun passes window.
+  id: blinds_solar_shutter
   initial_state: false
-  alias: When the sun is setting...
-  description: Close all blinds at sunset with Bond RF/Tuya Cloud retry and turn on the lights
+  mode: single
   triggers:
-  - trigger: sun
-    event: sunset
-    offset: 0
-  conditions: []
-  actions:
+  - event: sunrise
+    id: sunrise
+    trigger: sun
+  - at: '12:00:00'
+    id: dining_solar_close
+    trigger: time
+  - at: '16:00:00'
+    id: nw_solar_close
+    trigger: time
+  - at: '18:00:00'
+    id: dining_solar_open
+    trigger: time
+  - at: '20:00:00'
+    id: nw_solar_open
+    trigger: time
+- actions:
   - action: switch.turn_on
+    data: {}
     target:
       entity_id:
       - switch.back_hallway_light_main_switch
@@ -1878,20 +1781,21 @@
       - switch.kitchen_pantry_light
       - switch.sonoff_10001dccdc
       - switch.kitchen_pantry_light_socket_1
-    data: {}
   - action: light.turn_on
+    data: {}
     target:
       entity_id:
       - light.izaan_s_lamp
       - light.stair_light
-    data: {}
   - action: light.turn_on
+    data:
+      brightness_pct: 12
     target:
       entity_id:
       - light.elements_b3cd_2
-    data:
-      brightness_pct: 12
   - action: light.turn_on
+    data:
+      brightness_pct: 90
     target:
       entity_id:
       - light.lamppost_bulb_1
@@ -1900,8 +1804,6 @@
       - light.front_porch_downlight
       - light.garage_left_downlight
       - light.garage_right_downlight
-    data:
-      brightness_pct: 90
   - action: cover.set_cover_position
     data:
       position: 0
@@ -1916,9 +1818,9 @@
   - if:
     - condition: state
       entity_id: cover.living_room_blinds_curtain_2
-      state: open
       for:
         seconds: 5
+      state: open
     then:
     - action: cover.set_cover_position
       data:
@@ -1928,9 +1830,9 @@
   - if:
     - condition: state
       entity_id: cover.dining_room_blinds_curtain_2
-      state: open
       for:
         seconds: 5
+      state: open
     then:
     - action: cover.set_cover_position
       data:
@@ -1940,9 +1842,9 @@
   - if:
     - condition: state
       entity_id: cover.family_room_blinds_curtain_2
-      state: open
       for:
         seconds: 5
+      state: open
     then:
     - action: cover.set_cover_position
       data:
@@ -1952,41 +1854,38 @@
   - if:
     - condition: state
       entity_id: cover.mina_s_blinds_curtain_2
-      state: open
       for:
         seconds: 5
+      state: open
     then:
     - action: cover.set_cover_position
       data:
         position: 0
       target:
         entity_id: cover.mina_s_blinds_curtain_2
-  mode: single
-- id: climate_season_switch
-  alias: climate_season_switch
-  description: Daily 3am check 7-day mean outdoor temp. 3-day hysteresis with counter tracking.
+  alias: When the sun is setting...
+  conditions: []
+  description: Close all blinds at sunset with Bond RF/Tuya Cloud retry and turn on the lights
+  id: blinds_sunset_close
+  initial_state: false
   mode: single
   triggers:
-  - trigger: time
-    at: 03:00:00
-  conditions: []
-  actions:
-  - if:
-    - condition: numeric_state
-      entity_id: sensor.outdoor_temp_7_day_mean_2
-      above: 15
-    then:
-    - action: counter.increment
-      target:
-        entity_id: counter.season_switch_summer
-    - action: counter.reset
-      target:
-        entity_id: counter.season_switch_winter
-    else:
-    - if:
-      - condition: numeric_state
+  - event: sunset
+    offset: 0
+    trigger: sun
+- actions:
+  - else:
+    - else:
+      - action: counter.reset
+        target:
+          entity_id: counter.season_switch_summer
+      - action: counter.reset
+        target:
+          entity_id: counter.season_switch_winter
+      if:
+      - below: 10
+        condition: numeric_state
         entity_id: sensor.outdoor_temp_7_day_mean_2
-        below: 10
       then:
       - action: counter.increment
         target:
@@ -1994,17 +1893,21 @@
       - action: counter.reset
         target:
           entity_id: counter.season_switch_summer
-      else:
-      - action: counter.reset
-        target:
-          entity_id: counter.season_switch_summer
-      - action: counter.reset
-        target:
-          entity_id: counter.season_switch_winter
+    if:
+    - above: 15
+      condition: numeric_state
+      entity_id: sensor.outdoor_temp_7_day_mean_2
+    then:
+    - action: counter.increment
+      target:
+        entity_id: counter.season_switch_summer
+    - action: counter.reset
+      target:
+        entity_id: counter.season_switch_winter
   - if:
-    - condition: numeric_state
+    - above: 2
+      condition: numeric_state
       entity_id: counter.season_switch_summer
-      above: 2
     then:
     - action: input_boolean.turn_on
       target:
@@ -2019,9 +1922,9 @@
       target:
         entity_id: counter.season_switch_winter
   - if:
-    - condition: numeric_state
+    - above: 2
+      condition: numeric_state
       entity_id: counter.season_switch_winter
-      above: 2
     then:
     - action: input_boolean.turn_on
       target:
@@ -2035,36 +1938,15 @@
     - action: counter.reset
       target:
         entity_id: counter.season_switch_winter
-- id: bedtime_routine_auto
-  alias: Bed Time Light Routine
-  description: |
-    Locks doors, shuts garage, turns off inside lights when asleep. Only fires after 21:00 to prevent daytime nap false triggers. 22:00 catch-up trigger handles early bedtimes. TV playing bypasses the sleep-confidence triggers but catch-up at 22:00 always fires regardless of TV state.
+  alias: climate_season_switch
+  conditions: []
+  description: Daily 3am check 7-day mean outdoor temp. 3-day hysteresis with counter tracking.
+  id: climate_season_switch
+  mode: single
   triggers:
-  - entity_id: sensor.oneplus_13_sleep_confidence
-    above: 80
-    for:
-      minutes: 10
-    trigger: numeric_state
-    id: sleep_detected
-  - entity_id: sensor.oneplus13_sleep_confidence
-    above: 80
-    for:
-      minutes: 10
-    trigger: numeric_state
-    id: sleep_detected
-  - entity_id: calendar.sleep_as_android
-    to: 'on'
-    trigger: state
-    id: sleep_detected
-  - trigger: time
-    at: '22:00:00'
-    id: catch_up
-  conditions:
-  - condition: time
-    after: '21:00:00'
-  - condition: template
-    value_template: '{{ states(''media_player.lg_webos_tv_cd70'') not in [''playing'', ''on''] }}'
-  actions:
+  - at: 03:00:00
+    trigger: time
+- actions:
   - action: lock.lock
     target:
       entity_id:
@@ -2080,6 +1962,7 @@
   - delay:
       seconds: 10
   - action: light.turn_off
+    data: {}
     target:
       entity_id:
       - light.kitchen_light_light
@@ -2094,8 +1977,8 @@
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
       - light.master_bedroom_closet_light
-    data: {}
   - action: switch.turn_off
+    data: {}
     target:
       entity_id:
       - switch.kitchen_pantry_light
@@ -2110,27 +1993,62 @@
       - switch.garage_light_switch_switch_1
       - switch.master_bedroom_fan_light_switch_1
       - switch.back_hallway_light_main_switch
-    data: {}
   - action: notify.mobile_app_pixel_8_pro
     data:
-      message: |
-        Bedtime routine ran (trigger: {{ trigger.id }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.
+      message: 'Bedtime routine ran (trigger: {{ trigger.id }}). Locks: {{ states(''lock.front_door'') }}/{{ states(''lock.garages_entry_door'') }}, Garage: {{ states(''cover.larissa_s_garage_door'') }}.
+
+        '
+  alias: Bed Time Light Routine
+  conditions:
+  - after: '21:00:00'
+    condition: time
+  - condition: template
+    value_template: '{{ states(''media_player.lg_webos_tv_cd70'') not in [''playing'', ''on''] }}'
+  description: 'Locks doors, shuts garage, turns off inside lights when asleep. Only fires after 21:00 to prevent daytime nap false triggers. 22:00 catch-up trigger handles early bedtimes. TV playing bypasses the sleep-confidence triggers but catch-up at 22:00 always fires regardless of TV state.
+
+    '
+  id: bedtime_routine_auto
   mode: single
-- id: airbnb_floodlight_midnight
+  triggers:
+  - above: 80
+    entity_id: sensor.oneplus_13_sleep_confidence
+    for:
+      minutes: 10
+    id: sleep_detected
+    trigger: numeric_state
+  - above: 80
+    entity_id: sensor.oneplus13_sleep_confidence
+    for:
+      minutes: 10
+    id: sleep_detected
+    trigger: numeric_state
+  - entity_id: calendar.sleep_as_android
+    id: sleep_detected
+    to: 'on'
+    trigger: state
+  - at: '22:00:00'
+    id: catch_up
+    trigger: time
+- actions:
+  - action: light.turn_off
+    target:
+      entity_id: light.wasserstein_smart_floodlight_2
   alias: Airbnb Floodlight - Midnight
+  conditions: []
   description: Turn off Airbnb floodlight at midnight every day.
+  id: airbnb_floodlight_midnight
   mode: single
   triggers:
   - at: 00:00:00
     trigger: time
-  conditions: []
-  actions:
+- actions:
   - action: light.turn_off
     target:
       entity_id: light.wasserstein_smart_floodlight_2
-- id: airbnb_floodlight_reservation_end
   alias: Airbnb Floodlight - Reservation End
+  conditions: []
   description: Turn off Airbnb floodlight when Airbnb reservation ends.
+  id: airbnb_floodlight_reservation_end
   mode: single
   triggers:
   - attribute: description
@@ -2142,51 +2060,54 @@
     to:
     - Not available
     trigger: state
-  conditions: []
-  actions:
-  - action: light.turn_off
-    target:
-      entity_id: light.wasserstein_smart_floodlight_2
-- id: airbnb_floodlight_sunset
-  alias: Airbnb Floodlight - Sunset
-  description: Turn on Airbnb floodlight at sunset when Airbnb is reserved.
-  mode: single
-  triggers:
-  - event: sunset
-    offset: 0
-    trigger: sun
-  conditions:
-  - condition: state
-    entity_id: calendar.airbnb
-    state: 'on'
-  actions:
+- actions:
   - action: light.turn_on
     data:
       brightness_pct: 100
     target:
       entity_id: light.wasserstein_smart_floodlight_2
-- id: airbnb_heater_manual_override
-  alias: Airbnb Heater - Manual Override
-  description: Detect manual override of Airbnb heater and disable auto mode.
-  mode: single
-  triggers:
-  - entity_id: switch.airbnb_infrared_heater_child_lock
-    to: 'on'
-    trigger: state
+  alias: Airbnb Floodlight - Sunset
   conditions:
   - condition: state
-    entity_id: input_boolean.airbnb_heater_auto
+    entity_id: calendar.airbnb
     state: 'on'
-  actions:
+  description: Turn on Airbnb floodlight at sunset when Airbnb is reserved.
+  id: airbnb_floodlight_sunset
+  mode: single
+  triggers:
+  - event: sunset
+    offset: 0
+    trigger: sun
+- actions:
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.airbnb_heater_auto
   - action: notify.mobile_app_cph2655
     data:
       message: Airbnb heater manually overridden - auto mode disabled.
-- id: airbnb_heater_reservation_end
+  alias: Airbnb Heater - Manual Override
+  conditions:
+  - condition: state
+    entity_id: input_boolean.airbnb_heater_auto
+    state: 'on'
+  description: Detect manual override of Airbnb heater and disable auto mode.
+  id: airbnb_heater_manual_override
+  mode: single
+  triggers:
+  - entity_id: switch.airbnb_infrared_heater_child_lock
+    to: 'on'
+    trigger: state
+- actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.airbnb_infrared_heater_child_lock
+  - action: notify.mobile_app_cph2655
+    data:
+      message: Airbnb reservation ended - heater turned off.
   alias: Airbnb Heater - Reservation End
+  conditions: []
   description: Turn off Airbnb infrared heater when reservation ends.
+  id: airbnb_heater_reservation_end
   mode: single
   triggers:
   - attribute: description
@@ -2198,17 +2119,17 @@
     to:
     - Not available
     trigger: state
-  conditions: []
-  actions:
-  - action: switch.turn_off
+- actions:
+  - action: switch.turn_on
     target:
       entity_id: switch.airbnb_infrared_heater_child_lock
   - action: notify.mobile_app_cph2655
     data:
-      message: Airbnb reservation ended - heater turned off.
-- id: airbnb_heater_reservation_start
+      message: Airbnb reservation started - heater enabled.
   alias: Airbnb Heater - Reservation Start
+  conditions: []
   description: Turn on Airbnb infrared heater when reservation starts.
+  id: airbnb_heater_reservation_start
   mode: single
   triggers:
   - attribute: description
@@ -2218,41 +2139,25 @@
     to:
     - Reserved
     trigger: state
-  conditions: []
-  actions:
-  - action: switch.turn_on
-    target:
-      entity_id: switch.airbnb_infrared_heater_child_lock
-  - action: notify.mobile_app_cph2655
-    data:
-      message: Airbnb reservation started - heater enabled.
-- id: airbnb_heater_watchdog
-  alias: 'Airbnb: Heater Watchdog (max 4h runtime)'
-  description: Turn off Airbnb heater if it has been running for more than 4 hours continuously.
-  mode: single
-  triggers:
-  - entity_id: switch.airbnb_infrared_heater_child_lock
-    to: 'on'
-    for:
-      hours: 4
-    trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: switch.turn_off
     target:
       entity_id: switch.airbnb_infrared_heater_child_lock
   - action: notify.mobile_app_cph2655
     data:
       message: Airbnb heater watchdog - turned off after 4h continuous runtime.
-- id: '1779331000000'
-  alias: Auto-heal Govee and local integrations after reboot
-  description: Reload Govee and LocalTuya integrations after HA restart to restore connectivity.
+  alias: 'Airbnb: Heater Watchdog (max 4h runtime)'
+  conditions: []
+  description: Turn off Airbnb heater if it has been running for more than 4 hours continuously.
+  id: airbnb_heater_watchdog
   mode: single
   triggers:
-  - event: start
-    trigger: homeassistant
-  conditions: []
-  actions:
+  - entity_id: switch.airbnb_infrared_heater_child_lock
+    for:
+      hours: 4
+    to: 'on'
+    trigger: state
+- actions:
   - delay:
       seconds: 30
   - action: homeassistant.reload_config_entry
@@ -2264,24 +2169,15 @@
   - action: notify.mobile_app_cph2655
     data:
       message: Govee/LocalTuya integrations reloaded after HA restart.
-- id: auto_restore_ac_after_cold_day
-  alias: Auto-restore AC after cold day
-  description: Restore AC/cool mode on ecobee after a cold day passes and temperature rises.
+  alias: Auto-heal Govee and local integrations after reboot
+  conditions: []
+  description: Reload Govee and LocalTuya integrations after HA restart to restore connectivity.
+  id: '1779331000000'
   mode: single
   triggers:
-  - above: 22
-    entity_id: sensor.ecobee_current_temperature
-    trigger: numeric_state
-  conditions:
-  - condition: state
-    entity_id: climate.ecobee
-    attribute: hvac_mode
-    state: heat
-  - condition: numeric_state
-    entity_id: weather.forecast_home
-    attribute: temperature
-    above: 20
-  actions:
+  - event: start
+    trigger: homeassistant
+- actions:
   - action: climate.set_hvac_mode
     data:
       hvac_mode: cool
@@ -2290,34 +2186,43 @@
   - action: notify.mobile_app_cph2655
     data:
       message: AC restored to cool mode after cold day passed.
-- id: bathroom_light_timeout
-  alias: Bathroom Light Timeout (1.5h)
-  description: Turn off bathroom light after 1.5 hours to save energy.
+  alias: Auto-restore AC after cold day
+  conditions:
+  - attribute: hvac_mode
+    condition: state
+    entity_id: climate.ecobee
+    state: heat
+  - above: 20
+    attribute: temperature
+    condition: numeric_state
+    entity_id: weather.forecast_home
+  description: Restore AC/cool mode on ecobee after a cold day passes and temperature rises.
+  id: auto_restore_ac_after_cold_day
   mode: single
   triggers:
-  - entity_id: switch.bathroom_light_switch_1
-    to: 'on'
-    for:
-      hours: 1
-      minutes: 30
-    trigger: state
-  conditions: []
-  actions:
+  - above: 22
+    entity_id: sensor.ecobee_current_temperature
+    trigger: numeric_state
+- actions:
   - action: switch.turn_off
     target:
       entity_id: switch.bathroom_light_switch_1
   - action: notify.mobile_app_cph2655
     data:
       message: Bathroom light turned off after 1.5h timeout.
-- id: blinds_restart_recovery
-  alias: Blinds Restart Recovery — unstick all Zigbee blinds after HA restart
-  description: After HA restart, cycle all blinds to unstick them from wedged positions.
+  alias: Bathroom Light Timeout (1.5h)
+  conditions: []
+  description: Turn off bathroom light after 1.5 hours to save energy.
+  id: bathroom_light_timeout
   mode: single
   triggers:
-  - event: start
-    trigger: homeassistant
-  conditions: []
-  actions:
+  - entity_id: switch.bathroom_light_switch_1
+    for:
+      hours: 1
+      minutes: 30
+    to: 'on'
+    trigger: state
+- actions:
   - delay:
       seconds: 60
   - action: cover.open_cover
@@ -2336,17 +2241,15 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-- id: blinds_sunset_bond
-  initial_state: false
-  alias: blinds_sunset_bond
-  description: Close all blinds at sunset via Bond bridge / Tuya Cloud.
+  alias: Blinds Restart Recovery — unstick all Zigbee blinds after HA restart
+  conditions: []
+  description: After HA restart, cycle all blinds to unstick them from wedged positions.
+  id: blinds_restart_recovery
   mode: single
   triggers:
-  - event: sunset
-    offset: 0
-    trigger: sun
-  conditions: []
-  actions:
+  - event: start
+    trigger: homeassistant
+- actions:
   - action: cover.set_cover_position
     data:
       position: 0
@@ -2356,17 +2259,17 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-- id: '1732520407151'
+  alias: blinds_sunset_bond
+  conditions: []
+  description: Close all blinds at sunset via Bond bridge / Tuya Cloud.
+  id: blinds_sunset_bond
   initial_state: false
-  alias: When the sun is setting...
-  description: Close all blinds when the sun sets.
   mode: single
   triggers:
   - event: sunset
     offset: 0
     trigger: sun
-  conditions: []
-  actions:
+- actions:
   - action: cover.close_cover
     target:
       entity_id:
@@ -2374,16 +2277,17 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-- id: random_daily_curtain_scene
+  alias: When the sun is setting...
+  conditions: []
+  description: Close all blinds when the sun sets.
+  id: '1732520407151'
   initial_state: false
-  alias: Daily Random Curtain Scene
-  description: Set a random curtain position daily at a random time for variety.
   mode: single
   triggers:
-  - at: 09:00:00
-    trigger: time
-  conditions: []
-  actions:
+  - event: sunset
+    offset: 0
+    trigger: sun
+- actions:
   - variables:
       positions:
       - 0
@@ -2400,15 +2304,16 @@
       - cover.dining_room_blinds_curtain
       - cover.family_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-- id: '1778113750432'
-  alias: Dim the outdoor lights at 10PM
-  description: Dim outdoor lights (lampposts, downlights) to 10% at 10PM.
+  alias: Daily Random Curtain Scene
+  conditions: []
+  description: Set a random curtain position daily at a random time for variety.
+  id: random_daily_curtain_scene
+  initial_state: false
   mode: single
   triggers:
-  - at: '22:00:00'
+  - at: 09:00:00
     trigger: time
-  conditions: []
-  actions:
+- actions:
   - action: light.turn_on
     data:
       brightness_pct: 10
@@ -2420,49 +2325,64 @@
       - light.front_porch_downlight
       - light.garage_left_downlight
       - light.garage_right_downlight
-- id: disk_space_critical
+  alias: Dim the outdoor lights at 10PM
+  conditions: []
+  description: Dim outdoor lights (lampposts, downlights) to 10% at 10PM.
+  id: '1778113750432'
+  mode: single
+  triggers:
+  - at: '22:00:00'
+    trigger: time
+- actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      message: 'CRITICAL: Disk usage is at {{ states("sensor.system_monitor_disk_usage") }}%! Immediate action required.'
+      title: ⚠️ Disk Space Critical
   alias: Disk Space Critical Alert
+  conditions: []
   description: Send critical alert when disk usage exceeds 95%.
+  id: disk_space_critical
   mode: single
   triggers:
   - above: 95
     entity_id: sensor.system_monitor_disk_usage
     trigger: numeric_state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'CRITICAL: Disk usage is at {{ states("sensor.system_monitor_disk_usage") }}%! Immediate action required.'
-      title: ⚠️ Disk Space Critical
-- id: disk_space_daily_report
+      message: 'Daily Disk Report: {{ states("sensor.system_monitor_disk_usage") }}% used, {{ states("sensor.system_monitor_memory_usage") }}% memory, CPU {{ states("sensor.system_monitor_processor_use") }}%, Temp {{ states("sensor.system_monitor_processor_temperature") }}°C'
   alias: Disk Space Daily Report
+  conditions: []
   description: Daily report of disk usage at 8AM.
+  id: disk_space_daily_report
   mode: single
   triggers:
   - at: 08:00:00
     trigger: time
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'Daily Disk Report: {{ states("sensor.system_monitor_disk_usage") }}% used, {{ states("sensor.system_monitor_memory_usage") }}% memory, CPU {{ states("sensor.system_monitor_processor_use") }}%, Temp {{ states("sensor.system_monitor_processor_temperature") }}°C'
-- id: disk_space_warning
+      message: 'Warning: Disk usage is at {{ states("sensor.system_monitor_disk_usage") }}%. Consider cleaning up.'
+      title: 💾 Disk Space Warning
   alias: Disk Space Warning
+  conditions: []
   description: Send warning when disk usage exceeds 85%.
+  id: disk_space_warning
   mode: single
   triggers:
   - above: 85
     entity_id: sensor.system_monitor_disk_usage
     trigger: numeric_state
-  conditions: []
-  actions:
-  - action: notify.mobile_app_cph2655
+- actions:
+  - action: light.turn_on
     data:
-      message: 'Warning: Disk usage is at {{ states("sensor.system_monitor_disk_usage") }}%. Consider cleaning up.'
-      title: 💾 Disk Space Warning
-- id: family_room_tv_bias_light
+      brightness_pct: 25
+    target:
+      entity_id: light.family_room_light
   alias: Family Room TV Bias Light
+  conditions: []
   description: Turn on family room bias light when TV turns on.
+  id: family_room_tv_bias_light
   mode: single
   triggers:
   - entity_id: media_player.toshiba_firetv
@@ -2473,25 +2393,7 @@
     from: 'off'
     to: 'on'
     trigger: state
-  conditions: []
-  actions:
-  - action: light.turn_on
-    data:
-      brightness_pct: 25
-    target:
-      entity_id: light.family_room_light
-- id: front_door_left_open_10min
-  alias: Front Door Left Open (10 min)
-  description: Alert if the front door is left open for more than 10 minutes.
-  mode: single
-  triggers:
-  - entity_id: binary_sensor.front_door_door
-    to: 'on'
-    for:
-      minutes: 10
-    trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: The front door has been left open for 10 minutes!
@@ -2504,89 +2406,58 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-- id: garage_door_left_open
-  alias: Garage Entry Door Left Open
-  description: Alert if the garage entry door is left open for more than 10 minutes.
+  alias: Front Door Left Open (10 min)
+  conditions: []
+  description: Alert if the front door is left open for more than 10 minutes.
+  id: front_door_left_open_10min
   mode: single
   triggers:
-  - entity_id: binary_sensor.garages_entry_door_door
-    to: 'on'
+  - entity_id: binary_sensor.front_door_door
     for:
       minutes: 10
+    to: 'on'
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: The garage entry door has been left open for 10 minutes!
       title: 🚪 Garage Entry Door Open
-- id: low_battery_alert
-  alias: Low Battery Alert - Daily
-  description: Daily check of all battery sensors and alert if any are below 20%.
+  alias: Garage Entry Door Left Open
+  conditions: []
+  description: Alert if the garage entry door is left open for more than 10 minutes.
+  id: garage_door_left_open
   mode: single
   triggers:
-  - at: 09:00:00
-    trigger: time
-  conditions: []
-  actions:
+  - entity_id: binary_sensor.garages_entry_door_door
+    for:
+      minutes: 10
+    to: 'on'
+    trigger: state
+- actions:
   - variables:
-      low_batteries: |-
-        {% set sensors = [
-          'sensor.front_door_battery',
-          'sensor.front_door_battery_2',
-          'sensor.garages_entry_door_battery',
-          'sensor.airbnb_battery',
-          'sensor.airbnb_door_battery',
-          'sensor.basement_battery',
-          'sensor.basement_bathroom_leak_sensor_battery',
-          'sensor.ensuite_leak_sensor_battery',
-          'sensor.guest_bathroom_leak_sensor_battery',
-          'sensor.kitchen_leak_sensor_battery',
-          'sensor.laundry_room_leak_sensor_battery',
-          'sensor.powder_room_leak_sensor_battery',
-          'sensor.sump_pump_leak_sensor_battery',
-          'sensor.izaans_room_battery',
-          'sensor.minas_room_battery',
-          'sensor.cat_feeder_battery'
-        ] %} {% set ns = namespace(low=[]) %} {% for s in sensors %}
-          {% set val = states(s) | int(-1) %}
-          {% if val >= 0 and val < 20 %}
-            {% set ns.low = ns.low + [s ~ ' (' ~ val ~ '%)'] %}
-          {% endif %}
-        {% endfor %} {{ ns.low | join(', ') }}
+      low_batteries: "{% set sensors = [\n  'sensor.front_door_battery',\n  'sensor.front_door_battery_2',\n  'sensor.garages_entry_door_battery',\n  'sensor.airbnb_battery',\n  'sensor.airbnb_door_battery',\n  'sensor.basement_battery',\n  'sensor.basement_bathroom_leak_sensor_battery',\n  'sensor.ensuite_leak_sensor_battery',\n  'sensor.guest_bathroom_leak_sensor_battery',\n  'sensor.kitchen_leak_sensor_battery',\n  'sensor.laundry_room_leak_sensor_battery',\n  'sensor.powder_room_leak_sensor_battery',\n  'sensor.sump_pump_leak_sensor_battery',\n  'sensor.izaans_room_battery',\n  'sensor.minas_room_battery',\n  'sensor.cat_feeder_battery'\n] %} {% set ns = namespace(low=[]) %} {% for s in sensors %}\n  {% set val = states(s) | int(-1) %}\n  {% if val >= 0 and val < 20 %}\n    {% set ns.low = ns.low + [s ~ ' (' ~ val ~ '%)'] %}\n  {% endif %}\n{% endfor %} {{ ns.low | join(', ') }}"
   - condition: template
     value_template: '{{ low_batteries | length > 0 }}'
   - action: notify.mobile_app_cph2655
     data:
       message: 'Low battery alert: {{ low_batteries }}'
       title: 🔋 Low Battery Alert
-- id: office_heater_smart_control
-  alias: Office Heater Smart Control
-  description: Smart control for office heater based on temperature and occupancy.
+  alias: Low Battery Alert - Daily
+  conditions: []
+  description: Daily check of all battery sensors and alert if any are below 20%.
+  id: low_battery_alert
   mode: single
   triggers:
-  - above: 23
-    entity_id: sensor.system_monitor_processor_temperature
-    trigger: numeric_state
-  - entity_id: binary_sensor.usb_c_mmwave_sensor_presence
-    to: 'on'
-    id: occupied
-    trigger: state
-  - entity_id: binary_sensor.usb_c_mmwave_sensor_presence
-    to: 'off'
-    for:
-      minutes: 30
-    id: unoccupied
-    trigger: state
-  conditions: []
-  actions:
+  - at: 09:00:00
+    trigger: time
+- actions:
   - choose:
     - conditions:
       - condition: trigger
         id: occupied
-      - condition: numeric_state
+      - below: 20
+        condition: numeric_state
         entity_id: sensor.system_monitor_processor_temperature
-        below: 20
       sequence:
       - action: switch.turn_on
         target:
@@ -2602,47 +2473,54 @@
     - action: switch.turn_off
       target:
         entity_id: switch.office_heater_child_lock
-- id: '1779332000002'
+  alias: Office Heater Smart Control
+  conditions: []
+  description: Smart control for office heater based on temperature and occupancy.
+  id: office_heater_smart_control
+  mode: single
+  triggers:
+  - above: 23
+    entity_id: sensor.system_monitor_processor_temperature
+    trigger: numeric_state
+  - entity_id: binary_sensor.usb_c_mmwave_sensor_presence
+    id: occupied
+    to: 'on'
+    trigger: state
+  - entity_id: binary_sensor.usb_c_mmwave_sensor_presence
+    for:
+      minutes: 30
+    id: unoccupied
+    to: 'off'
+    trigger: state
+- actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      message: 'CRITICAL: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature") }}°C! Check cooling immediately.'
+      title: 🔥 Pi 5 Thermal Critical
   alias: Pi 5 thermal critical
+  conditions: []
   description: Critical alert when Pi 5 CPU temperature exceeds 80°C.
+  id: '1779332000002'
   mode: single
   triggers:
   - above: 80
     entity_id: sensor.system_monitor_processor_temperature
     trigger: numeric_state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
-      message: 'CRITICAL: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature") }}°C! Check cooling immediately.'
-      title: 🔥 Pi 5 Thermal Critical
-- id: '1779332000001'
+      message: 'Warning: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature") }}°C.'
+      title: 🌡️ Pi 5 Thermal Warning
   alias: Pi 5 thermal warning
+  conditions: []
   description: Warning when Pi 5 CPU temperature exceeds 70°C.
+  id: '1779332000001'
   mode: single
   triggers:
   - above: 70
     entity_id: sensor.system_monitor_processor_temperature
     trigger: numeric_state
-  conditions: []
-  actions:
-  - action: notify.mobile_app_cph2655
-    data:
-      message: 'Warning: Pi 5 CPU temperature is {{ states("sensor.system_monitor_processor_temperature") }}°C.'
-      title: 🌡️ Pi 5 Thermal Warning
-- id: pool_pump_offpeak
-  alias: Pool Pump - Off-Peak Overnight
-  description: Run pool pump during off-peak electricity hours overnight (12am-6am).
-  mode: single
-  triggers:
-  - at: 00:00:00
-    id: off_peak_start
-    trigger: time
-  - at: 06:00:00
-    id: off_peak_end
-    trigger: time
-  conditions: []
-  actions:
+- actions:
   - choose:
     - conditions:
       - condition: trigger
@@ -2662,21 +2540,19 @@
           entity_id:
           - switch.pool_pump_2
           - switch.pool_pump_heater_socket_1
-- id: pool_pump_solar_align
-  alias: Pool Pump - Solar Align
-  description: Run pool pump when solar power is available to align with solar generation.
+  alias: Pool Pump - Off-Peak Overnight
+  conditions: []
+  description: Run pool pump during off-peak electricity hours overnight (12am-6am).
+  id: pool_pump_offpeak
   mode: single
   triggers:
-  - above: 500
-    entity_id: sensor.solar_power_now
-    id: solar_active
-    trigger: numeric_state
-  - below: 100
-    entity_id: sensor.solar_power_now
-    id: solar_inactive
-    trigger: numeric_state
-  conditions: []
-  actions:
+  - at: 00:00:00
+    id: off_peak_start
+    trigger: time
+  - at: 06:00:00
+    id: off_peak_end
+    trigger: time
+- actions:
   - choose:
     - conditions:
       - condition: trigger
@@ -2696,16 +2572,21 @@
           entity_id:
           - switch.pool_pump_2
           - switch.salt_chlorinator
-- id: sunset_outdoor_lights
-  alias: 'Sunset: Turn on outdoor lights'
-  description: Turn on outdoor lights at sunset.
+  alias: Pool Pump - Solar Align
+  conditions: []
+  description: Run pool pump when solar power is available to align with solar generation.
+  id: pool_pump_solar_align
   mode: single
   triggers:
-  - event: sunset
-    offset: 0
-    trigger: sun
-  conditions: []
-  actions:
+  - above: 500
+    entity_id: sensor.solar_power_now
+    id: solar_active
+    trigger: numeric_state
+  - below: 100
+    entity_id: sensor.solar_power_now
+    id: solar_inactive
+    trigger: numeric_state
+- actions:
   - action: light.turn_on
     data:
       brightness_pct: 90
@@ -2722,9 +2603,25 @@
       entity_id:
       - switch.patio_door_light_switch_1
       - switch.foyer_light_switch_1
-- id: '1777271290234'
+  alias: 'Sunset: Turn on outdoor lights'
+  conditions: []
+  description: Turn on outdoor lights at sunset.
+  id: sunset_outdoor_lights
+  mode: single
+  triggers:
+  - event: sunset
+    offset: 0
+    trigger: sun
+- actions:
+  - action: switch.turn_off
+    target:
+      entity_id:
+      - switch.side_rain_barrel_switch
+      - switch.side_rain_barrel_switch
   alias: Turn off Side Entrance light when Airbnb is empty
+  conditions: []
   description: Turn off side entrance light when Airbnb is not reserved.
+  id: '1777271290234'
   mode: single
   triggers:
   - attribute: description
@@ -2736,81 +2633,68 @@
     to:
     - Not available
     trigger: state
-  conditions: []
-  actions:
-  - action: switch.turn_off
+- actions:
+  - action: fan.turn_off
     target:
-      entity_id:
-      - switch.side_rain_barrel_switch
-      - switch.side_rain_barrel_switch
-- id: '1731550977605'
-  initial_state: false
+      entity_id: fan.izaan_s_room_20a970
   alias: Turn off Izaan's vent fan when furnace is off
-  description: Turn off Izaan's vent fan when the furnace/climate stops heating.
-  mode: single
-  triggers:
-  - entity_id: climate.ecobee
-    attribute: hvac_action
-    from: heating
-    to: idle
-    trigger: state
   conditions:
   - condition: state
     entity_id: fan.izaan_s_room_20a970
     state: 'on'
-  actions:
+  description: Turn off Izaan's vent fan when the furnace/climate stops heating.
+  id: '1731550977605'
+  initial_state: false
+  mode: single
+  triggers:
+  - attribute: hvac_action
+    entity_id: climate.ecobee
+    from: heating
+    to: idle
+    trigger: state
+- actions:
   - action: fan.turn_off
     target:
-      entity_id: fan.izaan_s_room_20a970
-- id: '1731551071348'
-  initial_state: false
+      entity_id: fan.mina_s_room_f851f4
   alias: Turn off Mina's vent fan
+  conditions:
+  - condition: state
+    entity_id: fan.mina_s_room_f851f4
+    state: 'on'
   description: Turn off Mina's vent fan (manual trigger or when conditions warrant).
+  id: '1731551071348'
+  initial_state: false
   mode: single
   triggers:
   - entity_id: input_boolean.climate_summer_mode
     to: 'off'
     trigger: state
-  conditions:
-  - condition: state
-    entity_id: fan.mina_s_room_f851f4
-    state: 'on'
-  actions:
-  - action: fan.turn_off
-    target:
-      entity_id: fan.mina_s_room_f851f4
-- id: '1731006435330'
-  alias: Turn off Side Entrance light and heater
-  description: Turn off side entrance light and any connected heater.
-  mode: single
-  triggers: []
-  conditions: []
-  actions:
+- actions:
   - action: switch.turn_off
     target:
       entity_id:
       - switch.side_rain_barrel_switch
       - switch.side_rain_barrel_switch
-- id: '1732658443406'
-  initial_state: false
-  alias: Turn off Vent Fans
-  description: Turn off all SmartCocoon vent fans.
+  alias: Turn off Side Entrance light and heater
+  conditions: []
+  description: Turn off side entrance light and any connected heater.
+  id: '1731006435330'
   mode: single
   triggers: []
-  conditions: []
-  actions:
+- actions:
   - action: fan.turn_off
     target:
       entity_id:
       - fan.izaan_s_room_20a970
       - fan.mina_s_room_f851f4
-- id: '1730999662318'
-  alias: Turn on Heater
-  description: Turn on the main heater (ecobee to heat mode).
+  alias: Turn off Vent Fans
+  conditions: []
+  description: Turn off all SmartCocoon vent fans.
+  id: '1732658443406'
+  initial_state: false
   mode: single
   triggers: []
-  conditions: []
-  actions:
+- actions:
   - action: climate.set_hvac_mode
     data:
       hvac_mode: heat
@@ -2821,35 +2705,37 @@
       temperature: 22
     target:
       entity_id: climate.ecobee
-- id: '1731473309144'
-  initial_state: false
+  alias: Turn on Heater
+  conditions: []
+  description: Turn on the main heater (ecobee to heat mode).
+  id: '1730999662318'
+  mode: single
+  triggers: []
+- actions:
+  - action: fan.turn_on
+    target:
+      entity_id: fan.izaan_s_room_20a970
   alias: Turn on Izaan's vent fan (Winter)
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_winter_mode
+    state: 'on'
+  - condition: state
+    entity_id: fan.izaan_s_room_20a970
+    state: 'off'
   description: Turn on Izaan's vent fan when temperature drops below heat threshold (winter).
+  id: '1731473309144'
+  initial_state: false
   mode: single
   triggers:
   - below: 21
     entity_id: sensor.izaans_room_temperature
     trigger: numeric_state
-  conditions:
-  - condition: state
-    entity_id: input_boolean.climate_winter_mode
-    state: 'on'
-  - condition: state
-    entity_id: fan.izaan_s_room_20a970
-    state: 'off'
-  actions:
+- actions:
   - action: fan.turn_on
     target:
       entity_id: fan.izaan_s_room_20a970
-- id: '1749089443236'
-  initial_state: false
   alias: Turn on Izaan's Vent fan when too hot (summer)
-  description: Turn on Izaan's vent fan when room temperature exceeds cool threshold (summer).
-  mode: single
-  triggers:
-  - above: 23
-    entity_id: sensor.izaans_room_temperature
-    trigger: numeric_state
   conditions:
   - condition: state
     entity_id: input_boolean.climate_summer_mode
@@ -2857,19 +2743,19 @@
   - condition: state
     entity_id: fan.izaan_s_room_20a970
     state: 'off'
-  actions:
-  - action: fan.turn_on
-    target:
-      entity_id: fan.izaan_s_room_20a970
-- id: '1731473451966'
+  description: Turn on Izaan's vent fan when room temperature exceeds cool threshold (summer).
+  id: '1749089443236'
   initial_state: false
-  alias: Turn on Mina's vent fan (Winter)
-  description: Turn on Mina's vent fan when temperature drops below heat threshold (winter).
   mode: single
   triggers:
-  - below: 21
-    entity_id: sensor.minas_room_temperature
+  - above: 23
+    entity_id: sensor.izaans_room_temperature
     trigger: numeric_state
+- actions:
+  - action: fan.turn_on
+    target:
+      entity_id: fan.mina_s_room_f851f4
+  alias: Turn on Mina's vent fan (Winter)
   conditions:
   - condition: state
     entity_id: input_boolean.climate_winter_mode
@@ -2877,19 +2763,19 @@
   - condition: state
     entity_id: fan.mina_s_room_f851f4
     state: 'off'
-  actions:
+  description: Turn on Mina's vent fan when temperature drops below heat threshold (winter).
+  id: '1731473451966'
+  initial_state: false
+  mode: single
+  triggers:
+  - below: 21
+    entity_id: sensor.minas_room_temperature
+    trigger: numeric_state
+- actions:
   - action: fan.turn_on
     target:
       entity_id: fan.mina_s_room_f851f4
-- id: '1749089561856'
-  initial_state: false
   alias: Turn on Mina's vent fan when too hot (summer)
-  description: Turn on Mina's vent fan when room temperature exceeds cool threshold (summer).
-  mode: single
-  triggers:
-  - above: 23
-    entity_id: sensor.minas_room_temperature
-    trigger: numeric_state
   conditions:
   - condition: state
     entity_id: input_boolean.climate_summer_mode
@@ -2897,23 +2783,15 @@
   - condition: state
     entity_id: fan.mina_s_room_f851f4
     state: 'off'
-  actions:
-  - action: fan.turn_on
-    target:
-      entity_id: fan.mina_s_room_f851f4
-- id: '1777270174266'
-  alias: Turn on Nanoleaf Element at night
-  description: Turn on Nanoleaf Elements light at night (sunset) - only when auto-lighting is disabled.
+  description: Turn on Mina's vent fan when room temperature exceeds cool threshold (summer).
+  id: '1749089561856'
+  initial_state: false
   mode: single
   triggers:
-  - event: sunset
-    offset: 0
-    trigger: sun
-  conditions:
-  - condition: state
-    entity_id: input_boolean.kitchen_auto_lights_disable
-    state: 'on'
-  actions:
+  - above: 23
+    entity_id: sensor.minas_room_temperature
+    trigger: numeric_state
+- actions:
   - action: light.turn_on
     data:
       brightness_pct: 50
@@ -2921,33 +2799,31 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-- id: '1731006311562'
-  alias: Turn on Side Entrance Light and Heater
-  description: Turn on side entrance light and heater.
+  alias: Turn on Nanoleaf Element at night
+  conditions:
+  - condition: state
+    entity_id: input_boolean.kitchen_auto_lights_disable
+    state: 'on'
+  description: Turn on Nanoleaf Elements light at night (sunset) - only when auto-lighting is disabled.
+  id: '1777270174266'
   mode: single
-  triggers: []
-  conditions: []
-  actions:
+  triggers:
+  - event: sunset
+    offset: 0
+    trigger: sun
+- actions:
   - action: switch.turn_on
     target:
       entity_id:
       - switch.side_rain_barrel_switch
       - switch.side_rain_barrel_switch
-- id: '1777600410190'
-  alias: Turn on Supernova with Master bedroom light switch
-  description: Turn on Supernova and Elements when master bedroom light switch is turned on.
-  mode: restart
-  triggers:
-  - entity_id: switch.master_bedroom_fan_light_switch_1
-    id: switch_on
-    to: 'on'
-    trigger: state
-  - entity_id: switch.master_bedroom_fan_light_switch_1
-    id: switch_off
-    to: 'off'
-    trigger: state
+  alias: Turn on Side Entrance Light and Heater
   conditions: []
-  actions:
+  description: Turn on side entrance light and heater.
+  id: '1731006311562'
+  mode: single
+  triggers: []
+- actions:
   - choose:
     - conditions:
       - condition: trigger
@@ -2955,10 +2831,7 @@
       sequence:
       - if:
         - condition: template
-          value_template: >
-            {{ (is_state('sun.sun', 'below_horizon') and now().hour < 22)
-               or (state_attr('sun.sun', 'elevation') | float(-1) < 5
-                   and state_attr('weather.forecast_home', 'cloud_coverage') | int(0) > 80) }}
+          value_template: "{{ (is_state('sun.sun', 'below_horizon') and now().hour < 22)\n   or (state_attr('sun.sun', 'elevation') | float(-1) < 5\n       and state_attr('weather.forecast_home', 'cloud_coverage') | int(0) > 80) }}\n"
         then:
         - action: switch.turn_on
           target:
@@ -2980,35 +2853,40 @@
       - action: switch.turn_off
         target:
           entity_id: switch.sonoff_10001d2a24
-- id: '1777564702537'
-  alias: When Arshad leaves home, turn off Office heater
-  description: Turn off office heater when Arshad leaves home (device tracker changes to not_home).
-  mode: single
+  alias: Turn on Supernova with Master bedroom light switch
+  conditions: []
+  description: Turn on Supernova and Elements when master bedroom light switch is turned on.
+  id: '1777600410190'
+  mode: restart
   triggers:
-  - entity_id: device_tracker.oneplus_13
-    to: not_home
+  - entity_id: switch.master_bedroom_fan_light_switch_1
+    id: switch_on
+    to: 'on'
     trigger: state
-  conditions:
-  - condition: state
-    entity_id: switch.office_heater_child_lock
-    state: 'on'
-  actions:
+  - entity_id: switch.master_bedroom_fan_light_switch_1
+    id: switch_off
+    to: 'off'
+    trigger: state
+- actions:
   - action: switch.turn_off
     target:
       entity_id: switch.office_heater_child_lock
   - action: notify.mobile_app_cph2655
     data:
       message: Arshad left home - office heater turned off.
-- id: leak_basement_bathroom
-  alias: When leak is detected in the Basement Bathroom
-  description: Alert when leak is detected in the basement bathroom.
+  alias: When Arshad leaves home, turn off Office heater
+  conditions:
+  - condition: state
+    entity_id: switch.office_heater_child_lock
+    state: 'on'
+  description: Turn off office heater when Arshad leaves home (device tracker changes to not_home).
+  id: '1777564702537'
   mode: single
   triggers:
-  - entity_id: binary_sensor.basement_bathroom_leak_sensor_moisture
-    to: 'on'
+  - entity_id: device_tracker.oneplus_13
+    to: not_home
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Basement Bathroom!
@@ -3021,16 +2899,16 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-- id: leak_ensuite
-  alias: When leak is detected in the Ensuite
-  description: Alert when leak is detected in the ensuite.
+  alias: When leak is detected in the Basement Bathroom
+  conditions: []
+  description: Alert when leak is detected in the basement bathroom.
+  id: leak_basement_bathroom
   mode: single
   triggers:
-  - entity_id: binary_sensor.ensuite_leak_sensor_moisture
+  - entity_id: binary_sensor.basement_bathroom_leak_sensor_moisture
     to: 'on'
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Ensuite!
@@ -3043,16 +2921,16 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-- id: leak_kitchen
-  alias: When leak is detected in the Kitchen
-  description: Alert when leak is detected in the kitchen.
+  alias: When leak is detected in the Ensuite
+  conditions: []
+  description: Alert when leak is detected in the ensuite.
+  id: leak_ensuite
   mode: single
   triggers:
-  - entity_id: binary_sensor.kitchen_leak_sensor_moisture
+  - entity_id: binary_sensor.ensuite_leak_sensor_moisture
     to: 'on'
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Kitchen!
@@ -3065,16 +2943,16 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-- id: leak_laundry_room
-  alias: When leak is detected in the Laundry Room
-  description: Alert when leak is detected in the laundry room.
+  alias: When leak is detected in the Kitchen
+  conditions: []
+  description: Alert when leak is detected in the kitchen.
+  id: leak_kitchen
   mode: single
   triggers:
-  - entity_id: binary_sensor.laundry_room_leak_sensor_moisture
+  - entity_id: binary_sensor.kitchen_leak_sensor_moisture
     to: 'on'
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak in the Laundry Room!
@@ -3087,16 +2965,16 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-- id: leak_sump_pump
-  alias: When leak is detected in the Sump Pump
-  description: Alert when leak is detected near the sump pump.
+  alias: When leak is detected in the Laundry Room
+  conditions: []
+  description: Alert when leak is detected in the laundry room.
+  id: leak_laundry_room
   mode: single
   triggers:
-  - entity_id: binary_sensor.sump_pump_leak_sensor_moisture
+  - entity_id: binary_sensor.laundry_room_leak_sensor_moisture
     to: 'on'
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak near the Sump Pump!
@@ -3109,19 +2987,16 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-- id: '1778120067618'
-  alias: When Master bedroom light switch is turned off...
-  description: Actions when master bedroom light switch is turned off - turn off supernova and dim elements.
+  alias: When leak is detected in the Sump Pump
+  conditions: []
+  description: Alert when leak is detected near the sump pump.
+  id: leak_sump_pump
   mode: single
   triggers:
-  - entity_id: switch.master_bedroom_fan_light_switch_1
-    to: 'off'
+  - entity_id: binary_sensor.sump_pump_leak_sensor_moisture
+    to: 'on'
     trigger: state
-  conditions:
-  - condition: state
-    entity_id: input_boolean.kitchen_auto_lights_disable
-    state: 'on'
-  actions:
+- actions:
   - action: switch.turn_off
     target:
       entity_id: switch.sonoff_10001d2a24
@@ -3132,19 +3007,19 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-- id: '1778119862587'
-  alias: When Master bedroom light switch is turned on...
-  description: Actions when master bedroom light switch is turned on - turn on supernova and brighten elements.
-  mode: single
-  triggers:
-  - entity_id: switch.master_bedroom_fan_light_switch_1
-    to: 'on'
-    trigger: state
+  alias: When Master bedroom light switch is turned off...
   conditions:
   - condition: state
     entity_id: input_boolean.kitchen_auto_lights_disable
     state: 'on'
-  actions:
+  description: Actions when master bedroom light switch is turned off - turn off supernova and dim elements.
+  id: '1778120067618'
+  mode: single
+  triggers:
+  - entity_id: switch.master_bedroom_fan_light_switch_1
+    to: 'off'
+    trigger: state
+- actions:
   - action: switch.turn_on
     target:
       entity_id: switch.sonoff_10001d2a24
@@ -3155,16 +3030,19 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-- id: '1777566328006'
-  alias: When there's a leak by the dishwasher
-  description: Alert when leak is detected by the dishwasher (kitchen leak sensor).
+  alias: When Master bedroom light switch is turned on...
+  conditions:
+  - condition: state
+    entity_id: input_boolean.kitchen_auto_lights_disable
+    state: 'on'
+  description: Actions when master bedroom light switch is turned on - turn on supernova and brighten elements.
+  id: '1778119862587'
   mode: single
   triggers:
-  - entity_id: binary_sensor.kitchen_leak_sensor_moisture
+  - entity_id: switch.master_bedroom_fan_light_switch_1
     to: 'on'
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak by the dishwasher!
@@ -3177,16 +3055,16 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-- id: '1777566454340'
-  alias: When there's a leak by the laundry sink
-  description: Alert when leak is detected by the laundry sink (laundry room leak sensor).
+  alias: When there's a leak by the dishwasher
+  conditions: []
+  description: Alert when leak is detected by the dishwasher (kitchen leak sensor).
+  id: '1777566328006'
   mode: single
   triggers:
-  - entity_id: binary_sensor.laundry_room_leak_sensor_moisture
+  - entity_id: binary_sensor.kitchen_leak_sensor_moisture
     to: 'on'
     trigger: state
-  conditions: []
-  actions:
+- actions:
   - action: notify.mobile_app_cph2655
     data:
       message: There's a leak by the laundry sink!
@@ -3199,26 +3077,30 @@
       target:
       - media_player.downstairs_echo_dot
       - media_player.upstairs_echo_dot
-
-- id: esphome_kitchen_bridge_startup
-  alias: ESPHome Kitchen Bridge Startup
-  description: Starts the ESPHome-HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.
-  triggers:
-  - trigger: homeassistant
-    event: start
-  actions:
-  - action: shell_command.start_esphome_kitchen_bridge
-- id: stairs_echo_ecobee_motion
-  alias: 'Stairs Light - Echo + Ecobee Motion (100%)'
-  description: 'When the upstairs Echo presence (switch.stairs_occupancy) AND the ecobee motion sensor both detect motion, and it is dark out (overcast day or after sunset), turn the stair light to 100%.'
+  alias: When there's a leak by the laundry sink
+  conditions: []
+  description: Alert when leak is detected by the laundry sink (laundry room leak sensor).
+  id: '1777566454340'
   mode: single
   triggers:
-  - trigger: state
-    entity_id: switch.stairs_occupancy
+  - entity_id: binary_sensor.laundry_room_leak_sensor_moisture
     to: 'on'
-  - trigger: state
-    entity_id: binary_sensor.ecobee_motion
-    to: 'on'
+    trigger: state
+- actions:
+  - action: shell_command.start_esphome_kitchen_bridge
+  alias: ESPHome Kitchen Bridge Startup
+  description: Starts the ESPHome-HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.
+  id: esphome_kitchen_bridge_startup
+  triggers:
+  - event: start
+    trigger: homeassistant
+- actions:
+  - action: light.turn_on
+    data:
+      brightness_pct: 100
+    target:
+      entity_id: light.stair_light
+  alias: Stairs Light - Echo + Ecobee Motion (100%)
   conditions:
   - condition: state
     entity_id: switch.stairs_occupancy
@@ -3242,27 +3124,21 @@
       - fog
       - overcast
       - partlycloudy
-  actions:
-  - action: light.turn_on
-    target:
-      entity_id: light.stair_light
-    data:
-      brightness_pct: 100
-- id: foyer_light_daytime_auto_off
-  alias: 'Foyer Light Daytime Auto-Off (no hallway motion)'
-  description: 'During the day, if the foyer light is on and the hallway mmWave (presence-3) has seen no motion for 2 minutes, turn the foyer light off. Companion to "Foyer Light on Front Door Open".'
+  description: When the upstairs Echo presence (switch.stairs_occupancy) AND the ecobee motion sensor both detect motion, and it is dark out (overcast day or after sunset), turn the stair light to 100%.
+  id: stairs_echo_ecobee_motion
   mode: single
   triggers:
-  - trigger: state
-    entity_id: binary_sensor.presence_3_presence
-    to: 'off'
-    for:
-      minutes: 2
-  - trigger: state
-    entity_id: switch.foyer_light_switch_1
+  - entity_id: switch.stairs_occupancy
     to: 'on'
-    for:
-      minutes: 2
+    trigger: state
+  - entity_id: binary_sensor.ecobee_motion
+    to: 'on'
+    trigger: state
+- actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.foyer_light_switch_1
+  alias: Foyer Light Daytime Auto-Off (no hallway motion)
   conditions:
   - condition: state
     entity_id: switch.foyer_light_switch_1
@@ -3272,19 +3148,21 @@
     state: 'off'
   - condition: template
     value_template: '{{ state_attr(''sun.sun'', ''elevation'') | float(-1) > 0 }}'
-  actions:
-  - action: switch.turn_off
-    target:
-      entity_id: switch.foyer_light_switch_1
-- id: blinds_night_close
-  alias: Blinds — Night Close (consolidated)
-  description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
+  description: During the day, if the foyer light is on and the hallway mmWave (presence-3) has seen no motion for 2 minutes, turn the foyer light off. Companion to "Foyer Light on Front Door Open".
+  id: foyer_light_daytime_auto_off
   mode: single
   triggers:
-  - trigger: sun
-    event: sunset
-  conditions: []
-  actions:
+  - entity_id: binary_sensor.presence_3_presence
+    for:
+      minutes: 2
+    to: 'off'
+    trigger: state
+  - entity_id: switch.foyer_light_switch_1
+    for:
+      minutes: 2
+    to: 'on'
+    trigger: state
+- actions:
   - action: cover.close_cover
     target:
       entity_id:
@@ -3292,94 +3170,83 @@
       - cover.family_room_blinds_curtain
       - cover.living_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-- id: climate_safety_backstop
-  alias: Climate Safety Backstop (overheat/freeze)
-  description: Hardcoded backstop if the AI is unreachable or stale. Forces cool above 27C, heat below 16C.
+  alias: Blinds — Night Close (consolidated)
+  conditions: []
+  description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
+  id: blinds_night_close
   mode: single
   triggers:
-  - trigger: numeric_state
-    entity_id: sensor.ecobee_current_temperature
-    above: 27
-  - trigger: numeric_state
-    entity_id: sensor.ecobee_current_temperature
-    below: 16
-  conditions: []
-  actions:
+  - event: sunset
+    trigger: sun
+- actions:
   - choose:
     - conditions:
-      - condition: numeric_state
+      - above: 27
+        condition: numeric_state
         entity_id: sensor.ecobee_current_temperature
-        above: 27
       sequence:
       - action: climate.set_hvac_mode
-        target:
-          entity_id: climate.ecobee
         data:
           hvac_mode: cool
-    - conditions:
-      - condition: numeric_state
-        entity_id: sensor.ecobee_current_temperature
-        below: 16
-      sequence:
-      - action: climate.set_hvac_mode
         target:
           entity_id: climate.ecobee
+    - conditions:
+      - below: 16
+        condition: numeric_state
+        entity_id: sensor.ecobee_current_temperature
+      sequence:
+      - action: climate.set_hvac_mode
         data:
           hvac_mode: heat
-
-
-# ── Lawn watering veto (Hamilton bylaw odd-day + master kill) ──────────
-- alias: "Lawn watering: veto cycle"
-  description: >
-    Vetoes Smart Irrigation if watering is banned today.
-    Checks odd-day parity (house 31) and master-kill input_boolean.
-    Triggered by valve switch turning on; either kills it within seconds or
-    sends a confirmation notification.
-  id: "lawn_watering_veto"
+        target:
+          entity_id: climate.ecobee
+  alias: Climate Safety Backstop (overheat/freeze)
+  conditions: []
+  description: Hardcoded backstop if the AI is unreachable or stale. Forces cool above 27C, heat below 16C.
+  id: climate_safety_backstop
   mode: single
   triggers:
-    - trigger: state
-      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-      from: "off"
-      to: "on"
+  - above: 27
+    entity_id: sensor.ecobee_current_temperature
+    trigger: numeric_state
+  - below: 16
+    entity_id: sensor.ecobee_current_temperature
+    trigger: numeric_state
+- actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: '{{ is_odd_day and master_enabled }}'
+      sequence:
+      - action: notify.mobile_app_cph2655
+        data:
+          message: Watering cycle running for {{ duration_value }}.
+          title: Front lawn watering started
+    default:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+    - action: notify.mobile_app_cph2655
+      data:
+        message: "{% set reasons = [] %}\n{% if not is_odd_day %}\n  {% set reasons = reasons + [\"Today is an even day - odd-address watering not allowed\"] %}\n{% endif %}\n{% if not master_enabled %}\n  {% set reasons = reasons + [\"Master watering switch is OFF (toggle input_boolean.lawn_watering_master_enable to re-enable)\"] %}\n{% endif %}\nWatering was blocked.\n{% for r in reasons %}\n- {{ r }}\n{% endfor %}"
+        title: Watering vetoed
+  alias: 'Lawn watering: veto cycle'
+  description: 'Vetoes Smart Irrigation if watering is banned today.
+
+    Checks odd-day parity (house 31) and master-kill input_boolean.
+
+    Triggered by valve switch turning on; either kills it within seconds or
+
+    sends a confirmation notification.'
+  id: lawn_watering_veto
+  mode: single
+  triggers:
+  - entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+    from: 'off'
+    to: 'on'
+    trigger: state
   variables:
-    is_odd_day: "{{ now().day % 2 == 1 }}"
-    master_enabled: "{{ states('input_boolean.lawn_watering_master_enable') == 'on' }}"
-    duration_sensor_entity: "sensor.smart_irrigation_front_lawn_valve_2_duration"
-    duration_value: >
-      {% set d = states(duration_sensor_entity) %}
-      {% if d | is_number %}
-        {{ d }} min
-      {% else %}
-        (duration not available)
-      {% endif %}
-  actions:
-    - choose:
-        - conditions:
-            - condition: template
-              value_template: "{{ is_odd_day and master_enabled }}"
-          sequence:
-            - action: notify.mobile_app_cph2655
-              data:
-                title: "\xf0\x9f\x9a\xbf Front lawn watering started"
-                message: >
-                  Watering cycle running for {{ duration_value }}.
-          default:
-            - action: switch.turn_off
-              target:
-                entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-            - action: notify.mobile_app_cph2655
-              data:
-                title: "\xf0\x9f\x9a\xab Watering vetoed"
-                message: >
-                  {% set reasons = [] %}
-                  {% if not is_odd_day %}
-                    {% set reasons = reasons + ['Today is an even day \xe2\x80\x94 odd-address watering not allowed'] %}
-                  {% endif %}
-                  {% if not master_enabled %}
-                    {% set reasons = reasons + ['Master watering switch is OFF (toggle input_boolean.lawn_watering_master_enable to re-enable)'] %}
-                  {% endif %}
-                  Watering was blocked.
-                  {% for r in reasons %}
-                  - {{ r }}
-                  {% endfor %}
+    duration_sensor_entity: sensor.smart_irrigation_front_lawn_valve_2_duration
+    duration_value: "{% set d = states(duration_sensor_entity) %}\n{% if d | is_number %}\n  {{ d }} min\n{% else %}\n  (duration not available)\n{% endif %}"
+    is_odd_day: '{{ now().day % 2 == 1 }}'
+    master_enabled: '{{ states("input_boolean.lawn_watering_master_enable") == "on" }}'
