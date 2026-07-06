@@ -219,6 +219,10 @@ input_boolean:
     name: "Airbnb Heater Auto"
     initial: on
     icon: mdi:thermostat-auto
+  lawn_watering_master_enable:
+    name: "Lawn Watering Master Enable"
+    icon: mdi:water-off
+    initial: true
 input_text:
   climate_ai_recommendation:
     name: Climate AI Recommendation
@@ -360,8 +364,7 @@ template:
         unique_id: kitchen_presence_combined
         device_class: occupancy
         state: >
-          {{ is_state('input_boolean.kitchen_occupied_motion', 'on')
-             or is_state('input_boolean.kitchen_tuya_presence', 'on') }}
+          {{ is_state('input_boolean.kitchen_tuya_presence', 'on') }}
   - binary_sensor:
       - name: Garage Door (Vision)
         unique_id: garage_door_vision
