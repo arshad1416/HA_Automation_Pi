@@ -48,3 +48,5 @@ tmp_backups/
 .storage/sonoff/
 .storage/alexa_media.*
 .storage/core.labs
+.storage/core.config_entries*
+.storage/core.config_entries.bak.*

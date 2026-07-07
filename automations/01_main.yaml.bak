@@ -154,7 +154,7 @@
   conditions: []
   description: Open blinds, turn off lights at sunrise, with Bond RF/Tuya Cloud retry
   id: '1732520345733'
-  initial_state: true
+  initial_state: false
   mode: single
   triggers:
   - event: sunrise
@@ -2900,13 +2900,16 @@
       entity_id: fan.mina_s_room_f851f4
 - id: '1777270174266'
   alias: Turn on Nanoleaf Element at night
-  description: Turn on Nanoleaf Elements light at night (sunset).
+  description: Turn on Nanoleaf Elements light at night (sunset) - only when auto-lighting is disabled.
   mode: single
   triggers:
   - event: sunset
     offset: 0
     trigger: sun
-  conditions: []
+  conditions:
+  - condition: state
+    entity_id: input_boolean.kitchen_auto_lights_disable
+    state: 'on'
   actions:
   - action: light.turn_on
     data:
@@ -3304,57 +3307,3 @@
           entity_id: climate.ecobee
         data:
           hvac_mode: heat
-# --- Lawn watering veto (Hamilton bylaw odd-day + master kill) ---
-- alias: "Lawn watering: veto cycle"
-  description: >
-    Vetoes Smart Irrigation if watering is banned today.
-    Checks odd-day parity (house 31) and master-kill input_boolean.
-    Triggered by valve switch turning on; either kills it within seconds or
-    sends a confirmation notification.
-  id: "lawn_watering_veto"
-  mode: single
-  triggers:
-    - trigger: state
-      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-      from: "off"
-      to: "on"
-  variables:
-    is_odd_day: "{{ now().day % 2 == 1 }}"
-    master_enabled: "{{ states('input_boolean.lawn_watering_master_enable') == 'on' }}"
-    duration_sensor_entity: "sensor.smart_irrigation_front_lawn_valve_2_duration"
-    duration_value: >
-      {% set d = states(duration_sensor_entity) %}
-      {% if d | is_number %}
-        {{ d }} min
-      {% else %}
-        (duration not available)
-      {% endif %}
-  actions:
-    - choose:
-        - conditions:
-            - condition: template
-              value_template: "{{ is_odd_day and master_enabled }}"
-          sequence:
-            - action: notify.mobile_app_cph2655
-              data:
-                title: "🚿 Front lawn watering started"
-                message: "Watering cycle running for {{ duration_value }}."
-      default:
-        - action: switch.turn_off
-          target:
-            entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-        - action: notify.mobile_app_cph2655
-          data:
-            title: "🚫 Watering vetoed"
-            message: >
-              {% set reasons = [] %}
-              {% if not is_odd_day %}
-                {% set reasons = reasons + ['Today is an even day — odd-address watering not allowed'] %}
-              {% endif %}
-              {% if not master_enabled %}
-                {% set reasons = reasons + ['Master watering switch is OFF (toggle input_boolean.lawn_watering_master_enable to re-enable)'] %}
-              {% endif %}
-              Watering was blocked.
-              {% for r in reasons %}
-              - {{ r }}
-              {% endfor %}

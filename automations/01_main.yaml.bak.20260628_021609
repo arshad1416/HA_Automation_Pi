@@ -143,8 +143,6 @@
       - light.cabinet_light_strip_left_nanoleaf_light_strip
       - light.cabinet_light_strip_center_nanoleaf_light_strip
       - light.cabinet_light_strip_right_nanoleaf_light_strip
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
       - light.izaan_s_lamp
   - action: adaptive_lighting.set_manual_control
     data:
@@ -154,7 +152,7 @@
   conditions: []
   description: Open blinds, turn off lights at sunrise, with Bond RF/Tuya Cloud retry
   id: '1732520345733'
-  initial_state: true
+  initial_state: false
   mode: single
   triggers:
   - event: sunrise
@@ -742,7 +740,7 @@
   actions:
   - variables:
       prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.home\") }} Larissa={{ states(\"person.larissa\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed.
-                VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan_switch_1\") }} MFn={{ states(\"switch.master_bedroom_fan_light_switch_1\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_un8500auj\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"\
+                VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan_switch_1\") }} MFn={{ states(\"switch.master_bedroom_fan_light_switch_1\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_cd70\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"\
         weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15°, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fans\":{\"kitchen\":\"off|1|2|3\",\"master\":\"...\",\"mina\":\"...\",\"guest\":\"...\",\"izaan\":\"...\"}, \"blinds\":{\"dining\":N,\"family\":N,\"living\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun. Blinds covered: dining, family, living, mina. Prefer PARTIAL positions to balance sun/glare/heat. Only move blinds when sun is up; at night a separate automation closes them.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(state_attr('binary_sensor.front_door_door','last_changed') | default(now())) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If FrontOpenDuration > 10 (front door left open >10 min): factor this in — HVAC is being wasted, so ease off cooling/heating (do not run aggressively), recommend closing the door, and note reduced efficiency.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7¢/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1¢/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7¢/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8¢/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8¢. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
   - action: rest_command.climate_ai_gemini
     data:
@@ -1038,9 +1036,9 @@
   - if:
     - condition: template
       value_template: '{{ state_attr(''cover.family_room_blinds_curtain'', ''current_position'') | int(100) == 0 }}'
-    - condition: state
-      entity_id: media_player.lg_webos_tv_un8500auj
-      state: 'on'
+    - condition: template
+      value_template: >
+        {{ states('media_player.lg_webos_tv_cd70') not in ['off', 'unavailable'] }}
     then:
     - action: light.turn_on
       data:
@@ -1057,6 +1055,9 @@
     offset: 0
     trigger: sun
 - actions:
+  - action: cover.close_cover
+    target:
+      entity_id: cover.family_room_blinds
   - action: light.turn_on
     data:
       brightness_pct: 10
@@ -1075,7 +1076,7 @@
   description: When the LG TV turns on and it is sunny out, close the family room blinds and set family room light to 10%
   id: '1781145049841'
   triggers:
-  - entity_id: media_player.family_room_tv
+  - entity_id: media_player.lg_webos_tv_cd70
     from: 'off'
     id: tv_turned_on
     to: 'on'
@@ -1577,8 +1578,6 @@
       - light.cabinet_light_strip_left_nanoleaf_light_strip
       - light.cabinet_light_strip_center_nanoleaf_light_strip
       - light.cabinet_light_strip_right_nanoleaf_light_strip
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
   - action: adaptive_lighting.set_manual_control
     data:
       entity_id: switch.whole_house_adaptive_lighting_whole_house
@@ -1622,8 +1621,6 @@
     - cover.living_room_blinds_curtain_2
     - cover.mina_s_blinds_curtain
     - cover.mina_s_blinds_curtain_2
-    - light.front_porch_downlight
-    - light.back_yard_lamp_socket
     to: 'on'
   condition:
   - condition: time
@@ -2060,7 +2057,7 @@
   - condition: time
     after: '21:00:00'
   - condition: template
-    value_template: '{{ states(''media_player.lg_webos_tv_un8500auj'') not in [''playing'', ''on''] }}'
+    value_template: '{{ states(''media_player.lg_webos_tv_cd70'') not in [''playing'', ''on''] }}'
   actions:
   - action: lock.lock
     target:
@@ -2900,13 +2897,16 @@
       entity_id: fan.mina_s_room_f851f4
 - id: '1777270174266'
   alias: Turn on Nanoleaf Element at night
-  description: Turn on Nanoleaf Elements light at night (sunset).
+  description: Turn on Nanoleaf Elements light at night (sunset) - only when auto-lighting is disabled.
   mode: single
   triggers:
   - event: sunset
     offset: 0
     trigger: sun
-  conditions: []
+  conditions:
+  - condition: state
+    entity_id: input_boolean.kitchen_auto_lights_disable
+    state: 'on'
   actions:
   - action: light.turn_on
     data:
@@ -2947,9 +2947,19 @@
       - condition: trigger
         id: switch_on
       sequence:
-      - action: switch.turn_on
-        target:
-          entity_id: switch.sonoff_10001d2a24
+      - if:
+        - condition: template
+          value_template: >
+            {{ (is_state('sun.sun', 'below_horizon') and now().hour < 22)
+               or (state_attr('sun.sun', 'elevation') | float(-1) < 5
+                   and state_attr('weather.forecast_home', 'cloud_coverage') | int(0) > 80) }}
+        then:
+        - action: switch.turn_on
+          target:
+            entity_id: switch.sonoff_10001d2a24
+      - condition: state
+        entity_id: input_boolean.kitchen_auto_lights_disable
+        state: 'on'
       - action: light.turn_on
         data:
           brightness_pct: 100
@@ -3101,7 +3111,10 @@
   - entity_id: switch.master_bedroom_fan_light_switch_1
     to: 'off'
     trigger: state
-  conditions: []
+  conditions:
+  - condition: state
+    entity_id: input_boolean.kitchen_auto_lights_disable
+    state: 'on'
   actions:
   - action: switch.turn_off
     target:
@@ -3121,7 +3134,10 @@
   - entity_id: switch.master_bedroom_fan_light_switch_1
     to: 'on'
     trigger: state
-  conditions: []
+  conditions:
+  - condition: state
+    entity_id: input_boolean.kitchen_auto_lights_disable
+    state: 'on'
   actions:
   - action: switch.turn_on
     target:
@@ -3304,57 +3320,3 @@
           entity_id: climate.ecobee
         data:
           hvac_mode: heat
-# --- Lawn watering veto (Hamilton bylaw odd-day + master kill) ---
-- alias: "Lawn watering: veto cycle"
-  description: >
-    Vetoes Smart Irrigation if watering is banned today.
-    Checks odd-day parity (house 31) and master-kill input_boolean.
-    Triggered by valve switch turning on; either kills it within seconds or
-    sends a confirmation notification.
-  id: "lawn_watering_veto"
-  mode: single
-  triggers:
-    - trigger: state
-      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-      from: "off"
-      to: "on"
-  variables:
-    is_odd_day: "{{ now().day % 2 == 1 }}"
-    master_enabled: "{{ states('input_boolean.lawn_watering_master_enable') == 'on' }}"
-    duration_sensor_entity: "sensor.smart_irrigation_front_lawn_valve_2_duration"
-    duration_value: >
-      {% set d = states(duration_sensor_entity) %}
-      {% if d | is_number %}
-        {{ d }} min
-      {% else %}
-        (duration not available)
-      {% endif %}
-  actions:
-    - choose:
-        - conditions:
-            - condition: template
-              value_template: "{{ is_odd_day and master_enabled }}"
-          sequence:
-            - action: notify.mobile_app_cph2655
-              data:
-                title: "🚿 Front lawn watering started"
-                message: "Watering cycle running for {{ duration_value }}."
-      default:
-        - action: switch.turn_off
-          target:
-            entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-        - action: notify.mobile_app_cph2655
-          data:
-            title: "🚫 Watering vetoed"
-            message: >
-              {% set reasons = [] %}
-              {% if not is_odd_day %}
-                {% set reasons = reasons + ['Today is an even day — odd-address watering not allowed'] %}
-              {% endif %}
-              {% if not master_enabled %}
-                {% set reasons = reasons + ['Master watering switch is OFF (toggle input_boolean.lawn_watering_master_enable to re-enable)'] %}
-              {% endif %}
-              Watering was blocked.
-              {% for r in reasons %}
-              - {{ r }}
-              {% endfor %}
