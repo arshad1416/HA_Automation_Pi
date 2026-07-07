@@ -1,0 +1,102 @@
+reset:
+  name: Reset deficit
+  description: Reset the soil water deficit to zero (typically called after irrigation completes).
+
+irrigate_zone:
+  name: Irrigate zone
+  description: >
+    Start irrigation for a single zone. The irrigation method depends on the
+    zone's configured delivery mode: estimated_flow (timer-based), flow_meter
+    (sensor-monitored), or volume_preset (smart valve with volume dosing).
+  fields:
+    zone_name:
+      name: Zone name
+      description: The name of the zone to irrigate (as configured).
+      required: true
+      example: "Vegetable Garden"
+      selector:
+        text:
+
+irrigate_all:
+  name: Irrigate all zones
+  description: >
+    Irrigate all configured zones sequentially. Each zone uses its own
+    delivery mode. A pause between zones allows pressure stabilization.
+    The deficit is reset after all zones complete.
+
+stop:
+  name: Emergency stop
+  description: >
+    Immediately close all irrigation valves. Use this to abort an
+    irrigation cycle in progress.
+
+stop_zone:
+  name: Stop zone
+  description: >
+    Stop irrigation for a single zone and close its valve. Other zones
+    keep irrigating. Works for both a running irrigation cycle and a
+    manual/hardware-driven valve open.
+  fields:
+    zone_name:
+      name: Zone name
+      description: The zone whose irrigation should be stopped.
+      required: true
+      example: "Vegetable Garden"
+      selector:
+        text:
+
+mark_irrigated:
+  name: Mark zone as irrigated
+  description: >
+    Signal that a zone has been watered manually or by an external system.
+    Resets the zone deficit to zero without operating any valve.
+    If no zone is specified, all zones are marked as irrigated.
+  fields:
+    zone_name:
+      name: Zone name
+      description: The zone to mark as irrigated. Leave empty for all zones.
+      required: false
+      example: "Vegetable Garden"
+      selector:
+        text:
+
+set_deficit:
+  name: Set deficit
+  description: >
+    Set the soil water deficit to a specific value in mm.
+    Intended for testing, debugging, and manual correction of the water balance.
+    If zone_name is omitted, all zones and the reference sensor are updated.
+  fields:
+    deficit_mm:
+      name: Deficit (mm)
+      description: Target deficit value in mm. Must be >= 0.
+      required: true
+      example: 5.0
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: mm
+    zone_name:
+      name: Zone name
+      description: The zone to update. Leave empty to update all zones.
+      required: false
+      example: "Orto"
+      selector:
+        text:
+
+reset_valve:
+  name: Reset valve (unlock maintenance)
+  description: >
+    Reset the valve FSM from MAINTENANCE back to IDLE. Use this after
+    repeated close-verification failures to allow the zone to irrigate again.
+    The valve must be physically closed before resetting.
+  fields:
+    zone_name:
+      name: Zone name
+      description: The zone whose valve should be unlocked.
+      required: true
+      example: "Vegetable Garden"
+      selector:
+        text:

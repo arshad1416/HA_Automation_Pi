@@ -38,7 +38,7 @@ import urllib.error
 from aioesphomeapi import APIClient
 
 # --- Configuration ---
-ESPHOME_HOST = "192.168.0.108"
+ESPHOME_HOST = "192.168.0.121"
 ESPHOME_PORT = 6053
 ESPHOME_PASSWORD = ""
 
@@ -53,7 +53,13 @@ FAULT_ENTITY = "binary_sensor.kitchen_mmwave_radar_fault"
 # Debounce: how long to wait after presence goes OFF before pushing the OFF to HA.
 # The LD2420 radar can rapidly flip on/off when someone is stationary or at the
 # edge of detection range. This grace period prevents the lights from flickering.
-PRESENCE_OFF_DEBOUNCE_SECONDS = 15
+PRESENCE_OFF_DEBOUNCE_SECONDS = 60
+RADAR_PRESENCE_TIMEOUT = 120  # seconds; module reverts to 120 on power-cycle
+GATE_MINIMUM = 1       # Ignore gate 0 (0-0.7m) — avoids Nest Hub reflector at 35cm
+GATE_MAXIMUM = 4       # 450cm max detection range (gate 6 * ~0.75m)
+MOVE_SENSITIVITY = 0.25  # Was 0.5 — half as sensitive to movement
+STILL_SENSITIVITY = 0.1 # Was 0.5 — much less sensitive to stationary targets
+PRESENCE_DEBOUNCE_S = 60  # How long presence must persist before reporting ON
 
 # --- Logging ---
 logging.basicConfig(
@@ -172,6 +178,13 @@ class ESPHomeBridge:
         self.last_firmware = None
         self.last_fault = None
         self._connected_at = 0
+        # self-restoring radar config
+        self.timeout_key = None
+        self.apply_key = None
+        self.gate_min_key = None
+        self.gate_max_key = None
+        self.move_sens_key = None
+        self.still_sens_key = None
 
     async def connect(self):
         """Connect to ESP32 and subscribe to state updates."""
@@ -196,6 +209,49 @@ class ESPHomeBridge:
             elif e.object_id == "ld2420_firmware":
                 self.firmware_key = e.key
                 log.info(f"  Firmware key: {e.key} ({e.name})")
+            elif e.object_id == "detection_presence_timeout":
+                self.timeout_key = e.key
+            elif e.object_id == "apply_config":
+                self.apply_key = e.key
+            elif e.object_id == "min_gate_distance":
+                self.gate_min_key = e.key
+            elif e.object_id == "max_gate_distance":
+                self.gate_max_key = e.key
+            elif e.object_id == "gate_move_sensitivity":
+                self.move_sens_key = e.key
+            elif e.object_id == "gate_still_sensitivity":
+                self.still_sens_key = e.key
+
+        # Re-apply preferred radar config (module reverts to factory values after power-cycle)
+        # Apply tuning parameters before calling apply_config so they take effect in one batch
+        if self.gate_min_key is not None:
+            try:
+                self.client.number_command(self.gate_min_key, GATE_MINIMUM)
+            except:
+                pass
+        if self.gate_max_key is not None:
+            try:
+                self.client.number_command(self.gate_max_key, GATE_MAXIMUM)
+            except:
+                pass
+        if self.move_sens_key is not None:
+            try:
+                self.client.number_command(self.move_sens_key, MOVE_SENSITIVITY)
+            except:
+                pass
+        if self.still_sens_key is not None:
+            try:
+                self.client.number_command(self.still_sens_key, STILL_SENSITIVITY)
+            except:
+                pass
+        if self.timeout_key is not None:
+            try:
+                self.client.number_command(self.timeout_key, RADAR_PRESENCE_TIMEOUT)
+                if self.apply_key is not None:
+                    self.client.button_command(self.apply_key)
+                log.info(f"Restored radar config: timeout={RADAR_PRESENCE_TIMEOUT}s, gates={GATE_MINIMUM}-{GATE_MAXIMUM}, move_sens={MOVE_SENSITIVITY}, still_sens={STILL_SENSITIVITY}")
+            except Exception as e:
+                log.warning(f"Could not restore radar config: {e}")
 
     def on_state(self, state):
         """Sync callback for ESPHome state updates. Schedules async handling."""
@@ -272,7 +328,10 @@ class ESPHomeBridge:
                          {"entity_id": OCCUPANCY_BOOLEAN})
             log.info(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] -> input_boolean OFF (debounce expired)")
         except asyncio.CancelledError:
-            log.info(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Debounce cancelled — presence came back")
+            if self.running:
+                log.info(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Debounce cancelled — presence came back")
+            else:
+                log.debug(f"[{datetime.datetime.now().strftime('%H:%M:%S')}] Debounce abandoned on shutdown")
 
     def check_uart_health(self):
         """Flag a dead LD2420 UART link (firmware unreadable) in HA + notify."""

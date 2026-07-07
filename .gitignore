@@ -47,3 +47,4 @@ tmp_backups/
 .storage/esphome.*
 .storage/sonoff/
 .storage/alexa_media.*
+.storage/core.labs

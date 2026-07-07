@@ -8,10 +8,11 @@
       "base": false,
       "usage": false,
       "statistics": false,
-      "diagnostics": true
+      "diagnostics": true,
+      "snapshots": true
     },
     "uuid": null,
-    "submission_identifier": null,
-    "snapshot_submission_time": null
+    "submission_identifier": "I4Az3faDWl_tzDuPwI0aMrG1yakDtl4-iyZ1oFafVr0|eyJyb2xlIjoic25hcHNob3Qtc3VibWlzc2lvbiIsImF0IjoxNzgzNDUwODM5LCJpZCI6IjMzOTE3OWFiLWE4MTMtNDdlMS1hYjcwLTBjMDg4OTQzOGQ4ZCIsInN1YiI6IjNjN2ZiY2VjLTlhM2EtNDNmMi05Nzc5LTg3Nzk1YTk0MTYzNSJ9",
+    "snapshot_submission_time": 72038.51538556993
   }
 }

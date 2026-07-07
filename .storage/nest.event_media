@@ -1,0 +1,1063 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "nest.event_media",
+  "data": {
+    "enterprises/632eb804-a2cc-4a7b-991d-a0a3f3dc230e/devices/AVPHwEuWq_vIMHEtBBh13vB_V0UCRgf-vnK2TZc3zTj_OSxBPSEyJiwMqYGukKTvaHJPQne0tI87qVbw4MZkLIUMlrhElw": [
+      {
+        "event_session_id": "1782450864",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782450864",
+              "timestamp": "2026-06-26T05:14:26.429581+00:00",
+              "event_id": "-938591273",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T05:14:26.429581+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782453598",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782453598",
+              "timestamp": "2026-06-26T06:00:00.641796+00:00",
+              "event_id": "-938594147",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T06:00:00.641796+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782460828",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782460828",
+              "timestamp": "2026-06-26T08:00:30.368401+00:00",
+              "event_id": "-393000036",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T08:00:30.368401+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782463521",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782463521",
+              "timestamp": "2026-06-26T08:45:23.116099+00:00",
+              "event_id": "-1821292662",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T08:45:23.116099+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782465396",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782465396",
+              "timestamp": "2026-06-26T09:16:38.279015+00:00",
+              "event_id": "751760195",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T09:16:38.279015+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782466810",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782466810",
+              "timestamp": "2026-06-26T09:40:10.431270+00:00",
+              "event_id": "-1821293319",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T09:40:10.431270+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782474151",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782474151",
+              "timestamp": "2026-06-26T11:42:33.489036+00:00",
+              "event_id": "-1821292596",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T11:42:33.489036+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782476220",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782476220",
+              "timestamp": "2026-06-26T12:17:02.188010+00:00",
+              "event_id": "751761784",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T12:17:02.188010+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782476262",
+        "events": {
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782476262",
+              "timestamp": "2026-06-26T12:17:44.926500+00:00",
+              "event_id": "659363417",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T12:17:44.926500+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782478551",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782478551",
+              "timestamp": "2026-06-26T12:55:53.472686+00:00",
+              "event_id": "-1968819529",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T12:55:53.472686+00:00",
+            "event_image_type": "image/jpeg"
+          },
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782478551",
+              "timestamp": "2026-06-26T12:55:52.762079+00:00",
+              "event_id": "2022335176",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T12:55:52.762079+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782483309",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782483309",
+              "timestamp": "2026-06-26T14:15:09.996920+00:00",
+              "event_id": "-1821290710",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T14:15:09.996920+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782483431",
+        "events": {
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782483431",
+              "timestamp": "2026-06-26T14:17:14.224198+00:00",
+              "event_id": "1356521553",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T14:17:14.224198+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782485817",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782485817",
+              "timestamp": "2026-06-26T14:56:59.637674+00:00",
+              "event_id": "751762876",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T14:56:59.637674+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782486138",
+        "events": {
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782486138",
+              "timestamp": "2026-06-26T15:02:20.634730+00:00",
+              "event_id": "838741277",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T15:02:20.634730+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782488527",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782488527",
+              "timestamp": "2026-06-26T15:42:09.955569+00:00",
+              "event_id": "751762263",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T15:42:09.955569+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782497713",
+        "events": {
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782497713",
+              "timestamp": "2026-06-26T18:15:40.889921+00:00",
+              "event_id": "1711483606",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T18:15:40.889921+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782501312",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782501312",
+              "timestamp": "2026-06-26T19:15:14.666738+00:00",
+              "event_id": "751760854",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T19:15:14.666738+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782505705",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782505705",
+              "timestamp": "2026-06-26T20:28:27.666693+00:00",
+              "event_id": "-1821294278",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T20:28:27.666693+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782508204",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782508204",
+              "timestamp": "2026-06-26T21:10:06.495639+00:00",
+              "event_id": "751759631",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T21:10:06.495639+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782509437",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782509437",
+              "timestamp": "2026-06-26T21:30:39.094783+00:00",
+              "event_id": "751762382",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T21:30:39.094783+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782510954",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782510954",
+              "timestamp": "2026-06-26T21:55:56.809314+00:00",
+              "event_id": "751761037",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T21:55:56.809314+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782513414",
+        "events": {
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782513414",
+              "timestamp": "2026-06-26T22:36:56.267071+00:00",
+              "event_id": "547332218",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-26T22:36:56.267071+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782519807",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782519807",
+              "timestamp": "2026-06-27T00:23:29.694712+00:00",
+              "event_id": "751762983",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-27T00:23:29.694712+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782663735",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782663735",
+              "timestamp": "2026-06-28T16:22:17.784861+00:00",
+              "event_id": "-2039209232",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T16:22:17.784861+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782664862",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782664862",
+              "timestamp": "2026-06-28T16:41:04.825375+00:00",
+              "event_id": "-797526152",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T16:41:04.825375+00:00",
+            "event_image_type": "image/jpeg"
+          },
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782664862",
+              "timestamp": "2026-06-28T16:41:06.530264+00:00",
+              "event_id": "1684645582",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T16:41:06.530264+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782668709",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782668709",
+              "timestamp": "2026-06-28T17:45:11.413580+00:00",
+              "event_id": "-2039208867",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T17:45:11.413580+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782671411",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782671411",
+              "timestamp": "2026-06-28T18:30:11.874157+00:00",
+              "event_id": "-797524283",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T18:30:11.874157+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782674111",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782674111",
+              "timestamp": "2026-06-28T19:15:13.424875+00:00",
+              "event_id": "67322126",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T19:15:13.424875+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782680410",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782680410",
+              "timestamp": "2026-06-28T21:00:11.859461+00:00",
+              "event_id": "67324888",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T21:00:11.859461+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782683109",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782683109",
+              "timestamp": "2026-06-28T21:45:11.620844+00:00",
+              "event_id": "-2039206859",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T21:45:11.620844+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782684760",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782684760",
+              "timestamp": "2026-06-28T22:12:40.625153+00:00",
+              "event_id": "-2039208057",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T22:12:40.625153+00:00",
+            "event_image_type": "image/jpeg"
+          },
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782684760",
+              "timestamp": "2026-06-28T22:12:50.773192+00:00",
+              "event_id": "1194695531",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T22:12:50.773192+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782685757",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782685757",
+              "timestamp": "2026-06-28T22:29:19.205116+00:00",
+              "event_id": "-2039206357",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T22:29:19.205116+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782687096",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782687096",
+              "timestamp": "2026-06-28T22:51:38.108243+00:00",
+              "event_id": "67322220",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T22:51:38.108243+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782688511",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782688511",
+              "timestamp": "2026-06-28T23:15:12.256381+00:00",
+              "event_id": "-2039206106",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-28T23:15:12.256381+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782691211",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782691211",
+              "timestamp": "2026-06-29T00:00:12.804806+00:00",
+              "event_id": "-2039208502",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-29T00:00:12.804806+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782692155",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782692155",
+              "timestamp": "2026-06-29T00:15:57.213291+00:00",
+              "event_id": "-797525504",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-29T00:15:57.213291+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782693680",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782693680",
+              "timestamp": "2026-06-29T00:41:22.829095+00:00",
+              "event_id": "67324124",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-29T00:41:22.829095+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782693881",
+        "events": {
+          "sdm.devices.events.CameraPerson.Person": {
+            "event_type": "sdm.devices.events.CameraPerson.Person",
+            "event_data": {
+              "event_session_id": "1782693881",
+              "timestamp": "2026-06-29T00:44:46.629745+00:00",
+              "event_id": "521899395",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-06-29T00:44:46.629745+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782953157",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782953157",
+              "timestamp": "2026-07-02T00:45:59.242476+00:00",
+              "event_id": "98118709",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-07-02T00:45:59.242476+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782954842",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782954842",
+              "timestamp": "2026-07-02T01:14:04.862773+00:00",
+              "event_id": "-937576862",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-07-02T01:14:04.862773+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1782956871",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1782956871",
+              "timestamp": "2026-07-02T01:47:53.803944+00:00",
+              "event_id": "98118903",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-07-02T01:47:53.803944+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1783013209",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1783013209",
+              "timestamp": "2026-07-02T17:26:51.249916+00:00",
+              "event_id": "-2016664920",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-07-02T17:26:51.249916+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1783014494",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1783014494",
+              "timestamp": "2026-07-02T17:48:16.772266+00:00",
+              "event_id": "301761865",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-07-02T17:48:16.772266+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      },
+      {
+        "event_session_id": "1783026912",
+        "events": {
+          "sdm.devices.events.CameraMotion.Motion": {
+            "event_type": "sdm.devices.events.CameraMotion.Motion",
+            "event_data": {
+              "event_session_id": "1783026912",
+              "timestamp": "2026-07-02T21:15:12.527115+00:00",
+              "event_id": "-2016664914",
+              "event_image_type": "image/jpeg",
+              "zones": [
+                ""
+              ]
+            },
+            "timestamp": "2026-07-02T21:15:12.527115+00:00",
+            "event_image_type": "image/jpeg"
+          }
+        },
+        "media_key": null,
+        "event_media_keys": {},
+        "thumbnail_media_key": null,
+        "pending_event_keys": []
+      }
+    ]
+  }
+}

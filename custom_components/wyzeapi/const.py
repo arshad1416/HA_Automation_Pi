@@ -1,13 +1,28 @@
-from __future__ import annotations
+"""Constants for the Wyze Home Assistant Integration integration."""
 
-from datetime import timedelta
+DOMAIN = "wyzeapi"
+CONF_CLIENT = "wyzeapi_client"
 
-import logging
+ACCESS_TOKEN = "access_token"
+REFRESH_TOKEN = "refresh_token"
+REFRESH_TIME = "refresh_time"
+KEY_ID = "key_id"
+API_KEY = "api_key"
 
-_LOGGER = logging.getLogger(__package__)
+WYZE_NOTIFICATION_TOGGLE = f"{DOMAIN}.wyze.notification.toggle"
 
-API_TIMEOUT = 20
-PLATFORMS = ["vacuum"]
-DOMAIN = "wyze_ha"
-UPDATE_INTERVAL = timedelta(seconds=60)
-CONF_CLIENT = "wyze_sdk"
+LOCK_UPDATED = f"{DOMAIN}.lock_updated"
+CAMERA_UPDATED = f"{DOMAIN}.camera_updated"
+LIGHT_UPDATED = f"{DOMAIN}.light_updated"
+COVER_UPDATED = f"{DOMAIN}.cover_updated"
+RESET_BUTTON_PRESSED = f"{DOMAIN}.reset_button_pressed"
+# EVENT NAMES
+WYZE_CAMERA_EVENT = "wyze_camera_event"
+
+BULB_LOCAL_CONTROL = "bulb_local_control"
+DEFAULT_LOCAL_CONTROL = True
+
+# Yunding (YD) is the provider for Wyze Lock Bolt
+YDBLE_LOCK_STATE_UUID = "00002220-0000-6b63-6f6c-2e6b636f6f6c"
+YDBLE_UART_RX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e"
+YDBLE_UART_TX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e"

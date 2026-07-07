@@ -8,110 +8,6 @@
         "config_num": 13,
         "accessories": [
           {
-            "aid": 21474836482,
-            "services": [
-              {
-                "iid": 1,
-                "type": "0000003E-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000014-0000-1000-8000-0026BB765291",
-                    "iid": 85899345921,
-                    "perms": [
-                      "pw"
-                    ],
-                    "format": "bool",
-                    "description": "Identify"
-                  },
-                  {
-                    "type": "00000020-0000-1000-8000-0026BB765291",
-                    "iid": 137438953473,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Lutron Electronics Co., Inc",
-                    "description": "Manufacturer",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000021-0000-1000-8000-0026BB765291",
-                    "iid": 141733920769,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "PD-8ANS-XX",
-                    "description": "Model",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000023-0000-1000-8000-0026BB765291",
-                    "iid": 150323855361,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Caséta® Wireless In-wall Neutral Switch",
-                    "description": "Name",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000030-0000-1000-8000-0026BB765291",
-                    "iid": 206158430209,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "3F947BD",
-                    "description": "Serial Number",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000052-0000-1000-8000-0026BB765291",
-                    "iid": 352187318273,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "001.053",
-                    "description": "Firmware Revision",
-                    "maxLen": 64
-                  }
-                ]
-              },
-              {
-                "iid": 2,
-                "type": "00000049-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000025-0000-1000-8000-0026BB765291",
-                    "iid": 158913789954,
-                    "perms": [
-                      "pr",
-                      "pw",
-                      "ev"
-                    ],
-                    "format": "bool",
-                    "value": false,
-                    "description": "On"
-                  },
-                  {
-                    "type": "00000023-0000-1000-8000-0026BB765291",
-                    "iid": 150323855362,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Caséta® Wireless In-wall Neutral Switch",
-                    "description": "Name",
-                    "maxLen": 64
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "aid": 21474836484,
             "services": [
               {
@@ -331,13 +227,117 @@
                 ]
               }
             ]
+          },
+          {
+            "aid": 21474836482,
+            "services": [
+              {
+                "iid": 1,
+                "type": "0000003E-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000014-0000-1000-8000-0026BB765291",
+                    "iid": 85899345921,
+                    "perms": [
+                      "pw"
+                    ],
+                    "format": "bool",
+                    "description": "Identify"
+                  },
+                  {
+                    "type": "00000020-0000-1000-8000-0026BB765291",
+                    "iid": 137438953473,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Lutron Electronics Co., Inc",
+                    "description": "Manufacturer",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000021-0000-1000-8000-0026BB765291",
+                    "iid": 141733920769,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "PD-8ANS-XX",
+                    "description": "Model",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 150323855361,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Caséta® Wireless In-wall Neutral Switch",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000030-0000-1000-8000-0026BB765291",
+                    "iid": 206158430209,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "3F947BD",
+                    "description": "Serial Number",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000052-0000-1000-8000-0026BB765291",
+                    "iid": 352187318273,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "001.053",
+                    "description": "Firmware Revision",
+                    "maxLen": 64
+                  }
+                ]
+              },
+              {
+                "iid": 2,
+                "type": "00000049-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000025-0000-1000-8000-0026BB765291",
+                    "iid": 158913789954,
+                    "perms": [
+                      "pr",
+                      "pw",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": false,
+                    "description": "On"
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 150323855362,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Caséta® Wireless In-wall Neutral Switch",
+                    "description": "Name",
+                    "maxLen": 64
+                  }
+                ]
+              }
+            ]
           }
         ],
         "broadcast_key": null,
         "state_num": null
       },
       "5F:D2:AB:71:DF:C6": {
-        "config_num": 76,
+        "config_num": 82,
         "accessories": [
           {
             "aid": 1,
@@ -513,7 +513,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 22.5,
+                    "value": 22.6,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -529,7 +529,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 24.0,
+                    "value": 23.0,
                     "description": "Target Temperature",
                     "unit": "celsius",
                     "minValue": 7.5,
@@ -595,7 +595,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 44.0,
+                    "value": 51.0,
                     "description": "Current Relative Humidity",
                     "unit": "percentage",
                     "minValue": 0,
@@ -665,7 +665,7 @@
                       "pr"
                     ],
                     "format": "uint8",
-                    "value": 3,
+                    "value": 0,
                     "minValue": 0,
                     "maxValue": 3,
                     "minStep": 1
@@ -773,7 +773,7 @@
                       "pw"
                     ],
                     "format": "string",
-                    "value": "2026-06-23T19:00:00-04:00Q",
+                    "value": "2014-01-03T00:00:00-04:00Q",
                     "maxLen": 64
                   },
                   {
@@ -890,7 +890,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 1104,
+                    "value": 1385,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -935,7 +935,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 1188,
+                    "value": 1476,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1759,7 +1759,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 32759,
+                    "value": 13905,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1825,7 +1825,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 32759,
+                    "value": 13905,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -1980,7 +1980,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 23.1,
+                    "value": 22.8,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -2086,7 +2086,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 26475,
+                    "value": 2576,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2152,7 +2152,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 26476,
+                    "value": 2576,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2307,7 +2307,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 20.9,
+                    "value": 20.8,
                     "description": "Current Temperature",
                     "unit": "celsius",
                     "minValue": 0,
@@ -2364,7 +2364,7 @@
                       "ev"
                     ],
                     "format": "uint8",
-                    "value": 1,
+                    "value": 0,
                     "description": "Occupancy Detected",
                     "minValue": 0,
                     "maxValue": 1,
@@ -2413,7 +2413,7 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 1098,
+                    "value": 47959,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2479,7 +2479,661 @@
                       "pr"
                     ],
                     "format": "int",
-                    "value": 1061,
+                    "value": 47959,
+                    "unit": "seconds",
+                    "minValue": -1,
+                    "maxValue": 86400,
+                    "minStep": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "aid": 4297064996,
+            "services": [
+              {
+                "iid": 1,
+                "type": "0000003E-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 2,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Guest Room",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000020-0000-1000-8000-0026BB765291",
+                    "iid": 3,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "ecobee Inc.",
+                    "description": "Manufacturer",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000030-0000-1000-8000-0026BB765291",
+                    "iid": 4,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "BBWG",
+                    "description": "Serial Number",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000021-0000-1000-8000-0026BB765291",
+                    "iid": 5,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "EBERS41",
+                    "description": "Model",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000052-0000-1000-8000-0026BB765291",
+                    "iid": 8,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "1.0.0",
+                    "description": "Firmware Revision",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000014-0000-1000-8000-0026BB765291",
+                    "iid": 6,
+                    "perms": [
+                      "pw"
+                    ],
+                    "format": "bool",
+                    "description": "Identify"
+                  }
+                ]
+              },
+              {
+                "iid": 192,
+                "type": "00000096-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "0000008F-0000-1000-8000-0026BB765291",
+                    "iid": 193,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 2,
+                    "description": "Charging State",
+                    "minValue": 0,
+                    "maxValue": 2,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000068-0000-1000-8000-0026BB765291",
+                    "iid": 194,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 100,
+                    "description": "Battery Level",
+                    "unit": "percentage",
+                    "minValue": 0,
+                    "maxValue": 100,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 195,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 196,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Guest Room",
+                    "description": "Name",
+                    "maxLen": 64
+                  }
+                ]
+              },
+              {
+                "iid": 208,
+                "type": "0000008A-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000011-0000-1000-8000-0026BB765291",
+                    "iid": 209,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "float",
+                    "value": 22.9,
+                    "description": "Current Temperature",
+                    "unit": "celsius",
+                    "minValue": 0,
+                    "maxValue": 100.0,
+                    "minStep": 0.1
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 210,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Guest Room Temperature",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000075-0000-1000-8000-0026BB765291",
+                    "iid": 211,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": true,
+                    "description": "Status Active"
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 212,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  }
+                ]
+              },
+              {
+                "iid": 57,
+                "type": "00000086-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000071-0000-1000-8000-0026BB765291",
+                    "iid": 65,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Occupancy Detected",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 29,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Guest Room Occupancy",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000075-0000-1000-8000-0026BB765291",
+                    "iid": 117,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": true,
+                    "description": "Status Active"
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 116,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "A8F798E0-4A40-11E6-BDF4-0800200C9A66",
+                    "iid": 68,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "int",
+                    "value": -1,
+                    "unit": "seconds",
+                    "minValue": -1,
+                    "maxValue": 86400,
+                    "minStep": 1
+                  }
+                ]
+              },
+              {
+                "iid": 56,
+                "type": "00000085-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000022-0000-1000-8000-0026BB765291",
+                    "iid": 66,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": false,
+                    "description": "Motion Detected"
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 28,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Guest Room Motion",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000075-0000-1000-8000-0026BB765291",
+                    "iid": 101,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": true,
+                    "description": "Status Active"
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 100,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "BFE61C70-4A40-11E6-BDF4-0800200C9A66",
+                    "iid": 67,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "int",
+                    "value": -1,
+                    "unit": "seconds",
+                    "minValue": -1,
+                    "maxValue": 86400,
+                    "minStep": 1
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "aid": 4297808546,
+            "services": [
+              {
+                "iid": 1,
+                "type": "0000003E-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 2,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Master Bedroom",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000020-0000-1000-8000-0026BB765291",
+                    "iid": 3,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "ecobee Inc.",
+                    "description": "Manufacturer",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000030-0000-1000-8000-0026BB765291",
+                    "iid": 4,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "332D",
+                    "description": "Serial Number",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000021-0000-1000-8000-0026BB765291",
+                    "iid": 5,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "EBERS41",
+                    "description": "Model",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000052-0000-1000-8000-0026BB765291",
+                    "iid": 8,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "1.0.0",
+                    "description": "Firmware Revision",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000014-0000-1000-8000-0026BB765291",
+                    "iid": 6,
+                    "perms": [
+                      "pw"
+                    ],
+                    "format": "bool",
+                    "description": "Identify"
+                  }
+                ]
+              },
+              {
+                "iid": 192,
+                "type": "00000096-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "0000008F-0000-1000-8000-0026BB765291",
+                    "iid": 193,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 2,
+                    "description": "Charging State",
+                    "minValue": 0,
+                    "maxValue": 2,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000068-0000-1000-8000-0026BB765291",
+                    "iid": 194,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 100,
+                    "description": "Battery Level",
+                    "unit": "percentage",
+                    "minValue": 0,
+                    "maxValue": 100,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 195,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 196,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Master Bedroom",
+                    "description": "Name",
+                    "maxLen": 64
+                  }
+                ]
+              },
+              {
+                "iid": 208,
+                "type": "0000008A-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000011-0000-1000-8000-0026BB765291",
+                    "iid": 209,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "float",
+                    "value": 23.2,
+                    "description": "Current Temperature",
+                    "unit": "celsius",
+                    "minValue": 0,
+                    "maxValue": 100.0,
+                    "minStep": 0.1
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 210,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Master Bedroom Temperature",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000075-0000-1000-8000-0026BB765291",
+                    "iid": 211,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": true,
+                    "description": "Status Active"
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 212,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  }
+                ]
+              },
+              {
+                "iid": 57,
+                "type": "00000086-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000071-0000-1000-8000-0026BB765291",
+                    "iid": 65,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Occupancy Detected",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 29,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Master Bedroom Occupancy",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000075-0000-1000-8000-0026BB765291",
+                    "iid": 117,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": true,
+                    "description": "Status Active"
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 116,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "A8F798E0-4A40-11E6-BDF4-0800200C9A66",
+                    "iid": 68,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "int",
+                    "value": 2865,
+                    "unit": "seconds",
+                    "minValue": -1,
+                    "maxValue": 86400,
+                    "minStep": 1
+                  }
+                ]
+              },
+              {
+                "iid": 56,
+                "type": "00000085-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000022-0000-1000-8000-0026BB765291",
+                    "iid": 66,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": false,
+                    "description": "Motion Detected"
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 28,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Master Bedroom Motion",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000075-0000-1000-8000-0026BB765291",
+                    "iid": 101,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": true,
+                    "description": "Status Active"
+                  },
+                  {
+                    "type": "00000079-0000-1000-8000-0026BB765291",
+                    "iid": 100,
+                    "perms": [
+                      "pr",
+                      "ev"
+                    ],
+                    "format": "uint8",
+                    "value": 0,
+                    "description": "Status Low Battery",
+                    "minValue": 0,
+                    "maxValue": 1,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "BFE61C70-4A40-11E6-BDF4-0800200C9A66",
+                    "iid": 67,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "int",
+                    "value": 2865,
                     "unit": "seconds",
                     "minValue": -1,
                     "maxValue": 86400,
@@ -2709,7 +3363,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 166,
+                    "value": 165,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -2917,7 +3571,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 26
+                    "value": 95
                   }
                 ]
               }
@@ -3143,7 +3797,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 166,
+                    "value": 165,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -3351,7 +4005,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 26
+                    "value": 95
                   }
                 ]
               }
@@ -3577,7 +4231,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 166,
+                    "value": 165,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -3785,7 +4439,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 26
+                    "value": 94
                   }
                 ]
               }
@@ -4067,7 +4721,7 @@
                       "ev"
                     ],
                     "format": "uint8",
-                    "value": 8,
+                    "value": 6,
                     "description": "Volume",
                     "unit": "percentage",
                     "minValue": 0,

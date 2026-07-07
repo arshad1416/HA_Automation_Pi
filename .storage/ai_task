@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "ai_task",
+  "data": {
+    "gen_data_entity_id": "ai_task.google_ai_task",
+    "gen_image_entity_id": "ai_task.google_ai_task"
+  }
+}

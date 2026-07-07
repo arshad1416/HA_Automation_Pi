@@ -1,15 +1,28 @@
 {
   "domain": "govee",
-  "name": "Govee Cloud API",
-  "codeowners": [
-    "@jnstockley"
+  "name": "Govee Cloud Integration",
+  "after_dependencies": ["bluetooth", "network"],
+  "bluetooth": [
+    {"local_name": "Govee_*", "connectable": true},
+    {"local_name": "ihoment_*", "connectable": true},
+    {"local_name": "GBK_*", "connectable": true},
+    {"manufacturer_id": 34819, "connectable": true}
   ],
+  "codeowners": ["@lasswellt"],
   "config_flow": true,
-  "documentation": "https://github.com/jnstockley/Govee-Hassio/blob/main/README.md",
-  "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/jnstockley/Govee-Hassio/issues",
+  "dependencies": [],
+  "documentation": "https://github.com/lasswellt/govee-homeassistant/blob/master/README.md",
+  "homekit": {},
+  "integration_type": "hub",
+  "iot_class": "cloud_push",
+  "issue_tracker": "https://github.com/lasswellt/govee-homeassistant/issues",
+  "loggers": ["custom_components.govee", "aiohttp", "aiomqtt"],
+  "quality_scale": "silver",
   "requirements": [
-    "govee-cloud==20250516184204.dev0"
+    "aiohttp-retry>=2.8.3",
+    "aiomqtt>=2.0.0",
+    "bleak-retry-connector>=3.0.0",
+    "cryptography>=41.0.0"
   ],
-  "version": "3.0.0-beta.8"
+  "version": "2026.7.5"
 }

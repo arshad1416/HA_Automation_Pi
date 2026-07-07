@@ -4,6 +4,9 @@
 # FIX 2026-06-23: converted from dict to list for !include_dir_merge_list; added id; removed unavailable
 #   light.kitchen_light_light_1; added continue_on_error to bright light calls;
 #   replaced invalid 'before: sunrise' (time condition) with a template condition.
+# FIX 2026-06-24: split ambient call by integration (homekit_controller strips + Matter nanoleafs);
+#   added continue_on_error to all light.turn_on calls; added occupied_recovery trigger (10s delay
+#   retry) so a CoAP/Thread timeout on the cabinet strips doesn't silence the automation.
 - id: downstairs_occupancy_lighting
   alias: Downstairs Occupancy Lighting
   description: 'Consolidated kitchen lighting. Single source binary_sensor.kitchen_presence (mmWave primary, Nest Hub fallback, 5-min off-delay). Branches: occupied, unoccupied, manual-off cooldown, HA start.'
@@ -26,7 +29,7 @@
       for: { minutes: 5 }
     - id: manual_off
       platform: state
-      entity_id: light.kitchen_light
+      entity_id: light.kitchen_light_light_1
       to: 'off'
     - id: ha_start
       platform: homeassistant
@@ -36,6 +39,11 @@
       entity_id: binary_sensor.kitchen_presence
       to: 'on'
       for: { hours: 2 }
+    - id: occupied_recovery
+      platform: state
+      entity_id: binary_sensor.kitchen_presence
+      to: 'on'
+      for: { seconds: 10 }
   condition: []
   action:
     - choose:
@@ -51,10 +59,23 @@
           entity_id: binary_sensor.kitchen_presence
           state: 'on'
         sequence:
+        # Matter nanoleafs — isolated from homekit_controller to avoid CoAP timeout cross-contamination
         - action: light.turn_on
           target:
-            entity_id: &ambient [light.cabinet_light_strip_left_nanoleaf_light_strip, light.cabinet_light_strip_center_nanoleaf_light_strip, light.cabinet_light_strip_right_nanoleaf_light_strip, light.nanoleaf_multicolor_ls, light.nanoleaf_multicolor_ls_2]
+            entity_id:
+              - light.nanoleaf_multicolor_ls
+              - light.nanoleaf_multicolor_ls_2
           data: { brightness_pct: 100, transition: 1 }
+          continue_on_error: true
+        # homekit_controller cabinet strips — CoAP/Thread can timeout but won't block other lights
+        - action: light.turn_on
+          target:
+            entity_id:
+              - light.cabinet_light_strip_left_nanoleaf_light_strip
+              - light.cabinet_light_strip_center_nanoleaf_light_strip
+              - light.cabinet_light_strip_right_nanoleaf_light_strip
+          data: { brightness_pct: 100, transition: 1 }
+          continue_on_error: true
         - if:
           - condition: not
             conditions:
@@ -75,7 +96,7 @@
           then:
           - action: light.turn_on
             target:
-              entity_id: &bright [light.kitchen_light, light.island_light_kitchen_island_light, light.island_light_light]
+              entity_id: &bright [light.kitchen_light_light_1, light.island_light_light, light.island_light_light]
             data: { brightness_pct: 100 }
             continue_on_error: true
           - action: switch.turn_on
@@ -97,7 +118,7 @@
             entity_id: timer.kitchen_manual_cooldown
         - action: light.turn_off
           target:
-            entity_id: &all_off [light.kitchen_light, light.island_light_kitchen_island_light, light.island_light_light, light.cabinet_light_strip_left_nanoleaf_light_strip, light.cabinet_light_strip_center_nanoleaf_light_strip, light.cabinet_light_strip_right_nanoleaf_light_strip, light.nanoleaf_multicolor_ls, light.nanoleaf_multicolor_ls_2]
+            entity_id: &all_off [light.kitchen_light_light_1, light.island_light_light, light.island_light_light, light.cabinet_light_strip_left_nanoleaf_light_strip, light.cabinet_light_strip_center_nanoleaf_light_strip, light.cabinet_light_strip_right_nanoleaf_light_strip, light.nanoleaf_multicolor_ls, light.nanoleaf_multicolor_ls_2]
           continue_on_error: true
         - action: switch.turn_off
           target:
@@ -132,8 +153,14 @@
           then:
           - action: light.turn_on
             target:
-              entity_id: *ambient
+              entity_id:
+                - light.nanoleaf_multicolor_ls
+                - light.nanoleaf_multicolor_ls_2
+                - light.cabinet_light_strip_left_nanoleaf_light_strip
+                - light.cabinet_light_strip_center_nanoleaf_light_strip
+                - light.cabinet_light_strip_right_nanoleaf_light_strip
             data: { brightness_pct: 100 }
+            continue_on_error: true
           else:
           - action: light.turn_off
             target:
@@ -142,6 +169,9 @@
       - conditions:
         - condition: trigger
           id: watchdog
+        - condition: template
+          value_template: >
+            {{ as_timestamp(now()) - as_timestamp(states.sensor.kitchen_mmwave_presence_sensor_moving_distance.last_updated) > 300 }}
         sequence:
         - action: light.turn_off
           target:
@@ -150,4 +180,30 @@
         - action: switch.turn_off
           target:
             entity_id: switch.kitchen_pantry_light
+          continue_on_error: true
+      # Recovery branch — if presence is still on 10s later and lights are off (automation crashed),
+      # retry turning on the bright lights
+      - conditions:
+        - condition: trigger
+          id: occupied_recovery
+        - condition: state
+          entity_id: binary_sensor.kitchen_presence
+          state: 'on'
+        - condition: state
+          entity_id: light.kitchen_light_light_1
+          state: 'off'
+        - condition: not
+          conditions:
+          - condition: state
+            entity_id: timer.kitchen_manual_cooldown
+            state: active
+        sequence:
+        - action: light.turn_on
+          target:
+            entity_id:
+              - light.kitchen_light_light_1
+              - light.island_light_light
+              - light.nanoleaf_multicolor_ls
+              - light.nanoleaf_multicolor_ls_2
+          data: { brightness_pct: 100 }
           continue_on_error: true

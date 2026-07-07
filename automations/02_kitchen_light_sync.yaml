@@ -1,0 +1,85 @@
+# Kitchen Light Sync — follows the main kitchen light
+# When main light turns ON → sync ambient lights + conditional island
+# When main light turns OFF → all lights off
+- id: kitchen_light_sync
+  alias: Kitchen Light Sync
+  description: Syncs ambient lights with the main kitchen light. Island light turns on conditionally based on weather.
+  mode: queued
+  max: 10
+  max_exceeded: silent
+  trigger:
+    - platform: state
+      entity_id: light.kitchen_light_light_1
+      to: "on"
+      id: light_on
+    - platform: state
+      entity_id: light.kitchen_light_light_1
+      to: "off"
+      id: light_off
+  condition: []
+  action:
+    - choose:
+        # ── Main light turned ON ─────────────────────────────────
+        - conditions:
+            - condition: trigger
+              id: light_on
+          sequence:
+            # Always turn on ambient lights
+            - action: light.turn_on
+              target:
+                entity_id:
+                  - light.cabinet_light_strip_right_nanoleaf_light_strip
+                  - light.cabinet_light_strip_center_nanoleaf_light_strip
+                  - light.cabinet_light_strip_left_nanoleaf_light_strip
+                  - light.nanoleaf_multicolor_ls
+                  - light.nanoleaf_multicolor_ls_2
+              data:
+                brightness_pct: 100
+                transition: 1
+              continue_on_error: true
+
+            # Island light: on if overcast/UV<4/rain/snow AND NOT quiet hours
+            - if:
+                - condition: not
+                  conditions:
+                    - condition: template
+                      value_template: >
+                        {% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %}
+                        {{ now() < nr and now().date() == nr.date() }}
+                - condition: or
+                  conditions:
+                    - condition: state
+                      entity_id: weather.forecast_home
+                      state:
+                        - cloudy
+                        - overcast
+                        - partlycloudy
+                        - rainy
+                        - snowy
+                        - fog
+                    - condition: template
+                      value_template: >
+                        {{ state_attr('weather.forecast_home', 'uv_index') | float(100) < 4 }}
+              then:
+                - action: light.turn_on
+                  target:
+                    entity_id: light.island_light_light
+                  data:
+                    brightness_pct: 100
+                  continue_on_error: true
+
+        # ── Main light turned OFF ────────────────────────────────
+        - conditions:
+            - condition: trigger
+              id: light_off
+          sequence:
+            - action: light.turn_off
+              target:
+                entity_id:
+                  - light.island_light_light
+                  - light.cabinet_light_strip_right_nanoleaf_light_strip
+                  - light.cabinet_light_strip_center_nanoleaf_light_strip
+                  - light.cabinet_light_strip_left_nanoleaf_light_strip
+                  - light.nanoleaf_multicolor_ls
+                  - light.nanoleaf_multicolor_ls_2
+              continue_on_error: true

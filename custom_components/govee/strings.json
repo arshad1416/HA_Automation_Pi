@@ -1,0 +1,370 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Govee API Key",
+        "description": "Enter your Govee Developer API key from {api_url}\n\nThis is NOT your Govee account password - it's a separate developer key.",
+        "data": {
+          "api_key": "API Key"
+        },
+        "data_description": {
+          "api_key": "The API key from your Govee Developer account (a long string of letters and numbers)"
+        }
+      },
+      "account": {
+        "title": "Govee Account (Optional)",
+        "description": "For real-time updates, enter your Govee mobile app credentials below.\n\n**Important:** Use the email and password from the Govee mobile app. The app password may be different from the Govee website password.\n\nTo skip this step, leave both fields empty and submit.",
+        "data": {
+          "email": "Govee App Email",
+          "password": "Govee App Password"
+        },
+        "data_description": {
+          "email": "The email address you use to sign into the Govee mobile app",
+          "password": "The password you use to sign into the Govee mobile app (not the website)"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-authenticate Govee",
+        "description": "Your API key is invalid. Please enter a new one.",
+        "data": {
+          "api_key": "API Key"
+        }
+      },
+      "verification_code": {
+        "title": "Govee Verification Code",
+        "description": "A verification code has been sent to **{email}**. Enter the code below. The code expires in approximately 15 minutes.",
+        "data": {
+          "verification_code": "Verification code"
+        },
+        "data_description": {
+          "verification_code": "Check your email for a code from Govee"
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Govee",
+        "description": "Update your credentials. Current email: {current_email}",
+        "data": {
+          "api_key": "API Key",
+          "email": "Govee App Email (optional)",
+          "password": "Govee App Password (optional)"
+        },
+        "data_description": {
+          "api_key": "Your Govee Developer API key from developer.govee.com",
+          "email": "Email for Govee mobile app (leave empty to remove MQTT)",
+          "password": "Password for Govee mobile app (leave empty to keep existing)"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid API key. Check that you're using the developer key from developer.govee.com, not your account password.",
+      "invalid_account": "Invalid Govee app credentials. Make sure you're using the password from the Govee mobile app (not the website).",
+      "invalid_api_key_format": "API key appears invalid. It should be a long string (36+ characters) from developer.govee.com.",
+      "invalid_email_format": "Please enter a valid email address.",
+      "password_without_email": "Please enter both email and password, or leave both empty to skip.",
+      "email_without_password": "Please enter both email and password, or leave both empty to skip.",
+      "cannot_connect": "Failed to connect to Govee API. Check your internet connection.",
+      "invalid_verification_code": "Invalid or expired verification code. Please check your email and try again.",
+      "login_rejected": "Govee rejected the login request. This may indicate a temporary server issue — please try again later.",
+      "unknown": "Unexpected error occurred"
+    },
+    "abort": {
+      "reauth_successful": "Re-authentication was successful",
+      "reconfigure_successful": "Reconfiguration was successful"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Govee Options",
+        "description": "If you have RGBIC devices, per-device segment settings will appear after submitting.",
+        "data": {
+          "poll_interval": "Polling interval (seconds)",
+          "api_temperature_unit": "Temperature unit from Govee API (thermometers)",
+          "enable_groups": "Enable group devices",
+          "enable_scenes": "Enable scene selector",
+          "enable_diy_scenes": "Enable DIY scene selector",
+          "expose_transport_entities": "Expose per-device transport connectivity sensors",
+          "enable_mqtt_control": "Send power/brightness/color over MQTT (faster, experimental)",
+          "lan_targets": "LAN device addresses / subnets (advanced)"
+        },
+        "data_description": {
+          "api_temperature_unit": "Auto (default) converts known Fahrenheit-reporting thermometers (H5179, H5109, H5110, HS5108, HS5106) automatically. Choose Fahrenheit if another thermometer reads about 1.8× too high (e.g. 74 instead of 23), or Celsius to force no conversion. Govee's API omits unit metadata, so the value can't always be auto-detected.",
+          "enable_groups": "Surfaces the device groups you created in the Govee app as single light entities. A command to a group is sent once and synced to all members by Govee's cloud, so it syncs better than grouping the lights with Home Assistant helpers. State is best-effort (groups can't be polled), and group lights only support power/brightness/color.",
+          "enable_mqtt_control": "Routes power/brightness/color commands through Govee's MQTT channel instead of the REST cloud API, reducing latency and bypassing REST rate limits. Requires email/password login (MQTT credentials). Falls back to REST automatically when MQTT is unavailable. Experimental — uses an undocumented channel; leave off if commands behave unexpectedly.",
+          "lan_targets": "Only needed when LAN-enabled Govee devices are on a different subnet/VLAN than Home Assistant, so the local discovery scan can't reach them. Enter a comma-separated list of device IPs (10.20.0.51), broadcast addresses (10.20.0.255), and/or subnets in CIDR (10.20.0.0/24, /24 or smaller). Subnets are scanned device-by-device since most routers drop cross-VLAN broadcasts. Leave blank if all devices share Home Assistant's network."
+        }
+      },
+      "select_segment_devices": {
+        "title": "Select Segment Devices",
+        "description": "Choose which RGBIC devices to configure segment modes for.",
+        "data": {
+          "devices": "Devices to configure"
+        }
+      },
+      "configure_device_mode": {
+        "title": "Segment Mode: {device_name}",
+        "description": "Choose how segments are created for **{device_name}** (`{device_id}`): **disabled** creates no segment entities, **grouped** creates a single entity for all segments, **individual** creates a separate entity per segment.",
+        "data": {
+          "segment_mode": "Segment mode"
+        }
+      }
+    },
+    "error": {
+      "invalid_lan_targets": "One of the LAN device addresses is not a valid IP, broadcast address, or subnet (/24 or smaller). Example: 10.20.0.51, 10.20.0.255, 10.20.0.0/24"
+    }
+  },
+  "entity": {
+    "light": {
+      "govee_light": {
+        "name": "{device_name}"
+      },
+      "govee_nightlight": {
+        "name": "Night Light"
+      },
+      "govee_segment": {
+        "name": "{device_name} Segment {segment_index}"
+      },
+      "govee_grouped_segment": {
+        "name": "{device_name} Segments"
+      }
+    },
+    "number": {
+      "govee_music_sensitivity": {
+        "name": "Music Sensitivity"
+      }
+    },
+    "select": {
+      "govee_scene_select": {
+        "name": "Scene"
+      },
+      "govee_snapshot_select": {
+        "name": "Snapshot"
+      },
+      "govee_diy_scene_select": {
+        "name": "DIY Scene"
+      },
+      "govee_diy_style_select": {
+        "name": "DIY Style"
+      },
+      "govee_hdmi_source_select": {
+        "name": "HDMI Source"
+      },
+      "govee_music_mode_select": {
+        "name": "Music Mode"
+      },
+      "govee_preset_scene_select": {
+        "name": "Scene"
+      },
+      "govee_nightlight_scene_select": {
+        "name": "Night Light Scene"
+      }
+    },
+    "switch": {
+      "govee_plug": {
+        "name": "{device_name}"
+      },
+      "govee_night_light": {
+        "name": "Night Light"
+      },
+      "govee_music_mode": {
+        "name": "Music Mode"
+      },
+      "govee_dreamview": {
+        "name": "DreamView"
+      },
+      "govee_heater_auto_stop": {
+        "name": "Auto Stop"
+      },
+      "govee_appliance_power": {
+        "name": "{device_name}"
+      },
+      "govee_light_zone": {
+        "name": "Light Zone {zone}"
+      },
+      "govee_socket": {
+        "name": "Outlet {socket}"
+      },
+      "govee_main_light": {
+        "name": "Main Light"
+      },
+      "govee_background_light": {
+        "name": "Background Light"
+      },
+      "govee_nebula_light": {
+        "name": "Nebula Light"
+      },
+      "govee_side_light": {
+        "name": "Side Light"
+      },
+      "govee_bottom_light": {
+        "name": "Bottom Light"
+      }
+    },
+    "sensor": {
+      "rate_limit_remaining": {
+        "name": "API Rate Limit Remaining"
+      },
+      "mqtt_status": {
+        "name": "MQTT Status"
+      },
+      "mqtt_last_received": {
+        "name": "Last MQTT Received"
+      },
+      "sensor_temperature": {
+        "name": "Temperature"
+      },
+      "sensor_humidity": {
+        "name": "Humidity"
+      },
+      "sensor_air_quality": {
+        "name": "Air Quality"
+      },
+      "sensor_co2": {
+        "name": "CO2"
+      },
+      "sensor_filter_life": {
+        "name": "Filter Life"
+      },
+      "sensor_battery": {
+        "name": "Battery"
+      },
+      "sensor_reading_changed": {
+        "name": "Last Changed"
+      },
+      "all_data_last_updated": {
+        "name": "Last Update Received"
+      },
+      "last_command_sent": {
+        "name": "Last Command Sent"
+      },
+      "leak_battery": {
+        "name": "Battery"
+      },
+      "leak_last_wet": {
+        "name": "Last Leak Detected"
+      },
+      "leak_alert_status": {
+        "name": "Alert Status"
+      },
+      "ieee_address": {
+        "name": "IEEE Address"
+      }
+    },
+    "binary_sensor": {
+      "device_connectivity": {
+        "name": "Connectivity"
+      },
+      "cloud_api_connectivity": {
+        "name": "Cloud API"
+      },
+      "mqtt_connectivity": {
+        "name": "MQTT"
+      },
+      "ble_connectivity": {
+        "name": "Bluetooth"
+      },
+      "lan_connectivity": {
+        "name": "LAN"
+      },
+      "govee_water_full": {
+        "name": "Water Tank Full"
+      },
+      "govee_water_leak": {
+        "name": "Water Leak"
+      },
+      "govee_occupancy": {
+        "name": "Occupancy"
+      },
+      "leak_online": {
+        "name": "LoRa"
+      },
+      "leak_hub_online": {
+        "name": "Internet"
+      }
+    },
+    "humidifier": {
+      "govee_humidifier": {
+        "name": "{device_name}",
+        "state_attributes": {
+          "mode": {
+            "state": {
+              "low": "Low",
+              "medium": "Medium",
+              "high": "High",
+              "auto": "Auto",
+              "dryer": "Dryer"
+            }
+          }
+        }
+      }
+    },
+    "button": {
+      "refresh_scenes": {
+        "name": "Refresh Scenes"
+      },
+      "clear_water_full": {
+        "name": "Clear Water Alert"
+      }
+    },
+    "event": {
+      "leak_button": {
+        "name": "Button",
+        "state_attributes": {
+          "event_type": {
+            "state": {
+              "press": "Press"
+            }
+          }
+        }
+      }
+    }
+  },
+  "services": {
+    "refresh_scenes": {
+      "name": "Refresh Scenes",
+      "description": "Refresh available scenes from the Govee API",
+      "fields": {
+        "device_id": {
+          "name": "Device ID",
+          "description": "Specific device to refresh (optional)"
+        }
+      }
+    },
+    "set_segment_color": {
+      "name": "Set Segment Color",
+      "description": "Set color for specific segments on RGBIC devices",
+      "fields": {
+        "device_id": {
+          "name": "Device ID",
+          "description": "Device ID of the RGBIC light"
+        },
+        "segments": {
+          "name": "Segments",
+          "description": "List of segment indices (0-based)"
+        },
+        "rgb_color": {
+          "name": "RGB Color",
+          "description": "Color as [R, G, B] values"
+        }
+      }
+    }
+  },
+  "issues": {
+    "auth_failed": {
+      "title": "Govee authentication failed",
+      "description": "The API key for {entry_title} is no longer valid. The integration cannot communicate with Govee until you re-authenticate."
+    },
+    "rate_limited": {
+      "title": "Govee API rate limited",
+      "description": "The Govee API has rate limited requests for {entry_title}. Normal operation will resume in approximately {reset_time}. Consider increasing the poll interval in the integration options to reduce API calls."
+    },
+    "mqtt_disconnected": {
+      "title": "Govee MQTT disconnected",
+      "description": "Real-time updates for {entry_title} are unavailable. Reason: {reason}. The integration will continue to work using polling. Check your Govee account credentials if this persists."
+    },
+    "mqtt_2fa_required": {
+      "title": "Govee account requires verification",
+      "description": "Your Govee account now requires email verification (2FA) to enable real-time MQTT updates for {entry_title}. Go to the integration page and select **Reconfigure** to re-enter your credentials with a verification code.\n\nThe integration will continue to work using polling until this is resolved."
+    }
+  }
+}

@@ -1,15 +1,18 @@
 {
   "domain": "wyzeapi",
   "name": "Wyze",
-  "config_flow": true,
-  "documentation": "https://github.com/alanjames1987/Wyze-HA",
-  "issue_tracker": "https://github.com/alanjames1987/Wyze-HA/issues",
-  "requirements": [
-    "wyze_sdk==1.2.2"
-  ],
   "codeowners": [
-    "@alanjames1987"
+    "@SecKatie"
   ],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "https://github.com/SecKatie/ha-wyzeapi#readme",
   "iot_class": "cloud_polling",
-  "version": "0.0.3"
+  "issue_tracker": "https://github.com/SecKatie/ha-wyzeapi/issues",
+  "loggers": ["custom_components.wyzeapi"],
+  "requirements": [
+    "wyzeapy>=0.5.33,<0.6",
+    "websockets"
+  ],
+  "version": "0.1.38"
 }

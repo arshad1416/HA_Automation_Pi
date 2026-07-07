@@ -1,0 +1,893 @@
+"""Config flow for the NeverDry integration.
+
+Provides a multi-step UI setup:
+  1. Select temperature and rain sensors, ET model parameters
+  2. Add irrigation zones (repeatable)
+  3. Options flow to edit parameters and add/remove zones later
+"""
+
+from __future__ import annotations
+
+import logging
+from typing import Any
+
+import voluptuous as vol
+from homeassistant import config_entries
+from homeassistant.core import callback
+from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import selector
+
+from . import zone_device_identifier
+from .const import (
+    CONF_ALPHA,
+    CONF_D_MAX,
+    CONF_RAIN_SENSOR,
+    CONF_RAIN_SENSOR_TYPE,
+    CONF_T_BASE,
+    CONF_TEMP_SENSOR,
+    CONF_VWC_SENSOR,
+    CONF_ZONE_AREA,
+    CONF_ZONE_DELIVERY_MODE,
+    CONF_ZONE_DELIVERY_TIMEOUT,
+    CONF_ZONE_EFFICIENCY,
+    CONF_ZONE_FLOW_METER_SENSOR,
+    CONF_ZONE_FLOW_RATE,
+    CONF_ZONE_IRRIGATION_MODE,
+    CONF_ZONE_IRRIGATION_TIME,
+    CONF_ZONE_KC,
+    CONF_ZONE_NAME,
+    CONF_ZONE_PLANT_FAMILY,
+    CONF_ZONE_SYSTEM_TYPE,
+    CONF_ZONE_THRESHOLD,
+    CONF_ZONE_VALVE,
+    CONF_ZONE_VOLUME_ENTITY,
+    CONF_ZONES,
+    CONFIG_VERSION,
+    DEFAULT_ALPHA,
+    DEFAULT_D_MAX,
+    DEFAULT_DELIVERY_MODE,
+    DEFAULT_DELIVERY_TIMEOUT_S,
+    DEFAULT_IRRIGATION_MODE,
+    DEFAULT_IRRIGATION_TIME,
+    DEFAULT_RAIN_SENSOR_TYPE,
+    DEFAULT_T_BASE,
+    DEFAULT_THRESHOLD,
+    DELIVERY_MODE_ESTIMATED_FLOW,
+    DELIVERY_MODE_FLOW_METER,
+    DELIVERY_MODE_VOLUME_PRESET,
+    DOMAIN,
+    IRRIGATION_MODE_MANUAL,
+    IRRIGATION_MODE_REACTIVE,
+    IRRIGATION_MODE_SCHEDULED,
+    MAX_ZONE_NAME_LENGTH,
+    MAX_ZONES,
+    PLANT_FAMILIES,
+    RAIN_TYPE_DAILY_TOTAL,
+    RAIN_TYPE_EVENT,
+    SYSTEM_TYPE_DRIP,
+    SYSTEM_TYPE_MANUAL,
+    SYSTEM_TYPE_MICRO_SPRINKLER,
+    SYSTEM_TYPE_SPRINKLER,
+    UNUSUAL_AREA_MIN_M2,
+    UNUSUAL_FLOW_MAX_LPM,
+    UNUSUAL_FLOW_MIN_LPM,
+)
+from .unit_convert import (
+    LPM_TO_GPH,
+    LPM_TO_GPM,
+    LPM_TO_LPH,
+    M2_TO_FT2,
+    MM_TO_IN,
+    c_to_f,
+    sensors_input_to_metric,
+    zone_input_to_metric,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+# Unit-conversion helpers live in a HA-free module so they stay unit-testable.
+# Aliased here to keep the call sites below terse.
+_MM_TO_IN = MM_TO_IN
+_M2_TO_FT2 = M2_TO_FT2
+_LPM_TO_GPM = LPM_TO_GPM
+_LPM_TO_LPH = LPM_TO_LPH
+_LPM_TO_GPH = LPM_TO_GPH
+_c_to_f = c_to_f
+_sensors_input_to_metric = sensors_input_to_metric
+_zone_input_to_metric = zone_input_to_metric
+
+
+def _is_imperial(hass) -> bool:
+    from homeassistant.util.unit_system import US_CUSTOMARY_SYSTEM
+
+    return hass.config.units is US_CUSTOMARY_SYSTEM
+
+
+def _sensors_schema(is_imperial: bool) -> vol.Schema:
+    """Sensors + ET parameters form for initial setup, unit-aware."""
+    t_unit = "°F" if is_imperial else "°C"
+    d_unit = "in" if is_imperial else "mm"
+    t_base_default = _c_to_f(DEFAULT_T_BASE) if is_imperial else DEFAULT_T_BASE
+    d_max_default = round(DEFAULT_D_MAX * _MM_TO_IN, 1) if is_imperial else DEFAULT_D_MAX
+
+    return vol.Schema(
+        {
+            vol.Required(CONF_TEMP_SENSOR): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor", device_class="temperature")
+            ),
+            vol.Required(CONF_RAIN_SENSOR): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+            vol.Optional(CONF_RAIN_SENSOR_TYPE, default=DEFAULT_RAIN_SENSOR_TYPE): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[RAIN_TYPE_EVENT, RAIN_TYPE_DAILY_TOTAL],
+                    translation_key="rain_sensor_type",
+                    mode="dropdown",
+                )
+            ),
+            vol.Optional(CONF_ALPHA, default=DEFAULT_ALPHA): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.05,
+                    max=1.0,
+                    step=0.01,
+                    mode="box",
+                    unit_of_measurement="mm/°C/day",
+                )
+            ),
+            vol.Optional(CONF_T_BASE, default=t_base_default): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=23.0 if is_imperial else -5.0,
+                    max=68.0 if is_imperial else 20.0,
+                    step=1.0 if is_imperial else 0.5,
+                    mode="box",
+                    unit_of_measurement=t_unit,
+                )
+            ),
+            vol.Optional(CONF_D_MAX, default=d_max_default): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.5 if is_imperial else 10.0,
+                    max=20.0 if is_imperial else 500.0,
+                    step=0.5 if is_imperial else 10.0,
+                    mode="box",
+                    unit_of_measurement=d_unit,
+                )
+            ),
+            vol.Optional(CONF_VWC_SENSOR): selector.EntitySelector(selector.EntitySelectorConfig(domain="sensor")),
+        }
+    )
+
+
+def _model_params_schema(is_imperial: bool, current: dict) -> vol.Schema:
+    """ET parameters form for options flow, with stored metric values pre-filled."""
+    t_unit = "°F" if is_imperial else "°C"
+    d_unit = "in" if is_imperial else "mm"
+    t_stored = current.get(CONF_T_BASE, DEFAULT_T_BASE)
+    d_stored = current.get(CONF_D_MAX, DEFAULT_D_MAX)
+    t_display = _c_to_f(t_stored) if is_imperial else t_stored
+    d_display = round(d_stored * _MM_TO_IN, 1) if is_imperial else d_stored
+
+    return vol.Schema(
+        {
+            vol.Optional(CONF_ALPHA, default=current.get(CONF_ALPHA, DEFAULT_ALPHA)): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.05,
+                    max=1.0,
+                    step=0.01,
+                    mode="box",
+                    unit_of_measurement="mm/°C/day",
+                )
+            ),
+            vol.Optional(CONF_T_BASE, default=t_display): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=23.0 if is_imperial else -5.0,
+                    max=68.0 if is_imperial else 20.0,
+                    step=1.0 if is_imperial else 0.5,
+                    mode="box",
+                    unit_of_measurement=t_unit,
+                )
+            ),
+            vol.Optional(CONF_D_MAX, default=d_display): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.5 if is_imperial else 10.0,
+                    max=20.0 if is_imperial else 500.0,
+                    step=0.5 if is_imperial else 10.0,
+                    mode="box",
+                    unit_of_measurement=d_unit,
+                )
+            ),
+        }
+    )
+
+
+def _zone_schema_initial(is_imperial: bool) -> vol.Schema:
+    """Zone form for initial setup and add_zone options flow (no pre-existing values)."""
+    area_unit = "ft²" if is_imperial else "m²"
+    flow_unit = "gal/h" if is_imperial else "L/h"
+    depth_unit = "in" if is_imperial else "mm"
+    threshold_default = round(DEFAULT_THRESHOLD * _MM_TO_IN, 1) if is_imperial else DEFAULT_THRESHOLD
+
+    return vol.Schema(
+        {
+            vol.Required(CONF_ZONE_NAME): selector.TextSelector(),
+            vol.Optional(CONF_ZONE_VALVE): selector.EntitySelector(selector.EntitySelectorConfig(domain="switch")),
+            vol.Optional(CONF_ZONE_DELIVERY_MODE, default=DEFAULT_DELIVERY_MODE): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        DELIVERY_MODE_ESTIMATED_FLOW,
+                        DELIVERY_MODE_FLOW_METER,
+                        DELIVERY_MODE_VOLUME_PRESET,
+                    ],
+                    translation_key="delivery_mode",
+                    mode="dropdown",
+                )
+            ),
+            vol.Required(CONF_ZONE_AREA): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1.0 if is_imperial else 0.1,
+                    max=107000.0 if is_imperial else 10000.0,
+                    step=1.0 if is_imperial else 0.1,
+                    mode="box",
+                    unit_of_measurement=area_unit,
+                )
+            ),
+            vol.Required(CONF_ZONE_SYSTEM_TYPE): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        SYSTEM_TYPE_DRIP,
+                        SYSTEM_TYPE_MICRO_SPRINKLER,
+                        SYSTEM_TYPE_SPRINKLER,
+                        SYSTEM_TYPE_MANUAL,
+                    ],
+                    translation_key="system_type",
+                    mode="dropdown",
+                )
+            ),
+            vol.Optional(CONF_ZONE_EFFICIENCY): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=0.1, max=1.0, step=0.05, mode="slider")
+            ),
+            vol.Optional(CONF_ZONE_PLANT_FAMILY): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=list(PLANT_FAMILIES.keys()),
+                    translation_key="plant_family",
+                    mode="dropdown",
+                )
+            ),
+            vol.Optional(CONF_ZONE_KC): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=0.1, max=2.0, step=0.05, mode="box")
+            ),
+            vol.Optional(CONF_ZONE_FLOW_RATE): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=2.0 if is_imperial else 1.0,
+                    max=3200.0 if is_imperial else 12000.0,
+                    step=0.5 if is_imperial else 1.0,
+                    mode="box",
+                    unit_of_measurement=flow_unit,
+                )
+            ),
+            vol.Optional(CONF_ZONE_FLOW_METER_SENSOR): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="sensor")
+            ),
+            vol.Optional(CONF_ZONE_VOLUME_ENTITY): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="number")
+            ),
+            vol.Optional(CONF_ZONE_DELIVERY_TIMEOUT, default=DEFAULT_DELIVERY_TIMEOUT_S): selector.NumberSelector(
+                selector.NumberSelectorConfig(min=60, max=7200, step=60, mode="box", unit_of_measurement="s")
+            ),
+            vol.Optional(CONF_ZONE_IRRIGATION_MODE, default=DEFAULT_IRRIGATION_MODE): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[
+                        IRRIGATION_MODE_MANUAL,
+                        IRRIGATION_MODE_REACTIVE,
+                        IRRIGATION_MODE_SCHEDULED,
+                    ],
+                    translation_key="irrigation_mode",
+                    mode="dropdown",
+                )
+            ),
+            vol.Optional(CONF_ZONE_THRESHOLD, default=threshold_default): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0.1 if is_imperial else 1.0,
+                    max=4.0 if is_imperial else 100.0,
+                    step=0.1 if is_imperial else 1.0,
+                    mode="box",
+                    unit_of_measurement=depth_unit,
+                )
+            ),
+            vol.Optional(CONF_ZONE_IRRIGATION_TIME, default=DEFAULT_IRRIGATION_TIME): selector.TimeSelector(),
+        }
+    )
+
+
+def _unusual_zone_values(zone: dict, imperial: bool) -> list[str]:
+    """Detect implausible zone values for the soft-confirm guard.
+
+    Takes a zone dict in metric storage units (area m², flow L/min) and
+    returns human-readable warning lines in the user's display units.
+    An empty list means all values look plausible.
+    """
+    warnings: list[str] = []
+    area = zone.get(CONF_ZONE_AREA)
+    if area is not None and area < UNUSUAL_AREA_MIN_M2:
+        if imperial:
+            warnings.append(f"area {area * _M2_TO_FT2:.1f} ft² < {UNUSUAL_AREA_MIN_M2 * _M2_TO_FT2:.0f} ft²")
+        else:
+            warnings.append(f"area {area:.1f} m² < {UNUSUAL_AREA_MIN_M2:.0f} m²")
+    flow = zone.get(CONF_ZONE_FLOW_RATE)
+    if flow is not None and flow > 0:
+        if imperial:
+            shown, unit = flow * _LPM_TO_GPH, "gal/h"
+            low, high = UNUSUAL_FLOW_MIN_LPM * _LPM_TO_GPH, UNUSUAL_FLOW_MAX_LPM * _LPM_TO_GPH
+        else:
+            shown, unit = flow * _LPM_TO_LPH, "L/h"
+            low, high = UNUSUAL_FLOW_MIN_LPM * _LPM_TO_LPH, UNUSUAL_FLOW_MAX_LPM * _LPM_TO_LPH
+        if flow < UNUSUAL_FLOW_MIN_LPM:
+            warnings.append(f"flow rate {shown:.1f} {unit} < {low:.1f} {unit}")
+        elif flow > UNUSUAL_FLOW_MAX_LPM:
+            warnings.append(f"flow rate {shown:.0f} {unit} > {high:.0f} {unit}")
+    return warnings
+
+
+def _confirm_zone_schema() -> vol.Schema:
+    """Checkbox form for the unusual-values confirmation step."""
+    return vol.Schema({vol.Required("confirm", default=False): bool})
+
+
+def _coerce_delivery_mode(user_input: dict) -> dict:
+    """Downgrade delivery_mode to estimated_flow when the required sensor is missing."""
+    dm = user_input.get(CONF_ZONE_DELIVERY_MODE)
+    if (dm == DELIVERY_MODE_FLOW_METER and not user_input.get(CONF_ZONE_FLOW_METER_SENSOR)) or (
+        dm == DELIVERY_MODE_VOLUME_PRESET and not user_input.get(CONF_ZONE_VOLUME_ENTITY)
+    ):
+        user_input = dict(user_input)
+        user_input[CONF_ZONE_DELIVERY_MODE] = DELIVERY_MODE_ESTIMATED_FLOW
+    return user_input
+
+
+class NeverDryConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+    """Handle a config flow for NeverDry."""
+
+    VERSION = CONFIG_VERSION
+
+    def __init__(self) -> None:
+        """Initialize the config flow."""
+        self._data: dict[str, Any] = {}
+        self._zones: list[dict[str, Any]] = []
+        self._pending_zone: dict[str, Any] | None = None
+        self._pending_warnings: list[str] = []
+
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Step 1: Select sensors and ET model parameters."""
+        imperial = _is_imperial(self.hass)
+        if user_input is not None:
+            self._data = _sensors_input_to_metric(user_input, imperial)
+            return await self.async_step_zone()
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=_sensors_schema(imperial),
+        )
+
+    async def async_step_zone(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Step 2: Add an irrigation zone."""
+        imperial = _is_imperial(self.hass)
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            name = user_input.get(CONF_ZONE_NAME, "")
+            mode = user_input.get(CONF_ZONE_DELIVERY_MODE, DEFAULT_DELIVERY_MODE)
+            if len(name) > MAX_ZONE_NAME_LENGTH:
+                errors[CONF_ZONE_NAME] = "zone_name_too_long"
+            elif len(self._zones) >= MAX_ZONES:
+                errors["base"] = "too_many_zones"
+            elif mode == DELIVERY_MODE_ESTIMATED_FLOW and not user_input.get(CONF_ZONE_FLOW_RATE):
+                errors[CONF_ZONE_FLOW_RATE] = "flow_rate_required"
+            elif mode == DELIVERY_MODE_FLOW_METER and not user_input.get(CONF_ZONE_FLOW_METER_SENSOR):
+                errors[CONF_ZONE_FLOW_METER_SENSOR] = "flow_meter_required"
+            elif mode == DELIVERY_MODE_VOLUME_PRESET and not user_input.get(CONF_ZONE_VOLUME_ENTITY):
+                errors[CONF_ZONE_VOLUME_ENTITY] = "volume_entity_required"
+            else:
+                zone_metric = _zone_input_to_metric(user_input, imperial)
+                self._pending_warnings = _unusual_zone_values(zone_metric, imperial)
+                if self._pending_warnings:
+                    self._pending_zone = zone_metric
+                    return await self.async_step_confirm_zone()
+                self._zones.append(zone_metric)
+                return await self.async_step_add_another()
+
+        return self.async_show_form(
+            step_id="zone",
+            data_schema=_zone_schema_initial(imperial),
+            errors=errors,
+            description_placeholders={
+                "zone_count": str(len(self._zones)),
+            },
+        )
+
+    async def async_step_confirm_zone(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Soft guard: unusual zone values need explicit confirmation.
+
+        Values outside the plausibility ranges (tiny area, flow rate that
+        smells like a L/min-vs-L/h mix-up) are confirmed, not rejected —
+        planter zones and sprinkler manifolds legitimately exceed them.
+        Declining returns to the zone form to re-enter the values.
+        """
+        if user_input is not None:
+            pending = self._pending_zone
+            self._pending_zone = None
+            if user_input.get("confirm") and pending is not None:
+                self._zones.append(pending)
+                return await self.async_step_add_another()
+            return await self.async_step_zone()
+
+        return self.async_show_form(
+            step_id="confirm_zone",
+            data_schema=_confirm_zone_schema(),
+            description_placeholders={
+                "zone_name": (self._pending_zone or {}).get(CONF_ZONE_NAME, ""),
+                "warnings": "\n".join(f"- {w}" for w in self._pending_warnings),
+            },
+        )
+
+    async def async_step_add_another(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Step 3: Ask whether to add another zone or finish."""
+        if user_input is not None:
+            if user_input.get("add_another"):
+                return await self.async_step_zone()
+            return self._create_entry()
+
+        return self.async_show_form(
+            step_id="add_another",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("add_another", default=False): bool,
+                }
+            ),
+            description_placeholders={
+                "zone_count": str(len(self._zones)),
+                "zone_names": ", ".join(z[CONF_ZONE_NAME] for z in self._zones),
+            },
+        )
+
+    def _create_entry(self) -> config_entries.ConfigFlowResult:
+        """Create the config entry with all collected data."""
+        self._data[CONF_ZONES] = self._zones
+        title = f"NeverDry ({len(self._zones)} zone{'s' if len(self._zones) != 1 else ''})"
+        return self.async_create_entry(title=title, data=self._data)
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> NeverDryOptionsFlow:
+        """Get the options flow handler."""
+        return NeverDryOptionsFlow(config_entry)
+
+
+class NeverDryOptionsFlow(config_entries.OptionsFlow):
+    """Handle options for NeverDry (edit after setup)."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialize options flow."""
+        self._config_entry = config_entry
+        self._pending_zone: dict[str, Any] | None = None
+        self._pending_warnings: list[str] = []
+        self._pending_action: str = ""
+
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Show menu: edit model params or manage zones."""
+        return self.async_show_menu(
+            step_id="init",
+            menu_options=["model_params", "add_zone", "edit_zone", "check_zones", "remove_zone"],
+        )
+
+    async def async_step_model_params(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Edit ET model parameters."""
+        imperial = _is_imperial(self.hass)
+        if user_input is not None:
+            user_input = _sensors_input_to_metric(user_input, imperial)
+            new_data = {**self._config_entry.data, **user_input}
+            if new_data != dict(self._config_entry.data):
+                changed = [k for k in new_data if new_data[k] != self._config_entry.data.get(k)]
+                _LOGGER.debug("Config updated via model_params — changed keys: %s", changed)
+                self.hass.config_entries.async_update_entry(self._config_entry, data=new_data)
+            return self.async_create_entry(data={})
+
+        return self.async_show_form(
+            step_id="model_params",
+            data_schema=_model_params_schema(imperial, self._config_entry.data),
+        )
+
+    async def async_step_add_zone(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Add a new irrigation zone."""
+        imperial = _is_imperial(self.hass)
+        if user_input is not None:
+            user_input = _zone_input_to_metric(user_input, imperial)
+            user_input = _coerce_delivery_mode(user_input)
+            new_data = dict(self._config_entry.data)
+            zones = list(new_data.get(CONF_ZONES, []))
+            # Reject duplicate zone names
+            new_name = user_input[CONF_ZONE_NAME]
+            existing_names = {z[CONF_ZONE_NAME] for z in zones}
+            if new_name in existing_names:
+                return self.async_show_form(
+                    step_id="add_zone",
+                    data_schema=_zone_schema_initial(imperial),
+                    errors={"base": "zone_already_exists"},
+                )
+            self._pending_warnings = _unusual_zone_values(user_input, imperial)
+            if self._pending_warnings:
+                self._pending_zone = user_input
+                self._pending_action = "add"
+                return await self.async_step_confirm_zone()
+            return self._save_added_zone(user_input)
+
+        return self.async_show_form(
+            step_id="add_zone",
+            data_schema=_zone_schema_initial(imperial),
+        )
+
+    def _save_added_zone(self, zone: dict[str, Any]) -> config_entries.ConfigFlowResult:
+        """Append a new zone to the config entry and finish the flow."""
+        new_data = dict(self._config_entry.data)
+        zones = list(new_data.get(CONF_ZONES, []))
+        zones.append(zone)
+        new_data[CONF_ZONES] = zones
+        if new_data != dict(self._config_entry.data):
+            _LOGGER.debug("Config updated via add_zone — zone added: %s", zone.get(CONF_ZONE_NAME))
+            self.hass.config_entries.async_update_entry(self._config_entry, data=new_data)
+        return self.async_create_entry(data={})
+
+    async def async_step_edit_zone(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Select a zone to edit."""
+        zones = list(self._config_entry.data.get(CONF_ZONES, []))
+        zone_names = [z[CONF_ZONE_NAME] for z in zones]
+
+        if not zone_names:
+            return self.async_abort(reason="no_zones")
+
+        if user_input is not None:
+            self._edit_zone_name = user_input["zone_to_edit"]
+            return await self.async_step_edit_zone_detail()
+
+        return self.async_show_form(
+            step_id="edit_zone",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("zone_to_edit"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=zone_names,
+                            mode="dropdown",
+                        )
+                    ),
+                }
+            ),
+        )
+
+    async def async_step_edit_zone_detail(
+        self,
+        user_input: dict[str, Any] | None = None,
+    ) -> config_entries.ConfigFlowResult:
+        """Edit zone details with current values as defaults."""
+        zones = list(self._config_entry.data.get(CONF_ZONES, []))
+        cur = next(
+            (z for z in zones if z[CONF_ZONE_NAME] == self._edit_zone_name),
+            {},
+        )
+
+        imperial = _is_imperial(self.hass)
+        if user_input is not None:
+            user_input = _zone_input_to_metric(user_input, imperial)
+            user_input = _coerce_delivery_mode(user_input)
+            self._pending_warnings = _unusual_zone_values(user_input, imperial)
+            if self._pending_warnings:
+                self._pending_zone = user_input
+                self._pending_action = "edit"
+                return await self.async_step_confirm_zone()
+            return self._save_edited_zone(user_input)
+
+        area_unit = "ft²" if imperial else "m²"
+        flow_unit = "gal/h" if imperial else "L/h"
+        depth_unit = "in" if imperial else "mm"
+
+        # Helper to get current value or UNDEFINED
+        def _d(key, fallback=vol.UNDEFINED):
+            return cur.get(key, fallback)
+
+        def _d_area(fallback):
+            v = cur.get(CONF_ZONE_AREA, fallback)
+            return round(v * _M2_TO_FT2, 1) if (imperial and v is not None) else v
+
+        def _d_flow():
+            v = cur.get(CONF_ZONE_FLOW_RATE)
+            if v is None:
+                return vol.UNDEFINED
+            # Stored in L/min; UI shows gal/h (imperial) or L/h (metric).
+            return round(v * _LPM_TO_GPH, 1) if imperial else round(v * _LPM_TO_LPH, 1)
+
+        def _d_threshold(fallback):
+            v = cur.get(CONF_ZONE_THRESHOLD, fallback)
+            return round(v * _MM_TO_IN, 1) if (imperial and v is not None) else v
+
+        dm_opts = [
+            DELIVERY_MODE_ESTIMATED_FLOW,
+            DELIVERY_MODE_FLOW_METER,
+            DELIVERY_MODE_VOLUME_PRESET,
+        ]
+        st_opts = [
+            SYSTEM_TYPE_DRIP,
+            SYSTEM_TYPE_MICRO_SPRINKLER,
+            SYSTEM_TYPE_SPRINKLER,
+            SYSTEM_TYPE_MANUAL,
+        ]
+        pf_opts = list(PLANT_FAMILIES.keys())
+        ent_sw = selector.EntitySelectorConfig(domain="switch")
+        ent_sn = selector.EntitySelectorConfig(domain="sensor")
+        ent_nr = selector.EntitySelectorConfig(domain="number")
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_ZONE_NAME,
+                    default=_d(CONF_ZONE_NAME, ""),
+                ): selector.TextSelector(),
+                vol.Optional(
+                    CONF_ZONE_VALVE,
+                    description={"suggested_value": _d(CONF_ZONE_VALVE, None)},
+                ): selector.EntitySelector(ent_sw),
+                vol.Optional(
+                    CONF_ZONE_DELIVERY_MODE,
+                    default=_d(CONF_ZONE_DELIVERY_MODE, DEFAULT_DELIVERY_MODE),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=dm_opts,
+                        translation_key="delivery_mode",
+                        mode="dropdown",
+                    )
+                ),
+                vol.Required(
+                    CONF_ZONE_AREA,
+                    default=_d_area(10.0),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=1.0 if imperial else 0.1,
+                        max=107000.0 if imperial else 10000.0,
+                        step=1.0 if imperial else 0.1,
+                        mode="box",
+                        unit_of_measurement=area_unit,
+                    )
+                ),
+                vol.Required(
+                    CONF_ZONE_SYSTEM_TYPE,
+                    default=_d(CONF_ZONE_SYSTEM_TYPE, SYSTEM_TYPE_DRIP),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=st_opts,
+                        translation_key="system_type",
+                        mode="dropdown",
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_EFFICIENCY,
+                    default=_d(CONF_ZONE_EFFICIENCY),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0.1,
+                        max=1.0,
+                        step=0.05,
+                        mode="slider",
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_PLANT_FAMILY,
+                    default=_d(CONF_ZONE_PLANT_FAMILY),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=pf_opts,
+                        translation_key="plant_family",
+                        mode="dropdown",
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_KC,
+                    default=_d(CONF_ZONE_KC),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0.1,
+                        max=2.0,
+                        step=0.05,
+                        mode="box",
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_FLOW_RATE,
+                    default=_d_flow(),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=2.0 if imperial else 1.0,
+                        max=3200.0 if imperial else 12000.0,
+                        step=0.5 if imperial else 1.0,
+                        mode="box",
+                        unit_of_measurement=flow_unit,
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_FLOW_METER_SENSOR,
+                    description={"suggested_value": _d(CONF_ZONE_FLOW_METER_SENSOR, None)},
+                ): selector.EntitySelector(ent_sn),
+                vol.Optional(
+                    CONF_ZONE_VOLUME_ENTITY,
+                    description={"suggested_value": _d(CONF_ZONE_VOLUME_ENTITY, None)},
+                ): selector.EntitySelector(ent_nr),
+                vol.Optional(
+                    CONF_ZONE_DELIVERY_TIMEOUT,
+                    default=_d(
+                        CONF_ZONE_DELIVERY_TIMEOUT,
+                        DEFAULT_DELIVERY_TIMEOUT_S,
+                    ),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=60,
+                        max=7200,
+                        step=60,
+                        mode="box",
+                        unit_of_measurement="s",
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_IRRIGATION_MODE,
+                    default=_d(
+                        CONF_ZONE_IRRIGATION_MODE,
+                        DEFAULT_IRRIGATION_MODE,
+                    ),
+                ): selector.SelectSelector(
+                    selector.SelectSelectorConfig(
+                        options=[
+                            IRRIGATION_MODE_MANUAL,
+                            IRRIGATION_MODE_REACTIVE,
+                            IRRIGATION_MODE_SCHEDULED,
+                        ],
+                        translation_key="irrigation_mode",
+                        mode="dropdown",
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_THRESHOLD,
+                    default=_d_threshold(DEFAULT_THRESHOLD),
+                ): selector.NumberSelector(
+                    selector.NumberSelectorConfig(
+                        min=0.1 if imperial else 1.0,
+                        max=4.0 if imperial else 100.0,
+                        step=0.1 if imperial else 1.0,
+                        mode="box",
+                        unit_of_measurement=depth_unit,
+                    )
+                ),
+                vol.Optional(
+                    CONF_ZONE_IRRIGATION_TIME,
+                    default=_d(
+                        CONF_ZONE_IRRIGATION_TIME,
+                        DEFAULT_IRRIGATION_TIME,
+                    ),
+                ): selector.TimeSelector(),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="edit_zone_detail",
+            data_schema=schema,
+            description_placeholders={"zone_name": self._edit_zone_name},
+        )
+
+    def _save_edited_zone(self, zone: dict[str, Any]) -> config_entries.ConfigFlowResult:
+        """Replace the zone being edited in the config entry and finish the flow."""
+        zones = list(self._config_entry.data.get(CONF_ZONES, []))
+        new_data = dict(self._config_entry.data)
+        new_zones = [z for z in zones if z[CONF_ZONE_NAME] != self._edit_zone_name]
+        new_zones.append(zone)
+        new_data[CONF_ZONES] = new_zones
+        if new_data != dict(self._config_entry.data):
+            _LOGGER.debug("Config updated via edit_zone — zone edited: %s", self._edit_zone_name)
+            self.hass.config_entries.async_update_entry(
+                self._config_entry,
+                data=new_data,
+            )
+        return self.async_create_entry(data={})
+
+    async def async_step_confirm_zone(
+        self, user_input: dict[str, Any] | None = None
+    ) -> config_entries.ConfigFlowResult:
+        """Soft guard: unusual zone values need explicit confirmation.
+
+        Same semantics as the initial-setup guard: confirm saves the zone
+        as entered, declining returns to the add/edit form.
+        """
+        if user_input is not None:
+            pending = self._pending_zone
+            self._pending_zone = None
+            if user_input.get("confirm") and pending is not None:
+                if self._pending_action == "edit":
+                    return self._save_edited_zone(pending)
+                return self._save_added_zone(pending)
+            if self._pending_action == "edit":
+                return await self.async_step_edit_zone_detail()
+            return await self.async_step_add_zone()
+
+        return self.async_show_form(
+            step_id="confirm_zone",
+            data_schema=_confirm_zone_schema(),
+            description_placeholders={
+                "zone_name": (self._pending_zone or {}).get(CONF_ZONE_NAME, ""),
+                "warnings": "\n".join(f"- {w}" for w in self._pending_warnings),
+            },
+        )
+
+    async def async_step_check_zones(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Audit all configured zones against the plausibility guards.
+
+        Read-only report for installations configured before the guards
+        existed — nothing is modified; fixes go through 'Edit zone'.
+        """
+        if user_input is not None:
+            return self.async_create_entry(data={})
+
+        imperial = _is_imperial(self.hass)
+        zones = self._config_entry.data.get(CONF_ZONES, [])
+        findings = []
+        for z in zones:
+            findings.extend(f"- {z[CONF_ZONE_NAME]}: {w}" for w in _unusual_zone_values(z, imperial))
+        return self.async_show_form(
+            step_id="check_zones",
+            data_schema=vol.Schema({}),
+            description_placeholders={
+                "zone_count": str(len(zones)),
+                "findings_count": str(len(findings)),
+                "report": "\n".join(findings) if findings else "✓",
+            },
+        )
+
+    def _remove_zone_device(self, zone_name: str) -> None:
+        """Remove the device registry entry for a deleted zone.
+
+        Without this the zone device lingers in the registry after its
+        entities are torn down on reload, leaving an undeletable orphan
+        that blocks a clean uninstall.
+        """
+        device_registry = dr.async_get(self.hass)
+        identifier = zone_device_identifier(self._config_entry.entry_id, zone_name)
+        device = device_registry.async_get_device(identifiers={identifier})
+        if device is not None:
+            _LOGGER.debug("Removing stale zone device %s (%s)", device.id, zone_name)
+            device_registry.async_remove_device(device.id)
+
+    async def async_step_remove_zone(self, user_input: dict[str, Any] | None = None) -> config_entries.ConfigFlowResult:
+        """Remove an existing irrigation zone."""
+        zones = list(self._config_entry.data.get(CONF_ZONES, []))
+        zone_names = [z[CONF_ZONE_NAME] for z in zones]
+
+        if not zone_names:
+            return self.async_abort(reason="no_zones")
+
+        if user_input is not None:
+            name_to_remove = user_input["zone_to_remove"]
+            new_data = dict(self._config_entry.data)
+            new_data[CONF_ZONES] = [z for z in zones if z[CONF_ZONE_NAME] != name_to_remove]
+            if new_data != dict(self._config_entry.data):
+                _LOGGER.debug("Config updated via remove_zone — zone removed: %s", name_to_remove)
+                self._remove_zone_device(name_to_remove)
+                self.hass.config_entries.async_update_entry(self._config_entry, data=new_data)
+            return self.async_create_entry(data={})
+
+        return self.async_show_form(
+            step_id="remove_zone",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("zone_to_remove"): selector.SelectSelector(
+                        selector.SelectSelectorConfig(
+                            options=zone_names,
+                            mode="dropdown",
+                        )
+                    ),
+                }
+            ),
+        )

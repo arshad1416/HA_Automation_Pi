@@ -1,44 +1,61 @@
-"""Platform for fan integration."""
+"""Fan platform for Govee integration.
+
+Provides fan entities with support for:
+- On/Off control
+- Speed control (dynamic speed count from device capabilities)
+- Oscillation
+- Preset modes (Normal, Auto)
+"""
 
 from __future__ import annotations
 
 import logging
-import math
-from pprint import pformat
-from typing import TYPE_CHECKING
+from typing import Any
 
-# Import the device class from the component that you want to support
-import homeassistant.helpers.config_validation as cv
-import voluptuous as vol
-from devices.air_purifier.h7126 import H7126
-from devices.fan.h7102 import H7102
-from homeassistant.components.fan import PLATFORM_SCHEMA, FanEntity, FanEntityFeature
-from homeassistant.const import CONF_API_KEY, CONF_DEVICE_ID, CONF_NAME
-from homeassistant.core import DOMAIN
-from homeassistant.helpers.device_registry import DeviceInfo
-
-if TYPE_CHECKING:
-    from homeassistant.config_entries import ConfigEntry
-    from homeassistant.core import HomeAssistant
-    from homeassistant.helpers.entity_platform import AddEntitiesCallback
-
+from homeassistant.components.fan import (
+    DIRECTION_FORWARD,
+    DIRECTION_REVERSE,
+    FanEntity,
+    FanEntityFeature,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.util.percentage import (
-    percentage_to_ranged_value,
-    ranged_value_to_percentage,
+    ordered_list_item_to_percentage,
+    percentage_to_ordered_list_item,
 )
-from homeassistant.util.scaling import int_states_in_range
-from util.govee_api import GoveeAPI
 
-_LOGGER = logging.getLogger("govee")
-
-# Validation of the user's configuration
-PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend(
-    {
-        vol.Required(CONF_DEVICE_ID): cv.string,
-        vol.Required(CONF_API_KEY): cv.string,
-        vol.Required(CONF_NAME): cv.string,
-    }
+from .coordinator import GoveeCoordinator
+from .entity import GoveeEntity
+from .models import (
+    GoveeDevice,
+    ModeCommand,
+    OscillationCommand,
+    PowerCommand,
+    ToggleCommand,
+    WorkModeCommand,
 )
+from .models.device import (
+    INSTANCE_FAN_OSCILLATE,
+    INSTANCE_FAN_SPEED_MODE,
+    INSTANCE_FAN_TOGGLE,
+    INSTANCE_REVERSE_AIRFLOW,
+)
+
+_LOGGER = logging.getLogger(__name__)
+
+PARALLEL_UPDATES = 0
+
+# Preset modes: Normal uses gearMode (manual speed), Auto uses auto mode
+PRESET_MODE_NORMAL = "Normal"
+PRESET_MODE_AUTO = "Auto"
+FAN_PRESET_MODES = [PRESET_MODE_NORMAL, PRESET_MODE_AUTO]
+
+# Work mode constants
+WORK_MODE_GEAR = 1  # Manual speed control
+WORK_MODE_AUTO = 3  # Automatic mode
 
 
 async def async_setup_entry(
@@ -46,249 +63,421 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
+    """Set up Govee fans from a config entry."""
+    coordinator: GoveeCoordinator = entry.runtime_data
+
+    entities: list[FanEntity] = []
+
+    for device in coordinator.devices.values():
+        if device.is_fan:
+            _LOGGER.debug(
+                "Creating fan entity for %s (%s): oscillation=%s, work_mode=%s",
+                device.name,
+                device.sku,
+                device.supports_oscillation,
+                device.supports_work_mode,
+            )
+            entities.append(GoveeFanEntity(coordinator, device))
+
+        # Ceiling-fan-with-light combos (e.g. H1310) report as
+        # devices.types.light, so they get a light entity from the light
+        # platform AND a fan entity here for the integrated fan (issue #74).
+        elif device.supports_ceiling_fan:
+            _LOGGER.debug(
+                "Creating ceiling fan entity for %s (%s): reverse=%s, speeds=%d",
+                device.name,
+                device.sku,
+                device.supports_reverse_airflow,
+                len(device.get_ceiling_fan_speed_options()),
+            )
+            entities.append(GoveeCeilingFanEntity(coordinator, device))
+
+    async_add_entities(entities)
+    _LOGGER.debug("Set up %d Govee fan entities", len(entities))
+
+
+class GoveeFanEntity(GoveeEntity, FanEntity):
+    """Govee fan entity.
+
+    Supports:
+    - On/Off
+    - Speed (Low/Medium/High as percentage)
+    - Oscillation
+    - Preset modes (Normal, Auto)
     """
-    Set up the Govee sensor platform from a config entry.
 
-    :param entry: Config entry.
-    :param async_add_entities: Callback to add entities.
-    :return: None
-    """
-    # Add devices
-    _LOGGER.info("Setting up fan entry: %s", entry.data)
+    _attr_translation_key = "govee_fan"
 
-    fan = {
-        "device_id": entry.data[CONF_DEVICE_ID],
-        "api_key": entry.data[CONF_API_KEY],
-        "name": entry.data[CONF_NAME],
-    }
+    def __init__(
+        self,
+        coordinator: GoveeCoordinator,
+        device: GoveeDevice,
+    ) -> None:
+        """Initialize the fan entity."""
+        super().__init__(coordinator, device)
 
-    api = GoveeAPI(fan["api_key"])
+        # Set name (uses has_entity_name = True)
+        self._attr_name = None  # Use device name
 
-    match fan["name"].lower():
-        case "h7126":
-            device = H7126(fan["device_id"])
-            await device.update(api)
-        case "h7102":
-            device = H7102(fan["device_id"])
-            await device.update(api)
-        case _:
-            device = None
+        # Detect speed count from device capabilities
+        gear_speeds = [
+            opt
+            for opt in device.get_fan_speed_options()
+            if opt["work_mode"] == WORK_MODE_GEAR
+        ]
+        self._fan_speeds = (
+            [opt["mode_value"] for opt in gear_speeds] if gear_speeds else [1, 2, 3]
+        )
+        self._attr_speed_count = len(self._fan_speeds)
 
-    async_add_entities([GoveeFan(fan, api, device)])
+        # Build supported features based on device capabilities
+        features = FanEntityFeature.TURN_ON | FanEntityFeature.TURN_OFF
 
+        # Map preset name -> work_mode value for non-gear, non-Auto top-level
+        # work modes (e.g. H7124's Sleep/Turbo, H7126's Custom). Normal
+        # (gearMode) and Auto are always offered for backward compatibility.
+        self._preset_work_modes: dict[str, int] = {}
+        if device.supports_work_mode:
+            features |= FanEntityFeature.SET_SPEED
+            features |= FanEntityFeature.PRESET_MODE
+            extra_presets: list[str] = []
+            for opt in device.get_fan_speed_options():
+                wm = opt.get("work_mode")
+                name = str(opt.get("name", ""))
+                if wm is None or wm in (WORK_MODE_GEAR, WORK_MODE_AUTO) or not name:
+                    continue
+                # Skip work modes whose name collides with a built-in preset
+                # (e.g. H7106 exposes its own "Auto" work mode with a value !=
+                # WORK_MODE_AUTO). Without this the built-in "Auto" is offered
+                # twice, which crashes the HomeKit bridge with a duplicate-IID
+                # error (issue #120).
+                if name.lower() in (p.lower() for p in FAN_PRESET_MODES):
+                    continue
+                if name not in self._preset_work_modes:
+                    self._preset_work_modes[name] = int(wm)
+                    extra_presets.append(name)
+            self._attr_preset_modes = FAN_PRESET_MODES + extra_presets
 
-class GoveeFan(FanEntity):
-    """Representation of a Govee Fan."""
+        # Reverse lookup work_mode value -> preset name (issue #114).
+        self._work_mode_to_preset: dict[int, str] = {
+            wm: name for name, wm in self._preset_work_modes.items()
+        }
 
-    def __init__(self, fan: dict, api: GoveeAPI, device: H7126 | H7102) -> None:
+        if device.supports_oscillation:
+            features |= FanEntityFeature.OSCILLATE
+
+        self._attr_supported_features = features
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True if fan is on."""
+        state = self.device_state
+        return state.power_state if state else None
+
+    @property
+    def percentage(self) -> int | None:
+        """Return the current speed as a percentage.
+
+        Maps mode_value to percentage using the device's speed list.
+        Only applies when in gearMode (work_mode=1).
         """
-        Initialize the fan entity.
+        state = self.device_state
+        if state is None:
+            return None
 
-        :param fan: Fan configuration dictionary
-        :param api: Govee API instance
-        :param device: Device instance (H7126 or H7102)
+        # Only return percentage when in manual gear mode
+        if state.work_mode == WORK_MODE_GEAR and state.mode_value is not None:
+            try:
+                return ordered_list_item_to_percentage(
+                    self._fan_speeds, state.mode_value
+                )
+            except ValueError:
+                _LOGGER.debug("Unknown mode_value: %s", state.mode_value)
+
+        return None
+
+    @property
+    def preset_mode(self) -> str | None:
+        """Return the current preset mode.
+
+        Maps work_mode to preset:
+        - 1 (gearMode) -> Normal
+        - 3 (Auto) -> Auto
+        - other top-level work modes (Sleep/Turbo/Custom) -> their own preset
+          (issue #114)
         """
-        _LOGGER.info(pformat(fan))
-        self._attr_unique_id = fan["device_id"]
-        self._api = api
-        self._fan = device
+        state = self.device_state
+        if state is None or state.work_mode is None:
+            return None
 
-        if hasattr(self._fan, "online"):
-            self._online = self._fan.online
-        if hasattr(self._fan, "device_name"):
-            self._name = self._fan.device_name
-        if hasattr(self._fan, "power_switch"):
-            self._is_on = self._fan.power_switch
-        if hasattr(self._fan, "oscillation_toggle"):
-            self._oscillating = self._fan.oscillation_toggle
-        if hasattr(self._fan, "fan_speed"):
-            self._current_speed = self._fan.fan_speed
-        if hasattr(self._fan, "work_mode"):
-            self._preset_mode = self._fan.work_mode
-        if hasattr(self._fan, "work_mode_dict"):
-            self._preset_modes = list(self._fan.work_mode_dict.values())
-        if hasattr(self._fan, "max_fan_speed"):
-            self.speed_range = (self._fan.min_fan_speed, self._fan.max_fan_speed)
+        if state.work_mode == WORK_MODE_AUTO:
+            return PRESET_MODE_AUTO
+        if state.work_mode in self._work_mode_to_preset:
+            return self._work_mode_to_preset[state.work_mode]
+        return PRESET_MODE_NORMAL
+
+    @property
+    def oscillating(self) -> bool | None:
+        """Return the oscillation state."""
+        state = self.device_state
+        return state.oscillating if state else None
+
+    async def async_turn_on(
+        self,
+        percentage: int | None = None,
+        preset_mode: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Turn the fan on."""
+        # Handle preset mode if provided
+        if preset_mode is not None:
+            await self.async_set_preset_mode(preset_mode)
+        elif percentage is not None:
+            await self.async_set_percentage(percentage)
+
+        # Send power on command
+        await self.coordinator.async_control_device(
+            self._device_id,
+            PowerCommand(power_on=True),
+        )
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the fan off."""
+        await self.coordinator.async_control_device(
+            self._device_id,
+            PowerCommand(power_on=False),
+        )
+
+    async def async_set_percentage(self, percentage: int) -> None:
+        """Set the speed percentage.
+
+        0% turns off the fan.
+        Other percentages map to the device's speed levels.
+        """
+        if percentage == 0:
+            await self.async_turn_off()
+            return
+
+        mode_value = percentage_to_ordered_list_item(self._fan_speeds, percentage)
+
+        _LOGGER.debug(
+            "Setting fan speed: percentage=%d, mode_value=%d",
+            percentage,
+            mode_value,
+        )
+
+        await self.coordinator.async_control_device(
+            self._device_id,
+            WorkModeCommand(work_mode=WORK_MODE_GEAR, mode_value=mode_value),
+        )
+
+    async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set the preset mode."""
+        if preset_mode == PRESET_MODE_AUTO:
+            work_mode = WORK_MODE_AUTO
+            mode_value = 0  # Not used in auto mode
+        elif preset_mode in self._preset_work_modes:
+            # Sleep / Turbo / Custom etc. — top-level work mode, no speed value
+            # (issue #114).
+            work_mode = self._preset_work_modes[preset_mode]
+            mode_value = 0
         else:
-            self.speed_range = (0, 0)
+            # Normal mode - use current speed or default to medium
+            work_mode = WORK_MODE_GEAR
+            state = self.device_state
+            mode_value = state.mode_value if state and state.mode_value else 2
 
-    @property
-    def name(self) -> str:
-        """
-        Return the display name of this fan.
+        _LOGGER.debug(
+            "Setting preset mode: preset=%s, work_mode=%d, mode_value=%d",
+            preset_mode,
+            work_mode,
+            mode_value,
+        )
 
-        :return: str
-        """
-        return self._name
+        await self.coordinator.async_control_device(
+            self._device_id,
+            WorkModeCommand(work_mode=work_mode, mode_value=mode_value),
+        )
 
-    @property
-    def available(self) -> bool:
-        """
-        Return True if entity is available.
+    async def async_oscillate(self, oscillating: bool) -> None:
+        """Oscillate the fan."""
+        _LOGGER.debug("Setting oscillation: %s", oscillating)
 
-        :return: bool
-        """
-        return self._online
+        await self.coordinator.async_control_device(
+            self._device_id,
+            OscillationCommand(oscillating=oscillating),
+        )
+
+
+class GoveeCeilingFanEntity(GoveeEntity, FanEntity, RestoreEntity):
+    """Fan entity for ceiling-fan-with-light combos (e.g. H1310).
+
+    Controls the integrated fan via the ``fanToggle`` / ``fanSpeedMode`` /
+    ``reverseAirflowToggle`` capabilities — separate from the device's light
+    entity (the H1310 reports as devices.types.light). Govee's state poll
+    does not return these fan values, so state is optimistic and restored
+    across restarts via RestoreEntity (issue #74).
+    """
+
+    _attr_icon = "mdi:ceiling-fan-light"
+
+    def __init__(
+        self,
+        coordinator: GoveeCoordinator,
+        device: GoveeDevice,
+    ) -> None:
+        """Initialize the ceiling fan entity."""
+        super().__init__(coordinator, device)
+
+        # Distinct unique_id — the device_id alone backs the light entity.
+        self._attr_unique_id = f"{device.device_id}_fan"
+        self._attr_name = "Fan"
+
+        # Speed values from fanSpeedMode options (e.g. [1, 2, 3, 4, 5, 6]).
+        options = device.get_ceiling_fan_speed_options()
+        self._speed_values: list[int] = (
+            [int(o["value"]) for o in options if "value" in o] if options else [1, 2, 3]
+        )
+        self._attr_speed_count = len(self._speed_values)
+
+        features = (
+            FanEntityFeature.TURN_ON
+            | FanEntityFeature.TURN_OFF
+            | FanEntityFeature.SET_SPEED
+        )
+        if device.supports_reverse_airflow:
+            features |= FanEntityFeature.DIRECTION
+        if device.supports_fan_oscillation:
+            features |= FanEntityFeature.OSCILLATE
+        self._attr_supported_features = features
+
+        # Optimistic state — Govee does not report fan state on poll.
+        self._is_on = False
+        self._speed_value: int | None = None
+        self._direction = DIRECTION_FORWARD
+        self._oscillating = False
+
+    async def async_added_to_hass(self) -> None:
+        """Restore optimistic state on startup."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is None:
+            return
+        self._is_on = last_state.state == "on"
+        pct = last_state.attributes.get("percentage")
+        if pct is not None:
+            try:
+                self._speed_value = percentage_to_ordered_list_item(
+                    self._speed_values, int(pct)
+                )
+            except (ValueError, TypeError):
+                self._speed_value = None
+        direction = last_state.attributes.get("direction")
+        if direction in (DIRECTION_FORWARD, DIRECTION_REVERSE):
+            self._direction = direction
+        oscillating = last_state.attributes.get("oscillating")
+        if oscillating is not None:
+            self._oscillating = bool(oscillating)
 
     @property
     def is_on(self) -> bool:
-        """
-        Return True if the fan is on.
-
-        :return: bool
-        """
+        """Return True if the fan is on (optimistic)."""
         return self._is_on
 
     @property
-    def oscillating(self) -> bool:
-        """
-        Return True if the fan is oscillating.
+    def percentage(self) -> int | None:
+        """Return current speed as a percentage (optimistic)."""
+        if not self._is_on or self._speed_value is None:
+            return 0 if not self._is_on else None
+        try:
+            return ordered_list_item_to_percentage(
+                self._speed_values, self._speed_value
+            )
+        except ValueError:
+            return None
 
-        :return: bool
-        """
+    @property
+    def current_direction(self) -> str | None:
+        """Return the current airflow direction (optimistic)."""
+        if not self._device.supports_reverse_airflow:
+            return None
+        return self._direction
+
+    @property
+    def oscillating(self) -> bool | None:
+        """Return whether the fan is oscillating (optimistic)."""
+        if not self._device.supports_fan_oscillation:
+            return None
         return self._oscillating
 
-    @property
-    def percentage(self) -> int:
-        """
-        Return the current speed of the fan as a percentage.
-
-        :return: int
-        """
-        return ranged_value_to_percentage(self.speed_range, self._current_speed)
-
-    @property
-    def preset_mode(self) -> str:
-        """
-        Return the current preset mode of the fan.
-
-        :return: str
-        """
-        return self._preset_mode
-
-    @property
-    def preset_modes(self) -> list[str]:
-        """
-        Return the list of available preset modes.
-
-        :return: list[str]
-        """
-        return self._preset_modes
-
-    @property
-    def speed_count(self) -> int:
-        """
-        Return the number of speed settings available for the fan.
-
-        :return: int
-        """
-        return int_states_in_range(self.speed_range)
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """
-        Return the device info for the fan.
-
-        :return: DeviceInfo
-        """
-        identifiers = {
-            (DOMAIN, self._fan.device_id),
-        }
-        return DeviceInfo(
-            identifiers=identifiers,
-            name=self._fan.device_name,
-            manufacturer="Govee",
-            model=self._fan.sku,
-            model_id=self._fan.sku,
+    async def async_turn_on(
+        self,
+        percentage: int | None = None,
+        preset_mode: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Turn the fan on, optionally at a given speed."""
+        success = await self.coordinator.async_control_device(
+            self._device_id,
+            ToggleCommand(toggle_instance=INSTANCE_FAN_TOGGLE, enabled=True),
         )
+        if success:
+            self._is_on = True
+            self.async_write_ha_state()
+        if percentage is not None:
+            await self.async_set_percentage(percentage)
 
-    @property
-    def supported_features(self) -> FanEntityFeature:
-        """
-        Return the supported features of the fan.
-
-        :return: Supported features
-        """
-        features = FanEntityFeature(0)
-        match self._fan.sku.lower():
-            case "h7102":
-                features |= FanEntityFeature.SET_SPEED
-                features |= FanEntityFeature.OSCILLATE
-                features |= FanEntityFeature.TURN_ON
-                features |= FanEntityFeature.TURN_OFF
-                features |= FanEntityFeature.PRESET_MODE
-            case "h7126":
-                features |= FanEntityFeature.TURN_ON
-                features |= FanEntityFeature.TURN_OFF
-                features |= FanEntityFeature.PRESET_MODE
-
-        return features
-
-    async def async_set_preset_mode(self, preset_mode: str) -> None:
-        """
-        Set the preset mode of the fan.
-
-        :param preset_mode: Preset mode to set.
-        :return: None
-        """
-        await self._fan.set_work_mode(self._api, preset_mode)
-        self._preset_mode = self._fan.work_mode
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the fan off."""
+        success = await self.coordinator.async_control_device(
+            self._device_id,
+            ToggleCommand(toggle_instance=INSTANCE_FAN_TOGGLE, enabled=False),
+        )
+        if success:
+            self._is_on = False
+            self.async_write_ha_state()
 
     async def async_set_percentage(self, percentage: int) -> None:
-        """
-        Set the speed of the fan.
+        """Set the fan speed from a percentage. 0% turns off."""
+        if percentage == 0:
+            await self.async_turn_off()
+            return
 
-        :param percentage: Speed percentage (0-100).
-        :return: None
-        """
-        value_in_range = math.ceil(percentage_to_ranged_value(self.speed_range, percentage))
-        await self._fan.set_fan_speed(self._api, value_in_range)
-        self._current_speed = self._fan.fan_speed
+        speed_value = percentage_to_ordered_list_item(self._speed_values, percentage)
+        _LOGGER.debug(
+            "Setting ceiling fan speed: percentage=%d, fanSpeedMode=%d",
+            percentage,
+            speed_value,
+        )
+        success = await self.coordinator.async_control_device(
+            self._device_id,
+            ModeCommand(mode_instance=INSTANCE_FAN_SPEED_MODE, value=speed_value),
+        )
+        if success:
+            self._speed_value = speed_value
+            # Setting a speed implies the fan is running.
+            self._is_on = True
+            self.async_write_ha_state()
 
-    async def async_turn_on(self, percentage: int | None = None, preset_mode: str | None = None) -> None:
-        """
-        Turn on the fan with optional percentage and preset mode.
-
-        :param percentage: Optional speed percentage (0-100).
-        :param preset_mode: Optional preset mode.
-        :return: None
-        """
-        await self._fan.turn_on(self._api)
-        if percentage:
-            await self._fan.set_fan_speed(self._api, percentage)
-        if preset_mode:
-            await self._fan.set_work_mode(self._api, preset_mode)
-        await self.async_update()
-
-    async def async_turn_off(self) -> None:
-        """
-        Turn off the fan.
-
-        :return: None
-        """
-        await self._fan.turn_off(self._api)
-        self._is_on = self._fan.power_switch
+    async def async_set_direction(self, direction: str) -> None:
+        """Set the airflow direction (reverse airflow toggle)."""
+        reverse = direction == DIRECTION_REVERSE
+        _LOGGER.debug("Setting ceiling fan direction: %s", direction)
+        success = await self.coordinator.async_control_device(
+            self._device_id,
+            ToggleCommand(toggle_instance=INSTANCE_REVERSE_AIRFLOW, enabled=reverse),
+        )
+        if success:
+            self._direction = DIRECTION_REVERSE if reverse else DIRECTION_FORWARD
+            self.async_write_ha_state()
 
     async def async_oscillate(self, oscillating: bool) -> None:
-        """
-        Set the oscillation state of the fan.
-
-        :param oscillating: True to turn on oscillation, False to turn off
-        :return: None
-        """
-        await self._fan.toggle_oscillation(self._api, oscillating)
-        self._oscillating = self._fan.oscillation_toggle
-
-    async def async_update(self) -> None:
-        """
-        Update the fan state.
-
-        :return: None
-        """
-        await self._fan.update(self._api)
-        self._is_on = self._fan.power_switch
-        if hasattr(self._fan, "oscillation_toggle"):
-            self._oscillating = self._fan.oscillation_toggle
-        if hasattr(self._fan, "fan_speed"):
-            self._current_speed = self._fan.fan_speed
-        self._preset_mode = self._fan.work_mode
+        """Start or stop oscillation (fanOscillateToggle)."""
+        _LOGGER.debug("Setting ceiling fan oscillation: %s", oscillating)
+        success = await self.coordinator.async_control_device(
+            self._device_id,
+            ToggleCommand(toggle_instance=INSTANCE_FAN_OSCILLATE, enabled=oscillating),
+        )
+        if success:
+            self._oscillating = oscillating
+            self.async_write_ha_state()

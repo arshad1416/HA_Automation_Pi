@@ -334,6 +334,22 @@
     "329": "scene.if_back_hallway_light_switch_1_on_back_hallway_light_switch_1_on",
     "330": "scene.when_light_on_fan_on",
     "331": "switch.presence_3_restart_esphome_node",
-    "332": "switch.this_device_do_not_disturb_2"
+    "332": "switch.this_device_do_not_disturb_2",
+    "333": "switch.garage_cam_notifications",
+    "334": "switch.garage_cam_power",
+    "335": "switch.garage_cam_motion_detection",
+    "336": "switch.ioniq_6_ev_charging",
+    "337": "switch.ioniq_6_climate",
+    "338": "switch.front_load_washer_power",
+    "339": "switch.refrigerator_express_mode",
+    "340": "switch.slzb_06p7u_disable_leds",
+    "341": "switch.slzb_06p7u_led_night_mode",
+    "342": "switch.tze284_8zizsafo_ts0601_valve_1",
+    "343": "switch.tze284_8zizsafo_ts0601_valve_2",
+    "344": "switch.dual_outlet_irrigation_timer_switch_1",
+    "345": "switch.dual_outlet_irrigation_timer_switch_2",
+    "346": "scene.turn_on",
+    "347": "scene.turn_off",
+    "348": "light.elements_b3cd"
   }
 }

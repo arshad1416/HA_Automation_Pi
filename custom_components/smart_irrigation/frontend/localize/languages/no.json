@@ -1,0 +1,248 @@
+{
+  "common": {
+    "actions": {
+      "delete": "Slett"
+    },
+    "labels": {
+      "module": "Modul",
+      "no": "Nei",
+      "select": "Velg",
+      "yes": "Ja"
+    },
+    "attributes": {
+      "size": "størrelse",
+      "throughput": "kapasitet",
+      "state": "status"
+    }
+  },
+  "defaults": {
+    "default-zone": "Standard sone",
+    "default-mapping": "Standard sensorguppe"
+  },
+  "module": {
+    "calculation": {
+      "explanation": {
+        "module-returned-evapotranspiration-deficiency": "Merk: Denne forklaringen bruker '.' som desimaltegn og viser avrundede verdier. Modulen returnerte evapotranspirasjonsunderskudd på",
+        "bucket-was": "Bucket var",
+        "new-bucket-values-is": "Ny bucket verdien er",
+        "old-bucket-variable": "gammel_bucket",
+        "delta": "delta",
+        "bucket-less-than-zero-irrigation-necessary": "Siden bucket < 0, Vanning er nødvendig.",
+        "steps-taken-to-calculate-duration": "For å beregne nøyaktig varighet, ble følgende trinn utført",
+        "precipitation-rate-defined-as": "Nedbørshastigheten er definert som",
+        "duration-is-calculated-as": "Varigheten beregnes som",
+        "bucket": "bucket",
+        "precipitation-rate-variable": "nedbørshastighet",
+        "multiplier-is-applied": "Nå blir multiplikatoren brukt. Multiplikatoren er",
+        "duration-after-multiplier-is": "derfor er varigheten",
+        "maximum-duration-is-applied": "Deretter blir den maksimale varigheten brukt. Den maksimale varigheten er",
+        "duration-after-maximum-duration-is": "derfor er varigheten",
+        "lead-time-is-applied": "Til slutt blir ledetiden brukt. Ledetiden er",
+        "duration-after-lead-time-is": "derfor er den endelige varigheten",
+        "bucket-larger-than-or-equal-to-zero-no-irrigation-necessary": "Siden bucket >= 0, Ingen vanning er nødvendig, og varigheten er satt til",
+        "maximum-bucket-is": "maksimum bucket stærrelse er"
+      }
+    }
+  },
+  "calcmodules": {
+    "pyeto": {
+      "description": "Beregn varigheten basert på FAO56-beregningen fra PyETO-biblioteket"
+    },
+    "static": {
+      "description": "'Dummy'-modul med en statisk konfigurerbar endring (delta)"
+    },
+    "passthrough": {
+      "description": "En 'Passthrough'-modul som returnerer verdien av en Evapotranspiration-sensor som delta"
+    }
+  },
+  "panels": {
+    "general": {
+      "cards": {
+        "automatic-duration-calculation": {
+          "header": "Automatisk varighetsberegning",
+          "labels": {
+            "auto-calc-enabled": "Beregn sonevarigheter automatisk",
+            "auto-calc-time": "Beregn ved"
+          }
+        },
+        "automatic-update": {
+          "errors": {
+            "warning-update-time-on-or-after-calc-time": "Advarsel: Oppdateringstidspunkt for værdata på eller etter beregningstidspunktet"
+          },
+          "header": "Automatisk oppdatering av værdata",
+          "labels": {
+            "auto-update-enabled": "Oppdater værdata automatisk",
+            "auto-update-first-update": "(Første) Oppdatering kl",
+            "auto-update-interval": "Oppdater sensordata hvert"
+          },
+          "options": {
+            "days": "dager",
+            "hours": "timer",
+            "minutes": "minutter"
+          }
+        }
+      },
+      "description": "Denne siden gir globale innstillinger.",
+      "title": "Generelt"
+    },
+    "help": {
+      "title": "Hjelp",
+      "cards": {
+        "how-to-get-help": {
+          "title": "Hvordan få hjelp",
+          "first-read-the": "Først, les",
+          "wiki": "Wikien",
+          "if-you-still-need-help": "Hvis du fremdeles trenger hjelp, ta kontakt på",
+          "community-forum": "Fellesskapsforumet",
+          "or-open-a": "eller åpne en",
+          "github-issue": "Github-sak",
+          "english-only": "Kun på engelsk"
+        }
+      }
+    },
+    "mappings": {
+      "cards": {
+        "add-mapping": {
+          "actions": {
+            "add": "Legg til sensorguppe"
+          },
+          "header": "Legg til sensorgupper"
+        },
+        "mapping": {
+          "aggregates": {
+            "average": "Gjennomsnitt",
+            "first": "Første",
+            "last": "Siste",
+            "maximum": "Maksimum",
+            "median": "Median",
+            "minimum": "Minimum",
+            "sum": "Sum"
+          },
+          "errors": {
+            "cannot-delete-mapping-because-zones-use-it": "Du kan ikke slette denne sensorguppen fordi minst én sone bruker den."
+          },
+          "items": {
+            "dewpoint": "Duggpunkt",
+            "evapotranspiration": "Evapotranspirasjon",
+            "humidity": "Luftfuktighet",
+            "maximum temperature": "Maksimumstemperatur",
+            "minimum temperature": "Minimumstemperatur",
+            "precipitation": "Total nedbør",
+            "pressure": "Trykk",
+            "solar radiation": "Solstråling",
+            "temperature": "Temperatur",
+            "windspeed": "Vindhastighet"
+          },
+          "sensor-aggregate-of-sensor-values-to-calculate": "av sensordata for å beregne varighet",
+          "sensor-aggregate-use-the": "Bruk",
+          "sensor-entity": "Sensorenhet",
+          "static_value": "Verdi",
+          "input-units": "Inndata gir verdier i",
+          "source": "Kilde",
+          "sources": {
+            "none": "Ingen",
+            "weather_service": "Weather service",
+            "sensor": "Sensor",
+            "static": "Statisk verdi"
+          }
+        }
+      },
+      "description": "Legg til en eller flere sensorgupper som henter værdata fra Weather service, fra sensorer eller en kombinasjon av disse. Du kan tilordne hver sensorguppe til en eller flere soner",
+      "labels": {
+        "mapping-name": "Navn"
+      },
+      "no_items": "Det er ingen definerte sensorgupper ennå.",
+      "title": "Sensorgupper"
+    },
+    "modules": {
+      "cards": {
+        "add-module": {
+          "actions": {
+            "add": "Legg til modul"
+          },
+          "header": "Legg til modul"
+        },
+        "module": {
+          "errors": {
+            "cannot-delete-module-because-zones-use-it": "Du kan ikke slette denne modulen fordi minst én sone bruker den."
+          },
+          "labels": {
+            "configuration": "Konfigurasjon",
+            "required": "indikerer et obligatorisk felt"
+          },
+          "translated-options": {
+            "DontEstimate": "Ikke beregn",
+            "EstimateFromSunHours": "Beregn fra soltimer",
+            "EstimateFromTemp": "Beregn fra temperatur"
+          }
+        }
+      },
+      "description": "Legg til en eller flere moduler som beregner vanningsvarighet. Hver modul har sin egen konfigurasjon og kan brukes til å beregne varighet for en eller flere soner.",
+      "no_items": "Det er ingen definerte moduler ennå.",
+      "title": "Moduler"
+    },
+    "zones": {
+      "actions": {
+        "add": "Legg til",
+        "calculate": "Beregn",
+        "information": "Informasjon",
+        "update": "Oppdater",
+        "reset-bucket": "Nullstill bøtte"
+      },
+      "cards": {
+        "add-zone": {
+          "actions": {
+            "add": "Legg til sone"
+          },
+          "header": "Legg til sone"
+        },
+        "zone-actions": {
+          "actions": {
+            "calculate-all": "Beregn alle soner",
+            "update-all": "Oppdater alle soner",
+            "reset-all-buckets": "Nullstill alle bøtter"
+          },
+          "header": "Handlinger på alle soner"
+        }
+      },
+      "description": "Spesifiser en eller flere vanningssoner her. Vanningens varighet beregnes per sone, avhengig av størrelse, gjennomstrømning, tilstand, modul og sensorguppe.",
+      "labels": {
+        "bucket": "Bøtte",
+        "duration": "Varighet",
+        "lead-time": "Ledetid",
+        "mapping": "Sensorguppe",
+        "maximum-duration": "Maksimal varighet",
+        "multiplier": "Multiplikator",
+        "name": "Navn",
+        "size": "Størrelse",
+        "state": "Tilstand",
+        "states": {
+          "automatic": "Automatisk",
+          "disabled": "Deaktivert",
+          "manual": "Manuell"
+        },
+        "throughput": "Gjennomstrømning",
+        "maximum-bucket": "Maksimal bøtte"
+      },
+      "no_items": "Det er ingen definerte soner ennå.",
+      "title": "Soner"
+    },
+    "title": "Smart vanning"
+  },
+  "coordinate_config": {
+    "title": "Stedskoordinater",
+    "description": "Konfigurer stedskoordinater for innhenting av værdata. Du kan bruke manuelle koordinater som er forskjellige fra din Home Assistant plassering om nødvendig.",
+    "manual_enabled": "Bruk manuelle koordinater",
+    "use_ha_location": "Bruk Home Assistant plassering",
+    "latitude": "Breddegrad (desimalgrader)",
+    "longitude": "Lengdegrad (desimalgrader)",
+    "elevation": "Høyde (meter over havet)",
+    "current_ha_coords": "Gjeldende Home Assistant koordinater"
+  },
+  "days_between_irrigation": {
+    "title": "Dager Mellom Vanninger",
+    "description": "Konfigurer minimum antall dager som må gå mellom vanningshendelser. Dette hjelper med å kontrollere vanningsfrekvensen for vannsparing og plantehelse.\n\nTypiske brukstilfeller:\n• Plenpleie: 1-2 dagers intervaller forhindrer overvanning\n• Tørkerestriksjoner: 6+ dagers intervaller for ukentlig vanning\n• Dyprottede planter: 3-7 dagers intervaller for mindre hyppig vanning\n• Vannsparing: tilpassbar basert på klima og jordforhold",
+    "label": "Minimum dager mellom vanninger",
+    "help_text": "Sett til 0 for å deaktivere denne funksjonen. Verdier fra 1-365 dager støttes. Denne innstillingen fungerer sammen med eksisterende nedbørprognosering logikk."
+  }
+}

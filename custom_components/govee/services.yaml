@@ -1,0 +1,37 @@
+refresh_scenes:
+  name: Refresh Scenes
+  description: Refresh available scenes from Govee API
+  fields:
+    device_id:
+      name: Device ID
+      description: Specific device to refresh (optional, refreshes all if omitted)
+      required: false
+      example: "AA:BB:CC:DD:EE:FF:00:11"
+      selector:
+        text:
+
+set_segment_color:
+  name: Set Segment Color
+  description: Set color for specific segments on RGBIC devices
+  fields:
+    device_id:
+      name: Device ID
+      description: Device ID of the RGBIC light
+      required: true
+      example: "AA:BB:CC:DD:EE:FF:00:11"
+      selector:
+        text:
+    segments:
+      name: Segments
+      description: List of segment indices (0-based)
+      required: true
+      example: "[0, 1, 2]"
+      selector:
+        object:
+    rgb_color:
+      name: RGB Color
+      description: Color as [R, G, B] values (0-255)
+      required: true
+      example: "[255, 0, 0]"
+      selector:
+        color_rgb:

@@ -302,6 +302,32 @@
         "temperature_entity_id": null,
         "created_at": "2026-06-23T04:19:14.797398+00:00",
         "modified_at": "2026-06-23T04:19:14.797400+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": "mdi:washing-machine",
+        "id": "laundry_room",
+        "labels": [],
+        "name": "Laundry Room",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2026-06-24T03:39:10.189631+00:00",
+        "modified_at": "2026-06-24T03:39:10.189636+00:00"
+      },
+      {
+        "aliases": [],
+        "floor_id": null,
+        "humidity_entity_id": null,
+        "icon": "mdi:outdoor-lamp",
+        "id": "outdoor",
+        "labels": [],
+        "name": "Outdoor",
+        "picture": null,
+        "temperature_entity_id": null,
+        "created_at": "2026-06-24T11:37:04.973376+00:00",
+        "modified_at": "2026-06-24T11:37:04.973381+00:00"
       }
     ]
   }

@@ -1,0 +1,268 @@
+{
+  "common": {
+    "actions": {
+      "delete": "Zmazať"
+    },
+    "labels": {
+      "module": "Modul",
+      "no": "Nie",
+      "select": "Zvoliť",
+      "yes": "Áno"
+    },
+    "attributes": {
+      "size": "size",
+      "throughput": "priepustnosť",
+      "state": "stav",
+      "bucket": "nádoba"
+    }
+  },
+  "defaults": {
+    "default-zone": "Predvolená zóna",
+    "default-mapping": "Predvolená skupina snímačov"
+  },
+  "module": {
+    "calculation": {
+      "explanation": {
+        "module-returned-evapotranspiration-deficiency": "Poznámka: toto vysvetlenie používa '.' ako oddeľovač desatinných miest zobrazuje zaokrúhlené a metrické hodnoty. Modul vrátil nedostatok evapotranspirácie",
+        "bucket-was": "Vedro bolo",
+        "new-bucket-values-is": "Hodnota nového vedra je",
+        "old-bucket-variable": "staré_vedro",
+        "delta": "delta",
+        "bucket-less-than-zero-irrigation-necessary": "Keďže vedro < 0, je potrebné zavlažovanie",
+        "steps-taken-to-calculate-duration": "Na výpočet presného trvania sa vykonali nasledujúce kroky",
+        "precipitation-rate-defined-as": "Miera zrážok je definovaná ako",
+        "duration-is-calculated-as": "Trvanie sa vypočíta ako",
+        "bucket": "vedro",
+        "precipitation-rate-variable": "úhrn zrážok",
+        "multiplier-is-applied": "Teraz sa použije multiplikátor. Násobiteľ je",
+        "duration-after-multiplier-is": "teda trvanie je",
+        "maximum-duration-is-applied": "Potom sa použije maximálne trvanie. Maximálne trvanie je",
+        "duration-after-maximum-duration-is": "teda trvanie je",
+        "lead-time-is-applied": "Nakoniec sa použije dodacia lehota. Dodacia lehota je",
+        "duration-after-lead-time-is": "teda konečné trvanie je",
+        "bucket-larger-than-or-equal-to-zero-no-irrigation-necessary": "Keďže vedro >= 0, nie je potrebné žiadne zavlažovanie a trvanie je nastavené na",
+        "maximum-bucket-is": "maximálna veľkosť vedra je"
+      }
+    }
+  },
+  "calcmodules": {
+    "pyeto": {
+      "description": "Vypočítajte trvanie na základe výpočtu FAO56 z knižnice PyETO"
+    },
+    "static": {
+      "description": "'Atrapa' modul so statickou konfigurovateľnou deltou"
+    },
+    "passthrough": {
+      "description": "Priechodný modul, ktorý vracia hodnotu evapotranspiračného senzora ako delta"
+    }
+  },
+  "panels": {
+    "general": {
+      "cards": {
+        "automatic-duration-calculation": {
+          "header": "Automatický výpočet trvania",
+          "description": "Výpočet berie zhromaždené údaje o počasí až do tohto bodu a aktualizuje vedro pre každú automatickú zónu. Potom sa trvanie upraví na základe novej hodnoty segmentu a zhromaždené údaje o počasí sa odstránia.",
+          "labels": {
+            "auto-calc-enabled": "Automaticky vypočítajte trvanie zón",
+            "auto-calc-time": "Vypočítajte pri"
+          }
+        },
+        "automatic-update": {
+          "errors": {
+            "warning-update-time-on-or-after-calc-time": "Upozornenie: Čas aktualizácie údajov o počasí v čase výpočtu alebo po ňom"
+          },
+          "header": "Automatic weather data update",
+          "description": "Automaticky zbierajte a ukladajte údaje o počasí. Údaje o počasí sú potrebné na výpočet segmentov zón a trvania.",
+          "labels": {
+            "auto-update-enabled": "Automaticky aktualizovať údaje o počasí",
+            "auto-update-delay": "Oneskorenie aktualizácie",
+            "auto-update-interval": "Aktualizujte údaje snímača každý"
+          },
+          "options": {
+            "days": "dni",
+            "hours": "hodiny",
+            "minutes": "minúty"
+          }
+        },
+        "automatic-clear": {
+          "header": "Automatické orezávanie údajov o počasí",
+          "description": "Automaticky odstráňte zhromaždené údaje o počasí v nakonfigurovanom čase. Použite to, aby ste sa uistili, že nezostali žiadne údaje o počasí z predchádzajúcich dní. Neodstraňujte údaje o počasí pred výpočtom a túto možnosť použite iba vtedy, ak očakávate, že automatická aktualizácia bude zhromažďovať údaje o počasí až po výpočte na daný deň. V ideálnom prípade chcete prerezávať tak neskoro, ako je to možné.",
+          "labels": {
+            "automatic-clear-enabled": "Automaticky vymazať zhromaždené údaje o počasí",
+            "automatic-clear-time": "Vymazať údaje o počasí o"
+          }
+        }
+      },
+      "description": "Táto stránka poskytuje globálne nastavenia.",
+      "title": "Všeobecné"
+    },
+    "help": {
+      "title": "Pomoc",
+      "cards": {
+        "how-to-get-help": {
+          "title": "Ako získať pomoc",
+          "first-read-the": "Najprv si prečítajte",
+          "wiki": "Wiki",
+          "if-you-still-need-help": "Ak stále potrebujete pomoc, obráťte sa na",
+          "community-forum": "komunitné fórum",
+          "or-open-a": "alebo otvorte a",
+          "github-issue": "Problém Github",
+          "english-only": "len anglicky"
+        }
+      }
+    },
+    "mappings": {
+      "cards": {
+        "add-mapping": {
+          "actions": {
+            "add": "Pridať skupinu snímačov"
+          },
+          "header": "Pridajte skupiny senzorov"
+        },
+        "mapping": {
+          "aggregates": {
+            "average": "Priemer",
+            "first": "Prvý",
+            "last": "Posledný",
+            "maximum": "Maximum",
+            "median": "Medián",
+            "minimum": "Minimum",
+            "sum": "Sum"
+          },
+          "errors": {
+            "cannot-delete-mapping-because-zones-use-it": "Túto skupinu senzorov nemôžete vymazať, pretože ju používa aspoň jedna zóna."
+          },
+          "items": {
+            "dewpoint": "Rosný bod",
+            "evapotranspiration": "Evapotranspirácia",
+            "humidity": "Vlhkosť",
+            "maximum temperature": "Maximálna teplota",
+            "minimum temperature": "Minimálna teplota",
+            "precipitation": "Úhrn zrážok",
+            "pressure": "Tlak",
+            "solar radiation": "Slnečné žiarenie",
+            "temperature": "Teplota",
+            "windspeed": "Rýchlosť vetra"
+          },
+          "pressure_types": {
+            "absolute": "absolútne",
+            "relative": "relatítne"
+          },
+          "pressure-type": "Tlak je",
+          "sensor-aggregate-of-sensor-values-to-calculate": "hodnôt snímača na výpočet trvania",
+          "sensor-aggregate-use-the": "Použiť",
+          "sensor-entity": "Entita snímača",
+          "static_value": "Hodnota",
+          "input-units": "Vstup poskytuje hodnoty v",
+          "source": "Zdroj",
+          "sources": {
+            "none": "Nie je",
+            "weather_service": "Weather service",
+            "sensor": "Snímač",
+            "static": "Statická hodnota"
+          }
+        }
+      },
+      "description": "Pridajte jednu alebo viac skupín senzorov, ktoré získavajú údaje o počasí z Weather service, zo senzorov alebo ich kombinácie. Každú skupinu senzorov môžete namapovať na jednu alebo viac zón",
+      "labels": {
+        "mapping-name": "Názov"
+      },
+      "no_items": "Zatiaľ nie je definovaná žiadna skupina senzorov.",
+      "title": "Skupiny senzorov"
+    },
+    "modules": {
+      "cards": {
+        "add-module": {
+          "actions": {
+            "add": "Pridať modul"
+          },
+          "header": "Pridať modul"
+        },
+        "module": {
+          "errors": {
+            "cannot-delete-module-because-zones-use-it": "Tento modul nemôžete vymazať, pretože ho používa aspoň jedna zóna."
+          },
+          "labels": {
+            "configuration": "Konfigurácia",
+            "required": "označuje povinné pole"
+          },
+          "translated-options": {
+            "DontEstimate": "Bez odhadu",
+            "EstimateFromSunHours": "Odhad zo slnečných hodín",
+            "EstimateFromTemp": "Odhad z teploty"
+          }
+        }
+      },
+      "description": "Pridajte jeden alebo viac modulov, ktoré vypočítavajú trvanie zavlažovania. Každý modul sa dodáva s vlastnou konfiguráciou a možno ho použiť na výpočet trvania pre jednu alebo viac zón.",
+      "no_items": "Zatiaľ nie sú definované žiadne moduly.",
+      "title": "Moduly"
+    },
+    "zones": {
+      "actions": {
+        "add": "Pridať",
+        "calculate": "Vypočítať",
+        "information": "Informácia",
+        "update": "Aktualizovať",
+        "reset-bucket": "Resetovať vedro"
+      },
+      "cards": {
+        "add-zone": {
+          "actions": {
+            "add": "Pridať zónu"
+          },
+          "header": "Pridať zónu"
+        },
+        "zone-actions": {
+          "actions": {
+            "calculate-all": "Vypočítajte všetky zóny",
+            "update-all": "Aktualizujte všetky zóny",
+            "reset-all-buckets": "Obnovte všetky vedrá",
+            "clear-all-weatherdata": "Vymazať všetky údaje o počasí"
+          },
+          "header": "Akcie vo všetkých zónach"
+        }
+      },
+      "description": "Tu špecifikujte jednu alebo viac zavlažovacích zón. Trvanie zavlažovania sa vypočíta pre zónu v závislosti od veľkosti, výkonu, stavu, modulu a skupiny senzorov.",
+      "labels": {
+        "bucket": "Vedro",
+        "duration": "Trvanie",
+        "lead-time": "Dodacia lehota",
+        "mapping": "Skupina senzorov",
+        "maximum-duration": "Maximálne trvanie",
+        "multiplier": "Násobiteľ",
+        "name": "Názov",
+        "size": "Veľkosť",
+        "state": "Stav",
+        "states": {
+          "automatic": "Automatický",
+          "disabled": "Zakázaný",
+          "manual": "Manuány"
+        },
+        "throughput": "Priepustnosť",
+        "maximum-bucket": "Maximálne vedro",
+        "last_calculated": "Naposledy vypočítané",
+        "data-last-updated": "Údaje boli naposledy aktualizované",
+        "data-number-of-data-points": "Počet údajových bodov"
+      },
+      "no_items": "Zatiaľ nie sú definované žiadne zóny.",
+      "title": "Zóny"
+    }
+  },
+  "title": "Inteligentné zavlažovanie",
+  "coordinate_config": {
+    "title": "Súradnice Polohy",
+    "description": "Nakonfigurujte súradnice polohy pre získavanie meteorologických údajov. Môžete použiť manuálne súradnice odlišné od vašej polohy Home Assistant ak je to potrebné.",
+    "manual_enabled": "Použiť manuálne súradnice",
+    "use_ha_location": "Použiť polohu Home Assistant",
+    "latitude": "Zemepisná šírka (desatinné stupne)",
+    "longitude": "Zemepisná dĺžka (desatinné stupne)",
+    "elevation": "Nadmorská výška (metre nad morom)",
+    "current_ha_coords": "Aktuálne súradnice Home Assistant"
+  },
+  "days_between_irrigation": {
+    "title": "Dni Medzi Zavlažovaním",
+    "description": "Nakonfigurujte minimálny počet dní, ktoré musia uplynúť medzi udalosťami zavlažovania. Toto pomáha kontrolovať frekvenciu zavlažovania pre úsporu vody a správu zdravia rastlín.\n\nTypické prípady použitia:\n• Starostlivosť o trávnik: intervaly 1-2 dní zabránia nadmernému zalievaniu\n• Obmedzenia sucha: intervaly 6+ dní pre týždenné zalievanie\n• Hlbokokorenné rastliny: intervaly 3-7 dní pre menej časté zalievanie\n• Úspora vody: prispôsobiteľné na základe podnebia a podmienok pôdy",
+    "label": "Minimálne dni medzi zavlažovaním",
+    "help_text": "Nastavte na 0 pre deaktiváciu tejto funkcie. Podporované sú hodnoty 1-365 dní. Toto nastavenie funguje spolu s existujúcou logikou predpovede zrážok."
+  }
+}
