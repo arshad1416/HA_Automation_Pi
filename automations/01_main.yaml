@@ -3309,6 +3309,51 @@
           entity_id: climate.ecobee
         data:
           hvac_mode: heat
+
+# --- Lawn watering START (Smart Irrigation -> valve) ---
+# Smart Irrigation only computes a duration; it does not switch the valve.
+# This automation bridges the duration sensor to the physical valve.
+- alias: "Lawn watering: start cycle"
+  description: >
+    Turns on the front-lawn valve when Smart Irrigation has computed a
+    positive watering duration. Runs the valve for that many minutes, then
+    turns it off. The veto automation watches this same valve and kills it
+    if watering is banned (even day / master switch off).
+  id: "lawn_watering_start"
+  mode: single
+  triggers:
+    - trigger: numeric_state
+      entity_id: sensor.smart_irrigation_front_lawn_valve_2
+      above: 0
+  conditions:
+    # Only start if the veto would actually allow it, so we don't fire-then-kill.
+    - condition: template
+      value_template: >-
+        {{ now().day % 2 == 1 and
+           is_state('input_boolean.lawn_watering_master_enable', 'on') }}
+  actions:
+    - action: switch.turn_on
+      target:
+        entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+    - wait_for_trigger:
+        - trigger: state
+          entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+          to: "off"
+      timeout:
+        minutes: 120
+      continue_on_timeout: false
+    - variables:
+        duration_min: >-
+          {% set d = states('sensor.smart_irrigation_front_lawn_valve_2') %}
+          {{ d | float(0) | round(0) | int }}
+    - delay: "{{ duration_min }}"
+    - action: switch.turn_off
+      target:
+        entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "✅ Front lawn watered"
+        message: "Ran for {{ duration_min }} min (Smart Irrigation calculated)."
 # --- Lawn watering veto (Hamilton bylaw odd-day + master kill) ---
 - alias: "Lawn watering: veto cycle"
   description: >
@@ -3326,7 +3371,7 @@
   variables:
     is_odd_day: "{{ now().day % 2 == 1 }}"
     master_enabled: "{{ states('input_boolean.lawn_watering_master_enable') == 'on' }}"
-    duration_sensor_entity: "sensor.smart_irrigation_front_lawn_valve_2_duration"
+    duration_sensor_entity: "sensor.smart_irrigation_front_lawn_valve_2"
     duration_value: >
       {% set d = states(duration_sensor_entity) %}
       {% if d | is_number %}
@@ -3363,3 +3408,81 @@
               {% for r in reasons %}
               - {{ r }}
               {% endfor %}
+
+# --- Lawn watering morning report ---
+# Daily 07:00 check on last night's Smart Irrigation calc + whether the
+# front-lawn valve actually ran. Confirms the auto-watering chain is healthy.
+- alias: "Lawn watering: morning report"
+  description: >-
+    Daily 07:00 report on the Smart Irrigation calculation and whether the
+    front-lawn valve ran since 23:00. Catches a silent calc/mapping failure.
+  id: "lawn_watering_morning_report"
+  mode: single
+  triggers:
+    - trigger: time
+      at: "07:00:00"
+  actions:
+    - variables:
+        dur_min: >-
+          {{ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int }}
+        valve_last: >-
+          {{ state_attr('switch.tze284_8zizsafo_ts0601_valve_2', 'last_changed') }}
+        master: >-
+          {{ is_state('input_boolean.lawn_watering_master_enable', 'on') }}
+        odd_day: >-
+          {{ now().day % 2 == 1 }}
+        ran_since_2300: >-
+          {% if valve_last %}
+            {% set ns = namespace(ts=as_timestamp(now()) - 86400) %}
+            {% set cutoff = (ns.ts - (ns.ts % 86400) + (23*3600)) %}
+            {{ as_timestamp(valve_last) > cutoff }}
+          {% else %}false{% endif %}
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "🌱 Lawn watering status"
+        message: >-
+          Calc need: {{ dur_min }} min.
+          {% if dur_min > 0 %}Valve ran since 23:00: {{ 'YES' if ran_since_2300 else 'NO — check!' }}.
+          {% else %}No water needed (or calc/mapping issue — verify).
+          {% endif %}
+          Master: {{ 'ON' if master else 'OFF' }} | Odd-day allowed: {{ 'yes' if odd_day else 'no' }}.
+- alias: "Lawn watering: veto-failure watchdog"
+  description: >-
+    Belt-and-suspenders alert for a veto FAILURE. When the front-lawn valve
+    turns on in violation of the watering rules (even day, or master switch
+    off), the veto automation normally kills it within seconds. This watchdog
+    waits a short grace period, then pages ONLY if the valve is STILL on in
+    violation — meaning the veto did not do its job (logic bug, manual flip,
+    or another automation). Catches a veto failure.
+  id: "lawn_watering_veto_watchdog"
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+      from: "off"
+      to: "on"
+  actions:
+    # Give the veto automation a few seconds to do its job first.
+    - delay: "00:00:10"
+    # Re-check: still ON and a rule is violated => the veto failed.
+    - condition: template
+      value_template: >-
+        {{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'on') and
+           (now().day % 2 != 1 or
+            not is_state('input_boolean.lawn_watering_master_enable', 'on')) }}
+    - variables:
+        odd_day: >-
+          {{ now().day % 2 == 1 }}
+        master_on: >-
+          {{ is_state('input_boolean.lawn_watering_master_enable', 'on') }}
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "🚨 Watering veto FAILED"
+        message: >-
+          {% set why = [] %}
+          {% if not odd_day %}{% set why = why + ['Today is an EVEN day — odd-address watering not allowed'] %}{% endif %}
+          {% if not master_on %}{% set why = why + ['Master watering switch is OFF'] %}{% endif %}
+          Front-lawn valve (switch.tze284_8zizsafo_ts0601_valve_2) is ON in
+          violation of the watering rules — the veto did NOT block it!
+          {% for r in why %}- {{ r }}
+          {% endfor %}
