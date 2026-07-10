@@ -101,7 +101,7 @@ input_number:
     max: 359
     step: 1
     unit_of_measurement: "°"
-    initial: 168
+    initial: 154
   window_guest_room_facing:
     name: Guest Room Window Facing
     icon: mdi:window-open
@@ -109,7 +109,7 @@ input_number:
     max: 359
     step: 1
     unit_of_measurement: "°"
-    initial: 168
+    initial: 154
   window_living_room_facing:
     name: Living Room Window Facing
     icon: mdi:window-open
