@@ -120,13 +120,21 @@ input_number:
     initial: 154
 
   house_elevation:
-    name: House Elevation
+    name: House Elevation (Main Floor)
     icon: mdi:elevation-rise
     min: 0
     max: 500
     step: 0.1
     unit_of_measurement: "m"
-    initial: 256.6
+    initial: 252.8
+  house_elevation_second_floor:
+    name: House Elevation (Second Floor)
+    icon: mdi:elevation-rise
+    min: 0
+    max: 500
+    step: 0.1
+    unit_of_measurement: "m"
+    initial: 253.8
   ceiling_height:
     name: Ceiling Height
     icon: mdi:human
@@ -166,6 +174,20 @@ input_number:
     initial: 2
   floor_master_bedroom:
     name: Master Bedroom Floor
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 2
+  floor_izaans_room:
+    name: "Izaan's Room Floor"
+    icon: mdi:floor-plan
+    min: 1
+    max: 2
+    step: 1
+    initial: 2
+  floor_guest_room:
+    name: Guest Room Floor
     icon: mdi:floor-plan
     min: 1
     max: 2
