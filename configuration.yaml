@@ -208,7 +208,7 @@ input_number:
     max: 359
     step: 1
     unit_of_measurement: "°"
-    initial: 350
+    initial: 348
   floor_kitchen:
     name: Kitchen Floor
     icon: mdi:floor-plan
