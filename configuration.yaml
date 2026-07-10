@@ -77,7 +77,7 @@ input_number:
     max: 359
     step: 1
     unit_of_measurement: "°"
-    initial: 350
+    initial: 348
   window_minas_room_facing:
     name: Mina's Room Window Facing
     icon: mdi:window-open
@@ -85,7 +85,7 @@ input_number:
     max: 359
     step: 1
     unit_of_measurement: "°"
-    initial: 350
+    initial: 348
   window_dining_room_facing:
     name: Dining Room Window Facing
     icon: mdi:window-open
@@ -93,7 +93,7 @@ input_number:
     max: 359
     step: 1
     unit_of_measurement: "°"
-    initial: 270
+    initial: 247
   window_izaans_room_facing:
     name: Izaan's Room Window Facing
     icon: mdi:window-open
@@ -117,7 +117,7 @@ input_number:
     max: 359
     step: 1
     unit_of_measurement: "°"
-    initial: 165
+    initial: 154
 
   house_elevation:
     name: House Elevation
