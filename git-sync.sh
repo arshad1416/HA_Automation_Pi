@@ -25,7 +25,10 @@ git add -A
 
 # Commit with timestamp
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
-git commit -m "Auto-sync: $TIMESTAMP" --no-verify >/dev/null 2>&1
+if ! git commit -m "Auto-sync: $TIMESTAMP" --no-verify >>"$LOG_FILE" 2>&1; then
+    echo "[$TIMESTAMP] ERROR: commit failed" >> "$LOG_FILE"
+    exit 1
+fi
 
 # Push
 if git push origin "$BRANCH" >>"$LOG_FILE" 2>&1; then

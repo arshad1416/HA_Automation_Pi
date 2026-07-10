@@ -1,5 +1,8 @@
-external_url: "https://ha.arshadkazi.ca"
-internal_url: "http://localhost:8123"
+# 2026-07-10: these were top-level keys, which HA silently ignores ("Integration
+# 'external_url' not found") — nested under homeassistant: so they actually apply.
+homeassistant:
+  external_url: "https://ha.arshadkazi.ca"
+  internal_url: "http://192.168.0.102:8123"
 
 default_config:
 
@@ -215,14 +218,13 @@ input_boolean:
     name: Climate Winter Mode
     icon: mdi:snowflake
     initial: false
-  airbnb_heater_auto:
-    name: "Airbnb Heater Auto"
-    initial: on
-    icon: mdi:thermostat-auto
   lawn_watering_master_enable:
     name: "Lawn Watering Master Enable"
     icon: mdi:water-off
     initial: true
+  house_away:
+    name: "House Away Mode"
+    icon: mdi:home-export-outline
 input_text:
   climate_ai_recommendation:
     name: Climate AI Recommendation
@@ -284,15 +286,80 @@ http:
     - 131.0.72.0/22
 
 # Emulated Hue — exposes HA devices to Echo Dots as fake Philips Hue bridge
+# 2026-07-10: switched from expose-everything (1348 entities, Alexa clutter + ghost-entity
+# poll errors) to an explicit allowlist. After restart: Alexa app -> forget Hue devices ->
+# "Alexa, discover devices" to purge stale entries (e.g. deleted light.elements_b3cd_2).
 emulated_hue:
   host_ip: 192.168.0.102
   listen_port: 80
-  expose_by_default: true
-  exposed_domains:
-    - light
-    - switch
-    - scene
-    - script
+  expose_by_default: false
+  entities:
+    # Kitchen
+    light.kitchen_light: {hidden: false}
+    light.kitchen_ceiling_fan: {hidden: false}
+    light.island_light_light: {hidden: false}
+    switch.kitchen_fan: {hidden: false}
+    light.cabinet_light_strip_left_nanoleaf_light_strip: {hidden: false}
+    light.cabinet_light_strip_center_nanoleaf_light_strip: {hidden: false}
+    light.cabinet_light_strip_right_nanoleaf_light_strip: {hidden: false}
+    light.nanoleaf_multicolor_ls_2: {hidden: false}
+    # Family / living
+    light.family_room_light: {hidden: false}
+    switch.living_room_floor_lamp: {hidden: false}
+    light.curtain_lights_v2: {hidden: false}
+    # Halls / stairs / foyer
+    switch.foyer_light: {hidden: false}
+    switch.back_hallway_light_main_switch: {hidden: false}
+    light.stair_light: {hidden: false}
+    light.stair_light_2:
+      name: Upper Stair Light
+      hidden: false
+    switch.basement_stair_light: {hidden: false}
+    # Basement
+    switch.basement_lights: {hidden: false}
+    light.basement_tv: {hidden: false}
+    # Master bed / bath
+    light.master_bedroom_ceiling_fan: {hidden: false}
+    switch.master_bedroom_fan_light: {hidden: false}
+    light.master_bathroom_light: {hidden: false}
+    # Izaan's room
+    light.izaan_s_ceiling_fan: {hidden: false}
+    light.izaan_s_lamp: {hidden: false}
+    switch.izaan_s_bedroom_light: {hidden: false}
+    # Mina's room
+    light.mina_s_ceiling_fan: {hidden: false}
+    switch.mina_s_light: {hidden: false}
+    switch.mina_s_lamp: {hidden: false}
+    # Guest room
+    light.guest_room_ceiling_fan: {hidden: false}
+    switch.guest_room_light: {hidden: false}
+    # Baths / laundry
+    switch.bathroom_light: {hidden: false}
+    switch.powder_room_light: {hidden: false}
+    switch.powder_room_mirror: {hidden: false}
+    switch.laundry_room_light: {hidden: false}
+    # Garage
+    switch.garage_light_switch: {hidden: false}
+    light.garage_left_downlight: {hidden: false}
+    light.garage_right_downlight: {hidden: false}
+    # Outdoor
+    light.front_porch_downlight: {hidden: false}
+    light.lamppost_bulb_1: {hidden: false}
+    light.lamppost_bulb_2: {hidden: false}
+    light.lamppost_bulb_3: {hidden: false}
+    light.back_yard_lamp_socket: {hidden: false}
+    light.wasserstein_smart_floodlight_2: {hidden: false}
+    switch.patio_door_light: {hidden: false}
+    switch.pool_light_2: {hidden: false}
+    switch.halloween_lights: {hidden: false}
+    switch.holiday_lights_switch: {hidden: false}
+    switch.outdoor_decoration_smartplug_switch: {hidden: false}
+    # Echo routine presence helpers (Alexa routines write to these)
+    switch.kitchen_occupancy: {hidden: false}
+    switch.stairs_occupancy: {hidden: false}
+    # Scenes used by Echo routines
+    scene.good_morning: {hidden: false}
+    scene.good_night: {hidden: false}
 
 # Limit history to 7 days to keep DB manageable
 recorder:

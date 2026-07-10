@@ -167,7 +167,7 @@
     trigger: sun
 - actions:
   - data:
-      agent_id: conversation.local_chat
+      agent_id: conversation.google_ai_conversation
       text: |
         The front door has been open for 5 minutes. Compose a one-sentence, friendly reminder to close it. Mention the current outdoor temperature ({{ state_attr('weather.forecast_home', 'temperature') }}°C) only if it is below 5 or above 30.
     response_variable: agent
@@ -180,7 +180,7 @@
       - media_player.downstairs_echo_dot
     service: notify.alexa_media
   alias: 'Proactive: front door left open'
-  description: LLM-generated reminder via Alexa when front door stays open longer than 5 minutes. Uses local Ollama agent so it works during WAN outages.
+  description: 'LLM-generated reminder via Alexa when front door stays open longer than 5 minutes. 2026-07-10: agent swapped to Google AI (cloud) — the local Ollama entry is disabled; re-enable it for WAN-outage-proof operation.'
   id: proactive_front_door_left_open
   mode: single
   triggers:
@@ -190,7 +190,7 @@
     trigger: state
 - actions:
   - data:
-      agent_id: conversation.local_chat
+      agent_id: conversation.google_ai_conversation
       text: |
         Arshad just got home. Compose a one-sentence greeting using the current weather ({{ states('weather.forecast_home') }}, {{ state_attr('weather.forecast_home', 'temperature') }}°C) and the next calendar event ({{ state_attr('calendar.arshad14_gmail_com', 'message') }}).
     response_variable: agent
@@ -210,11 +210,11 @@
   - condition: template
     value_template: |
       {{ (now() - (state_attr('automation.proactive_welcome_home', 'last_triggered') or (now() - timedelta(hours=2)))).total_seconds() > 1800 }}
-  description: LLM-generated greeting via Alexa when Arshad arrives home. Uses local Ollama agent with weather + calendar context for a personalized message.
+  description: '2026-07-10: retriggered on person.arshad14 (old person.home was a deleted ghost — never fired) and agent swapped to Google AI. LLM-generated greeting via Alexa when Arshad arrives home, with weather + calendar context.'
   id: proactive_welcome_home
   mode: single
   triggers:
-  - entity_id: person.home
+  - entity_id: person.arshad14
     for: 00:01:00
     to: home
     trigger: state
@@ -228,7 +228,7 @@
            | map(attribute='entity_id')
            | list }}
   - data:
-      agent_id: conversation.local_chat
+      agent_id: conversation.google_ai_conversation
       text: |
         These locks were unlocked and have been automatically locked: {{ unlocked }}. Compose a one-sentence, calm bedtime message confirming the locks are now secure.
     response_variable: agent
@@ -260,7 +260,7 @@
          | join(', ') }}
 - id: airbnb_sunset_logic
   alias: 'Airbnb: Sunset Logic'
-  description: 'At sunset: reserved -> floodlight ON (scene.manual_on); not reserved -> motion-sensor mode (scene.sensor_mode). Does NOT touch the heater, preserving guest manual control.'
+  description: 'At sunset: reservation active NOW -> floodlight ON (scene.manual_on); otherwise motion-sensor mode (scene.sensor_mode). Does NOT touch the heater, preserving guest manual control. The is_state guard matters: the message attribute alone leaks the NEXT upcoming event on vacant days.'
   mode: single
   triggers:
   - trigger: sun
@@ -270,7 +270,7 @@
   actions:
   - if:
     - condition: template
-      value_template: "{{ 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+      value_template: "{{ is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
     then:
     - action: scene.turn_on
       target: {entity_id: scene.manual_on}
@@ -279,66 +279,109 @@
       target: {entity_id: scene.sensor_mode}
 - id: airbnb_midnight_logic
   alias: 'Airbnb: Midnight Logic'
-  description: 'At midnight, if reserved -> floodlight to motion-sensor mode (scene.sensor_mode + light off).'
+  description: 'Every midnight: floodlight back to motion-sensor mode and off. Unconditional — safe on non-reserved nights and covers the final-night calendar rollover.'
   mode: single
   triggers:
   - trigger: time
     at: '00:00:00'
-  conditions:
-  - condition: template
-    value_template: "{{ 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+  conditions: []
   actions:
   - action: scene.turn_on
     target: {entity_id: scene.sensor_mode}
   - action: light.turn_off
     target: {entity_id: light.wasserstein_smart_floodlight_2}
-- id: airbnb_reservation_start
-  alias: 'Airbnb: Reservation Start'
-  description: 'Calendar shows Reserved -> heater to heat at set temp (default 20C), set ONCE so the guest can still turn it on/off and change temp manually. Floodlight ON if evening (after sunset, before midnight), else motion-sensor mode.'
+- id: airbnb_checkin
+  alias: 'Airbnb: Check-in (heater on)'
+  description: 'Reserved event start +15h = 3 PM check-in: heater to heat at the helper temp, set ONCE so the guest keeps manual control. Floodlight is handled by Sunset/Midnight Logic.'
   mode: single
   triggers:
-  - trigger: state
+  - trigger: calendar
     entity_id: calendar.airbnb
-    attribute: message
+    event: start
+    offset: '15:00:00'
   conditions:
   - condition: template
-    value_template: "{{ 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+    value_template: "{{ 'reserved' in (trigger.calendar_event.summary | lower) }}"
   actions:
   - action: climate.set_hvac_mode
     target: {entity_id: climate.airbnb_infrared_heater_2}
     data: {hvac_mode: heat}
+    continue_on_error: true
   - action: climate.set_temperature
     target: {entity_id: climate.airbnb_infrared_heater_2}
     data: {temperature: "{{ states('input_number.airbnb_heater_temperature') | float(20) }}"}
-  - if:
-    - condition: state
-      entity_id: sun.sun
-      state: below_horizon
-    - condition: template
-      value_template: "{{ now().hour >= 12 }}"
-    then:
-    - action: scene.turn_on
-      target: {entity_id: scene.manual_on}
-    else:
-    - action: scene.turn_on
-      target: {entity_id: scene.sensor_mode}
-- id: airbnb_reservation_end
-  alias: 'Airbnb: Reservation End'
-  description: 'Calendar no longer Reserved (Airbnb Not available or blank) -> heater OFF and floodlight to motion-sensor mode.'
+    continue_on_error: true
+  - action: notify.mobile_app_cph2655
+    data:
+      message: "Airbnb check-in: heater commanded to heat at {{ states('input_number.airbnb_heater_temperature') | int(20) }}°C — now reporting {{ states('climate.airbnb_infrared_heater_2') }} / {{ state_attr('climate.airbnb_infrared_heater_2','temperature') }}°C."
+- id: airbnb_checkout
+  alias: 'Airbnb: Checkout (heater off, floodlight to sensor mode)'
+  description: 'Reserved event end +14h = 2 PM checkout: heater off, floodlight off and back to motion-sensor mode. A same-day new reservation re-arms via Check-in at 3 PM.'
   mode: single
   triggers:
-  - trigger: state
+  - trigger: calendar
     entity_id: calendar.airbnb
-    attribute: message
+    event: end
+    offset: '14:00:00'
   conditions:
   - condition: template
-    value_template: "{{ 'reserved' not in (state_attr('calendar.airbnb','message') | string | lower) }}"
+    value_template: "{{ 'reserved' in (trigger.calendar_event.summary | lower) }}"
   actions:
   - action: climate.set_hvac_mode
     target: {entity_id: climate.airbnb_infrared_heater_2}
     data: {hvac_mode: 'off'}
   - action: scene.turn_on
     target: {entity_id: scene.sensor_mode}
+  - action: light.turn_off
+    target: {entity_id: light.wasserstein_smart_floodlight_2}
+  - action: notify.mobile_app_cph2655
+    data:
+      message: 'Airbnb checkout: heater off, floodlight returned to motion-sensor mode.'
+- id: airbnb_heater_safety_sync
+  alias: 'Airbnb: Heater Safety Sync'
+  description: 'Daily 15:30 backstop for calendar triggers missed during HA downtime or late iCal syncs. Vacant + heater not off -> off. Check-in-day reservation active + heater still off -> one-shot re-arm (start date must be today, so guest manual-off later in the stay is never overridden). Uses is_state(calendar,on) because the message attribute leaks the NEXT event when vacant.'
+  mode: single
+  triggers:
+  - trigger: time
+    at: '15:30:00'
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ not (is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower)) }}"
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: climate.airbnb_infrared_heater_2
+          state: 'off'
+      sequence:
+      - action: climate.set_hvac_mode
+        target: {entity_id: climate.airbnb_infrared_heater_2}
+        data: {hvac_mode: 'off'}
+      - action: notify.mobile_app_cph2655
+        data:
+          message: 'Airbnb safety sync: heater was on with no reservation — turned off.'
+    - conditions:
+      - condition: template
+        value_template: "{{ is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+      - condition: state
+        entity_id: climate.airbnb_infrared_heater_2
+        state: 'off'
+      - condition: template
+        value_template: "{{ (state_attr('calendar.airbnb','start_time') | as_datetime | as_local).date() == now().date() }}"
+      sequence:
+      - action: climate.set_hvac_mode
+        target: {entity_id: climate.airbnb_infrared_heater_2}
+        data: {hvac_mode: heat}
+        continue_on_error: true
+      - action: climate.set_temperature
+        target: {entity_id: climate.airbnb_infrared_heater_2}
+        data: {temperature: "{{ states('input_number.airbnb_heater_temperature') | float(20) }}"}
+        continue_on_error: true
+      - action: notify.mobile_app_cph2655
+        data:
+          message: 'Airbnb safety sync: check-in day but heater was off (missed 3 PM trigger?) — re-armed to heat.'
 - actions:
   - action: switch.toggle
     target:
@@ -746,15 +789,15 @@
     value_template: '{{ now().hour >= 6 }}'
   actions:
   - variables:
-      prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.home\") }} Larissa={{ states(\"person.larissa\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed.
+      prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.arshad14\") }} Larissa={{ \"home\" if is_state(\"binary_sensor.larissa_s_s22_presence\",\"on\") else \"away\" }} WFHWorkday={{ \"yes\" if is_state(\"calendar.workday_sensor_calendar\",\"on\") else \"no\" }} (Arshad works from home on workdays)\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed.
                 VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan_switch_1\") }} MFn={{ states(\"switch.master_bedroom_fan_light_switch_1\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_un8500auj\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"\
-        weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15°, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fans\":{\"kitchen\":\"off|1|2|3\",\"master\":\"...\",\"mina\":\"...\",\"guest\":\"...\",\"izaan\":\"...\"}, \"blinds\":{\"dining\":N,\"family\":N,\"living\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun. Blinds covered: dining, family, living, mina. Prefer PARTIAL positions to balance sun/glare/heat. Only move blinds when sun is up; at night a separate automation closes them.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(state_attr('binary_sensor.front_door_door','last_changed') | default(now())) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If FrontOpenDuration > 10 (front door left open >10 min): factor this in — HVAC is being wasted, so ease off cooling/heating (do not run aggressively), recommend closing the door, and note reduced efficiency.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7¢/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1¢/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7¢/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8¢/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8¢. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
+        weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15°, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fans\":{\"kitchen\":\"off|1|2|3\",\"master\":\"...\",\"mina\":\"...\",\"guest\":\"...\",\"izaan\":\"...\"}, \"blinds\":{\"dining\":N,\"family\":N,\"living\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun. Blinds covered: dining, family, living, mina. Prefer PARTIAL positions to balance sun/glare/heat. Only move blinds when sun is up; at night a separate automation closes them.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(states.binary_sensor.front_door_door.last_changed | default(now(), true)) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If FrontOpenDuration > 10 (front door left open >10 min): factor this in — HVAC is being wasted, so ease off cooling/heating (do not run aggressively), recommend closing the door, and note reduced efficiency.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7¢/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1¢/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7¢/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8¢/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8¢. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
   - action: rest_command.climate_ai_gemini
     data:
       prompt: '{{ prompt }}'
     response_variable: ai_response
   - variables:
-      ai_raw: '{{ ai_response.content.candidates[0].content.parts[0].text }}'
+      ai_raw: '{{ ai_response.content.candidates[0].content.parts[0].text if ai_response.content.candidates is defined and ai_response.content.candidates and ai_response.content.candidates[0].content is defined and ai_response.content.candidates[0].content.parts is defined and ai_response.content.candidates[0].content.parts else '''' }}'
       ai_json: '{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace(''(?i)```json\s*'', '''') | regex_replace(''(?i)```\s*'', '''') | trim | from_json if ai_raw is string and ai_raw | trim != '''' and (ai_raw | trim | regex_search(''[\{\[]'')) else {}) }}'
       hvac_mode: '{{ ai_json.hvac_mode | default(none, true) }}'
       setpoint: '{{ ai_json.setpoint | default(none) }}'
@@ -1197,7 +1240,7 @@
         entity_id: fan.master_bedroom_ceiling_fan
     if:
     - condition: state
-      entity_id: person.home
+      entity_id: person.arshad14
       state: home
     - after: '21:00:00'
       before: 07:00:00
@@ -1266,9 +1309,8 @@
       target:
         entity_id: fan.guest_room_ceiling_fan
     if:
-    - condition: state
-      entity_id: switch.airbnb_reserved
-      state: 'on'
+    - condition: template
+      value_template: "{{ is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
     - above: 23.5
       condition: numeric_state
       entity_id: sensor.ecobee_current_temperature
@@ -1456,7 +1498,7 @@
 - actions:
   - variables:
       device: '{{ trigger.to_state.attributes.friendly_name | default(trigger.entity_id) }}'
-  - action: notify.mobile_app_oneplus13_tailscale
+  - action: notify.mobile_app_cph2655
     data:
       message: '{{ device }} reported a fault'
       title: ⚠️ Device Fault
@@ -1676,7 +1718,7 @@
   mode: single
 - id: smartthings_nightly_token_refresh
   alias: Nightly SmartThings Token Refresh
-  description: Reloads the SmartThings integration daily at 3 AM to force an OAuth token refresh before the token expires.
+  description: 'Reloads the SmartThings integration daily at 3 AM to force an OAuth token refresh before the token expires. Fixed 2026-07-10: pointed at a stale pre-June-23 entry_id and errored nightly.'
   mode: single
   triggers:
   - trigger: time
@@ -1684,7 +1726,7 @@
   actions:
   - action: homeassistant.reload_config_entry
     data:
-      entry_id: 01KQE0MPFNX2G9DQYR1H77867V
+      entry_id: 01KVSB7WGHYD8S5XNYQDMWHRMS
 - id: smart_vent_fan_control
   initial_state: false
   alias: Smart Vent Fan Control
@@ -2095,7 +2137,6 @@
       - light.cabinet_light_strip_right_nanoleaf_light_strip
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-      - light.master_bedroom_closet_light
     data: {}
   - action: switch.turn_off
     target:
@@ -2103,7 +2144,6 @@
       - switch.kitchen_pantry_light
       - switch.laundry_room_light_switch
       - switch.living_room_floor_lamp_switch
-      - switch.dining_room_table_lights
       - switch.foyer_light_switch_1
       - switch.sonoff_10001dccdc
       - switch.kitchen_pantry_light_socket_1
@@ -2113,139 +2153,11 @@
       - switch.master_bedroom_fan_light_switch_1
       - switch.back_hallway_light_main_switch
     data: {}
-  - action: notify.mobile_app_pixel_8_pro
+  - action: notify.mobile_app_cph2655
     data:
       message: |
         Bedtime routine ran (trigger: {{ trigger.id }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.
   mode: single
-- id: airbnb_floodlight_midnight
-  alias: Airbnb Floodlight - Midnight
-  description: Turn off Airbnb floodlight at midnight every day.
-  mode: single
-  triggers:
-  - at: 00:00:00
-    trigger: time
-  conditions: []
-  actions:
-  - action: light.turn_off
-    target:
-      entity_id: light.wasserstein_smart_floodlight_2
-- id: airbnb_floodlight_reservation_end
-  alias: Airbnb Floodlight - Reservation End
-  description: Turn off Airbnb floodlight when Airbnb reservation ends.
-  mode: single
-  triggers:
-  - attribute: description
-    entity_id:
-    - calendar.airbnb
-    - switch.airbnb_reserved
-    from:
-    - Reserved
-    to:
-    - Not available
-    trigger: state
-  conditions: []
-  actions:
-  - action: light.turn_off
-    target:
-      entity_id: light.wasserstein_smart_floodlight_2
-- id: airbnb_floodlight_sunset
-  alias: Airbnb Floodlight - Sunset
-  description: Turn on Airbnb floodlight at sunset when Airbnb is reserved.
-  mode: single
-  triggers:
-  - event: sunset
-    offset: 0
-    trigger: sun
-  conditions:
-  - condition: state
-    entity_id: calendar.airbnb
-    state: 'on'
-  actions:
-  - action: light.turn_on
-    data:
-      brightness_pct: 100
-    target:
-      entity_id: light.wasserstein_smart_floodlight_2
-- id: airbnb_heater_manual_override
-  alias: Airbnb Heater - Manual Override
-  description: Detect manual override of Airbnb heater and disable auto mode.
-  mode: single
-  triggers:
-  - entity_id: switch.airbnb_infrared_heater_child_lock
-    to: 'on'
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: input_boolean.airbnb_heater_auto
-    state: 'on'
-  actions:
-  - action: input_boolean.turn_off
-    target:
-      entity_id: input_boolean.airbnb_heater_auto
-  - action: notify.mobile_app_cph2655
-    data:
-      message: Airbnb heater manually overridden - auto mode disabled.
-- id: airbnb_heater_reservation_end
-  alias: Airbnb Heater - Reservation End
-  description: Turn off Airbnb infrared heater when reservation ends.
-  mode: single
-  triggers:
-  - attribute: description
-    entity_id:
-    - calendar.airbnb
-    - switch.airbnb_reserved
-    from:
-    - Reserved
-    to:
-    - Not available
-    trigger: state
-  conditions: []
-  actions:
-  - action: switch.turn_off
-    target:
-      entity_id: switch.airbnb_infrared_heater_child_lock
-  - action: notify.mobile_app_cph2655
-    data:
-      message: Airbnb reservation ended - heater turned off.
-- id: airbnb_heater_reservation_start
-  alias: Airbnb Heater - Reservation Start
-  description: Turn on Airbnb infrared heater when reservation starts.
-  mode: single
-  triggers:
-  - attribute: description
-    entity_id:
-    - calendar.airbnb
-    - switch.airbnb_reserved
-    to:
-    - Reserved
-    trigger: state
-  conditions: []
-  actions:
-  - action: switch.turn_on
-    target:
-      entity_id: switch.airbnb_infrared_heater_child_lock
-  - action: notify.mobile_app_cph2655
-    data:
-      message: Airbnb reservation started - heater enabled.
-- id: airbnb_heater_watchdog
-  alias: 'Airbnb: Heater Watchdog (max 4h runtime)'
-  description: Turn off Airbnb heater if it has been running for more than 4 hours continuously.
-  mode: single
-  triggers:
-  - entity_id: switch.airbnb_infrared_heater_child_lock
-    to: 'on'
-    for:
-      hours: 4
-    trigger: state
-  conditions: []
-  actions:
-  - action: switch.turn_off
-    target:
-      entity_id: switch.airbnb_infrared_heater_child_lock
-  - action: notify.mobile_app_cph2655
-    data:
-      message: Airbnb heater watchdog - turned off after 4h continuous runtime.
 - id: '1779331000000'
   alias: Auto-heal Govee and local integrations after reboot
   description: Reload Govee and LocalTuya integrations after HA restart to restore connectivity.
@@ -2402,26 +2314,6 @@
       - cover.dining_room_blinds_curtain
       - cover.family_room_blinds_curtain
       - cover.mina_s_blinds_curtain
-- id: '1778113750432'
-  alias: Dim the outdoor lights at 10PM
-  description: Dim outdoor lights (lampposts, downlights) to 10% at 10PM.
-  mode: single
-  triggers:
-  - at: '22:00:00'
-    trigger: time
-  conditions: []
-  actions:
-  - action: light.turn_on
-    data:
-      brightness_pct: 10
-    target:
-      entity_id:
-      - light.lamppost_bulb_1
-      - light.lamppost_bulb_2
-      - light.lamppost_bulb_3
-      - light.front_porch_downlight
-      - light.garage_left_downlight
-      - light.garage_right_downlight
 - id: disk_space_critical
   alias: Disk Space Critical Alert
   description: Send critical alert when disk usage exceeds 95%.
@@ -2564,12 +2456,9 @@
       title: 🔋 Low Battery Alert
 - id: office_heater_smart_control
   alias: Office Heater Smart Control
-  description: Smart control for office heater based on temperature and occupancy.
+  description: 'Heats the office (climate.office_heater_2) to 21°C while the office mmWave sees someone AND the room is below 20°C (the cold trigger also re-heats during continuous occupancy); off after 30 min empty or once the room passes 23°C. Blocked while house_away is on — the mmWave is cat-trippable and away-mode owns the heater then. Fixed 2026-07-10: previous version read the Pi CPU temperature as the room temp and toggled the child-lock switch instead of the heater.'
   mode: single
   triggers:
-  - above: 23
-    entity_id: sensor.system_monitor_processor_temperature
-    trigger: numeric_state
   - entity_id: binary_sensor.usb_c_mmwave_sensor_presence
     to: 'on'
     id: occupied
@@ -2580,30 +2469,56 @@
       minutes: 30
     id: unoccupied
     trigger: state
+  - trigger: numeric_state
+    entity_id: climate.office_heater_2
+    attribute: current_temperature
+    above: 23
+    id: warm_enough
+  - trigger: numeric_state
+    entity_id: climate.office_heater_2
+    attribute: current_temperature
+    below: 20
+    id: cold
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: trigger
-        id: occupied
+        id:
+        - occupied
+        - cold
+      - condition: state
+        entity_id: binary_sensor.usb_c_mmwave_sensor_presence
+        state: 'on'
       - condition: numeric_state
-        entity_id: sensor.system_monitor_processor_temperature
+        entity_id: climate.office_heater_2
+        attribute: current_temperature
         below: 20
+      - condition: state
+        entity_id: input_boolean.house_away
+        state: 'off'
       sequence:
-      - action: switch.turn_on
+      - action: climate.set_hvac_mode
         target:
-          entity_id: switch.office_heater_child_lock
+          entity_id: climate.office_heater_2
+        data:
+          hvac_mode: heat
+      - action: climate.set_temperature
+        target:
+          entity_id: climate.office_heater_2
+        data:
+          temperature: 21
     - conditions:
       - condition: trigger
-        id: unoccupied
+        id:
+        - unoccupied
+        - warm_enough
       sequence:
-      - action: switch.turn_off
+      - action: climate.set_hvac_mode
         target:
-          entity_id: switch.office_heater_child_lock
-    default:
-    - action: switch.turn_off
-      target:
-        entity_id: switch.office_heater_child_lock
+          entity_id: climate.office_heater_2
+        data:
+          hvac_mode: 'off'
 - id: '1779332000002'
   alias: Pi 5 thermal critical
   description: Critical alert when Pi 5 CPU temperature exceeds 80°C.
@@ -2969,25 +2884,6 @@
       - action: switch.turn_off
         target:
           entity_id: switch.sonoff_10001d2a24
-- id: '1777564702537'
-  alias: When Arshad leaves home, turn off Office heater
-  description: Turn off office heater when Arshad leaves home (device tracker changes to not_home).
-  mode: single
-  triggers:
-  - entity_id: device_tracker.oneplus_13
-    to: not_home
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: switch.office_heater_child_lock
-    state: 'on'
-  actions:
-  - action: switch.turn_off
-    target:
-      entity_id: switch.office_heater_child_lock
-  - action: notify.mobile_app_cph2655
-    data:
-      message: Arshad left home - office heater turned off.
 - id: leak_basement_bathroom
   alias: When leak is detected in the Basement Bathroom
   description: Alert when leak is detected in the basement bathroom.
@@ -3486,3 +3382,124 @@
           violation of the watering rules — the veto did NOT block it!
           {% for r in why %}- {{ r }}
           {% endfor %}
+- id: house_away_mode
+  alias: 'House: Away Mode'
+  description: 'Both phones away for 10 min (Arshad person + Larissa S22 SmartThings presence) -> pause Climate AI, set back the ecobee, turn off the office heater. Guards: skipped if the Family Room TV (toshiba_firetv) is on or the kitchen Nest camera saw a PERSON in the last 30 min — indoor motion sensors are cat-trippable, so only person-grade signals are used. NEVER touches the Airbnb heater (guest automations own it).'
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: person.arshad14
+    to: not_home
+    for: '00:10:00'
+  - trigger: state
+    entity_id: binary_sensor.larissa_s_s22_presence
+    to: 'off'
+    for: '00:10:00'
+  conditions:
+  - condition: state
+    entity_id: person.arshad14
+    state: not_home
+  - condition: state
+    entity_id: binary_sensor.larissa_s_s22_presence
+    state: 'off'
+  - condition: state
+    entity_id: input_boolean.house_away
+    state: 'off'
+  - condition: template
+    value_template: "{{ states('media_player.toshiba_firetv') in ('off', 'idle', 'standby', 'unavailable', 'unknown') }}"
+  - condition: template
+    value_template: >-
+      {{ states('event.kitchen_kitchen_display_motion') in ('unknown', 'unavailable')
+         or state_attr('event.kitchen_kitchen_display_motion', 'event_type') != 'camera_person'
+         or (now() - states.event.kitchen_kitchen_display_motion.last_changed).total_seconds() > 1800 }}
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.house_away
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.climate_ai_enabled
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: climate.ecobee
+        state: cool
+      sequence:
+      - action: climate.set_temperature
+        target:
+          entity_id: climate.ecobee
+        data:
+          temperature: 26
+    - conditions:
+      - condition: state
+        entity_id: climate.ecobee
+        state: heat
+      sequence:
+      - action: climate.set_temperature
+        target:
+          entity_id: climate.ecobee
+        data:
+          temperature: 18
+    - conditions:
+      - condition: state
+        entity_id: climate.ecobee
+        state: heat_cool
+      sequence:
+      - action: climate.set_temperature
+        target:
+          entity_id: climate.ecobee
+        data:
+          target_temp_high: 26
+          target_temp_low: 18
+  - action: climate.set_hvac_mode
+    target:
+      entity_id: climate.office_heater_2
+    data:
+      hvac_mode: 'off'
+  - action: notify.mobile_app_cph2655
+    data:
+      message: 'Away mode ON: Climate AI paused, ecobee set back, office heater off. Airbnb untouched.'
+- id: house_away_mode_return
+  alias: 'House: Away Mode - Return'
+  description: 'Either phone returns -> clear away mode, resume Climate AI and run it immediately so the LLM restores normal comfort.'
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: person.arshad14
+    to: home
+  - trigger: state
+    entity_id: binary_sensor.larissa_s_s22_presence
+    to: 'on'
+  conditions:
+  - condition: state
+    entity_id: input_boolean.house_away
+    state: 'on'
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.house_away
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.climate_ai_enabled
+  - action: automation.trigger
+    target:
+      entity_id: automation.climate_ai_advisor
+  - action: notify.mobile_app_cph2655
+    data:
+      message: 'Welcome back: away mode cleared, Climate AI resumed.'
+- id: camp_day_reminder
+  alias: 'Calendar: Camp Day Reminder'
+  description: 'Notifies at 07:45 on days with an Izaan camp event on the shared activities calendar (drop-off is 8:00-9:00 AM).'
+  mode: single
+  triggers:
+  - trigger: calendar
+    entity_id: calendar.summer_camp_shared
+    event: start
+    offset: '07:45:00'
+  conditions:
+  - condition: template
+    value_template: "{{ 'camp' in (trigger.calendar_event.summary | lower) }}"
+  actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      message: "Camp day: {{ trigger.calendar_event.summary }} — drop-off 8:00-9:00 AM."

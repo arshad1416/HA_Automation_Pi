@@ -19,13 +19,6 @@
         "issue_id": "config_entry_reauth_androidtv_remote_01JC3FY2DWZA4V3BZ0DB7WEAH5"
       },
       {
-        "created": "2026-06-23T03:18:29.191484+00:00",
-        "dismissed_version": null,
-        "domain": "homeassistant",
-        "is_persistent": false,
-        "issue_id": "config_entry_reauth_androidtv_remote_01JC3FTKJ6BC8X2QYMPC4HSM10"
-      },
-      {
         "created": "2026-06-23T03:18:39.298147+00:00",
         "dismissed_version": null,
         "domain": "automation",
