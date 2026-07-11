@@ -4721,7 +4721,7 @@
                       "ev"
                     ],
                     "format": "uint8",
-                    "value": 6,
+                    "value": 5,
                     "description": "Volume",
                     "unit": "percentage",
                     "minValue": 0,
