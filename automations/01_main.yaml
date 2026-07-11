@@ -3561,8 +3561,8 @@
     target:
       entity_id: input_boolean.bedtime_shutdown_done
 - id: foyer_light_off_after_door_closed
-  alias: 'Foyer Light Off - 30 min After Front Door Closed (Daytime)'
-  description: 'During the day, turn the foyer light off once the front door has stayed closed for 30 minutes. Door-based companion to "Foyer Light on Front Door Open"; reliable replacement for the hallway-motion auto-off (foyer_light_daytime_auto_off), whose binary_sensor.presence_3_presence mmWave is currently unavailable. If the door reopens, the 30-min timer resets.'
+  alias: 'Foyer Light Daytime Auto-Off (door closed 30 min, or sun came out)'
+  description: 'During the day, turn the foyer light off when ANY of these happen: the front door has stayed closed for 30 min; the UV index rises above 2; or it turns sunny out. The foyer is only turned ON on gloomy days, so it should switch off once it brightens or the door has been shut a while. Reliable replacement for the hallway-motion auto-off (foyer_light_daytime_auto_off), whose presence_3 mmWave is unavailable. The door-close timer resets if the door reopens; the UV/sunny triggers fire on the transition, so a foyer light manually switched on during an already-sunny day is left alone.'
   mode: single
   triggers:
   - trigger: state
@@ -3570,6 +3570,13 @@
     to: 'off'
     for:
       minutes: 30
+  - trigger: numeric_state
+    entity_id: weather.forecast_home
+    attribute: uv_index
+    above: 2
+  - trigger: state
+    entity_id: weather.forecast_home
+    to: 'sunny'
   conditions:
   - condition: state
     entity_id: switch.foyer_light_switch_1
