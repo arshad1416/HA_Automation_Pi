@@ -3244,15 +3244,15 @@
     - trigger: time
       at: "05:00:00"
   conditions:
-    # Only water if SI computed a positive run time (evaluated at 5 AM, using last night's 23:00 calc)...
+    # Only water if Smart Irrigation computed a positive run time (calc runs 04:00; read here at 05:00).
     - condition: numeric_state
       entity_id: sensor.smart_irrigation_front_lawn_valve_2
       above: 0
-    # ...and it's an odd calendar day (Hamilton odd-address bylaw) with the master switch on.
-    - condition: template
-      value_template: >-
-        {{ now().day % 2 == 1 and
-           is_state('input_boolean.lawn_watering_master_enable', 'on') }}
+    # Master watering switch on. Odd/even-day bylaw check removed 2026-07-11 (not enforced locally) —
+    # so it waters on ANY day the lawn needs it, not just odd days.
+    - condition: state
+      entity_id: input_boolean.lawn_watering_master_enable
+      state: 'on'
   actions:
     - variables:
         run_seconds: >-
