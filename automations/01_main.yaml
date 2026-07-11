@@ -2082,15 +2082,9 @@
 - id: bedtime_routine_auto
   alias: Bed Time Light Routine
   description: |
-    Locks doors, shuts garage, turns off inside lights when asleep. Only fires after 21:00 to prevent daytime nap false triggers. 22:00 catch-up trigger handles early bedtimes. TV playing bypasses the sleep-confidence triggers but catch-up at 22:00 always fires regardless of TV state.
+    Locks doors, shuts garage, turns off inside lights when asleep. Only fires after 21:00 (prevents daytime-nap false triggers). Two paths: (1) genuine sleep detected (Arshad's phone sleep-confidence >80 for 10 min, or Sleep-as-Android calendar) -> proceed even if a TV was left on; (2) 22:00 catch-up -> only if the house looks settled: family-room TV (lg_webos_tv_cd70) not on/playing AND no kitchen/family/island light was toggled in the last 20 min. Fixed 2026-07-10: sleep sensor was the non-existent sensor.oneplus_13_sleep_confidence (phone is CPH2655); TV guard watched an unavailable TV (un8500auj) so it never blocked.
   triggers:
-  - entity_id: sensor.oneplus_13_sleep_confidence
-    above: 80
-    for:
-      minutes: 10
-    trigger: numeric_state
-    id: sleep_detected
-  - entity_id: sensor.oneplus13_sleep_confidence
+  - entity_id: sensor.cph2655_sleep_confidence
     above: 80
     for:
       minutes: 10
@@ -2106,8 +2100,18 @@
   conditions:
   - condition: time
     after: '21:00:00'
-  - condition: template
-    value_template: '{{ states(''media_player.lg_webos_tv_un8500auj'') not in [''playing'', ''on''] }}'
+  - condition: or
+    conditions:
+    - condition: trigger
+      id: sleep_detected
+    - condition: and
+      conditions:
+      - condition: trigger
+        id: catch_up
+      - condition: template
+        value_template: "{{ states('media_player.lg_webos_tv_cd70') not in ['on', 'playing'] }}"
+      - condition: template
+        value_template: "{% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | reject('none') | map(attribute='last_changed') | list %}{{ ch | length == 0 or (now() - (ch | max)).total_seconds() > 1200 }}"
   actions:
   - action: lock.lock
     target:
