@@ -3228,22 +3228,28 @@
 # This automation bridges the duration sensor to the physical valve.
 - alias: "Lawn watering: start cycle"
   description: >
-    Runs the front-lawn valve for the Smart Irrigation computed duration, then
-    turns it off and calls smart_irrigation.reset_bucket so the deficit resets.
-    Rewritten 2026-07-11: the SI sensor is in SECONDS (delay uses it directly);
-    the old wait_for_trigger/delay ordering was dead code that never controlled
-    the run. run_seconds is defensively capped at 3600 s (= the zone's own
-    maximum_duration) and a separate automation (valve_2 Max Runtime Failsafe,
-    60 min) is the independent hard backstop. Held DISABLED (initial_state:false)
-    until a supervised live test; re-enable by removing that line.
+    Waters the front lawn at 05:00 for the Smart Irrigation computed duration,
+    then turns off and calls smart_irrigation.reset_bucket so the deficit resets.
+    Smart Irrigation still CALCULATES the amount at its own 23:00 calc time; this
+    automation just runs the valve at 5 AM if that calc left a positive duration.
+    Rewritten 2026-07-11: SI sensor is SECONDS (delay uses it directly); the old
+    wait_for_trigger/delay ordering was dead code; trigger changed from the
+    sensor-crossing to a fixed 05:00 time (per user). run_seconds capped at 3600 s
+    (the zone maximum_duration); the separate valve_2 Max Runtime Failsafe (60 min)
+    is the independent hard backstop. Held DISABLED (initial_state:false) until a
+    supervised live test; re-enable by removing that line.
   id: "lawn_watering_start"
   initial_state: false  # HELD DISABLED 2026-07-11 pending supervised test. Remove to enable.
   mode: single
   triggers:
-    - trigger: numeric_state
+    - trigger: time
+      at: "05:00:00"
+  conditions:
+    # Only water if SI computed a positive run time (evaluated at 5 AM, using last night's 23:00 calc)...
+    - condition: numeric_state
       entity_id: sensor.smart_irrigation_front_lawn_valve_2
       above: 0
-  conditions:
+    # ...and it's an odd calendar day (Hamilton odd-address bylaw) with the master switch on.
     - condition: template
       value_template: >-
         {{ now().day % 2 == 1 and
