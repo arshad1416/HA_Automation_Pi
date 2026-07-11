@@ -234,13 +234,6 @@
         "domain": "automation",
         "is_persistent": false,
         "issue_id": "automation.lawn_watering_veto_cycle_validation_failed_schema"
-      },
-      {
-        "created": "2026-07-11T21:54:39.162677+00:00",
-        "dismissed_version": null,
-        "domain": "homeassistant",
-        "is_persistent": false,
-        "issue_id": "config_entry_reauth_nest_01KW14VA4PJHSG9VMM9EP122RC"
       }
     ]
   }

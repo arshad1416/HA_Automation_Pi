@@ -216,20 +216,6 @@ input_number:
     max: 2
     step: 1
     initial: 1
-input_datetime:
-  airbnb_check_in_time:
-    name: Airbnb Check-In Time
-    has_date: false
-    has_time: true
-    initial: "15:00"
-    icon: mdi:door-open
-  airbnb_check_out_time:
-    name: Airbnb Check-Out Time
-    has_date: false
-    has_time: true
-    initial: "14:00"
-    icon: mdi:door-closed
-
 input_boolean:
   kitchen_auto_lights_disable:
     name: Kitchen Auto Lights Disable

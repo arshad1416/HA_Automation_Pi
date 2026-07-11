@@ -258,33 +258,9 @@
          | map(attribute='attributes.friendly_name')
          | list
          | join(', ') }}
-- id: airbnb_reserved_sync
-  alias: 'Airbnb: Reserved Flag Sync'
-  description: 'Keeps switch.airbnb_reserved in sync with calendar.airbnb_ics state — on when reservation active, off when vacant. Fires on HA start to recover from restarts during iCal sync gaps.'
-  mode: restart
-  triggers:
-  - trigger: calendar
-    entity_id: calendar.airbnb_ics
-    event: start
-  - trigger: calendar
-    entity_id: calendar.airbnb_ics
-    event: end
-  - trigger: homeassistant
-    event: start
-  conditions: []
-  actions:
-  - if:
-    - condition: template
-      value_template: "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
-    then:
-    - action: switch.turn_on
-      target: {entity_id: switch.airbnb_reserved}
-    else:
-    - action: switch.turn_off
-      target: {entity_id: switch.airbnb_reserved}
 - id: airbnb_sunset_logic
   alias: 'Airbnb: Sunset Logic'
-  description: 'At sunset: reservation active NOW -> floodlight ON (scene.manual_on); otherwise motion-sensor mode (scene.sensor_mode). Does NOT touch the heater, preserving guest manual control. Uses is_state(calendar,on) because the message attribute leaks the NEXT upcoming event on vacant days.'
+  description: 'At sunset: reservation active NOW -> floodlight ON (scene.manual_on); otherwise motion-sensor mode (scene.sensor_mode). Does NOT touch the heater, preserving guest manual control. The is_state guard matters: the message attribute alone leaks the NEXT upcoming event on vacant days.'
   mode: single
   triggers:
   - trigger: sun
@@ -316,20 +292,17 @@
     target: {entity_id: light.wasserstein_smart_floodlight_2}
 - id: airbnb_checkin
   alias: 'Airbnb: Check-in (heater on)'
-  description: 'Calendar reservation start -> set reserved flag -> delay until configurable check-in time (input_datetime.airbnb_check_in_time, default 15:00) -> heater to heat at helper temp. Safety sync at 15:30 is the backstop for HA restarts.'
+  description: 'Reserved event start +15h = 3 PM check-in: heater to heat at the helper temp, set ONCE so the guest keeps manual control. Floodlight is handled by Sunset/Midnight Logic.'
   mode: single
   triggers:
   - trigger: calendar
     entity_id: calendar.airbnb_ics
     event: start
+    offset: '15:00:00'
   conditions:
   - condition: template
     value_template: "{{ 'reserved' in (trigger.calendar_event.summary | lower) }}"
   actions:
-  - action: switch.turn_on
-    target: {entity_id: switch.airbnb_reserved}
-  - delay:
-      seconds: "{{ [0, (today_at(states('input_datetime.airbnb_check_in_time')) - now()).total_seconds() | int] | max }}"
   - action: climate.set_hvac_mode
     target: {entity_id: climate.airbnb_infrared_heater_2}
     data: {hvac_mode: heat}
@@ -343,18 +316,17 @@
       message: "Airbnb check-in: heater commanded to heat at {{ states('input_number.airbnb_heater_temperature') | int(20) }}°C — now reporting {{ states('climate.airbnb_infrared_heater_2') }} / {{ state_attr('climate.airbnb_infrared_heater_2','temperature') }}°C."
 - id: airbnb_checkout
   alias: 'Airbnb: Checkout (heater off, floodlight to sensor mode)'
-  description: 'Calendar reservation end -> delay until configurable check-out time (input_datetime.airbnb_check_out_time, default 14:00) -> heater off, floodlight off and back to motion-sensor mode, reserved flag off. A same-day new reservation re-arms via Check-in.'
+  description: 'Reserved event end +14h = 2 PM checkout: heater off, floodlight off and back to motion-sensor mode. A same-day new reservation re-arms via Check-in at 3 PM.'
   mode: single
   triggers:
   - trigger: calendar
     entity_id: calendar.airbnb_ics
     event: end
+    offset: '14:00:00'
   conditions:
   - condition: template
     value_template: "{{ 'reserved' in (trigger.calendar_event.summary | lower) }}"
   actions:
-  - delay:
-      seconds: "{{ [0, (today_at(states('input_datetime.airbnb_check_out_time')) - now()).total_seconds() | int] | max }}"
   - action: climate.set_hvac_mode
     target: {entity_id: climate.airbnb_infrared_heater_2}
     data: {hvac_mode: 'off'}
@@ -362,11 +334,9 @@
     target: {entity_id: scene.sensor_mode}
   - action: light.turn_off
     target: {entity_id: light.wasserstein_smart_floodlight_2}
-  - action: switch.turn_off
-    target: {entity_id: switch.airbnb_reserved}
   - action: notify.mobile_app_cph2655
     data:
-      message: 'Airbnb checkout: heater off, floodlight returned to motion-sensor mode, reserved flag cleared.'
+      message: 'Airbnb checkout: heater off, floodlight returned to motion-sensor mode.'
 - id: airbnb_heater_safety_sync
   alias: 'Airbnb: Heater Safety Sync'
   description: 'Daily 15:30 backstop for calendar triggers missed during HA downtime or late iCal syncs. Vacant + heater not off -> off. Check-in-day reservation active + heater still off -> one-shot re-arm (start date must be today, so guest manual-off later in the stay is never overridden). Uses is_state(calendar,on) because the message attribute leaks the NEXT event when vacant.'
