@@ -3228,45 +3228,45 @@
 # This automation bridges the duration sensor to the physical valve.
 - alias: "Lawn watering: start cycle"
   description: >
-    Turns on the front-lawn valve when Smart Irrigation has computed a
-    positive watering duration. Runs the valve for that many minutes, then
-    turns it off. The veto automation watches this same valve and kills it
-    if watering is banned (even day / master switch off).
+    Runs the front-lawn valve for the Smart Irrigation computed duration, then
+    turns it off and calls smart_irrigation.reset_bucket so the deficit resets.
+    Rewritten 2026-07-11: the SI sensor is in SECONDS (delay uses it directly);
+    the old wait_for_trigger/delay ordering was dead code that never controlled
+    the run. run_seconds is defensively capped at 3600 s (= the zone's own
+    maximum_duration) and a separate automation (valve_2 Max Runtime Failsafe,
+    60 min) is the independent hard backstop. Held DISABLED (initial_state:false)
+    until a supervised live test; re-enable by removing that line.
   id: "lawn_watering_start"
+  initial_state: false  # HELD DISABLED 2026-07-11 pending supervised test. Remove to enable.
   mode: single
   triggers:
     - trigger: numeric_state
       entity_id: sensor.smart_irrigation_front_lawn_valve_2
       above: 0
   conditions:
-    # Only start if the veto would actually allow it, so we don't fire-then-kill.
     - condition: template
       value_template: >-
         {{ now().day % 2 == 1 and
            is_state('input_boolean.lawn_watering_master_enable', 'on') }}
   actions:
+    - variables:
+        run_seconds: >-
+          {{ [ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int, 3600 ] | min }}
     - action: switch.turn_on
       target:
         entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-    - wait_for_trigger:
-        - trigger: state
-          entity_id: switch.tze284_8zizsafo_ts0601_valve_2
-          to: "off"
-      timeout:
-        minutes: 120
-      continue_on_timeout: false
-    - variables:
-        duration_min: >-
-          {% set d = states('sensor.smart_irrigation_front_lawn_valve_2') %}
-          {{ d | float(0) | round(0) | int }}
-    - delay: "{{ duration_min }}"
+    - delay:
+        seconds: "{{ run_seconds }}"
     - action: switch.turn_off
       target:
         entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+    - action: smart_irrigation.reset_bucket
+      target:
+        entity_id: sensor.smart_irrigation_front_lawn_valve_2
     - action: notify.mobile_app_cph2655
       data:
         title: "✅ Front lawn watered"
-        message: "Ran for {{ duration_min }} min (Smart Irrigation calculated)."
+        message: "Ran {{ run_seconds }} s ({{ (run_seconds / 60) | round(1) }} min), Smart Irrigation calc. Bucket reset."
 # --- Lawn watering veto (Hamilton bylaw odd-day + master kill) ---
 - alias: "Lawn watering: veto cycle"
   description: >
@@ -3583,3 +3583,22 @@
     data:
       title: '💧 Front Lawn Valve 1 auto-closed'
       message: 'Front Lawn Sprinkler valve 1 opened on its own (nothing schedules it) and was auto-closed — most likely a Zigbee reconnect or the device onboard timer. If this keeps happening, the valve needs better Zigbee coverage.'
+- id: valve_2_max_runtime_guard
+  alias: 'Front Lawn Valve 2 - Max Runtime Failsafe'
+  description: 'Independent hard safety cap for the front-lawn valve. If switch.tze284_8zizsafo_ts0601_valve_2 stays on for 60 minutes for ANY reason (watering automation bug, HA restart mid-run, manual, device glitch), force it off and notify. Belt-and-suspenders backstop to lawn_watering_start_cycle; always enabled.'
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+    to: 'on'
+    for:
+      minutes: 60
+  conditions: []
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "🚨 Front lawn valve force-closed (60-min cap)"
+      message: "valve_2 was on for 60 minutes and was force-closed as a hard safety cap. Check the watering chain."
