@@ -3239,7 +3239,6 @@
     is the independent hard backstop. Held DISABLED (initial_state:false) until a
     supervised live test; re-enable by removing that line.
   id: "lawn_watering_start"
-  initial_state: false  # HELD DISABLED 2026-07-11 pending supervised test. Remove to enable.
   mode: single
   triggers:
     - trigger: time
@@ -3281,7 +3280,6 @@
     Triggered by valve switch turning on; either kills it within seconds or
     sends a confirmation notification.
   id: "lawn_watering_veto"
-  initial_state: false  # DISABLED 2026-07-11 per user (observing raw Smart Irrigation behavior). Re-enable by removing this line.
   mode: single
   triggers:
     - trigger: state
@@ -3375,7 +3373,6 @@
     violation — meaning the veto did not do its job (logic bug, manual flip,
     or another automation). Catches a veto failure.
   id: "lawn_watering_veto_watchdog"
-  initial_state: false  # DISABLED 2026-07-11 per user (observing raw Smart Irrigation behavior). Re-enable by removing this line.
   mode: single
   triggers:
     - trigger: state
