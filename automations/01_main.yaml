@@ -3172,34 +3172,6 @@
       entity_id: light.stair_light
     data:
       brightness_pct: 100
-- id: foyer_light_daytime_auto_off
-  alias: 'Foyer Light Daytime Auto-Off (no hallway motion)'
-  description: 'During the day, if the foyer light is on and the hallway mmWave (presence-3) has seen no motion for 2 minutes, turn the foyer light off. Companion to "Foyer Light on Front Door Open".'
-  mode: single
-  triggers:
-  - trigger: state
-    entity_id: binary_sensor.presence_3_presence
-    to: 'off'
-    for:
-      minutes: 2
-  - trigger: state
-    entity_id: switch.foyer_light_switch_1
-    to: 'on'
-    for:
-      minutes: 2
-  conditions:
-  - condition: state
-    entity_id: switch.foyer_light_switch_1
-    state: 'on'
-  - condition: state
-    entity_id: binary_sensor.presence_3_presence
-    state: 'off'
-  - condition: template
-    value_template: '{{ state_attr(''sun.sun'', ''elevation'') | float(-1) > 0 }}'
-  actions:
-  - action: switch.turn_off
-    target:
-      entity_id: switch.foyer_light_switch_1
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
