@@ -260,7 +260,7 @@
   - choose:
     - conditions:
       - condition: state
-        entity_id: calendar.airbnb
+        entity_id: calendar.airbnb_ics
         state: 'on'
       sequence:
       - action: scene.turn_on
@@ -301,7 +301,7 @@
   conditions:
   - attribute: description
     condition: state
-    entity_id: calendar.airbnb
+    entity_id: calendar.airbnb_ics
     state:
     - Reserved
   description: Sets floodlight to sensor mode at midnight if reserved
@@ -344,7 +344,7 @@
   triggers:
   - attribute: description
     entity_id:
-    - calendar.airbnb
+    - calendar.airbnb_ics
     - switch.airbnb_reserved
     to:
     - Reserved
@@ -371,7 +371,7 @@
   triggers:
   - attribute: description
     entity_id:
-    - calendar.airbnb
+    - calendar.airbnb_ics
     - switch.airbnb_reserved
     from:
     - Reserved

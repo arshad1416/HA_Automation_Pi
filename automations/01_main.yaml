@@ -270,7 +270,7 @@
   actions:
   - if:
     - condition: template
-      value_template: "{{ is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+      value_template: "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
     then:
     - action: scene.turn_on
       target: {entity_id: scene.manual_on}
@@ -296,7 +296,7 @@
   mode: single
   triggers:
   - trigger: calendar
-    entity_id: calendar.airbnb
+    entity_id: calendar.airbnb_ics
     event: start
     offset: '15:00:00'
   conditions:
@@ -320,7 +320,7 @@
   mode: single
   triggers:
   - trigger: calendar
-    entity_id: calendar.airbnb
+    entity_id: calendar.airbnb_ics
     event: end
     offset: '14:00:00'
   conditions:
@@ -349,7 +349,7 @@
   - choose:
     - conditions:
       - condition: template
-        value_template: "{{ not (is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower)) }}"
+        value_template: "{{ not (is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower)) }}"
       - condition: not
         conditions:
         - condition: state
@@ -364,12 +364,12 @@
           message: 'Airbnb safety sync: heater was on with no reservation — turned off.'
     - conditions:
       - condition: template
-        value_template: "{{ is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+        value_template: "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
       - condition: state
         entity_id: climate.airbnb_infrared_heater_2
         state: 'off'
       - condition: template
-        value_template: "{{ (state_attr('calendar.airbnb','start_time') | as_datetime | as_local).date() == now().date() }}"
+        value_template: "{{ (state_attr('calendar.airbnb_ics','start_time') | as_datetime | as_local).date() == now().date() }}"
       sequence:
       - action: climate.set_hvac_mode
         target: {entity_id: climate.airbnb_infrared_heater_2}
@@ -1310,7 +1310,7 @@
         entity_id: fan.guest_room_ceiling_fan
     if:
     - condition: template
-      value_template: "{{ is_state('calendar.airbnb','on') and 'reserved' in (state_attr('calendar.airbnb','message') | string | lower) }}"
+      value_template: "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
     - above: 23.5
       condition: numeric_state
       entity_id: sensor.ecobee_current_temperature
@@ -2691,7 +2691,7 @@
   triggers:
   - attribute: description
     entity_id:
-    - calendar.airbnb
+    - calendar.airbnb_ics
     - switch.airbnb_reserved
     from:
     - Reserved
