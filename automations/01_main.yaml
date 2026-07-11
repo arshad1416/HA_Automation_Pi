@@ -3559,3 +3559,25 @@
   - action: switch.turn_off
     target:
       entity_id: switch.foyer_light_switch_1
+- id: valve_1_phantom_open_guard
+  alias: 'Front Lawn Valve 1 - Phantom-Open Guard'
+  description: 'valve_1 (Front Lawn Sprinkler zone 1) is in no watering schedule, so it should never open on its own. If it stays on for 10 s and a person did not open it (Zigbee reconnection glitch, or the device''s onboard Tuya timer), close it and notify. Manual opens (which carry a user context) and brief self-correcting Zigbee blips (<10 s, like the 2-5 s ones seen on 2026-07-04 and 07-11) are left alone. If valve_1 is ever added to a real watering automation, disable this guard.'
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: switch.tze284_8zizsafo_ts0601_valve_1
+    to: 'on'
+    for:
+      seconds: 10
+  conditions:
+  - condition: template
+    value_template: '{{ trigger.to_state.context.user_id is none }}'
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.tze284_8zizsafo_ts0601_valve_1
+    continue_on_error: true
+  - action: notify.mobile_app_cph2655
+    data:
+      title: '💧 Front Lawn Valve 1 auto-closed'
+      message: 'Front Lawn Sprinkler valve 1 opened on its own (nothing schedules it) and was auto-closed — most likely a Zigbee reconnect or the device onboard timer. If this keeps happening, the valve needs better Zigbee coverage.'
