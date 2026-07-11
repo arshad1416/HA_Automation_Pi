@@ -247,6 +247,9 @@ input_boolean:
   house_away:
     name: "House Away Mode"
     icon: mdi:home-export-outline
+  bedtime_shutdown_done:
+    name: "Bedtime Shutdown Done (nightly latch)"
+    icon: mdi:sleep
 input_text:
   climate_ai_recommendation:
     name: Climate AI Recommendation

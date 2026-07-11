@@ -2082,7 +2082,11 @@
 - id: bedtime_routine_auto
   alias: Bed Time Light Routine
   description: |
-    Locks doors, shuts garage, turns off inside lights when asleep. Only fires after 21:00 (prevents daytime-nap false triggers). Two paths: (1) genuine sleep detected (Arshad's phone sleep-confidence >80 for 10 min, or Sleep-as-Android calendar) -> proceed even if a TV was left on; (2) 22:00 catch-up -> only if the house looks settled: family-room TV (lg_webos_tv_cd70) not on/playing AND no kitchen/family/island light was toggled in the last 20 min. Fixed 2026-07-10: sleep sensor was the non-existent sensor.oneplus_13_sleep_confidence (phone is CPH2655); TV guard watched an unavailable TV (un8500auj) so it never blocked.
+    Locks doors, shuts garage, turns off inside lights once we are actually asleep. Instead of a blunt 10 PM shutoff it VERIFIES sleep every 30 min from 9 PM. Runs at most once per night (input_boolean.bedtime_shutdown_done latch, reset at 20:00). Fires when, and only when, one of:
+      (1) IMMEDIATE — Arshad's phone reports sleep (sensor.cph2655_sleep_confidence >80 for 10 min) or Sleep-as-Android turns on, any time 21:00-11:00 (daytime naps excluded).
+      (2) HALF-HOURLY POLL — at every :00/:30 from 21:00-04:00, if phone sleep-confidence is currently >80 (verified asleep).
+      (3) FALLBACK for nights the phone isn't sleep-tracking — same poll, 23:00-04:00, if the house has clearly settled: family-room TV (lg_webos_tv_cd70) not on/playing AND no kitchen/family/island light toggled in the last 30 min.
+    Fixed 2026-07-10: sleep sensor was the non-existent sensor.oneplus_13_sleep_confidence (phone is CPH2655); TV guard watched an unavailable TV (un8500auj).
   triggers:
   - entity_id: sensor.cph2655_sleep_confidence
     above: 80
@@ -2094,24 +2098,46 @@
     to: 'on'
     trigger: state
     id: sleep_detected
-  - trigger: time
-    at: '22:00:00'
-    id: catch_up
+  - trigger: time_pattern
+    minutes: '/30'
+    id: sleep_check
   conditions:
-  - condition: time
-    after: '21:00:00'
+  - condition: state
+    entity_id: input_boolean.bedtime_shutdown_done
+    state: 'off'
   - condition: or
     conditions:
-    - condition: trigger
-      id: sleep_detected
+    # (1) Immediate: phone/app reports genuine sleep (21:00-11:00 blocks daytime naps)
     - condition: and
       conditions:
       - condition: trigger
-        id: catch_up
+        id: sleep_detected
+      - condition: time
+        after: '21:00:00'
+        before: '11:00:00'
+    # (2) Half-hourly poll 21:00-04:00: phone sleep-confidence confirms sleep
+    - condition: and
+      conditions:
+      - condition: trigger
+        id: sleep_check
+      - condition: time
+        after: '21:00:00'
+        before: '04:00:00'
+      - condition: numeric_state
+        entity_id: sensor.cph2655_sleep_confidence
+        above: 80
+    # (3) Settled-house fallback 23:00-04:00 (phone not sleep-tracking)
+    - condition: and
+      conditions:
+      - condition: trigger
+        id: sleep_check
+      - condition: time
+        after: '23:00:00'
+        before: '04:00:00'
       - condition: template
         value_template: "{{ states('media_player.lg_webos_tv_cd70') not in ['on', 'playing'] }}"
       - condition: template
-        value_template: "{% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | reject('none') | map(attribute='last_changed') | list %}{{ ch | length == 0 or (now() - (ch | max)).total_seconds() > 1200 }}"
+        value_template: "{% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | reject('none') | map(attribute='last_changed') | list %}{{ ch | length == 0 or (now() - (ch | max)).total_seconds() > 1800 }}"
   actions:
   - action: lock.lock
     target:
@@ -2157,10 +2183,13 @@
       - switch.master_bedroom_fan_light_switch_1
       - switch.back_hallway_light_main_switch
     data: {}
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.bedtime_shutdown_done
   - action: notify.mobile_app_cph2655
     data:
       message: |
-        Bedtime routine ran (trigger: {{ trigger.id }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.
+        Bedtime routine ran (trigger: {{ trigger.id }}, sleep_confidence {{ states('sensor.cph2655_sleep_confidence') }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.
   mode: single
 - id: '1779331000000'
   alias: Auto-heal Govee and local integrations after reboot
@@ -3507,3 +3536,15 @@
   - action: notify.mobile_app_cph2655
     data:
       message: "Camp day: {{ trigger.calendar_event.summary }} — drop-off 8:00-9:00 AM."
+- id: bedtime_shutdown_reset
+  alias: 'Bed Time - Reset Nightly Latch'
+  description: 'Clears input_boolean.bedtime_shutdown_done at 20:00 daily so the bedtime verification poll is armed fresh for the coming night. 20:00 is before the 21:00 poll window, so it never clears the latch mid-shutdown.'
+  mode: single
+  triggers:
+  - trigger: time
+    at: '20:00:00'
+  conditions: []
+  actions:
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.bedtime_shutdown_done
