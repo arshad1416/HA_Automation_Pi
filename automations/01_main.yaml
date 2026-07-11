@@ -3561,14 +3561,14 @@
       entity_id: switch.foyer_light_switch_1
 - id: valve_1_phantom_open_guard
   alias: 'Front Lawn Valve 1 - Phantom-Open Guard'
-  description: 'valve_1 (Front Lawn Sprinkler zone 1) is in no watering schedule, so it should never open on its own. If it stays on for 6 s and a person did not open it (Zigbee reconnection glitch, or the device''s onboard Tuya timer), close it and notify. 6 s is the floor that still clears the self-correcting reconnect blips, which have run up to 5 s (the 2-5 s ones on 2026-07-04, 3 s on 07-11). Manual opens (which carry a user context) are left alone. If valve_1 is ever added to a real watering automation, disable this guard.'
+  description: 'valve_1 (Front Lawn Sprinkler zone 1) is in no watering schedule, so it should never open on its own. If it stays on for 1 s and a person did not open it (Zigbee reconnection glitch, or the device''s onboard Tuya timer), close it and notify. 1 s is deliberately aggressive (user opted for max sensitivity 2026-07-11): it catches even the brief self-correcting reconnect blips (2-5 s observed), so a Zigbee wobble may send a few notifications; it only filters sub-second comms flicker. Manual opens (which carry a user context) are left alone. If valve_1 is ever added to a real watering automation, disable this guard.'
   mode: single
   triggers:
   - trigger: state
     entity_id: switch.tze284_8zizsafo_ts0601_valve_1
     to: 'on'
     for:
-      seconds: 6
+      seconds: 1
   conditions:
   - condition: template
     value_template: '{{ trigger.to_state.context.user_id is none }}'
