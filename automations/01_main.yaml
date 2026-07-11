@@ -3560,3 +3560,23 @@
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.bedtime_shutdown_done
+- id: foyer_light_off_after_door_closed
+  alias: 'Foyer Light Off - 30 min After Front Door Closed (Daytime)'
+  description: 'During the day, turn the foyer light off once the front door has stayed closed for 30 minutes. Door-based companion to "Foyer Light on Front Door Open"; reliable replacement for the hallway-motion auto-off (foyer_light_daytime_auto_off), whose binary_sensor.presence_3_presence mmWave is currently unavailable. If the door reopens, the 30-min timer resets.'
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.front_door_door
+    to: 'off'
+    for:
+      minutes: 30
+  conditions:
+  - condition: state
+    entity_id: switch.foyer_light_switch_1
+    state: 'on'
+  - condition: template
+    value_template: '{{ state_attr(''sun.sun'', ''elevation'') | float(-1) > 0 }}'
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id: switch.foyer_light_switch_1
