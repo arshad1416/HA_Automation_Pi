@@ -465,6 +465,32 @@ template:
           {{ states('sensor.garage_door_vision_state') | lower == 'open' }}
         availability: >
           {{ states('sensor.garage_door_vision_state') not in ('unknown', 'unavailable', 'error') }}
+  # Aggregate of every indoor MOTION sensor (Ecobee + Echo presence switches included).
+  # ON if anything is currently moving. Only device_class=motion sources + the two Echo
+  # presence switches — occupancy/presence (mmWave) is deliberately EXCLUDED because it
+  # stays ON while a person lies still, which would block the bedtime shutdown while asleep.
+  # Used by bedtime_routine_auto: "off for 30 min" = house has been still = everyone settled.
+  - binary_sensor:
+      - name: Any Home Motion
+        unique_id: any_home_motion
+        device_class: motion
+        state: >
+          {{ [
+               'binary_sensor.332d_motion',
+               'binary_sensor.basement_motion',
+               'binary_sensor.basement_motion_2',
+               'binary_sensor.bbwg_motion',
+               'binary_sensor.ecobee_motion',
+               'binary_sensor.guest_room_motion',
+               'binary_sensor.izaans_room_motion',
+               'binary_sensor.izaans_room_motion_2',
+               'binary_sensor.master_bedroom_motion',
+               'binary_sensor.minas_room_motion',
+               'binary_sensor.minas_room_motion_2',
+               'binary_sensor.pir_motion_sensor_2_motion',
+               'switch.kitchen_occupancy',
+               'switch.stairs_occupancy'
+             ] | select('is_state', 'on') | list | length > 0 }}
 
 
 

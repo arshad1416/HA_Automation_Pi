@@ -2126,7 +2126,7 @@
       - condition: numeric_state
         entity_id: sensor.cph2655_sleep_confidence
         above: 80
-    # (3) Settled-house fallback 23:00-04:00 (phone not sleep-tracking)
+    # (3) Settled-house fallback 23:00-04:00 (phone not sleep-tracking): TV off + no recent light use
     - condition: and
       conditions:
       - condition: trigger
@@ -2138,6 +2138,19 @@
         value_template: "{{ states('media_player.lg_webos_tv_cd70') not in ['on', 'playing'] }}"
       - condition: template
         value_template: "{% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | reject('none') | map(attribute='last_changed') | list %}{{ ch | length == 0 or (now() - (ch | max)).total_seconds() > 1800 }}"
+    # (4) No-motion fallback 23:00-04:00: no indoor motion sensor (incl. Ecobee + Echo) has fired for 30 min
+    - condition: and
+      conditions:
+      - condition: trigger
+        id: sleep_check
+      - condition: time
+        after: '23:00:00'
+        before: '04:00:00'
+      - condition: state
+        entity_id: binary_sensor.any_home_motion
+        state: 'off'
+        for:
+          minutes: 30
   actions:
   - action: lock.lock
     target:
@@ -2156,9 +2169,8 @@
   - action: light.turn_off
     target:
       entity_id:
-      - light.kitchen_light_light
+      - light.kitchen_light_light_1
       - light.island_light_light
-      - light.stair_light
       - light.stair_light
       - light.family_room_light
       - light.basement_tv
