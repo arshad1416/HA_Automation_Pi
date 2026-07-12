@@ -33,18 +33,18 @@
         "size": 69.72,
         "throughput": 25.0,
         "state": "automatic",
-        "bucket": 0,
-        "delta": -2.1539881284204334,
-        "duration": 0,
+        "bucket": -3.611381986328144,
+        "delta": -3.611381986328144,
+        "duration": 604,
         "module": "0",
         "multiplier": 1.0,
-        "explanation": null,
+        "explanation": "Note: this explanation uses '.' as decimal separator, shows rounded and metric values. Module returned Evapotranspiration deficiency ( = et0 * hour_multiplier + precipitation) of -3.61.Bucket was 0.00.<br/>Maximum bucket size is 24.0.<br/>Drainage rate when saturated (bucket at max) is 50.8.<br/>Current drainage is 0 because [old_bucket] + [delta] <= 0 (0.00-3.61 = -3.61).<br/>New bucket value is max(0, min([old_bucket] + [delta], max_bucket) - [drainage]) = max(0, min(0.00-3.61, 24.0) - 0.00) = -3.61.<br/>Since bucket < 0, irrigation is necessary.<br/>To calculate the exact duration, the following steps were taken:<br/><ol><li>The precipitation rate is defined as [throughput] * 60 / [size] = 25.0 * 60 / 69.7 = 21.5.</li><li>The duration is calculated as abs([bucket]) / [precipitation_rate] * 3600 = 3.61 / 21.5 * 3600 = 604.</li><li>Now, the multiplier is applied. The multiplier is 1.0, hence the duration is 604.</li><li>Then, the maximum duration is applied. The maximum duration is 3600.</li><li>Finally, the lead time is applied. The lead time is 0.0, hence the final duration is 604</li></ol>hence the final duration is 604.</li></ol>",
         "mapping": "0",
         "lead_time": 0.0,
         "maximum_duration": 3600.0,
         "maximum_bucket": 24,
-        "last_calculated": null,
-        "last_updated": "2026-07-12T03:16:26.584398",
+        "last_calculated": "2026-07-12T04:00:01.609902",
+        "last_updated": "2026-07-12T04:00:01.609904",
         "number_of_data_points": 19,
         "drainage_rate": 50.8,
         "current_drainage": 0
@@ -151,208 +151,7 @@
             "unit": ""
           }
         },
-        "data": [
-          {
-            "Windspeed": 4.01649727365186,
-            "Pressure": 1017.5400124593668,
-            "Humidity": 67.0,
-            "Temperature": 23.85,
-            "Dewpoint": 17.38,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T11:46:26.216423"
-          },
-          {
-            "Windspeed": 4.01649727365186,
-            "Pressure": 1017.5500124594893,
-            "Humidity": 67.0,
-            "Temperature": 23.85,
-            "Dewpoint": 17.38,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T11:48:40.547143"
-          },
-          {
-            "Windspeed": 3.0965174511952887,
-            "Pressure": 1017.4400124581425,
-            "Humidity": 68.0,
-            "Temperature": 23.85,
-            "Dewpoint": 17.5,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T12:48:40.437108"
-          },
-          {
-            "Windspeed": 3.1264354942020063,
-            "Pressure": 1017.2200124554487,
-            "Humidity": 70.0,
-            "Temperature": 23.4,
-            "Dewpoint": 17.58,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.1524,
-            "retrieved": "2026-07-11T13:48:40.460876"
-          },
-          {
-            "Windspeed": 3.4405749457725427,
-            "Pressure": 1017.7500124619382,
-            "Humidity": 64.0,
-            "Temperature": 23.43,
-            "Dewpoint": 16.25,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.1524,
-            "retrieved": "2026-07-11T14:48:40.433743"
-          },
-          {
-            "Windspeed": 3.118955983450327,
-            "Pressure": 1017.8500124631628,
-            "Humidity": 64.0,
-            "Temperature": 23.39,
-            "Dewpoint": 16.2,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0254,
-            "retrieved": "2026-07-11T15:48:40.424931"
-          },
-          {
-            "Windspeed": 3.2012306017188012,
-            "Pressure": 1018.0500124656116,
-            "Humidity": 65.0,
-            "Temperature": 21.84,
-            "Dewpoint": 14.86,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T16:48:40.432199"
-          },
-          {
-            "Windspeed": 3.2461076662288773,
-            "Pressure": 1018.1200124664688,
-            "Humidity": 55.00000000000001,
-            "Temperature": 22.02,
-            "Dewpoint": 12.55,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T17:48:40.434725"
-          },
-          {
-            "Windspeed": 3.2461076662288773,
-            "Pressure": 1018.1300124665912,
-            "Humidity": 55.00000000000001,
-            "Temperature": 22.02,
-            "Dewpoint": 12.55,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T17:51:40.117663"
-          },
-          {
-            "Windspeed": 3.2461076662288773,
-            "Pressure": 1018.1400124667136,
-            "Humidity": 55.00000000000001,
-            "Temperature": 22.02,
-            "Dewpoint": 12.55,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T17:54:39.164977"
-          },
-          {
-            "Windspeed": 2.311168822268947,
-            "Pressure": 1017.8100124626728,
-            "Humidity": 70.0,
-            "Temperature": 26.04,
-            "Dewpoint": 20.16,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T18:16:26.613270"
-          },
-          {
-            "Windspeed": 2.0643449674635255,
-            "Pressure": 1018.0100124651218,
-            "Humidity": 70.0,
-            "Temperature": 24.63,
-            "Dewpoint": 18.67,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T19:16:26.588462"
-          },
-          {
-            "Windspeed": 1.2341192740271076,
-            "Pressure": 1017.9100124638974,
-            "Humidity": 64.0,
-            "Temperature": 24.26,
-            "Dewpoint": 16.97,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T20:16:26.576915"
-          },
-          {
-            "Windspeed": 1.084529058993519,
-            "Pressure": 1018.5700124719789,
-            "Humidity": 66.0,
-            "Temperature": 23.41,
-            "Dewpoint": 16.66,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T21:16:26.584825"
-          },
-          {
-            "Windspeed": 0.882582268698174,
-            "Pressure": 1019.3600124816521,
-            "Humidity": 70.0,
-            "Temperature": 22.15,
-            "Dewpoint": 16.52,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T22:16:26.606532"
-          },
-          {
-            "Windspeed": 1.3762299783090173,
-            "Pressure": 1020.0100124896111,
-            "Humidity": 71.0,
-            "Temperature": 21.6,
-            "Dewpoint": 16.09,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-11T23:16:26.601830"
-          },
-          {
-            "Windspeed": 1.7576850266446689,
-            "Pressure": 1020.2100124920601,
-            "Humidity": 73.0,
-            "Temperature": 21.29,
-            "Dewpoint": 16.22,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-12T00:16:26.621166"
-          },
-          {
-            "Windspeed": 2.243853225503832,
-            "Pressure": 1019.7100124859377,
-            "Humidity": 64.0,
-            "Temperature": 20.69,
-            "Dewpoint": 13.63,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-12T01:16:26.587278"
-          },
-          {
-            "Windspeed": 2.13914007498032,
-            "Pressure": 1020.5600124963455,
-            "Humidity": 63.0,
-            "Temperature": 19.91,
-            "Dewpoint": 12.74,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-12T02:16:26.620037"
-          },
-          {
-            "Windspeed": 2.243853225503832,
-            "Pressure": 1020.950012501121,
-            "Humidity": 70.0,
-            "Temperature": 18.9,
-            "Dewpoint": 13.36,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-12T03:16:26.584028"
-          }
-        ],
+        "data": [],
         "data_last_updated": "2026-07-07T13:48:20.534728",
         "data_last_entry": {},
         "data_last_calculation": {
