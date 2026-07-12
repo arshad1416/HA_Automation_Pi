@@ -826,7 +826,7 @@
   actions:
   - variables:
       prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n              \
-        \  Top-level keys: setpoint (null or Summer 22.5-25.0C / Winter 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object:\
+        \  Top-level keys: setpoint (null or Summer 23.0-25.5C / Winter 21.5-24.0C), hvac_mode (heat/cool/off/auto/null),\n                fan (object: room+speed, or null), blinds (object: dining/family/mina), vent_boosters (object:\
         \ izaan/mina with percentage 0-100 or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived\
         \ temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(0) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature')\
         \ | float(0) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When\
@@ -981,7 +981,7 @@
   - if:
     - condition: template
       value_template: '{{ setpoint is not none and ((is_state("input_boolean.climate_summer_mode",
-        "on") and setpoint | float >= 22.5 and setpoint | float <= 25.0) or (not is_state("input_boolean.climate_summer_mode",
+        "on") and setpoint | float >= 23.0 and setpoint | float <= 25.5) or (not is_state("input_boolean.climate_summer_mode",
         "on") and setpoint | float >= 20.0 and setpoint | float <= 26.0)) }}'
     then:
     - action: climate.set_temperature
