@@ -234,6 +234,13 @@
         "domain": "automation",
         "is_persistent": false,
         "issue_id": "automation.lawn_watering_veto_cycle_validation_failed_schema"
+      },
+      {
+        "created": "2026-07-13T03:37:06.786948+00:00",
+        "dismissed_version": null,
+        "domain": "hacs",
+        "is_persistent": false,
+        "issue_id": "restart_required_356385629_tags/v3.7.0"
       }
     ]
   }
