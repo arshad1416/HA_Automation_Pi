@@ -3277,8 +3277,8 @@
     SI calculates at 04:00; this runs the valve at 05:00 when there is a positive
     duration AND the last watering was >=2 days ago (deep-and-infrequent watering,
     user 2026-07-13 — deficit accumulates across skipped days). Calibrated
-    2026-07-13: zone throughput set to 12 L/min (real oscillating-sprinkler flow;
-    was 25) and zone maximum_duration raised to 5400 s, so expect ~45-90 min runs
+    2026-07-13: zone throughput 13.4 L/min (METER-MEASURED: 67 L in 5 min; was 25)
+    and zone maximum_duration raised to 5400 s, so expect ~40-80 min runs
     every other day (~25 mm/week incl. rain credit). run_seconds capped at 5400 s;
     the valve_2 Max Runtime Failsafe (100 min) is the independent hard backstop.
   id: "lawn_watering_start"

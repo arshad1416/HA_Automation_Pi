@@ -31,7 +31,7 @@
         "id": 0,
         "name": "Front Lawn Valve 2",
         "size": 69.72,
-        "throughput": 12.0,
+        "throughput": 13.4,
         "state": "automatic",
         "bucket": 0,
         "delta": -6.39182322455926,
