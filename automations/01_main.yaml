@@ -3274,14 +3274,13 @@
   description: >
     Waters the front lawn at 05:00 for the Smart Irrigation computed duration,
     then turns off and calls smart_irrigation.reset_bucket so the deficit resets.
-    Smart Irrigation still CALCULATES the amount at its own 23:00 calc time; this
-    automation just runs the valve at 5 AM if that calc left a positive duration.
-    Rewritten 2026-07-11: SI sensor is SECONDS (delay uses it directly); the old
-    wait_for_trigger/delay ordering was dead code; trigger changed from the
-    sensor-crossing to a fixed 05:00 time (per user). run_seconds capped at 3600 s
-    (the zone maximum_duration); the separate valve_2 Max Runtime Failsafe (60 min)
-    is the independent hard backstop. Held DISABLED (initial_state:false) until a
-    supervised live test; re-enable by removing that line.
+    SI calculates at 04:00; this runs the valve at 05:00 when there is a positive
+    duration AND the last watering was >=2 days ago (deep-and-infrequent watering,
+    user 2026-07-13 — deficit accumulates across skipped days). Calibrated
+    2026-07-13: zone throughput set to 12 L/min (real oscillating-sprinkler flow;
+    was 25) and zone maximum_duration raised to 5400 s, so expect ~45-90 min runs
+    every other day (~25 mm/week incl. rain credit). run_seconds capped at 5400 s;
+    the valve_2 Max Runtime Failsafe (100 min) is the independent hard backstop.
   id: "lawn_watering_start"
   mode: single
   triggers:
@@ -3292,15 +3291,23 @@
     - condition: numeric_state
       entity_id: sensor.smart_irrigation_front_lawn_valve_2
       above: 0
-    # Master watering switch on. Odd/even-day bylaw check removed 2026-07-11 (not enforced locally) —
-    # so it waters on ANY day the lawn needs it, not just odd days.
+    # Master watering switch on. Odd/even-day bylaw check removed 2026-07-11 (not enforced locally).
     - condition: state
       entity_id: input_boolean.lawn_watering_master_enable
       state: 'on'
+    # Deep-and-infrequent watering (user 2026-07-13): only water if the last completed watering was
+    # >=2 days ago (47h allows for trigger jitter). The bucket keeps accumulating deficit on skipped
+    # days (it is only reset after an actual watering), so each run delivers the accumulated need.
+    # NOTE: SI's own days_between_irrigation setting only gates its start EVENT, which this
+    # time-triggered automation does not use — hence the gate lives here.
+    - condition: template
+      value_template: >-
+        {{ state_attr('automation.lawn_watering_start_cycle', 'last_triggered') is none
+           or (now() - state_attr('automation.lawn_watering_start_cycle', 'last_triggered')).total_seconds() >= 169200 }}
   actions:
     - variables:
         run_seconds: >-
-          {{ [ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int, 3600 ] | min }}
+          {{ [ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int, 5400 ] | min }}
     - action: switch.turn_on
       target:
         entity_id: switch.tze284_8zizsafo_ts0601_valve_2
@@ -3634,14 +3641,14 @@
       message: 'Front Lawn Sprinkler valve 1 opened on its own (nothing schedules it) and was auto-closed — most likely a Zigbee reconnect or the device onboard timer. If this keeps happening, the valve needs better Zigbee coverage.'
 - id: valve_2_max_runtime_guard
   alias: 'Front Lawn Valve 2 - Max Runtime Failsafe'
-  description: 'Independent hard safety cap for the front-lawn valve. If switch.tze284_8zizsafo_ts0601_valve_2 stays on for 60 minutes for ANY reason (watering automation bug, HA restart mid-run, manual, device glitch), force it off and notify. Belt-and-suspenders backstop to lawn_watering_start_cycle; always enabled.'
+  description: 'Independent hard safety cap for the front-lawn valve. If switch.tze284_8zizsafo_ts0601_valve_2 stays on for 100 minutes for ANY reason (watering automation bug, HA restart mid-run, manual, device glitch), force it off and notify. Raised from 60 min on 2026-07-13: legitimate deep-watering runs can now reach 90 min (SI maximum_duration 5400 s at the calibrated 12 L/min flow). Belt-and-suspenders backstop to lawn_watering_start_cycle; always enabled.'
   mode: single
   triggers:
   - trigger: state
     entity_id: switch.tze284_8zizsafo_ts0601_valve_2
     to: 'on'
     for:
-      minutes: 60
+      minutes: 100
   conditions: []
   actions:
   - action: switch.turn_off
