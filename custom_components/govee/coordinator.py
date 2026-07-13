@@ -150,6 +150,13 @@ BFF_POLL_INTERVAL = 300  # 5 minutes
 # the account API's rate limit is unverified (homebridge issue #543).
 WATER_DETECTOR_POLL_INTERVAL = 120  # 2 minutes
 
+# Delay before re-polling device state after a humidifier work_mode/humidity
+# write, to attach a timestamped "what Govee reports N seconds later" snapshot
+# to that same recent_commands entry (issue #118: these writes return HTTP 200
+# but the H7150's physical setpoint may not move, and the regular coordinator
+# poll cycle isn't correlated in time with the write under test).
+HUMIDITY_VERIFICATION_DELAY_SECONDS = 8
+
 
 @dataclasses.dataclass
 class _LanReadOverlay:
@@ -297,6 +304,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # sensors, so the periodic poll doesn't queue a reload every tick while
         # the reload is pending (issue #101).
         self._bff_reload_scheduled = False
+        # Set once a reload has been scheduled to pick up a thermometer battery
+        # sensor missed at startup (issue #132), so a slow tick doesn't queue a
+        # reload every 5 minutes while the reload is pending.
+        self._battery_reload_scheduled = False
         # Leak sensor subsystem
         self._leak_sensors: dict[str, GoveeLeakSensor] = {}
         self._leak_states: dict[str, GoveeLeakSensorState] = {}
@@ -1572,7 +1583,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # Non-fatal: integration continues without leak sensors
 
     def _apply_bff_thermo_battery(
-        self, thermo_readings: dict[str, dict[str, Any]]
+        self,
+        thermo_readings: dict[str, dict[str, Any]],
+        *,
+        allow_reload: bool = False,
     ) -> None:
         """Apply BFF-reported battery to devices.
 
@@ -1588,7 +1602,20 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         ``battery: 100`` while plugged in but doesn't carry a mains device_type)
         — so they don't surface a misleading 100% battery sensor (issues #125,
         #114).
+
+        ``sensor.py`` only creates ``GoveeThermoBatterySensor`` once, at
+        platform setup, when ``state.battery is not None`` at that instant. If
+        the BFF call this method's data came from failed or was still in
+        flight at startup (issue #132 — a transient hiccup coincident with the
+        restart an update triggers), the entity is silently skipped forever;
+        the periodic BFF poll would keep refreshing ``state.battery`` with
+        nothing to show it. When ``allow_reload`` is set (the periodic-poll
+        call site, never the initial-discovery one — entities don't exist yet
+        during discovery, so there's nothing to have missed), a device that
+        gains its first-ever battery reading after startup schedules one
+        reload, mirroring the newly-added-leak-sensor handling above.
         """
+        newly_battery_capable: list[str] = []
         for dev_id in set(thermo_readings) & set(self._devices):
             state = self._states.get(dev_id)
             if state is None:
@@ -1604,10 +1631,29 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     and device.sku.upper() not in MAINS_POWERED_BATTERY_SKUS
                 )
             ):
+                if state.battery is None:
+                    newly_battery_capable.append(dev_id)
                 try:
                     state.battery = int(battery)
                 except (TypeError, ValueError):
                     pass
+
+        if (
+            allow_reload
+            and newly_battery_capable
+            and not self._battery_reload_scheduled
+        ):
+            self._battery_reload_scheduled = True
+            _LOGGER.info(
+                "Battery reading now available for %d thermometer(s) that had "
+                "none at startup (%s) — reloading the integration to add the "
+                "sensor (#132)",
+                len(newly_battery_capable),
+                ", ".join(sorted(newly_battery_capable)),
+            )
+            self.hass.config_entries.async_schedule_reload(
+                self._config_entry.entry_id
+            )
 
             # NOTE: the BFF ``deviceSettings.waterFull`` field is deliberately
             # NOT applied here anymore. It is the app's "Full Bucket Alert"
@@ -1873,7 +1919,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         # Refresh BLE-bridged thermometer battery from the BFF data (#83). The
         # tem/hum are still discarded (scale varies, #102) — battery only.
-        self._apply_bff_thermo_battery(thermo_readings)
+        # allow_reload=True: this is the periodic poll, after platform setup
+        # has already run, so a device gaining its first battery reading here
+        # needs a reload to get its sensor entity created (#132).
+        self._apply_bff_thermo_battery(thermo_readings, allow_reload=True)
 
         # Update state for each known sensor
         now_s = time.time()
@@ -2560,6 +2609,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 # Apply optimistic update
                 self._apply_optimistic_update(device_id, command)
                 self.async_set_updated_data(self._states)
+                self._maybe_schedule_humidity_verification(device_id, device, command)
             else:
                 self._record_transport_failure(
                     device_id, "cloud_api", "control_returned_false"
@@ -2577,6 +2627,52 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         finally:
             if is_power_off:
                 self._pending_power_off.discard(device_id)
+
+    def _maybe_schedule_humidity_verification(
+        self, device_id: str, device: GoveeDevice, command: DeviceCommand
+    ) -> None:
+        """After a humidifier work_mode/humidity REST write, schedule a re-poll.
+
+        Issue #118: these writes return HTTP 200 but the physical H7150
+        setpoint may not move. The result is attached to the same
+        recent_commands entry so a diagnostics download shows a timestamped
+        "sent X -> Govee reports Y, N seconds later" pair, instead of relying
+        on whatever the next unrelated coordinator poll cycle happens to see.
+        """
+        is_humidity_write = (
+            isinstance(command, WorkModeCommand) and device.is_humidifier
+        ) or (
+            isinstance(command, RangeCommand)
+            and command.range_instance == INSTANCE_HUMIDITY
+        )
+        if not is_humidity_write:
+            return
+        record = self._api_client.peek_last_command_record()
+        if record is None:
+            return
+        self._config_entry.async_create_background_task(
+            self.hass,
+            self._verify_humidity_command(device_id, device.sku, record),
+            name="govee_verify_humidity_command",
+        )
+
+    async def _verify_humidity_command(
+        self, device_id: str, sku: str, record: dict[str, Any]
+    ) -> None:
+        """Re-poll device state and attach it to a recent_commands record."""
+        await asyncio.sleep(HUMIDITY_VERIFICATION_DELAY_SECONDS)
+        try:
+            state = await self._api_client.get_device_state(device_id, sku)
+        except Exception as err:  # noqa: BLE001 - best-effort diagnostics only
+            record["verification_poll"] = {"error": str(err)}
+            return
+        record["verification_poll"] = {
+            "polled_at": dt_util.utcnow().isoformat(),
+            "delay_seconds": HUMIDITY_VERIFICATION_DELAY_SECONDS,
+            "work_mode": state.work_mode,
+            "mode_value": state.mode_value,
+            "configured_humidity": state.configured_humidity,
+        }
 
     async def _dispatch_segment_command(
         self,

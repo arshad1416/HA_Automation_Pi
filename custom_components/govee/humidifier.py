@@ -15,8 +15,13 @@ Target-humidity writes (issue #118):
 - H7150-style devices (Auto modeValue is a real 30-80 setpoint range) receive
   BOTH the ``work_mode`` Auto+setpoint write — which switches the unit into
   Auto, required for the target to take effect, matching the Govee app — and
-  the canonical ``range::humidity`` setpoint write (govee2mqtt's field-proven
-  platform-API path), carrying the same clamped value.
+  the canonical ``range::humidity`` setpoint write, carrying the same clamped
+  value. Both are the only write paths govee2mqtt uses for this device family
+  too (it has no reverse-engineered raw-protocol path for H7150/H7151/H7152,
+  unlike its H7160 humidifier support) — neither is confirmed to actually move
+  the physical setpoint on all firmware revisions; some reports (#118) show
+  Govee's cloud accepting both writes with HTTP 200 while the unit doesn't
+  change. The dual write is a best-effort hedge, not a proven fix.
 - H7152-style devices (Auto modeValue pinned, e.g. 80..80) receive only
   ``range::humidity`` — an arbitrary modeValue would be rejected with
   "Parameter value out of range" (issue #114; govee2mqtt #145).
@@ -307,9 +312,12 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
         ``work_mode`` Auto+setpoint write — which switches the unit into Auto,
         required for the target to take effect, matching the Govee app — and,
         when the device also advertises ``range::humidity``, the canonical
-        range setpoint write (cross-validated against govee2mqtt's platform-API
-        path). Both writes carry the same clamped value so either firmware
-        interpretation converges (issue #118).
+        range setpoint write. Both writes carry the same clamped value so
+        either firmware interpretation converges — a best-effort hedge, not a
+        confirmed fix: some H7150 units accept both writes (HTTP 200) without
+        the physical setpoint moving (issue #118). The coordinator schedules a
+        delayed re-poll after either write so a diagnostics download shows
+        what Govee reports back, correlated in time with the command.
         """
         clamped = max(self._attr_min_humidity, min(self._attr_max_humidity, humidity))
 

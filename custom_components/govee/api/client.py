@@ -368,6 +368,15 @@ class GoveeApiClient:
         """Recent control-command sends for the diagnostics download (oldest first)."""
         return list(self._recent_commands)
 
+    def peek_last_command_record(self) -> dict[str, Any] | None:
+        """Return the most recently appended command record (same object, not a copy).
+
+        Lets a caller attach follow-up data (e.g. a verification poll result)
+        to the record that a diagnostics download will surface, without
+        re-plumbing control_device's return value.
+        """
+        return self._recent_commands[-1] if self._recent_commands else None
+
     @property
     def last_raw_state(self) -> dict[str, dict[str, Any]]:
         """Raw /device/state payloads keyed by device_id (latest per device)."""

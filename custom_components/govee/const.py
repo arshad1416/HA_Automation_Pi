@@ -49,6 +49,10 @@ CONF_API_TEMPERATURE_UNIT: Final = "api_temperature_unit"
 #     °C-tagged unit (screenshots show 80.8°C / 70.7°C at normal room
 #     temperature — i.e. the raw °F reading). Same class as #72/#78/#96
 #     (issue #128).
+#   H5220 (gateway-bridged thermo-hygrometer): same class — a captured BFF
+#     sample shows the device itself configured for °F (`"fahOpen": true`),
+#     and its sensorTemperature comes via the Developer API, same path as
+#     H5075/H5100 (issue #128 follow-up).
 FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
     {
         "H5179",
@@ -61,6 +65,7 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
         "H5140",
         "H5075",
         "H5100",
+        "H5220",
     }
 )
 
