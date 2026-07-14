@@ -418,12 +418,18 @@
       entity_id: switch.basement_lights_switch_1
   alias: Turn On or Off the Basement Lights with the Basement Stair Lights
   conditions: []
-  description: 'Pressing the basement STAIR light switch toggles the basement ROOM lights. Fixed 2026-06-23: action targeted itself (switch.basement_stair_light_switch_1) causing an infinite on/off loop; now targets switch.basement_lights_switch_1.'
+  description: 'Pressing the basement STAIR light switch toggles the basement ROOM lights. Fixed 2026-06-23: action targeted itself (switch.basement_stair_light_switch_1) causing an infinite on/off loop; now targets switch.basement_lights_switch_1. Fixed 2026-07-14: the trigger was a bare state trigger, so every localtuya WiFi drop/reconnect (unavailable transitions) and even attribute updates fired a TOGGLE — basement lights turned off/on intermittently by themselves. Now only real on<->off presses trigger.'
   id: '1777445592532'
   mode: single
   triggers:
   - trigger: state
     entity_id: switch.basement_stair_light_switch_1
+    from: 'off'
+    to: 'on'
+  - trigger: state
+    entity_id: switch.basement_stair_light_switch_1
+    from: 'on'
+    to: 'off'
 - actions:
   - action: switch.turn_on
     target:
