@@ -3314,10 +3314,14 @@
     # days (it is only reset after an actual watering), so each run delivers the accumulated need.
     # NOTE: SI's own days_between_irrigation setting only gates its start EVENT, which this
     # time-triggered automation does not use — hence the gate lives here.
+    # 2026-07-14: gate moved OFF this automation's own last_triggered onto input_datetime.
+    # lawn_last_watered (set at the end of a successful run). last_triggered is bumped by manual/
+    # test triggers too, survives automation.reload, and has no API to reset — so a single 25 s
+    # test silently cancelled the next real watering. This helper is settable, so tests are undoable.
     - condition: template
       value_template: >-
-        {{ state_attr('automation.lawn_watering_start_cycle', 'last_triggered') is none
-           or (now() - state_attr('automation.lawn_watering_start_cycle', 'last_triggered')).total_seconds() >= 169200 }}
+        {{ state_attr('input_datetime.lawn_last_watered', 'timestamp') is none
+           or (now().timestamp() - state_attr('input_datetime.lawn_last_watered', 'timestamp')) >= 169200 }}
   actions:
     - variables:
         run_seconds: >-
@@ -3374,6 +3378,13 @@
     - action: smart_irrigation.reset_bucket
       target:
         entity_id: sensor.smart_irrigation_front_lawn_valve_2
+    # ---- Stamp the 2-day gate. Only reached on a verified watering: a failed open
+    #      stops above, so a missed run does NOT push the next one out by 2 days.
+    - action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.lawn_last_watered
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
     - action: notify.mobile_app_cph2655
       data:
         title: "✅ Front lawn watered"

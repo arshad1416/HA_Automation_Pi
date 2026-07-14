@@ -229,6 +229,17 @@ input_datetime:
     has_time: true
     initial: "14:00"
     icon: mdi:door-closed
+  # Set by lawn_watering_start_cycle after a SUCCESSFUL watering; read by its
+  # every-2-days gate. Added 2026-07-14 to replace a gate keyed on the automation's
+  # own last_triggered — that attribute is also bumped by manual/test triggers, is
+  # NOT clearable (survives automation.reload) and has no API to set, so one 25 s
+  # test silently cancelled the next real watering. This helper is settable, so a
+  # test can be undone by just restoring the correct timestamp.
+  lawn_last_watered:
+    name: Lawn Last Watered
+    has_date: true
+    has_time: true
+    icon: mdi:sprinkler-variant
 
 input_boolean:
   kitchen_auto_lights_disable:
