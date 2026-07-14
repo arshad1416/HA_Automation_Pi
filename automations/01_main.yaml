@@ -3287,12 +3287,14 @@
     and zone maximum_duration raised to 5400 s, so expect ~40-80 min runs
     every other day (~25 mm/week incl. rain credit). run_seconds capped at 5400 s;
     the valve_2 Max Runtime Failsafe (100 min) is the independent hard backstop.
-    2026-07-14: valve hardware moved off ZHA/Zigbee (LQI 17, dropped commands) to
-    the Tuya Cloud "Dual Outlet Irrigation Timer" — front lawn is now
-    switch.dual_outlet_irrigation_timer_switch_2 (outlet 1 unused, user-confirmed).
-    NOTE: commands now go via Tuya cloud, so expect a few seconds of latency;
-    the cloud queues them for this battery device, which is why it is more reliable
-    than the old direct-Zigbee link.
+    2026-07-14: valve briefly moved to Tuya Cloud (its ZHA link was LQI 17, dropping
+    ~half of all commands), then moved BACK to ZHA once the user relocated the network
+    Zigbee coordinator (socket://192.168.0.42:6638) closer to the sprinkler. Measured
+    after relocation: LQI 17 -> 100, command delivery 6/6 (100%), actuation confirmed
+    in 2 s (vs 8 s via Tuya cloud). Front lawn = switch.tze284_8zizsafo_ts0601_valve_2
+    (outlet 1 unused, user-confirmed). Now fully LOCAL — no internet dependency for the
+    5 AM run — and the device's own status_2 / irrigation_duration_2 sensors are back
+    for verifying a run actually delivered water.
   id: "lawn_watering_start"
   mode: single
   triggers:
@@ -3322,12 +3324,12 @@
           {{ [ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int, 5400 ] | min }}
     - action: switch.turn_on
       target:
-        entity_id: switch.dual_outlet_irrigation_timer_switch_2
+        entity_id: switch.tze284_8zizsafo_ts0601_valve_2
     - delay:
         seconds: "{{ run_seconds }}"
     - action: switch.turn_off
       target:
-        entity_id: switch.dual_outlet_irrigation_timer_switch_2
+        entity_id: switch.tze284_8zizsafo_ts0601_valve_2
     - action: smart_irrigation.reset_bucket
       target:
         entity_id: sensor.smart_irrigation_front_lawn_valve_2
@@ -3347,7 +3349,7 @@
   mode: single
   triggers:
     - trigger: state
-      entity_id: switch.dual_outlet_irrigation_timer_switch_2
+      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
       from: "off"
       to: "on"
   variables:
@@ -3374,7 +3376,7 @@
       default:
         - action: switch.turn_off
           target:
-            entity_id: switch.dual_outlet_irrigation_timer_switch_2
+            entity_id: switch.tze284_8zizsafo_ts0601_valve_2
         - action: notify.mobile_app_cph2655
           data:
             title: "🚫 Watering vetoed"
@@ -3408,7 +3410,7 @@
         dur_min: >-
           {{ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int }}
         valve_last: >-
-          {{ state_attr('switch.dual_outlet_irrigation_timer_switch_2', 'last_changed') }}
+          {{ state_attr('switch.tze284_8zizsafo_ts0601_valve_2', 'last_changed') }}
         master: >-
           {{ is_state('input_boolean.lawn_watering_master_enable', 'on') }}
         odd_day: >-
@@ -3441,7 +3443,7 @@
   mode: single
   triggers:
     - trigger: state
-      entity_id: switch.dual_outlet_irrigation_timer_switch_2
+      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
       from: "off"
       to: "on"
   actions:
@@ -3450,7 +3452,7 @@
     # Re-check: still ON and a rule is violated => the veto failed.
     - condition: template
       value_template: >-
-        {{ is_state('switch.dual_outlet_irrigation_timer_switch_2', 'on') and
+        {{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'on') and
            (now().day % 2 != 1 or
             not is_state('input_boolean.lawn_watering_master_enable', 'on')) }}
     - variables:
@@ -3465,7 +3467,7 @@
           {% set why = [] %}
           {% if not odd_day %}{% set why = why + ['Today is an EVEN day — odd-address watering not allowed'] %}{% endif %}
           {% if not master_on %}{% set why = why + ['Master watering switch is OFF'] %}{% endif %}
-          Front-lawn valve (switch.dual_outlet_irrigation_timer_switch_2) is ON in
+          Front-lawn valve (switch.tze284_8zizsafo_ts0601_valve_2) is ON in
           violation of the watering rules — the veto did NOT block it!
           {% for r in why %}- {{ r }}
           {% endfor %}
@@ -3631,11 +3633,11 @@
       entity_id: switch.foyer_light_switch_1
 - id: valve_2_max_runtime_guard
   alias: 'Front Lawn Valve 2 - Max Runtime Failsafe'
-  description: 'Independent hard safety cap for the front-lawn valve. If switch.dual_outlet_irrigation_timer_switch_2 stays on for 100 minutes for ANY reason (watering automation bug, HA restart mid-run, manual, device glitch), force it off and notify. Raised from 60 min on 2026-07-13: legitimate deep-watering runs can now reach 90 min (SI maximum_duration 5400 s at the calibrated 13.4 L/min flow). Re-pointed 2026-07-14 to the Tuya Cloud Dual Outlet Irrigation Timer (outlet 2) after the valve was moved off ZHA. Belt-and-suspenders backstop to lawn_watering_start_cycle; always enabled.'
+  description: 'Independent hard safety cap for the front-lawn valve. If switch.tze284_8zizsafo_ts0601_valve_2 stays on for 100 minutes for ANY reason (watering automation bug, HA restart mid-run, manual, device glitch), force it off and notify. Raised from 60 min on 2026-07-13: legitimate deep-watering runs can now reach 90 min (SI maximum_duration 5400 s at the calibrated 13.4 L/min flow). Re-pointed 2026-07-14 back to the ZHA valve (switch.tze284_8zizsafo_ts0601_valve_2) after the coordinator was relocated and the link recovered (LQI 17 -> 100, 6/6 command delivery). Belt-and-suspenders backstop to lawn_watering_start_cycle; always enabled.'
   mode: single
   triggers:
   - trigger: state
-    entity_id: switch.dual_outlet_irrigation_timer_switch_2
+    entity_id: switch.tze284_8zizsafo_ts0601_valve_2
     to: 'on'
     for:
       minutes: 100
@@ -3643,7 +3645,7 @@
   actions:
   - action: switch.turn_off
     target:
-      entity_id: switch.dual_outlet_irrigation_timer_switch_2
+      entity_id: switch.tze284_8zizsafo_ts0601_valve_2
   - action: notify.mobile_app_cph2655
     data:
       title: "🚨 Front lawn valve force-closed (60-min cap)"
