@@ -255,6 +255,13 @@
         "domain": "hacs",
         "is_persistent": false,
         "issue_id": "restart_required_356385629_tags/v3.7.1"
+      },
+      {
+        "created": "2026-07-15T17:38:44.721774+00:00",
+        "dismissed_version": null,
+        "domain": "homeassistant",
+        "is_persistent": false,
+        "issue_id": "config_entry_reauth_google_drive_01KVSCPV4T7ETHJY4T5ZHWE8HW"
       }
     ]
   }
