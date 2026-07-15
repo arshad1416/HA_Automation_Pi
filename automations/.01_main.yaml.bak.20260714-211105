@@ -3326,72 +3326,55 @@
     - variables:
         run_seconds: >-
           {{ [ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int, 5400 ] | min }}
-    # ---- OPEN, verified against the DEVICE, not against HA's cache.
-    #      2026-07-14: the previous version waited on switch.valve_2 == 'on'. That was WRONG.
-    #      The Tuya quirk writes valve_on_off_2 into a LocalDataCluster BEFORE the radio send,
-    #      so the switch entity flips to 'on' even when delivery fails outright. Proven this
-    #      night: every command returned NWK_NO_ROUTE (coordinator had lost its child-table
-    #      entry after being relocated) while switch.valve_2 happily reported 'on' and no
-    #      water flowed for 2 days.
-    #      sensor.status_2 (Tuya DP 105) is only ever written from a DEVICE report, so
-    #      'Manual' proves the valve actually received the command and started a run.
-    #      Verified 2026-07-14 21:05 with a live water test: DataConfirm=SUCCESS, status_2->Manual.
-    #      Fails closed: if the device never reports, we abort and preserve the deficit.
+    # ---- OPEN, verified. ZHA reports switch state only when the DEVICE confirms
+    #      (a dropped command produces no state change at all), so waiting on 'on'
+    #      is a true actuation check, not an optimistic echo. Retry up to 3x.
     - repeat:
         sequence:
           - action: switch.turn_on
             target:
               entity_id: switch.tze284_8zizsafo_ts0601_valve_2
             continue_on_error: true
-          - wait_template: "{{ is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Manual') }}"
+          - wait_template: "{{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'on') }}"
             timeout: "00:00:45"
             continue_on_timeout: true
-        until: "{{ is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Manual') or repeat.index >= 3 }}"
+        until: "{{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'on') or repeat.index >= 3 }}"
     # ---- Never opened: alert and ABORT before reset_bucket, so the moisture
     #      deficit carries to the next run instead of being falsely cleared.
     - if:
         - condition: template
-          value_template: "{{ not is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Manual') }}"
+          value_template: "{{ not is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'on') }}"
       then:
         - action: notify.mobile_app_cph2655
           data:
             title: "🚨 Lawn watering FAILED to start"
             message: >-
-              valve_2 never confirmed a run after 3 attempts — the device did not report status
-              'Manual' (it reports '{{ states('sensor.tze284_8zizsafo_ts0601_status_2') }}').
-              The command likely never reached the valve. Check ZHA: if the coordinator lost its
-              child-table entry, re-pair the valve with permit-join OPEN (hold both buttons until
-              the lights flash) and confirm it gets a NEW nwk address.
-              Bucket NOT reset — the {{ (run_seconds / 60) | round(1) }} min deficit carries to the
-              next run. Lawn was NOT watered.
-        - stop: "valve never confirmed Manual - deficit preserved for next run"
+              valve_2 never opened after 3 attempts (Zigbee link? LQI was {{ state_attr('sensor.tze284_8zizsafo_ts0601_battery','linkquality') | default('n/a') }}).
+              Bucket NOT reset — the {{ (run_seconds / 60) | round(1) }} min deficit carries to the next run. Lawn was NOT watered.
+        - stop: "valve never opened - deficit preserved for next run"
     - delay:
         seconds: "{{ run_seconds }}"
-    # ---- CLOSE, verified against the DEVICE (status_2 -> 'Idle'), not the switch cache.
-    #      Same reasoning as the open above. Retry up to 4x (closing matters more than opening).
+    # ---- CLOSE, verified. Retry up to 4x (closing matters more than opening).
     - repeat:
         sequence:
           - action: switch.turn_off
             target:
               entity_id: switch.tze284_8zizsafo_ts0601_valve_2
             continue_on_error: true
-          - wait_template: "{{ is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Idle') }}"
+          - wait_template: "{{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'off') }}"
             timeout: "00:00:45"
             continue_on_timeout: true
-        until: "{{ is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Idle') or repeat.index >= 4 }}"
+        until: "{{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'off') or repeat.index >= 4 }}"
     - if:
         - condition: template
-          value_template: "{{ not is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Idle') }}"
+          value_template: "{{ not is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'off') }}"
       then:
         - action: notify.mobile_app_cph2655
           data:
             title: "🚨 Lawn valve did NOT close"
-            message: >-
-              valve_2 has not reported 'Idle' after 4 close attempts (device reports
-              '{{ states('sensor.tze284_8zizsafo_ts0601_status_2') }}'). The valve may still be
-              running. The 100-min failsafe is the backstop — go check the tap.
-    # ---- Water WAS delivered (the device confirmed a run), so reset the bucket even if the
-    #      close needed retries — the close alert above is a separate concern.
+            message: "valve_2 still reports ON after 4 close attempts. The 100-min failsafe is the backstop — go check the tap."
+    # ---- Water WAS delivered (it opened), so reset the bucket even if the close
+    #      needed retries — the close alert above is a separate concern.
     - action: smart_irrigation.reset_bucket
       target:
         entity_id: sensor.smart_irrigation_front_lawn_valve_2
@@ -3702,16 +3685,9 @@
       entity_id: switch.foyer_light_switch_1
 - id: valve_2_max_runtime_guard
   alias: 'Front Lawn Valve 2 - Max Runtime Failsafe'
-  description: 'Independent hard safety cap for the front-lawn valve. If the valve runs for 100 minutes for ANY reason (watering automation bug, HA restart mid-run, manual, device glitch), force it off and notify. Raised from 60 min on 2026-07-13: legitimate deep-watering runs can now reach 90 min (SI maximum_duration 5400 s at the calibrated 13.4 L/min flow). 2026-07-14: triggers on BOTH the device-reported status_2 == Manual AND the switch cache — the switch entity is written from a LocalDataCluster before the radio send and can read on with the device untouched (or off while the device runs), so neither signal alone is trustworthy; a failsafe should fire on either. Close is verified against status_2 == Idle (a real device report). Belt-and-suspenders backstop to lawn_watering_start_cycle; always enabled.'
+  description: 'Independent hard safety cap for the front-lawn valve. If switch.tze284_8zizsafo_ts0601_valve_2 stays on for 100 minutes for ANY reason (watering automation bug, HA restart mid-run, manual, device glitch), force it off and notify. Raised from 60 min on 2026-07-13: legitimate deep-watering runs can now reach 90 min (SI maximum_duration 5400 s at the calibrated 13.4 L/min flow). Re-pointed 2026-07-14 back to the ZHA valve (switch.tze284_8zizsafo_ts0601_valve_2) after the coordinator was relocated and the link recovered (LQI 17 -> 100, 6/6 command delivery). Belt-and-suspenders backstop to lawn_watering_start_cycle; always enabled.'
   mode: single
   triggers:
-  # Device-reported run state — the authoritative signal (Tuya DP 105).
-  - trigger: state
-    entity_id: sensor.tze284_8zizsafo_ts0601_status_2
-    to: 'Manual'
-    for:
-      minutes: 100
-  # Cache signal kept as a second net: if the device stops reporting mid-run this still fires.
   - trigger: state
     entity_id: switch.tze284_8zizsafo_ts0601_valve_2
     to: 'on'
@@ -3721,26 +3697,23 @@
   actions:
   # This is the LAST line of defence, so its close is verified + retried (up to 5x)
   # rather than fire-and-forget — a dropped Zigbee command here would leave water running.
-  # Verified against the device's own status, never the switch cache.
   - repeat:
       sequence:
       - action: switch.turn_off
         target:
           entity_id: switch.tze284_8zizsafo_ts0601_valve_2
         continue_on_error: true
-      - wait_template: "{{ is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Idle') }}"
+      - wait_template: "{{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'off') }}"
         timeout: "00:00:30"
         continue_on_timeout: true
-      until: "{{ is_state('sensor.tze284_8zizsafo_ts0601_status_2', 'Idle') or repeat.index >= 5 }}"
+      until: "{{ is_state('switch.tze284_8zizsafo_ts0601_valve_2', 'off') or repeat.index >= 5 }}"
   - action: notify.mobile_app_cph2655
     data:
       title: >-
-        {{ "🚨 Front lawn valve force-closed (100-min cap)" if is_state('sensor.tze284_8zizsafo_ts0601_status_2','Idle')
+        {{ "🚨 Front lawn valve force-closed (100-min cap)" if is_state('switch.tze284_8zizsafo_ts0601_valve_2','off')
            else "🚨🚨 LAWN VALVE STUCK OPEN - GO SHUT THE TAP" }}
       message: >-
-        valve_2 ran for 100 minutes and hit the hard safety cap.
-        {{ "Force-closed successfully (device reports Idle) — check why the watering automation did not close it."
-           if is_state('sensor.tze284_8zizsafo_ts0601_status_2','Idle')
-           else "IT DID NOT CONFIRM CLOSED after 5 attempts (device reports '"
-                ~ states('sensor.tze284_8zizsafo_ts0601_status_2')
-                ~ "') and may STILL BE RUNNING — shut the tap manually." }}
+        valve_2 was on for 100 minutes and hit the hard safety cap.
+        {{ "Force-closed successfully — check why the watering automation did not close it."
+           if is_state('switch.tze284_8zizsafo_ts0601_valve_2','off')
+           else "IT DID NOT CLOSE after 5 attempts and is STILL RUNNING — shut the tap manually." }}
