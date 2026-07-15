@@ -50,3 +50,4 @@ tmp_backups/
 .storage/core.labs
 .storage/core.config_entries*
 .storage/core.config_entries.bak.*
+automations/.*.yaml.bak.*
