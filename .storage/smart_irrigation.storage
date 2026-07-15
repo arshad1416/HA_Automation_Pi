@@ -151,18 +151,7 @@
             "unit": ""
           }
         },
-        "data": [
-          {
-            "Windspeed": 2.6028697415844455,
-            "Pressure": 1013.5400124103885,
-            "Humidity": 74.0,
-            "Temperature": 26.78,
-            "Dewpoint": 21.8,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-15T04:38:38.514132"
-          }
-        ],
+        "data": [],
         "data_last_updated": "2026-07-07T13:48:20.534728",
         "data_last_entry": {},
         "data_last_calculation": {
