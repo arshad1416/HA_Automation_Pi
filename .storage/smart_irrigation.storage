@@ -44,8 +44,8 @@
         "maximum_duration": 5400.0,
         "maximum_bucket": 24,
         "last_calculated": "2026-07-16T04:00:00.350387",
-        "last_updated": "2026-07-16T04:00:00.350389",
-        "number_of_data_points": 22,
+        "last_updated": "2026-07-16T04:38:38.512359",
+        "number_of_data_points": 0,
         "drainage_rate": 50.8,
         "current_drainage": 0
       }
@@ -151,7 +151,18 @@
             "unit": ""
           }
         },
-        "data": [],
+        "data": [
+          {
+            "Windspeed": 3.1114764726986475,
+            "Pressure": 1014.9000124270411,
+            "Humidity": 66.0,
+            "Temperature": 22.07,
+            "Dewpoint": 15.36,
+            "Current Precipitation": 0.0,
+            "Precipitation": 0.0,
+            "retrieved": "2026-07-16T04:38:38.512187"
+          }
+        ],
         "data_last_updated": "2026-07-07T13:48:20.534728",
         "data_last_entry": {},
         "data_last_calculation": {
