@@ -262,6 +262,23 @@
         "domain": "homeassistant",
         "is_persistent": false,
         "issue_id": "config_entry_reauth_google_drive_01KVSCPV4T7ETHJY4T5ZHWE8HW"
+      },
+      {
+        "created": "2026-07-16T08:58:15.084670+00:00",
+        "dismissed_version": null,
+        "domain": "backup",
+        "is_persistent": true,
+        "issue_id": "automatic_backup_failed",
+        "breaks_in_ha_version": null,
+        "data": null,
+        "is_fixable": false,
+        "issue_domain": null,
+        "learn_more_url": "homeassistant://config/backup",
+        "severity": "warning",
+        "translation_key": "automatic_backup_failed_upload_agents",
+        "translation_placeholders": {
+          "failed_agents": "Google Drive"
+        }
       }
     ]
   }
