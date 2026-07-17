@@ -15,14 +15,14 @@
       "autoupdateinterval": "1",
       "autoclearenabled": true,
       "cleardatatime": "05:30",
-      "starteventfiredtoday": false,
+      "starteventfiredtoday": true,
       "continuousupdates": false,
       "sensor_debounce": "100",
       "irrigation_start_triggers": [],
       "skip_irrigation_on_precipitation": true,
       "precipitation_threshold_mm": 2.0,
       "days_between_irrigation": 0,
-      "days_since_last_irrigation": 1,
+      "days_since_last_irrigation": 0,
       "seasonal_adjustments": [],
       "recurring_schedules": []
     },
@@ -151,18 +151,7 @@
             "unit": ""
           }
         },
-        "data": [
-          {
-            "Windspeed": 1.0321724837317627,
-            "Pressure": 1017.6700124609587,
-            "Humidity": 78.0,
-            "Temperature": 17.59,
-            "Dewpoint": 13.73,
-            "Current Precipitation": 0.0,
-            "Precipitation": 0.0,
-            "retrieved": "2026-07-17T04:38:38.559006"
-          }
-        ],
+        "data": [],
         "data_last_updated": "2026-07-07T13:48:20.534728",
         "data_last_entry": {},
         "data_last_calculation": {
