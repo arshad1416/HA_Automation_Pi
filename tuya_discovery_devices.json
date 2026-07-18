@@ -1,0 +1,26 @@
+{
+  "eb9883b5def5e30cd1zakb": {
+    "ip": "192.168.0.105",
+    "name": "Wasserstein Smart Floodlight 2",
+    "product": "keyqj4cqs54ger7r",
+    "version": "3.3",
+    "configured_ip": "192.168.0.105",
+    "first_seen": "2026-07-17T22:11:09.248341"
+  },
+  "eb152e8acdf2a0c29aprxc": {
+    "ip": "192.168.0.89",
+    "name": "UNKNOWN DEVICE",
+    "product": "keyjup78v54myhan",
+    "version": "3.4",
+    "configured_ip": "?",
+    "first_seen": "2026-07-17T22:11:09.549064"
+  },
+  "eb814f71bb6ded1077903w": {
+    "ip": "192.168.0.117",
+    "name": "Outdoor Decoration SmartPlug",
+    "product": "keyjup78v54myhan",
+    "version": "3.4",
+    "configured_ip": "192.168.0.117",
+    "first_seen": "2026-07-17T22:11:12.165277"
+  }
+}

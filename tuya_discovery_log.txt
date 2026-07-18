@@ -1,0 +1,30 @@
+[2026-07-17 22:09:51] ======================================================================
+[2026-07-17 22:09:51] Tuya UDP Discovery Listener started
+[2026-07-17 22:09:51] Listening on UDP 6666 + 6667 (indefinite)
+[2026-07-17 22:09:51] Logging to /config/tuya_discovery_log.txt
+[2026-07-17 22:09:51] Known devices in config: 38
+[2026-07-17 22:09:51] Devices at wrong IPs (need discovery): 38
+[2026-07-17 22:09:51] ======================================================================
+[2026-07-17 22:09:52] DISCOVERED: Outdoor Decoration SmartPlug | gwId=eb814f71bb6ded1077903w | IP=192.168.0.117 | ✅ IP unchanged | Product=keyjup78v54myhan | v3.4
+[2026-07-17 22:09:54] DISCOVERED: Wasserstein Smart Floodlight 2 | gwId=eb9883b5def5e30cd1zakb | IP=192.168.0.105 | ✅ IP unchanged | Product=keyqj4cqs54ger7r | v3.3
+[2026-07-17 22:09:54] DISCOVERED: UNKNOWN DEVICE | gwId=eb152e8acdf2a0c29aprxc | IP=192.168.0.89 | 🆕 NEW DEVICE (not in HA config) | Product=keyjup78v54myhan | v3.4
+[2026-07-17 22:10:43] ======================================================================
+[2026-07-17 22:10:43] Tuya UDP Discovery Listener started
+[2026-07-17 22:10:43] Listening on UDP 6666 + 6667 (indefinite)
+[2026-07-17 22:10:43] Logging to /config/tuya_discovery_log.txt
+[2026-07-17 22:10:43] Known devices in config: 38
+[2026-07-17 22:10:43] Devices at wrong IPs (need discovery): 38
+[2026-07-17 22:10:43] ======================================================================
+[2026-07-17 22:10:44] DISCOVERED: Wasserstein Smart Floodlight 2 | gwId=eb9883b5def5e30cd1zakb | IP=192.168.0.105 | ✅ IP unchanged | Product=keyqj4cqs54ger7r | v3.3
+[2026-07-17 22:10:44] DISCOVERED: UNKNOWN DEVICE | gwId=eb152e8acdf2a0c29aprxc | IP=192.168.0.89 | 🆕 NEW DEVICE (not in HA config) | Product=keyjup78v54myhan | v3.4
+[2026-07-17 22:10:47] DISCOVERED: Outdoor Decoration SmartPlug | gwId=eb814f71bb6ded1077903w | IP=192.168.0.117 | ✅ IP unchanged | Product=keyjup78v54myhan | v3.4
+[2026-07-17 22:11:07] ======================================================================
+[2026-07-17 22:11:07] Tuya UDP Discovery Listener started
+[2026-07-17 22:11:07] Listening on UDP 6666 + 6667 (indefinite)
+[2026-07-17 22:11:07] Logging to /config/tuya_discovery_log.txt
+[2026-07-17 22:11:07] Known devices in config: 38
+[2026-07-17 22:11:07] Devices at wrong IPs (need discovery): 38
+[2026-07-17 22:11:07] ======================================================================
+[2026-07-17 22:11:09] DISCOVERED: Wasserstein Smart Floodlight 2 | gwId=eb9883b5def5e30cd1zakb | IP=192.168.0.105 | ✅ IP unchanged | Product=keyqj4cqs54ger7r | v3.3
+[2026-07-17 22:11:09] DISCOVERED: UNKNOWN DEVICE | gwId=eb152e8acdf2a0c29aprxc | IP=192.168.0.89 | 🆕 NEW DEVICE (not in HA config) | Product=keyjup78v54myhan | v3.4
+[2026-07-17 22:11:12] DISCOVERED: Outdoor Decoration SmartPlug | gwId=eb814f71bb6ded1077903w | IP=192.168.0.117 | ✅ IP unchanged | Product=keyjup78v54myhan | v3.4
