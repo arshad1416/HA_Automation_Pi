@@ -413,23 +413,37 @@
         data:
           message: 'Airbnb safety sync: check-in day but heater was off (missed 3 PM trigger?) — re-armed to heat.'
 - actions:
-  - action: switch.toggle
+  - action: >-
+      {% if trigger.to_state.state == 'on' %}
+        switch.turn_on
+      {% else %}
+        switch.turn_off
+      {% endif %}
     target:
-      entity_id: switch.basement_lights_switch_1
+      entity_id: >-
+        {% if trigger.entity_id == 'switch.basement_lights' %}
+          switch.basement_stair_light_switch_1
+        {% else %}
+          switch.basement_lights
+        {% endif %}
   alias: Turn On or Off the Basement Lights with the Basement Stair Lights
-  conditions: []
-  description: 'Pressing the basement STAIR light switch toggles the basement ROOM lights. Fixed 2026-06-23: action targeted itself (switch.basement_stair_light_switch_1) causing an infinite on/off loop; now targets switch.basement_lights_switch_1. Fixed 2026-07-14: the trigger was a bare state trigger, so every localtuya WiFi drop/reconnect (unavailable transitions) and even attribute updates fired a TOGGLE — basement lights turned off/on intermittently by themselves. Now only real on<->off presses trigger.'
+  conditions:
+  - condition: template
+    value_template: "{{ states('switch.basement_lights') != states('switch.basement_stair_light_switch_1') }}"
+  description: 'Synchronize switch.basement_lights and switch.basement_stair_light_switch_1 bidirectionally. Loop-safe using template condition comparison.'
   id: '1777445592532'
-  mode: single
+  mode: queued
   triggers:
   - trigger: state
-    entity_id: switch.basement_stair_light_switch_1
-    from: 'off'
-    to: 'on'
-  - trigger: state
-    entity_id: switch.basement_stair_light_switch_1
-    from: 'on'
-    to: 'off'
+    entity_id:
+    - switch.basement_stair_light_switch_1
+    - switch.basement_lights
+    from:
+    - 'off'
+    - 'on'
+    to:
+    - 'off'
+    - 'on'
 - actions:
   - action: switch.turn_on
     target:
@@ -2239,7 +2253,7 @@
       - switch.foyer_light_switch_1
       - switch.sonoff_10001dccdc
       - switch.kitchen_pantry_light_socket_1
-      - switch.basement_lights_switch_1
+      - switch.basement_lights
       - switch.basement_stair_light_switch_1
       - switch.garage_light_switch_switch_1
       - switch.master_bedroom_fan_light_switch_1
