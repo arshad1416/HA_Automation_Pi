@@ -420,6 +420,7 @@ logger:
   default: warning
   logs:
     homeassistant.components.emulated_hue: error
+    custom_components.localtuya: debug
 # Rest API commands for Climate AI - Direct API calls bypassing conversation agent
 rest_command:
   climate_ai_gemini:

@@ -8,126 +8,6 @@
         "config_num": 13,
         "accessories": [
           {
-            "aid": 21474836484,
-            "services": [
-              {
-                "iid": 1,
-                "type": "0000003E-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000014-0000-1000-8000-0026BB765291",
-                    "iid": 85899345921,
-                    "perms": [
-                      "pw"
-                    ],
-                    "format": "bool",
-                    "description": "Identify"
-                  },
-                  {
-                    "type": "00000020-0000-1000-8000-0026BB765291",
-                    "iid": 137438953473,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Lutron Electronics Co., Inc",
-                    "description": "Manufacturer",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000021-0000-1000-8000-0026BB765291",
-                    "iid": 141733920769,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "PD-6WCL-XX",
-                    "description": "Model",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000023-0000-1000-8000-0026BB765291",
-                    "iid": 150323855361,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Caséta® Wireless In-wall Dimmer",
-                    "description": "Name",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000030-0000-1000-8000-0026BB765291",
-                    "iid": 206158430209,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "653B8DD",
-                    "description": "Serial Number",
-                    "maxLen": 64
-                  },
-                  {
-                    "type": "00000052-0000-1000-8000-0026BB765291",
-                    "iid": 352187318273,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "003.001",
-                    "description": "Firmware Revision",
-                    "maxLen": 64
-                  }
-                ]
-              },
-              {
-                "iid": 2,
-                "type": "00000043-0000-1000-8000-0026BB765291",
-                "characteristics": [
-                  {
-                    "type": "00000008-0000-1000-8000-0026BB765291",
-                    "iid": 34359738370,
-                    "perms": [
-                      "pr",
-                      "pw",
-                      "ev"
-                    ],
-                    "format": "int",
-                    "value": 0,
-                    "description": "Brightness",
-                    "unit": "percentage",
-                    "minValue": 0,
-                    "maxValue": 100,
-                    "minStep": 1
-                  },
-                  {
-                    "type": "00000025-0000-1000-8000-0026BB765291",
-                    "iid": 158913789954,
-                    "perms": [
-                      "pr",
-                      "pw",
-                      "ev"
-                    ],
-                    "format": "bool",
-                    "value": false,
-                    "description": "On"
-                  },
-                  {
-                    "type": "00000023-0000-1000-8000-0026BB765291",
-                    "iid": 150323855362,
-                    "perms": [
-                      "pr"
-                    ],
-                    "format": "string",
-                    "value": "Caséta® Wireless In-wall Dimmer",
-                    "description": "Name",
-                    "maxLen": 64
-                  }
-                ]
-              }
-            ]
-          },
-          {
             "aid": 1,
             "services": [
               {
@@ -325,6 +205,126 @@
                     ],
                     "format": "string",
                     "value": "Caséta® Wireless In-wall Neutral Switch",
+                    "description": "Name",
+                    "maxLen": 64
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "aid": 21474836484,
+            "services": [
+              {
+                "iid": 1,
+                "type": "0000003E-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000014-0000-1000-8000-0026BB765291",
+                    "iid": 85899345921,
+                    "perms": [
+                      "pw"
+                    ],
+                    "format": "bool",
+                    "description": "Identify"
+                  },
+                  {
+                    "type": "00000020-0000-1000-8000-0026BB765291",
+                    "iid": 137438953473,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Lutron Electronics Co., Inc",
+                    "description": "Manufacturer",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000021-0000-1000-8000-0026BB765291",
+                    "iid": 141733920769,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "PD-6WCL-XX",
+                    "description": "Model",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 150323855361,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Caséta® Wireless In-wall Dimmer",
+                    "description": "Name",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000030-0000-1000-8000-0026BB765291",
+                    "iid": 206158430209,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "653B8DD",
+                    "description": "Serial Number",
+                    "maxLen": 64
+                  },
+                  {
+                    "type": "00000052-0000-1000-8000-0026BB765291",
+                    "iid": 352187318273,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "003.001",
+                    "description": "Firmware Revision",
+                    "maxLen": 64
+                  }
+                ]
+              },
+              {
+                "iid": 2,
+                "type": "00000043-0000-1000-8000-0026BB765291",
+                "characteristics": [
+                  {
+                    "type": "00000008-0000-1000-8000-0026BB765291",
+                    "iid": 34359738370,
+                    "perms": [
+                      "pr",
+                      "pw",
+                      "ev"
+                    ],
+                    "format": "int",
+                    "value": 0,
+                    "description": "Brightness",
+                    "unit": "percentage",
+                    "minValue": 0,
+                    "maxValue": 100,
+                    "minStep": 1
+                  },
+                  {
+                    "type": "00000025-0000-1000-8000-0026BB765291",
+                    "iid": 158913789954,
+                    "perms": [
+                      "pr",
+                      "pw",
+                      "ev"
+                    ],
+                    "format": "bool",
+                    "value": false,
+                    "description": "On"
+                  },
+                  {
+                    "type": "00000023-0000-1000-8000-0026BB765291",
+                    "iid": 150323855362,
+                    "perms": [
+                      "pr"
+                    ],
+                    "format": "string",
+                    "value": "Caséta® Wireless In-wall Dimmer",
                     "description": "Name",
                     "maxLen": 64
                   }
@@ -3363,7 +3363,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 171,
+                    "value": 400,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -3436,7 +3436,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 27.0,
+                    "value": 29.0,
                     "description": "Hue",
                     "unit": "arcdegrees",
                     "minValue": 0.0,
@@ -3452,7 +3452,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 9.0,
+                    "value": 73.0,
                     "description": "Saturation",
                     "unit": "percentage",
                     "minValue": 0.0,
@@ -3571,7 +3571,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 44
+                    "value": 45
                   }
                 ]
               }
@@ -3797,7 +3797,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 171,
+                    "value": 400,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -3870,7 +3870,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 27.0,
+                    "value": 29.0,
                     "description": "Hue",
                     "unit": "arcdegrees",
                     "minValue": 0.0,
@@ -3886,7 +3886,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 9.0,
+                    "value": 73.0,
                     "description": "Saturation",
                     "unit": "percentage",
                     "minValue": 0.0,
@@ -4005,7 +4005,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 44
+                    "value": 45
                   }
                 ]
               }
@@ -4231,7 +4231,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 171,
+                    "value": 400,
                     "description": "Color Temperature",
                     "minValue": 153,
                     "maxValue": 470,
@@ -4304,7 +4304,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 27.0,
+                    "value": 29.0,
                     "description": "Hue",
                     "unit": "arcdegrees",
                     "minValue": 0.0,
@@ -4320,7 +4320,7 @@
                       "ev"
                     ],
                     "format": "float",
-                    "value": 9.0,
+                    "value": 73.0,
                     "description": "Saturation",
                     "unit": "percentage",
                     "minValue": 0.0,
@@ -4439,7 +4439,7 @@
                       "ev"
                     ],
                     "format": "int",
-                    "value": 44
+                    "value": 45
                   }
                 ]
               }

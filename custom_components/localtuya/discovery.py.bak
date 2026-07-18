@@ -60,35 +60,13 @@ class TuyaDiscovery(asyncio.DatagramProtocol):
 
     def datagram_received(self, data, addr):
         """Handle received broadcast message."""
-        # Strip the Tuya header (20 bytes) and CRC footer (8 bytes)
-        if len(data) <= 28:
-            _LOGGER.debug("Received short packet from %s: %d bytes", addr, len(data))
-            return
-
-        payload = data[20:-8]
-
-        # Try to decrypt first (encrypted broadcasts on port 6667)
+        data = data[20:-8]
         try:
-            decoded_data = decrypt_udp(payload)
+            data = decrypt_udp(data)
         except Exception:  # pylint: disable=broad-except
-            # Not encrypted — try plain decode
-            try:
-                decoded_data = payload.decode("utf-8", errors="replace")
-            except Exception:
-                _LOGGER.debug("Failed to decode packet from %s", addr)
-                return
+            data = data.decode()
 
-        # Parse JSON
-        try:
-            decoded = json.loads(decoded_data)
-        except json.JSONDecodeError:
-            _LOGGER.debug(
-                "Received non-JSON UDP packet from %s: %s",
-                addr,
-                decoded_data[:100] if isinstance(decoded_data, str) else "binary",
-            )
-            return
-
+        decoded = json.loads(data)
         self.device_found(decoded)
 
     def device_found(self, device):
