@@ -84,3 +84,17 @@
 [2026-07-18 02:11:09]   ✅ Stair light (LED): at 192.168.0.29
 [2026-07-18 02:11:09]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
 [2026-07-18 02:11:09]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 03:10:46] --- Hourly summary: 6 unique devices discovered so far ---
+[2026-07-18 03:10:46]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 03:10:46]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 03:10:46]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 03:10:46]   ✅ Stair light (LED): at 192.168.0.29
+[2026-07-18 03:10:46]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 03:10:46]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 03:11:10] --- Hourly summary: 6 unique devices discovered so far ---
+[2026-07-18 03:11:10]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 03:11:10]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 03:11:10]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 03:11:10]   ✅ Stair light (LED): at 192.168.0.29
+[2026-07-18 03:11:10]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 03:11:10]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
