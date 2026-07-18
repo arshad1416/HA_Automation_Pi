@@ -54,3 +54,5 @@
 [2026-07-18 00:11:09]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
 [2026-07-18 00:11:09]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
 [2026-07-18 00:11:09]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 00:42:35] DISCOVERED: Stair light (LED) | gwId=15004183cc50e351f530 | IP=192.168.0.29 | ✅ IP unchanged | Product=4T0aYRs5TZOaHQTQ | v3.1
+[2026-07-18 00:42:35] DISCOVERED: Stair light (LED) | gwId=15004183cc50e351f530 | IP=192.168.0.29 | ✅ IP unchanged | Product=4T0aYRs5TZOaHQTQ | v3.1
