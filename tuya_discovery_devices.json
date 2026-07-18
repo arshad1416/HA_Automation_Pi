@@ -5,7 +5,7 @@
     "product": "keyqj4cqs54ger7r",
     "version": "3.3",
     "configured_ip": "192.168.0.105",
-    "first_seen": "2026-07-17T22:10:44.228141"
+    "first_seen": "2026-07-17T22:11:09.248341"
   },
   "eb152e8acdf2a0c29aprxc": {
     "ip": "192.168.0.89",
@@ -13,7 +13,7 @@
     "product": "keyjup78v54myhan",
     "version": "3.4",
     "configured_ip": "?",
-    "first_seen": "2026-07-17T22:10:44.532219"
+    "first_seen": "2026-07-17T22:11:09.549064"
   },
   "eb814f71bb6ded1077903w": {
     "ip": "192.168.0.117",
@@ -21,7 +21,7 @@
     "product": "keyjup78v54myhan",
     "version": "3.4",
     "configured_ip": "192.168.0.117",
-    "first_seen": "2026-07-17T22:10:47.104527"
+    "first_seen": "2026-07-17T22:11:12.165277"
   },
   "13105277c4dd57315edd": {
     "ip": "192.168.0.51",
@@ -29,7 +29,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.51",
-    "first_seen": "2026-07-17T22:51:32.925513"
+    "first_seen": "2026-07-17T22:51:32.925523"
   },
   "13105277c4dd573160d3": {
     "ip": "192.168.0.63",
@@ -37,7 +37,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.63",
-    "first_seen": "2026-07-17T23:22:34.840127"
+    "first_seen": "2026-07-17T23:22:34.839005"
   },
   "15004183cc50e351f530": {
     "ip": "192.168.0.29",
@@ -45,7 +45,7 @@
     "product": "4T0aYRs5TZOaHQTQ",
     "version": "3.1",
     "configured_ip": "192.168.0.29",
-    "first_seen": "2026-07-18T00:42:35.651388"
+    "first_seen": "2026-07-18T00:42:35.650661"
   },
   "3258883224a160340ee9": {
     "ip": "192.168.0.66",
@@ -53,6 +53,14 @@
     "product": "ubadjqh45i98tdel",
     "version": "3.3",
     "configured_ip": "192.168.0.66",
-    "first_seen": "2026-07-18T03:45:37.079036"
+    "first_seen": "2026-07-18T03:45:37.079229"
+  },
+  "131052773c61058b5cb5": {
+    "ip": "192.168.0.70",
+    "name": "Master Bedroom Fan Light",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.70",
+    "first_seen": "2026-07-18T12:59:33.814176"
   }
 }

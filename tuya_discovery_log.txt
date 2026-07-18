@@ -244,3 +244,5 @@
 [2026-07-18 12:11:15]   ✅ Stair light (LED): at 192.168.0.29
 [2026-07-18 12:11:15]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
 [2026-07-18 12:11:15]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 12:59:33] DISCOVERED: Master Bedroom Fan Light | gwId=131052773c61058b5cb5 | IP=192.168.0.70 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
+[2026-07-18 12:59:33] DISCOVERED: Master Bedroom Fan Light | gwId=131052773c61058b5cb5 | IP=192.168.0.70 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
