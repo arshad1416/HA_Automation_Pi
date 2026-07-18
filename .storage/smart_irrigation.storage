@@ -15,14 +15,14 @@
       "autoupdateinterval": "1",
       "autoclearenabled": true,
       "cleardatatime": "05:30",
-      "starteventfiredtoday": true,
+      "starteventfiredtoday": false,
       "continuousupdates": false,
       "sensor_debounce": "100",
       "irrigation_start_triggers": [],
       "skip_irrigation_on_precipitation": true,
       "precipitation_threshold_mm": 2.0,
       "days_between_irrigation": 0,
-      "days_since_last_irrigation": 0,
+      "days_since_last_irrigation": 1,
       "seasonal_adjustments": [],
       "recurring_schedules": []
     },
@@ -44,8 +44,8 @@
         "maximum_duration": 5400.0,
         "maximum_bucket": 24,
         "last_calculated": null,
-        "last_updated": "2026-07-17T22:58:08.078516",
-        "number_of_data_points": 18,
+        "last_updated": "2026-07-17T23:58:08.069320",
+        "number_of_data_points": 19,
         "drainage_rate": 50.8,
         "current_drainage": 0
       }
@@ -341,6 +341,16 @@
             "Current Precipitation": 0.0,
             "Precipitation": 0.0,
             "retrieved": "2026-07-17T22:58:08.078167"
+          },
+          {
+            "Windspeed": 2.2064556717454353,
+            "Pressure": 1014.0200124162659,
+            "Humidity": 56.00000000000001,
+            "Temperature": 21.69,
+            "Dewpoint": 12.45,
+            "Current Precipitation": 0.0,
+            "Precipitation": 0.0,
+            "retrieved": "2026-07-17T23:58:08.068973"
           }
         ],
         "data_last_updated": "2026-07-07T13:48:20.534728",
