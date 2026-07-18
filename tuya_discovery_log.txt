@@ -56,3 +56,17 @@
 [2026-07-18 00:11:09]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
 [2026-07-18 00:42:35] DISCOVERED: Stair light (LED) | gwId=15004183cc50e351f530 | IP=192.168.0.29 | ✅ IP unchanged | Product=4T0aYRs5TZOaHQTQ | v3.1
 [2026-07-18 00:42:35] DISCOVERED: Stair light (LED) | gwId=15004183cc50e351f530 | IP=192.168.0.29 | ✅ IP unchanged | Product=4T0aYRs5TZOaHQTQ | v3.1
+[2026-07-18 01:10:44] --- Hourly summary: 6 unique devices discovered so far ---
+[2026-07-18 01:10:44]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 01:10:44]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 01:10:44]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 01:10:44]   ✅ Stair light (LED): at 192.168.0.29
+[2026-07-18 01:10:44]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 01:10:44]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 01:11:09] --- Hourly summary: 6 unique devices discovered so far ---
+[2026-07-18 01:11:09]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 01:11:09]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 01:11:09]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 01:11:09]   ✅ Stair light (LED): at 192.168.0.29
+[2026-07-18 01:11:09]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 01:11:09]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
