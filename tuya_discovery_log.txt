@@ -98,3 +98,5 @@
 [2026-07-18 03:11:10]   ✅ Stair light (LED): at 192.168.0.29
 [2026-07-18 03:11:10]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
 [2026-07-18 03:11:10]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 03:45:37] DISCOVERED: Kitchen Light | gwId=3258883224a160340ee9 | IP=192.168.0.66 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3
+[2026-07-18 03:45:37] DISCOVERED: Kitchen Light | gwId=3258883224a160340ee9 | IP=192.168.0.66 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3

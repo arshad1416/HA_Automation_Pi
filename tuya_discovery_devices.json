@@ -46,5 +46,13 @@
     "version": "3.1",
     "configured_ip": "192.168.0.29",
     "first_seen": "2026-07-18T00:42:35.651388"
+  },
+  "3258883224a160340ee9": {
+    "ip": "192.168.0.66",
+    "name": "Kitchen Light",
+    "product": "ubadjqh45i98tdel",
+    "version": "3.3",
+    "configured_ip": "192.168.0.66",
+    "first_seen": "2026-07-18T03:45:37.079036"
   }
 }
