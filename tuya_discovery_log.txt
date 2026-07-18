@@ -40,3 +40,5 @@
 [2026-07-17 23:11:08]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
 [2026-07-17 23:11:08]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
 [2026-07-17 23:11:08]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-17 23:22:34] DISCOVERED: Mina's Light | gwId=13105277c4dd573160d3 | IP=192.168.0.63 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
+[2026-07-17 23:22:34] DISCOVERED: Mina's Light | gwId=13105277c4dd573160d3 | IP=192.168.0.63 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
