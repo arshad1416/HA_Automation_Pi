@@ -28,3 +28,5 @@
 [2026-07-17 22:11:09] DISCOVERED: Wasserstein Smart Floodlight 2 | gwId=eb9883b5def5e30cd1zakb | IP=192.168.0.105 | ✅ IP unchanged | Product=keyqj4cqs54ger7r | v3.3
 [2026-07-17 22:11:09] DISCOVERED: UNKNOWN DEVICE | gwId=eb152e8acdf2a0c29aprxc | IP=192.168.0.89 | 🆕 NEW DEVICE (not in HA config) | Product=keyjup78v54myhan | v3.4
 [2026-07-17 22:11:12] DISCOVERED: Outdoor Decoration SmartPlug | gwId=eb814f71bb6ded1077903w | IP=192.168.0.117 | ✅ IP unchanged | Product=keyjup78v54myhan | v3.4
+[2026-07-17 22:51:32] DISCOVERED: Izaan's Bedroom light | gwId=13105277c4dd57315edd | IP=192.168.0.51 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
+[2026-07-17 22:51:32] DISCOVERED: Izaan's Bedroom light | gwId=13105277c4dd57315edd | IP=192.168.0.51 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
