@@ -42,3 +42,15 @@
 [2026-07-17 23:11:08]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
 [2026-07-17 23:22:34] DISCOVERED: Mina's Light | gwId=13105277c4dd573160d3 | IP=192.168.0.63 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
 [2026-07-17 23:22:34] DISCOVERED: Mina's Light | gwId=13105277c4dd573160d3 | IP=192.168.0.63 | ✅ IP unchanged | Product=la5v5qkk4saxjtx8 | v3.3
+[2026-07-18 00:10:44] --- Hourly summary: 5 unique devices discovered so far ---
+[2026-07-18 00:10:44]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 00:10:44]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 00:10:44]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 00:10:44]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 00:10:44]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 00:11:09] --- Hourly summary: 5 unique devices discovered so far ---
+[2026-07-18 00:11:09]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 00:11:09]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 00:11:09]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 00:11:09]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 00:11:09]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
