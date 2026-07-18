@@ -282,3 +282,5 @@
 [2026-07-18 14:11:16]   ✅ Stair light (LED): at 192.168.0.29
 [2026-07-18 14:11:16]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
 [2026-07-18 14:11:16]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 14:25:20] DISCOVERED: UNKNOWN DEVICE | gwId=ebc58b2216f7097c49t1i4 | IP=192.168.0.30 | 🆕 NEW DEVICE (not in HA config) | Product=key37qxed4yeqxag | v3.3
+[2026-07-18 14:25:20] DISCOVERED: UNKNOWN DEVICE | gwId=ebc58b2216f7097c49t1i4 | IP=192.168.0.30 | 🆕 NEW DEVICE (not in HA config) | Product=key37qxed4yeqxag | v3.3
