@@ -5,7 +5,7 @@
     "product": "keyqj4cqs54ger7r",
     "version": "3.3",
     "configured_ip": "192.168.0.105",
-    "first_seen": "2026-07-17T22:11:09.248341"
+    "first_seen": "2026-07-17T22:10:44.228141"
   },
   "eb152e8acdf2a0c29aprxc": {
     "ip": "192.168.0.89",
@@ -13,7 +13,7 @@
     "product": "keyjup78v54myhan",
     "version": "3.4",
     "configured_ip": "?",
-    "first_seen": "2026-07-17T22:11:09.549064"
+    "first_seen": "2026-07-17T22:10:44.532219"
   },
   "eb814f71bb6ded1077903w": {
     "ip": "192.168.0.117",
@@ -21,7 +21,7 @@
     "product": "keyjup78v54myhan",
     "version": "3.4",
     "configured_ip": "192.168.0.117",
-    "first_seen": "2026-07-17T22:11:12.165277"
+    "first_seen": "2026-07-17T22:10:47.104527"
   },
   "13105277c4dd57315edd": {
     "ip": "192.168.0.51",
@@ -29,7 +29,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.51",
-    "first_seen": "2026-07-17T22:51:32.925523"
+    "first_seen": "2026-07-17T22:51:32.925513"
   },
   "13105277c4dd573160d3": {
     "ip": "192.168.0.63",
@@ -37,7 +37,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.63",
-    "first_seen": "2026-07-17T23:22:34.839005"
+    "first_seen": "2026-07-17T23:22:34.840127"
   },
   "15004183cc50e351f530": {
     "ip": "192.168.0.29",
@@ -45,7 +45,7 @@
     "product": "4T0aYRs5TZOaHQTQ",
     "version": "3.1",
     "configured_ip": "192.168.0.29",
-    "first_seen": "2026-07-18T00:42:35.650661"
+    "first_seen": "2026-07-18T00:42:35.651388"
   },
   "3258883224a160340ee9": {
     "ip": "192.168.0.66",
@@ -53,7 +53,7 @@
     "product": "ubadjqh45i98tdel",
     "version": "3.3",
     "configured_ip": "192.168.0.66",
-    "first_seen": "2026-07-18T03:45:37.079229"
+    "first_seen": "2026-07-18T03:45:37.079036"
   },
   "131052773c61058b5cb5": {
     "ip": "192.168.0.70",
@@ -61,7 +61,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.70",
-    "first_seen": "2026-07-18T12:59:33.814176"
+    "first_seen": "2026-07-18T12:59:33.795530"
   },
   "ebc58b2216f7097c49t1i4": {
     "ip": "192.168.0.30",
@@ -69,7 +69,7 @@
     "product": "key37qxed4yeqxag",
     "version": "3.3",
     "configured_ip": "?",
-    "first_seen": "2026-07-18T14:25:20.956569"
+    "first_seen": "2026-07-18T14:25:20.956570"
   },
   "66483875c4dd5714a875": {
     "ip": "192.168.0.127",
@@ -77,7 +77,7 @@
     "product": "tmspliigatvf20yl",
     "version": "3.3",
     "configured_ip": "192.168.0.127",
-    "first_seen": "2026-07-18T20:58:06.196423"
+    "first_seen": "2026-07-18T20:58:06.196428"
   },
   "888020473c6105e8b1ab": {
     "ip": "192.168.0.76",
@@ -85,7 +85,7 @@
     "product": "ubadjqh45i98tdel",
     "version": "3.3",
     "configured_ip": "192.168.0.76",
-    "first_seen": "2026-07-18T21:19:23.711665"
+    "first_seen": "2026-07-18T21:19:23.711325"
   },
   "888020473c6105e86199": {
     "ip": "192.168.0.48",
@@ -93,7 +93,7 @@
     "product": "ubadjqh45i98tdel",
     "version": "3.3",
     "configured_ip": "192.168.0.34",
-    "first_seen": "2026-07-18T23:17:29.805780"
+    "first_seen": "2026-07-18T23:17:29.806609"
   },
   "131052773c61058b7d1b": {
     "ip": "192.168.0.88",
@@ -101,7 +101,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.88",
-    "first_seen": "2026-07-18T23:17:30.405820"
+    "first_seen": "2026-07-18T23:17:30.405635"
   },
   "6715478070039fce0412": {
     "ip": "192.168.0.55",
@@ -109,7 +109,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.175",
-    "first_seen": "2026-07-18T23:17:33.575383"
+    "first_seen": "2026-07-18T23:17:33.574534"
   },
   "131052773c61058b9a1d": {
     "ip": "192.168.0.57",
@@ -117,7 +117,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.57",
-    "first_seen": "2026-07-18T23:17:34.503049"
+    "first_seen": "2026-07-18T23:17:34.503045"
   },
   "131052773c61058b58d1": {
     "ip": "192.168.0.49",
@@ -133,7 +133,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.41",
-    "first_seen": "2026-07-18T23:17:36.134210"
+    "first_seen": "2026-07-18T23:17:36.134209"
   },
   "45142045c82b96c1f60f": {
     "ip": "192.168.0.94",
@@ -141,7 +141,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.94",
-    "first_seen": "2026-07-18T23:17:37.390169"
+    "first_seen": "2026-07-18T23:17:37.389072"
   },
   "131052773c61058ba305": {
     "ip": "192.168.0.65",
@@ -149,7 +149,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.65",
-    "first_seen": "2026-07-18T23:17:38.250761"
+    "first_seen": "2026-07-18T23:17:38.250762"
   },
   "66483875c4dd571483e4": {
     "ip": "192.168.0.95",
@@ -157,7 +157,7 @@
     "product": "tmspliigatvf20yl",
     "version": "3.3",
     "configured_ip": "192.168.0.95",
-    "first_seen": "2026-07-18T23:17:38.613835"
+    "first_seen": "2026-07-18T23:17:38.613605"
   },
   "888020473c6105e95c64": {
     "ip": "192.168.0.59",
@@ -165,7 +165,7 @@
     "product": "ubadjqh45i98tdel",
     "version": "3.3",
     "configured_ip": "192.168.0.85",
-    "first_seen": "2026-07-18T23:17:39.902886"
+    "first_seen": "2026-07-18T23:17:39.902092"
   },
   "131052773c61058b5cac": {
     "ip": "192.168.0.69",
@@ -173,7 +173,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.73",
-    "first_seen": "2026-07-18T23:17:46.082719"
+    "first_seen": "2026-07-18T23:17:46.082533"
   },
   "131052773c61058a9f6b": {
     "ip": "192.168.0.53",
@@ -181,7 +181,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.69",
-    "first_seen": "2026-07-18T23:18:09.201025"
+    "first_seen": "2026-07-18T23:18:09.201029"
   },
   "eb63d6fd2a642f6bf4r3iy": {
     "ip": "192.168.0.73",
@@ -189,7 +189,7 @@
     "product": "sy7r45n4x2dqzkgc",
     "version": "3.3",
     "configured_ip": "192.168.0.49",
-    "first_seen": "2026-07-18T23:20:44.168054"
+    "first_seen": "2026-07-18T23:20:44.167471"
   },
   "eb228bea36b97bb1bcag3w": {
     "ip": "192.168.0.78",
@@ -197,7 +197,7 @@
     "product": "key37qxed4yeqxag",
     "version": "3.3",
     "configured_ip": "192.168.0.48",
-    "first_seen": "2026-07-18T23:20:44.755562"
+    "first_seen": "2026-07-18T23:20:44.755331"
   },
   "ebf5071fb7d8c3303eha2l": {
     "ip": "192.168.0.85",
@@ -221,7 +221,7 @@
     "product": "keyjup78v54myhan",
     "version": "3.4",
     "configured_ip": "192.168.0.53",
-    "first_seen": "2026-07-18T23:21:13.726125"
+    "first_seen": "2026-07-18T23:21:13.726123"
   },
   "ebc2cdd6b08d7469ealqcv": {
     "ip": "192.168.0.91",
@@ -237,7 +237,7 @@
     "product": "keyfa7hya4gfa7g9",
     "version": "3.3",
     "configured_ip": "?",
-    "first_seen": "2026-07-18T23:21:22.005502"
+    "first_seen": "2026-07-18T23:21:22.005501"
   },
   "eb1780072f130dadaci0cm": {
     "ip": "192.168.0.93",
@@ -245,7 +245,7 @@
     "product": "keyftvxappyrem5a",
     "version": "3.3",
     "configured_ip": "192.168.0.21",
-    "first_seen": "2026-07-18T23:21:30.161891"
+    "first_seen": "2026-07-18T23:21:30.161890"
   },
   "ebaa5f77f7fce4cb15l6t6": {
     "ip": "192.168.0.96",
@@ -253,6 +253,46 @@
     "product": "l4rlmt9ko5v1xq8o",
     "version": "3.3",
     "configured_ip": "?",
-    "first_seen": "2026-07-18T23:21:41.428441"
+    "first_seen": "2026-07-18T23:21:41.428366"
+  },
+  "67100068483fda16c660": {
+    "ip": "192.168.0.83",
+    "name": "Office Heater",
+    "product": "wuz1ys71acov8sx6",
+    "version": "3.3",
+    "configured_ip": "192.168.0.83",
+    "first_seen": "2026-07-18T23:53:16.975811"
+  },
+  "50535623c44f33c2b17d": {
+    "ip": "192.168.0.131",
+    "name": "Basement Lights",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.25",
+    "first_seen": "2026-07-18T23:53:17.270051"
+  },
+  "20327148c44f33af4ea0": {
+    "ip": "192.168.0.119",
+    "name": "UNKNOWN DEVICE",
+    "product": "key4puh75hpvxcdw",
+    "version": "3.3",
+    "configured_ip": "?",
+    "first_seen": "2026-07-18T23:53:17.794225"
+  },
+  "eb799ab5470604253bnhi7": {
+    "ip": "192.168.0.138",
+    "name": "Massage Room Heater",
+    "product": "hhs4ani0a2zrztof",
+    "version": "3.3",
+    "configured_ip": "192.168.0.37",
+    "first_seen": "2026-07-18T23:53:34.158129"
+  },
+  "eb9349f92e7f4acaaaccvg": {
+    "ip": "192.168.0.137",
+    "name": "Cat Feeder",
+    "product": "abtatdzmlavpawxo",
+    "version": "3.3",
+    "configured_ip": "192.168.0.111",
+    "first_seen": "2026-07-18T23:53:34.985227"
   }
 }

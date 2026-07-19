@@ -520,3 +520,13 @@
 [2026-07-18 23:21:30] DISCOVERED: Larissa's Garage Door | gwId=eb1780072f130dadaci0cm | IP=192.168.0.93 | 🔄 IP CHANGED (was 192.168.0.21) | Product=keyftvxappyrem5a | v3.3
 [2026-07-18 23:21:41] DISCOVERED: UNKNOWN DEVICE | gwId=ebaa5f77f7fce4cb15l6t6 | IP=192.168.0.96 | 🆕 NEW DEVICE (not in HA config) | Product=l4rlmt9ko5v1xq8o | v3.3
 [2026-07-18 23:21:41] DISCOVERED: UNKNOWN DEVICE | gwId=ebaa5f77f7fce4cb15l6t6 | IP=192.168.0.96 | 🆕 NEW DEVICE (not in HA config) | Product=l4rlmt9ko5v1xq8o | v3.3
+[2026-07-18 23:53:16] DISCOVERED: Office Heater | gwId=67100068483fda16c660 | IP=192.168.0.83 | ✅ IP unchanged | Product=wuz1ys71acov8sx6 | v3.3
+[2026-07-18 23:53:16] DISCOVERED: Office Heater | gwId=67100068483fda16c660 | IP=192.168.0.83 | ✅ IP unchanged | Product=wuz1ys71acov8sx6 | v3.3
+[2026-07-18 23:53:17] DISCOVERED: Basement Lights | gwId=50535623c44f33c2b17d | IP=192.168.0.131 | 🔄 IP CHANGED (was 192.168.0.25) | Product=la5v5qkk4saxjtx8 | v3.3
+[2026-07-18 23:53:17] DISCOVERED: Basement Lights | gwId=50535623c44f33c2b17d | IP=192.168.0.131 | 🔄 IP CHANGED (was 192.168.0.25) | Product=la5v5qkk4saxjtx8 | v3.3
+[2026-07-18 23:53:17] DISCOVERED: UNKNOWN DEVICE | gwId=20327148c44f33af4ea0 | IP=192.168.0.119 | 🆕 NEW DEVICE (not in HA config) | Product=key4puh75hpvxcdw | v3.3
+[2026-07-18 23:53:17] DISCOVERED: UNKNOWN DEVICE | gwId=20327148c44f33af4ea0 | IP=192.168.0.119 | 🆕 NEW DEVICE (not in HA config) | Product=key4puh75hpvxcdw | v3.3
+[2026-07-18 23:53:34] DISCOVERED: Massage Room Heater | gwId=eb799ab5470604253bnhi7 | IP=192.168.0.138 | 🔄 IP CHANGED (was 192.168.0.37) | Product=hhs4ani0a2zrztof | v3.3
+[2026-07-18 23:53:34] DISCOVERED: Massage Room Heater | gwId=eb799ab5470604253bnhi7 | IP=192.168.0.138 | 🔄 IP CHANGED (was 192.168.0.37) | Product=hhs4ani0a2zrztof | v3.3
+[2026-07-18 23:53:34] DISCOVERED: Cat Feeder | gwId=eb9349f92e7f4acaaaccvg | IP=192.168.0.137 | 🔄 IP CHANGED (was 192.168.0.111) | Product=abtatdzmlavpawxo | v3.3
+[2026-07-18 23:53:34] DISCOVERED: Cat Feeder | gwId=eb9349f92e7f4acaaaccvg | IP=192.168.0.137 | 🔄 IP CHANGED (was 192.168.0.111) | Product=abtatdzmlavpawxo | v3.3
