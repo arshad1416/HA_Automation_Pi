@@ -430,3 +430,27 @@
 [2026-07-18 21:11:19]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
 [2026-07-18 21:19:23] DISCOVERED: Family Room | gwId=888020473c6105e8b1ab | IP=192.168.0.76 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3
 [2026-07-18 21:19:23] DISCOVERED: Family Room | gwId=888020473c6105e8b1ab | IP=192.168.0.76 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3
+[2026-07-18 22:10:55] --- Hourly summary: 11 unique devices discovered so far ---
+[2026-07-18 22:10:55]   ✅ Back Hallway Light: at 192.168.0.127
+[2026-07-18 22:10:55]   ✅ Family Room: at 192.168.0.76
+[2026-07-18 22:10:55]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 22:10:55]   ✅ Kitchen Light: at 192.168.0.66
+[2026-07-18 22:10:55]   ✅ Master Bedroom Fan Light: at 192.168.0.70
+[2026-07-18 22:10:55]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 22:10:55]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 22:10:55]   ✅ Stair light (LED): at 192.168.0.29
+[2026-07-18 22:10:55]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 22:10:55]   🆕 UNKNOWN DEVICE (ebc58b2216f7097c49t1i4): at 192.168.0.30
+[2026-07-18 22:10:55]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-18 22:11:20] --- Hourly summary: 11 unique devices discovered so far ---
+[2026-07-18 22:11:20]   ✅ Back Hallway Light: at 192.168.0.127
+[2026-07-18 22:11:20]   ✅ Family Room: at 192.168.0.76
+[2026-07-18 22:11:20]   ✅ Izaan's Bedroom light: at 192.168.0.51
+[2026-07-18 22:11:20]   ✅ Kitchen Light: at 192.168.0.66
+[2026-07-18 22:11:20]   ✅ Master Bedroom Fan Light: at 192.168.0.70
+[2026-07-18 22:11:20]   ✅ Mina's Light: at 192.168.0.63
+[2026-07-18 22:11:20]   ✅ Outdoor Decoration SmartPlug: at 192.168.0.117
+[2026-07-18 22:11:20]   ✅ Stair light (LED): at 192.168.0.29
+[2026-07-18 22:11:20]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
+[2026-07-18 22:11:20]   🆕 UNKNOWN DEVICE (ebc58b2216f7097c49t1i4): at 192.168.0.30
+[2026-07-18 22:11:20]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
