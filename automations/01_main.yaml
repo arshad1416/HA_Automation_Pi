@@ -74,7 +74,7 @@
     data: {}
     target:
       entity_id:
-      - switch.back_hallway_light_switch_1
+      - switch.back_hallway_light_switch_1_2
       - switch.sonoff_10001d2a24
       - switch.back_hallway_light_main_switch
       - switch.foyer_light_switch_1
@@ -422,21 +422,21 @@
     target:
       entity_id: >-
         {% if trigger.entity_id == 'switch.basement_lights' %}
-          switch.basement_stair_light_switch_1
+          switch.basement_stair_light
         {% else %}
           switch.basement_lights
         {% endif %}
   alias: Turn On or Off the Basement Lights with the Basement Stair Lights
   conditions:
   - condition: template
-    value_template: "{{ states('switch.basement_lights') != states('switch.basement_stair_light_switch_1') }}"
-  description: 'Synchronize switch.basement_lights and switch.basement_stair_light_switch_1 bidirectionally. Loop-safe using template condition comparison.'
+    value_template: "{{ states('switch.basement_lights') != states('switch.basement_stair_light') }}"
+  description: 'Synchronize the SmartThings switch.basement_lights and switch.basement_stair_light entities bidirectionally. Loop-safe using template condition comparison; does not depend on the unavailable LocalTuya duplicates.'
   id: '1777445592532'
   mode: queued
   triggers:
   - trigger: state
     entity_id:
-    - switch.basement_stair_light_switch_1
+    - switch.basement_stair_light
     - switch.basement_lights
     from:
     - 'off'
@@ -525,7 +525,7 @@
     data: {}
     target:
       entity_id:
-      - switch.back_hallway_light_switch_1
+      - switch.back_hallway_light_switch_1_2
       - switch.kitchen_pantry_light
   - action: lock.lock
     data: {}
@@ -637,7 +637,7 @@
     - sun
 - id: '1777560826089'
   alias: Powder Room Mirror Follows Light
-  description: 'Mirror follows the powder room light: light on -> mirror on, light off -> mirror off. Fixed 2026-06-23 (old version toggled non-existent switch.powder_room_mirror_switch_1; folded in the separate off-automation).'
+  description: 'Mirror follows the powder room LocalTuya light: light on -> mirror on, light off -> mirror off.'
   mode: single
   triggers:
   - trigger: state
@@ -1699,7 +1699,7 @@
   - else:
     - action: switch.turn_off
       target:
-        entity_id: switch.back_hallway_light_switch_1
+        entity_id: switch.back_hallway_light_switch_1_2
     if:
     - condition: state
       entity_id: switch.back_hallway_light_main_switch
@@ -1707,7 +1707,7 @@
     then:
     - action: switch.turn_on
       target:
-        entity_id: switch.back_hallway_light_switch_1
+        entity_id: switch.back_hallway_light_switch_1_2
   alias: Back Hallway Light 3-Way Sync
   conditions:
   - condition: template
@@ -2149,8 +2149,9 @@
     Locks doors, shuts garage, turns off inside lights once we are actually asleep. Instead of a blunt 10 PM shutoff it VERIFIES sleep every 30 min from 9 PM. Runs at most once per night (input_boolean.bedtime_shutdown_done latch, reset at 20:00). Fires when, and only when, one of:
       (1) IMMEDIATE — Arshad's phone reports sleep (sensor.cph2655_sleep_confidence >80 for 10 min) or Sleep-as-Android turns on, any time 21:00-11:00 (daytime naps excluded).
       (2) HALF-HOURLY POLL — at every :00/:30 from 21:00-04:00, if phone sleep-confidence is currently >80 (verified asleep).
-      (3) FALLBACK for nights the phone isn't sleep-tracking — same poll, 23:00-04:00, if the house has clearly settled: family-room TV (lg_webos_tv_cd70) not on/playing AND no kitchen/family/island light toggled in the last 30 min.
+      (3) FALLBACK for nights the phone isn't sleep-tracking — same poll, 23:00-04:00, only if the house has clearly settled: family-room TV is confirmed off/idle/standby, all kitchen/family/island lights are confirmed off and unchanged for 30 min, AND no indoor motion has fired for 30 min. Unavailable sensors fail closed.
     Fixed 2026-07-10: sleep sensor was the non-existent sensor.oneplus_13_sleep_confidence (phone is CPH2655); TV guard watched an unavailable TV (un8500auj).
+    Fixed 2026-07-19: unavailable TV/light entities no longer count as a settled house, and the fallback now also requires no motion for 30 minutes.
   triggers:
   - entity_id: sensor.cph2655_sleep_confidence
     above: 80
@@ -2190,7 +2191,9 @@
       - condition: numeric_state
         entity_id: sensor.cph2655_sleep_confidence
         above: 80
-    # (3) Settled-house fallback 23:00-04:00 (phone not sleep-tracking): TV off + no recent light use
+    # (3) Settled-house fallback 23:00-04:00 (phone not sleep-tracking):
+    #     TV and key lights must be confirmed inactive, plus no motion for 30 min.
+    #     Any unavailable input fails closed instead of being mistaken for an idle house.
     - condition: and
       conditions:
       - condition: trigger
@@ -2199,17 +2202,14 @@
         after: '23:00:00'
         before: '04:00:00'
       - condition: template
-        value_template: "{{ states('media_player.lg_webos_tv_cd70') not in ['on', 'playing'] }}"
+        value_template: "{{ states('media_player.lg_webos_tv_cd70') in ['off', 'idle', 'standby'] }}"
       - condition: template
-        value_template: "{% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | reject('none') | map(attribute='last_changed') | list %}{{ ch | length == 0 or (now() - (ch | max)).total_seconds() > 1800 }}"
-    # (4) No-motion fallback 23:00-04:00: no indoor motion sensor (incl. Ecobee + Echo) has fired for 30 min
-    - condition: and
-      conditions:
-      - condition: trigger
-        id: sleep_check
-      - condition: time
-        after: '23:00:00'
-        before: '04:00:00'
+        value_template: >-
+          {% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | map(attribute='last_changed') | list %}
+          {{ is_state('light.kitchen_light_light_1', 'off') and
+             is_state('light.family_room_light', 'off') and
+             is_state('light.island_light_light', 'off') and
+             (now() - (ch | max)).total_seconds() > 1800 }}
       - condition: state
         entity_id: binary_sensor.any_home_motion
         state: 'off'
@@ -2237,6 +2237,12 @@
       - light.island_light_light
       - light.stair_light
       - light.family_room_light
+      # Fan wall switches are power isolators, not light controls. Use Bond RF
+      # light commands so Climate AI can keep the ceiling fans powered.
+      - light.master_bedroom_ceiling_fan
+      - light.mina_s_ceiling_fan
+      - light.guest_room_ceiling_fan
+      - light.izaan_s_ceiling_fan
       - light.basement_tv
       - light.cabinet_light_strip_left_nanoleaf_light_strip
       - light.cabinet_light_strip_center_nanoleaf_light_strip
@@ -2254,9 +2260,8 @@
       - switch.sonoff_10001dccdc
       - switch.kitchen_pantry_light_socket_1
       - switch.basement_lights
-      - switch.basement_stair_light_switch_1
+      - switch.basement_stair_light
       - switch.garage_light_switch_switch_1
-      - switch.master_bedroom_fan_light_switch_1
       - switch.back_hallway_light_main_switch
     data: {}
   - action: input_boolean.turn_on
@@ -3257,12 +3262,18 @@
   description: Hardcoded backstop if the AI is unreachable or stale. Forces cool above 27C, heat below 16C.
   mode: single
   triggers:
+  # for: reading must persist 5 min, so a transient blip is ignored.
   - trigger: numeric_state
     entity_id: sensor.ecobee_current_temperature
     above: 27
+    for: "00:05:00"
+  # above: 4 floors out spurious 0/dropout values (e.g. ecobee power-loss reconnect,
+  # which has no UPS). A real freeze crosses 15->14, not 22->0.
   - trigger: numeric_state
     entity_id: sensor.ecobee_current_temperature
+    above: 4
     below: 16
+    for: "00:05:00"
   conditions: []
   actions:
   - choose:
@@ -3277,8 +3288,10 @@
         data:
           hvac_mode: cool
     - conditions:
+      # above: 4 defense-in-depth floor mirrors the trigger guard.
       - condition: numeric_state
         entity_id: sensor.ecobee_current_temperature
+        above: 4
         below: 16
       sequence:
       - action: climate.set_hvac_mode
