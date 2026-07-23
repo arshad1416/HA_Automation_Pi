@@ -248,6 +248,13 @@
         "domain": "hacs",
         "is_persistent": false,
         "issue_id": "restart_required_356385629_tags/v3.7.1"
+      },
+      {
+        "created": "2026-07-23T21:35:05.570516+00:00",
+        "dismissed_version": "2026.6.3",
+        "domain": "govee",
+        "is_persistent": false,
+        "issue_id": "mqtt_disconnected_01KVWPMWKE4Z55Q3NDMNWZ6ZR2"
       }
     ]
   }
