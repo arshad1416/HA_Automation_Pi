@@ -126,5 +126,45 @@
     "version": "3.3",
     "configured_ip": "192.168.0.63",
     "first_seen": "2026-07-24T08:55:54.806389"
+  },
+  "13105277c4dd57315edd": {
+    "ip": "192.168.0.51",
+    "name": "Izaan's Bedroom light",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.51",
+    "first_seen": "2026-07-24T09:00:45.874123"
+  },
+  "888020473c6105e95c64": {
+    "ip": "192.168.0.59",
+    "name": "Island Light",
+    "product": "ubadjqh45i98tdel",
+    "version": "3.3",
+    "configured_ip": "192.168.0.85",
+    "first_seen": "2026-07-24T09:00:46.132842"
+  },
+  "67100068483fda16c660": {
+    "ip": "192.168.0.83",
+    "name": "Office Heater",
+    "product": "wuz1ys71acov8sx6",
+    "version": "3.3",
+    "configured_ip": "192.168.0.83",
+    "first_seen": "2026-07-24T09:00:46.365841"
+  },
+  "888020473c6105e8b1ab": {
+    "ip": "192.168.0.76",
+    "name": "Family Room",
+    "product": "ubadjqh45i98tdel",
+    "version": "3.3",
+    "configured_ip": "192.168.0.76",
+    "first_seen": "2026-07-24T09:01:21.699193"
+  },
+  "888020473c6105e86199": {
+    "ip": "192.168.0.48",
+    "name": "Master Bathroom",
+    "product": "ubadjqh45i98tdel",
+    "version": "3.3",
+    "configured_ip": "192.168.0.34",
+    "first_seen": "2026-07-24T09:01:22.066406"
   }
 }
