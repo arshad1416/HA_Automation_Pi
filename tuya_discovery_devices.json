@@ -286,5 +286,13 @@
     "version": "3.3",
     "configured_ip": "192.168.0.34",
     "first_seen": "2026-07-23T16:46:11.506819"
+  },
+  "66483875c4dd5714a875": {
+    "ip": "192.168.0.127",
+    "name": "Back Hallway Light",
+    "product": "tmspliigatvf20yl",
+    "version": "3.3",
+    "configured_ip": "192.168.0.127",
+    "first_seen": "2026-07-23T20:53:39.838537"
   }
 }

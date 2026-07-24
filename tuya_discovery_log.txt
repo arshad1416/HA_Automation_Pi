@@ -4770,3 +4770,4 @@
 [2026-07-23 20:10:21]   🆕 UNKNOWN DEVICE (eb152e8acdf2a0c29aprxc): at 192.168.0.89
 [2026-07-23 20:10:21]   🆕 UNKNOWN DEVICE (53365228bcddc28c3747): at 192.168.0.33
 [2026-07-23 20:10:21]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-23 20:53:39] DISCOVERED: Back Hallway Light | gwId=66483875c4dd5714a875 | IP=192.168.0.127 | ✅ IP unchanged | Product=tmspliigatvf20yl | v3.3
