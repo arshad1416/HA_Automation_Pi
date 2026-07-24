@@ -182,5 +182,21 @@
     "version": "3.3",
     "configured_ip": "?",
     "first_seen": "2026-07-24T09:44:20.520718"
+  },
+  "131052773c61058ba305": {
+    "ip": "192.168.0.65",
+    "name": "Patio Door Light",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.65",
+    "first_seen": "2026-07-24T09:51:19.306801"
+  },
+  "131052773c61058b9a1d": {
+    "ip": "192.168.0.57",
+    "name": "Kitchen Fan",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.57",
+    "first_seen": "2026-07-24T09:51:19.713543"
   }
 }
