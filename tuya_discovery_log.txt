@@ -5260,3 +5260,4 @@
 [2026-07-24 09:00:46] DISCOVERED: Office Heater | gwId=67100068483fda16c660 | IP=192.168.0.83 | ✅ IP unchanged | Product=wuz1ys71acov8sx6 | v3.3
 [2026-07-24 09:01:21] DISCOVERED: Family Room | gwId=888020473c6105e8b1ab | IP=192.168.0.76 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3
 [2026-07-24 09:01:22] DISCOVERED: Master Bathroom | gwId=888020473c6105e86199 | IP=192.168.0.48 | 🔄 IP CHANGED (was 192.168.0.34) | Product=ubadjqh45i98tdel | v3.3
+[2026-07-24 09:27:57] DISCOVERED: Stair light (LED) | gwId=15004183cc50e351f530 | IP=192.168.0.29 | ✅ IP unchanged | Product=4T0aYRs5TZOaHQTQ | v3.1

@@ -166,5 +166,13 @@
     "version": "3.3",
     "configured_ip": "192.168.0.34",
     "first_seen": "2026-07-24T09:01:22.066406"
+  },
+  "15004183cc50e351f530": {
+    "ip": "192.168.0.29",
+    "name": "Stair light (LED)",
+    "product": "4T0aYRs5TZOaHQTQ",
+    "version": "3.1",
+    "configured_ip": "192.168.0.29",
+    "first_seen": "2026-07-24T09:27:57.202800"
   }
 }
