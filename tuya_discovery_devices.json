@@ -270,5 +270,21 @@
     "version": "3.1",
     "configured_ip": "?",
     "first_seen": "2026-07-24T10:31:10.511291"
+  },
+  "67100068483fda16c660": {
+    "ip": "192.168.0.83",
+    "name": "Office Heater",
+    "product": "wuz1ys71acov8sx6",
+    "version": "3.3",
+    "configured_ip": "192.168.0.83",
+    "first_seen": "2026-07-24T11:48:39.025546"
+  },
+  "3258883224a160340ee9": {
+    "ip": "192.168.0.66",
+    "name": "Kitchen Light",
+    "product": "ubadjqh45i98tdel",
+    "version": "3.3",
+    "configured_ip": "192.168.0.66",
+    "first_seen": "2026-07-24T11:48:58.562142"
   }
 }

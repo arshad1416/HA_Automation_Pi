@@ -5364,3 +5364,5 @@
 [2026-07-24 11:07:39]   🆕 UNKNOWN DEVICE (ebaa5f77f7fce4cb15l6t6): at 192.168.0.96
 [2026-07-24 11:07:39]   🆕 UNKNOWN DEVICE (53365228bcddc28c3747): at 192.168.0.60
 [2026-07-24 11:07:39]   ✅ Wasserstein Smart Floodlight 2: at 192.168.0.105
+[2026-07-24 11:48:39] DISCOVERED: Office Heater | gwId=67100068483fda16c660 | IP=192.168.0.83 | ✅ IP unchanged | Product=wuz1ys71acov8sx6 | v3.3
+[2026-07-24 11:48:58] DISCOVERED: Kitchen Light | gwId=3258883224a160340ee9 | IP=192.168.0.66 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3
