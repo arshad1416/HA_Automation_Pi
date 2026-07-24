@@ -3383,6 +3383,10 @@
             target:
               entity_id: switch.dual_outlet_irrigation_timer_switch_2
             continue_on_error: true
+          - delay: "00:00:15"
+          - action: homeassistant.update_entity
+            target:
+              entity_id: switch.dual_outlet_irrigation_timer_switch_2
           - wait_template: "{{ is_state('switch.dual_outlet_irrigation_timer_switch_2', 'on') }}"
             timeout: "00:01:30"
             continue_on_timeout: true
@@ -3524,12 +3528,13 @@
           {{ is_state('input_boolean.lawn_watering_master_enable', 'on') }}
         odd_day: >-
           {{ now().day % 2 == 1 }}
+        last_watered: >-
+          {{ state_attr('input_datetime.lawn_last_watered', 'timestamp') }}
         ran_since_2300: >-
-          {% if valve_last %}
-            {% set ns = namespace(ts=as_timestamp(now()) - 86400) %}
-            {% set cutoff = (ns.ts - (ns.ts % 86400) + (23*3600)) %}
-            {{ as_timestamp(valve_last) > cutoff }}
-          {% else %}false{% endif %}
+          {% set cutoff = as_timestamp(now().replace(hour=0, minute=0, second=0, microsecond=0)) - 3600 %}
+          {% set v_ts = as_timestamp(valve_last) if valve_last else 0 %}
+          {% set lw_ts = last_watered if last_watered else 0 %}
+          {{ v_ts > cutoff or lw_ts > cutoff }}
     - action: notify.mobile_app_cph2655
       data:
         title: "🌱 Lawn watering status"
