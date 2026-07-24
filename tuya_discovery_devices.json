@@ -174,5 +174,13 @@
     "version": "3.1",
     "configured_ip": "192.168.0.29",
     "first_seen": "2026-07-24T09:27:57.202800"
+  },
+  "eb386a82689ae55335r6it": {
+    "ip": "192.168.0.27",
+    "name": "UNKNOWN DEVICE",
+    "product": "keyfa7hya4gfa7g9",
+    "version": "3.3",
+    "configured_ip": "?",
+    "first_seen": "2026-07-24T09:44:20.520718"
   }
 }

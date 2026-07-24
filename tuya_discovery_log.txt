@@ -5261,3 +5261,4 @@
 [2026-07-24 09:01:21] DISCOVERED: Family Room | gwId=888020473c6105e8b1ab | IP=192.168.0.76 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3
 [2026-07-24 09:01:22] DISCOVERED: Master Bathroom | gwId=888020473c6105e86199 | IP=192.168.0.48 | 🔄 IP CHANGED (was 192.168.0.34) | Product=ubadjqh45i98tdel | v3.3
 [2026-07-24 09:27:57] DISCOVERED: Stair light (LED) | gwId=15004183cc50e351f530 | IP=192.168.0.29 | ✅ IP unchanged | Product=4T0aYRs5TZOaHQTQ | v3.1
+[2026-07-24 09:44:20] DISCOVERED: UNKNOWN DEVICE | gwId=eb386a82689ae55335r6it | IP=192.168.0.27 | 🆕 NEW DEVICE (not in HA config) | Product=keyfa7hya4gfa7g9 | v3.3
