@@ -5328,3 +5328,4 @@
 [2026-07-24 10:07:43] DISCOVERED: Living Room Floor Lamp | gwId=ebf5071fb7d8c3303eha2l | IP=192.168.0.85 | 🔄 IP CHANGED (was 192.168.0.52) | Product=key37qxed4yeqxag | v3.3
 [2026-07-24 10:07:44] DISCOVERED: Larissa's Garage Door | gwId=eb1780072f130dadaci0cm | IP=192.168.0.93 | 🔄 IP CHANGED (was 192.168.0.21) | Product=keyftvxappyrem5a | v3.3
 [2026-07-24 10:07:44] DISCOVERED: Massage Room Heater | gwId=eb799ab5470604253bnhi7 | IP=192.168.0.138 | 🔄 IP CHANGED (was 192.168.0.37) | Product=hhs4ani0a2zrztof | v3.3
+[2026-07-24 10:31:10] DISCOVERED: UNKNOWN DEVICE | gwId=53365228bcddc28c3747 | IP=192.168.0.60 | 🆕 NEW DEVICE (not in HA config) | Product=DsS0exXElZJSWIdc | v3.1
