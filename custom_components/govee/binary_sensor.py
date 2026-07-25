@@ -221,10 +221,17 @@ class GoveeWaterLeakBinarySensor(GoveeEntity, BinarySensorEntity):
         return self.coordinator.last_update_success
 
     @property
-    def is_on(self) -> bool | None:
-        """Return True when water is detected."""
+    def is_on(self) -> bool:
+        """Return True when water is detected, else dry.
+
+        ``state.water_leak`` is ``None`` until the account ``warnMessage`` poll
+        first resolves the sensor's status. A moisture sensor with no known trip
+        is dry, so report ``False`` in that window rather than surfacing an
+        "Unknown" state (issue #145) — a real leak flips it to ``True`` on the
+        next poll or MQTT push.
+        """
         state = self.device_state
-        return state.water_leak if state else None
+        return bool(state.water_leak) if state else False
 
 
 class GoveeOccupancyBinarySensor(GoveeEntity, BinarySensorEntity):

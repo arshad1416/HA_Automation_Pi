@@ -53,11 +53,16 @@ CONF_API_TEMPERATURE_UNIT: Final = "api_temperature_unit"
 #     sample shows the device itself configured for °F (`"fahOpen": true`),
 #     and its sensorTemperature comes via the Developer API, same path as
 #     H5075/H5100 (issue #128 follow-up).
+#   H5111 (fridge/freezer thermometer, temperature-only): reports °F under the
+#     °C-tagged unit — a ~6.1°F freezer reading surfaced as 43.3°F in HA. Same
+#     BLE-bridged read path as H5110 (issue #83 findings: API returns °F with
+#     no unit field).
 FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
     {
         "H5179",
         "H5109",
         "H5110",
+        "H5111",
         "HS5108",
         "HS5106",
         "H717A",

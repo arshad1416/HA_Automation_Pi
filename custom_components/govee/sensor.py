@@ -263,7 +263,13 @@ class _BffThermometerAvailabilityMixin(GoveeEntity):
 
     @property
     def available(self) -> bool:
-        if self.coordinator.is_bff_thermometer(self._device_id):
+        # Water detectors (H5054) are sleepy gateway-bridged devices that report
+        # online: false at poll time, same as the BFF thermometers — gate their
+        # battery sensor on coordinator success, not online, or it would show
+        # permanently unavailable (issues #97, #145).
+        if self.coordinator.is_bff_thermometer(
+            self._device_id
+        ) or self.coordinator.is_water_detector(self._device_id):
             return self.coordinator.last_update_success and (
                 self.device_state is not None
             )

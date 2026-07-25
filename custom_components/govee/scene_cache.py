@@ -155,9 +155,15 @@ class SceneCacheManager:
                 device.name,
             )
             return scenes
-        except GoveeApiError as err:
+        except (GoveeApiError, TimeoutError) as err:
+            # TimeoutError (a raw aiohttp read timeout, not wrapped in
+            # GoveeApiError) must be caught here too: scenes are fetched from
+            # light/select ``async_added_to_hass``, so an uncaught timeout there
+            # aborts adding the entity entirely (issue #146). Scenes are optional
+            # effect support — degrade to cached/empty and let the entity load.
             _LOGGER.error(
-                "API error fetching scenes for %s: %s",
+                "%s fetching scenes for %s: %s",
+                type(err).__name__,
                 device.name,
                 err,
             )
@@ -248,9 +254,12 @@ class SceneCacheManager:
                 device.name,
             )
             return scenes
-        except GoveeApiError as err:
+        except (GoveeApiError, TimeoutError) as err:
+            # See _fetch_and_cache_scenes: a raw read TimeoutError here would
+            # otherwise abort adding the entity (issue #146).
             _LOGGER.error(
-                "API error fetching DIY scenes for %s: %s",
+                "%s fetching DIY scenes for %s: %s",
+                type(err).__name__,
                 device.name,
                 err,
             )

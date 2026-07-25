@@ -539,6 +539,71 @@ class GoveeAuthClient:
             )
             raise GoveeApiError(f"Connection error getting IoT key: {err}") from err
 
+    @staticmethod
+    def _extract_topics_from_devices(devices: list[Any]) -> dict[str, str]:
+        """Map device_id -> MQTT topic from a device-list ``devices`` array.
+
+        Shared by the legacy ``/device/rest/devices/v1/list`` and the BFF
+        ``/bff-app/v1/device/list`` responses: both carry the topic at
+        ``deviceExt.deviceSettings.topic``, and both may deliver ``deviceExt``
+        and/or ``deviceSettings`` as JSON strings that need parsing.
+        """
+        topics: dict[str, str] = {}
+        for device in devices:
+            device_id = device.get("device")
+            if not device_id:
+                continue
+
+            device_ext = device.get("deviceExt", {})
+            if isinstance(device_ext, str):
+                try:
+                    device_ext = json.loads(device_ext)
+                except (json.JSONDecodeError, TypeError):
+                    device_ext = {}
+
+            device_settings = device_ext.get("deviceSettings", {})
+            if isinstance(device_settings, str):
+                try:
+                    device_settings = json.loads(device_settings)
+                except (json.JSONDecodeError, TypeError):
+                    device_settings = {}
+            if not isinstance(device_settings, dict):
+                continue
+
+            topic = device_settings.get("topic")
+            if topic:
+                topics[device_id] = topic
+        return topics
+
+    async def _fetch_bff_device_topics(self, token: str) -> dict[str, str]:
+        """Fetch device MQTT topics from the BFF device list.
+
+        The BFF ``/bff-app/v1/device/list`` response carries
+        ``deviceExt.deviceSettings.topic`` for gateway-attached (BLE-over-H5044)
+        devices — e.g. the H5901 Smart Water Timer — that the legacy device-list
+        endpoint omits, leaving them uncontrollable (issue #135).
+        """
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "appVersion": GOVEE_APP_VERSION,
+            "clientType": GOVEE_CLIENT_TYPE,
+            "iotVersion": GOVEE_IOT_VERSION,
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        }
+        async with self._require_session().get(
+            GOVEE_BFF_DEVICE_LIST_URL,
+            headers=headers,
+        ) as response:
+            data = await response.json()
+            if response.status != 200:
+                message = data.get("message", f"HTTP {response.status}")
+                raise GoveeApiError(
+                    f"BFF device list failed: {message}", code=response.status
+                )
+            devices = data.get("data", {}).get("devices", [])
+            return self._extract_topics_from_devices(devices)
+
     async def fetch_device_topics(
         self,
         token: str,
@@ -579,54 +644,34 @@ class GoveeAuthClient:
                         f"Failed to get device list: {message}", code=response.status
                     )
 
-                # Extract device topics from response
-                # Structure: devices[].device_ext.device_settings.topic
-                device_topics: dict[str, str] = {}
+                # Extract topics from the legacy list (structure:
+                # devices[].deviceExt.deviceSettings.topic), then merge in topics
+                # from the BFF device list, which additionally carries them for
+                # gateway-attached (BLE-over-H5044) devices the legacy endpoint
+                # omits — e.g. the H5901 Smart Water Timer (issue #135).
                 devices = data.get("devices", [])
+                device_topics = self._extract_topics_from_devices(devices)
+                legacy_count = len(device_topics)
 
-                for device in devices:
-                    device_id = device.get("device")
-                    if not device_id:
-                        continue
+                added = 0
+                try:
+                    bff_topics = await self._fetch_bff_device_topics(token)
+                except Exception as err:  # noqa: BLE001
+                    # Best-effort supplement: the BFF merge must never regress the
+                    # legacy topic set, so any failure is swallowed (non-fatal).
+                    _LOGGER.debug("BFF topic fetch failed (non-fatal): %s", err)
+                else:
+                    for device_id, topic in bff_topics.items():
+                        if device_id not in device_topics:
+                            device_topics[device_id] = topic
+                            added += 1
 
-                    # device_ext may be a JSON string that needs parsing
-                    device_ext = device.get("deviceExt", {})
-                    if isinstance(device_ext, str):
-                        try:
-                            device_ext = json.loads(device_ext)
-                        except (json.JSONDecodeError, TypeError):
-                            device_ext = {}
-
-                    # device_settings may also be a JSON string
-                    device_settings = device_ext.get("deviceSettings", {})
-                    if isinstance(device_settings, str):
-                        try:
-                            device_settings = json.loads(device_settings)
-                        except (json.JSONDecodeError, TypeError):
-                            device_settings = {}
-
-                    topic = device_settings.get("topic")
-                    if topic:
-                        device_topics[device_id] = topic
-                        _LOGGER.debug(
-                            "Device %s has MQTT topic: %s...", device_id, topic[:30]
-                        )
-                    else:
-                        # Log missing topics - group devices (numeric IDs) never have topics
-                        # because they're virtual aggregation entities, not physical devices
-                        is_likely_group = device_id.isdigit() if device_id else False
-                        if is_likely_group:
-                            _LOGGER.debug(
-                                "Group device %s has no MQTT topic (expected - groups are virtual)",
-                                device_id,
-                            )
-                        else:
-                            _LOGGER.debug(
-                                "Device %s has no MQTT topic in response",
-                                device_id,
-                            )
-
-                _LOGGER.info("Fetched MQTT topics for %d devices", len(device_topics))
+                _LOGGER.info(
+                    "Fetched MQTT topics for %d device(s) (%d legacy + %d BFF-only)",
+                    len(device_topics),
+                    legacy_count,
+                    added,
+                )
                 return device_topics
 
         except aiohttp.ClientError as err:

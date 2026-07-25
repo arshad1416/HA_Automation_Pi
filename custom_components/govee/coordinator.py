@@ -10,7 +10,7 @@ import asyncio
 import dataclasses
 import logging
 import time
-from collections.abc import Mapping
+from collections.abc import Awaitable, Mapping
 from datetime import datetime, timedelta
 from typing import Any
 
@@ -95,6 +95,7 @@ from .models.commands import (
     DIYSceneCommand,
     ModeCommand,
     MusicModeCommand,
+    OscillationCommand,
     PowerCommand,
     RangeCommand,
     SceneCommand,
@@ -127,6 +128,11 @@ _LOGGER = logging.getLogger(__name__)
 
 # State fetch timeout per device
 STATE_FETCH_TIMEOUT = 30
+
+# Per-step timeout for fallible account/BFF discovery calls during setup. Bounds
+# each so a hung endpoint degrades that feature to polling instead of letting HA
+# cancel the whole config-entry setup (issue #146).
+STARTUP_STEP_TIMEOUT = 30
 
 # Segment command pacing — Govee silently rate-limits bursts of segment
 # updates on RGBIC strips (H80A1 has 14 segments). Serialize per-device
@@ -716,6 +722,15 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """
         return device_id in self._bff_thermometer_ids
 
+    def is_water_detector(self, device_id: str) -> bool:
+        """Return True if this device is a standalone water detector (H5054).
+
+        Like the BFF thermometers, these are sleepy gateway-bridged sensors that
+        report ``online: false`` at poll time, so entity availability must not
+        gate on ``online`` (issues #62, #145).
+        """
+        return any(d.device_id == device_id for d in self._water_detectors)
+
     def is_power_off_pending(self, device_id: str) -> bool:
         """Return True if a power-off command is in flight for this device.
 
@@ -740,6 +755,39 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """Compatibility delegate — tests still call this directly."""
         self._ble_handler.handle_advertisement(service_info)
 
+    async def _run_startup_step(self, coro: Awaitable[None], name: str) -> None:
+        """Run a fallible startup discovery step, bounded and failure-isolated.
+
+        The account/BFF endpoints these steps call can hang (a stuck socket read
+        with no server response). Left unbounded, a single hang lets Home
+        Assistant cancel the *entire* config-entry setup — the traceback in
+        issue #146 is exactly this: a ``CancelledError`` raised inside
+        ``_discover_leak_sensors``' BFF GET, which the method's ``except
+        Exception`` can't catch (``CancelledError`` is a ``BaseException``), so
+        setup dies and every entity goes offline.
+
+        Bound each step with its own timeout and swallow timeouts/errors so the
+        integration still loads; the feature degrades to the next poll cycle. A
+        genuine outer cancel (HA shutting the entry down) still propagates,
+        because ``asyncio.timeout`` only converts *its own* deadline into a
+        ``TimeoutError`` — an externally-injected cancel re-raises as
+        ``CancelledError`` past the ``except`` clauses below.
+        """
+        try:
+            async with asyncio.timeout(STARTUP_STEP_TIMEOUT):
+                await coro
+        except TimeoutError:
+            _LOGGER.warning(
+                "Startup step %r did not complete within %ss; continuing without "
+                "it (it will retry on the next poll)",
+                name,
+                STARTUP_STEP_TIMEOUT,
+            )
+        except Exception as err:  # noqa: BLE001
+            _LOGGER.warning(
+                "Startup step %r failed (%s); continuing without it", name, err
+            )
+
     async def _async_setup(self) -> None:
         """Set up the coordinator - discover devices and start MQTT.
 
@@ -751,25 +799,35 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # Start MQTT client if credentials available
         if self._iot_credentials:
             await self._start_mqtt()
-            # Fetch device-specific MQTT topics for publishing commands
-            await self._fetch_device_topics()
+            # Fetch device-specific MQTT topics for publishing commands. Bounded:
+            # it hits the legacy + BFF device lists and must not hang setup (#146).
+            await self._run_startup_step(
+                self._fetch_device_topics(), "fetch device topics"
+            )
 
         # OpenAPI event subscription — needs only the API key (no account
         # login), so it runs regardless of IoT credentials. Failure-isolated:
         # a broker hiccup must never fail setup (the client retries forever).
         await self._start_openapi_events()
 
-        # Discover leak sensors via BFF API (requires email/password)
-        await self._discover_leak_sensors()
+        # Discover leak sensors via BFF API (requires email/password). Bounded so
+        # a hung BFF call degrades to polling instead of cancelling setup (#146).
+        await self._run_startup_step(
+            self._discover_leak_sensors(), "discover leak sensors"
+        )
 
         # Discover BFF-only thermo-hygrometers (H5301) that the Developer API
         # omits (issue #86). Also requires email/password.
-        await self._discover_bff_thermometers()
+        await self._run_startup_step(
+            self._discover_bff_thermometers(), "discover BFF thermometers"
+        )
 
         # Standalone water detectors (H5054) deliver their trip only via the
         # account warnMessage history — start the dedicated leak poll (issue #62).
         if self._water_detectors and self._iot_credentials:
-            await self._poll_water_detectors()
+            await self._run_startup_step(
+                self._poll_water_detectors(), "poll water detectors"
+            )
             self._schedule_water_detector_poll()
 
         # LAN (UDP) transport is opened LAST, after every fallible discovery /
@@ -1390,8 +1448,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # bodyAppearedEvent fires for BOTH transitions on presence sensors:
         # value 1 = Presence, 2 = Absence (Govee Subscribe Device Event docs,
         # issue #124). SKU-locked to presence sensors — the H5054 water
-        # detector shares this instance but means "leak", and its state is
-        # owned by the warnMessage poll.
+        # detector shares this instance but means "leak" (see below).
         if instance == "bodyAppearedEvent" and device.supports_presence_event:
             state = self._get_or_create_state(device_id)
             state.presence = value == 1
@@ -1400,6 +1457,23 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 device_id,
                 sku,
                 "present" if value == 1 else "absent",
+            )
+            self.async_set_updated_data(self._states)
+            return
+
+        # H5054 water detectors reuse the same bodyAppearedEvent instance to
+        # report a leak trip: value 1 = LEAKED (wet), 2 = UN_LEAKED (dry),
+        # mirroring the presence 1/2 encoding (issue #138). This is the
+        # real-time path; the warnMessage BFF poll remains the fallback that
+        # backstops missed pushes and covers the initial state.
+        if instance == "bodyAppearedEvent" and device.supports_water_leak_event:
+            state = self._get_or_create_state(device_id)
+            state.water_leak = value == 1
+            _LOGGER.info(
+                "Water-leak event for %s (%s): %s",
+                device_id,
+                sku,
+                "wet" if value == 1 else "dry",
             )
             self.async_set_updated_data(self._states)
 
@@ -2060,12 +2134,20 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     if state.online != online:
                         state.online = online
                         changed = True
+                    # Battery (%) rides along in the same BFF device/list poll —
+                    # surface it so the H5054 gets a battery sensor (issue #145).
+                    battery = info.get("battery")
+                    if battery is not None and state.battery != battery:
+                        state.battery = battery
+                        changed = True
                     state.source = "api"
                     _LOGGER.debug(
-                        "Water-detector %s: online=%s water_leak=%s last_time=%s",
+                        "Water-detector %s: online=%s water_leak=%s battery=%s "
+                        "last_time=%s",
                         device_id,
                         online,
                         state.water_leak,
+                        state.battery,
                         last_time,
                     )
         except Exception as err:  # noqa: BLE001
@@ -3345,6 +3427,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             state.heater_auto_stop = command.auto_stop
         elif isinstance(command, WorkModeCommand):
             state.apply_optimistic_work_mode(command.work_mode, command.mode_value)
+        elif isinstance(command, OscillationCommand):
+            state.apply_optimistic_oscillation(command.oscillating)
         elif isinstance(command, MusicModeCommand):
             # Look up mode name from device capabilities for display
             device = self._devices.get(device_id)
