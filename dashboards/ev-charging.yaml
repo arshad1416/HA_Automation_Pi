@@ -113,3 +113,78 @@ views:
             icon: mdi:wifi
             attribute: rssi_dbm
             suffix: " dBm"
+
+  # ══════════════════════════════════════════════════════════════════
+  # HISTORICAL VIEW — Modeled data Nov 2024 – Jun 2026 + live thereafter
+  # ══════════════════════════════════════════════════════════════════
+  - title: History
+    path: history
+    icon: mdi:history
+    cards:
+      - type: markdown
+        content: |
+          ## Lifetime Charging Summary
+          **Vehicles:** IONIQ 6 (Jun 2023-present) | VF9 (Jun 2025-present) | Santa Fe PHEV (May 2023-Jun 2025)
+
+          Nov 2024 - Jun 2026: modeled from odometer x efficiency x ULO rates (within 9% of Alectra billing). Jul 2026+: live metered data.
+
+      - type: entities
+        title: Lifetime Totals
+        show_header_toggle: false
+        entities:
+          - entity: sensor.grizzl_e_total_cost
+            name: Lifetime Energy
+            icon: mdi:lightning-bolt-circle
+          - entity: sensor.grizzl_e_total_cost
+            name: Lifetime Cost
+            icon: mdi:currency-usd
+          - entity: sensor.grizzl_e_cost_yearly
+            name: This Year (live)
+            icon: mdi:calendar-range
+
+      - type: statistics-graph
+        title: Monthly Energy (365 days)
+        entities:
+          - sensor.grizzl_e_energy_daily
+        stat_types:
+          - sum
+        days_to_show: 365
+        chart_type: bar
+
+      - type: statistics-graph
+        title: Monthly Cost (365 days)
+        entities:
+          - sensor.grizzl_e_cost_daily
+        stat_types:
+          - sum
+        days_to_show: 365
+        chart_type: bar
+
+      - type: markdown
+        content: |
+          ### Modeled Monthly Breakdown (Nov 2024 - Jun 2026)
+          | Month | kWh | Cost | Vehicles |
+          |-------|-----|------|----------|
+          | 2024-11 | 611 | $47 | IONIQ 6 + Santa Fe |
+          | 2024-12 | 631 | $49 | IONIQ 6 + Santa Fe |
+          | 2025-01 | 631 | $49 | IONIQ 6 + Santa Fe |
+          | 2025-02 | 570 | $44 | IONIQ 6 + Santa Fe |
+          | 2025-03 | 631 | $49 | IONIQ 6 + Santa Fe |
+          | 2025-04 | 611 | $47 | IONIQ 6 + Santa Fe |
+          | 2025-05 | 631 | $49 | IONIQ 6 + Santa Fe |
+          | 2025-06 | 772 | $60 | All 3 vehicles |
+          | 2025-07 | 782 | $60 | IONIQ 6 + VF9 |
+          | 2025-08 | 782 | $60 | IONIQ 6 + VF9 |
+          | 2025-09 | 757 | $58 | IONIQ 6 + VF9 |
+          | 2025-10 | 782 | $60 | IONIQ 6 + VF9 |
+          | 2025-11 | 757 | $58 | IONIQ 6 + VF9 |
+          | 2025-12 | 782 | $60 | IONIQ 6 + VF9 |
+          | 2026-01 | 782 | $60 | IONIQ 6 + VF9 |
+          | 2026-02 | 706 | $54 | IONIQ 6 + VF9 |
+          | 2026-03 | 782 | $60 | IONIQ 6 + VF9 |
+          | 2026-04 | 757 | $58 | IONIQ 6 + VF9 |
+          | 2026-05 | 782 | $60 | IONIQ 6 + VF9 |
+          | 2026-06 | 757 | $58 | IONIQ 6 + VF9 |
+          | **Total** | **14,294** | **$1,102** | **20 months** |
+
+          *Avg: 715 kWh/mo | $55/mo | 1.86 c/km*

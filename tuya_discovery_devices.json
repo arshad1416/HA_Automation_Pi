@@ -262,5 +262,21 @@
     "version": "3.3",
     "configured_ip": "192.168.0.70",
     "first_seen": "2026-07-26T02:03:04.737531"
+  },
+  "131052773c61058ba305": {
+    "ip": "192.168.0.65",
+    "name": "Patio Door Light",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.65",
+    "first_seen": "2026-07-26T03:12:59.568149"
+  },
+  "131052773c61058a9f6b": {
+    "ip": "192.168.0.53",
+    "name": "Laundry Room Light",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.69",
+    "first_seen": "2026-07-26T03:12:59.963964"
   }
 }
