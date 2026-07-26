@@ -564,9 +564,6 @@ shell_command:
 
 # Google Assistant — control HA via Google Home speakers
 # TEMPORARILY DISABLED: google_assistant_service_account.json not found after restore
-  start_grizzl_e_daemon: >-
-    sh -c 'pgrep -f grizzl_e_daemon.py >/dev/null 2>&1 || nohup python3 /config/grizzl_e_daemon.py 192.168.0.115 /config/grizzl_e_state.json >/config/grizzl_e_daemon.log 2>&1 &'
-
 # google_assistant:
 #   project_id: shiftlogic-ha
 #   service_account: !include google_assistant_service_account.json

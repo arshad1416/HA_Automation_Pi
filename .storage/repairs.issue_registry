@@ -262,26 +262,6 @@
         "domain": "hacs",
         "is_persistent": false,
         "issue_id": "restart_required_1133923244_tags/v2026.7.8"
-      },
-      {
-        "created": "2026-07-26T03:46:31.756858+00:00",
-        "dismissed_version": null,
-        "domain": "automation",
-        "is_persistent": true,
-        "issue_id": "automation.esphome_kitchen_bridge_startup_service_not_found_shell_command.start_esphome_kitchen_bridge",
-        "breaks_in_ha_version": null,
-        "data": null,
-        "is_fixable": true,
-        "issue_domain": null,
-        "learn_more_url": null,
-        "severity": "error",
-        "translation_key": "service_not_found",
-        "translation_placeholders": {
-          "service": "shell_command.start_esphome_kitchen_bridge",
-          "entity_id": "automation.esphome_kitchen_bridge_startup",
-          "name": "ESPHome Kitchen Bridge Startup",
-          "edit": "/config/automation/edit/esphome_kitchen_bridge_startup"
-        }
       }
     ]
   }

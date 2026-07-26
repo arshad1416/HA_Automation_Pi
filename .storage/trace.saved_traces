@@ -7,12 +7,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/else/0",
-          "run_id": "3bf60d7b689e7f248b5b71757d59bc88",
+          "run_id": "07c1ca72322b1a7534be4cede51ca82d",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.728545+00:00",
-            "finish": "2026-07-26T03:46:31.879027+00:00"
+            "start": "2026-07-26T03:47:33.698641+00:00",
+            "finish": "2026-07-26T03:47:34.168049+00:00"
           },
           "domain": "automation",
           "item_id": "airbnb_reserved_sync",
@@ -21,23 +21,23 @@
             "trigger/2": [
               {
                 "path": "trigger/2",
-                "timestamp": "2026-07-26T03:46:31.728594+00:00",
+                "timestamp": "2026-07-26T03:47:33.698687+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.airbnb_reserved_flag_sync",
                     "state": "on",
                     "attributes": {
                       "id": "airbnb_reserved_sync",
-                      "last_triggered": "2026-07-26T03:37:53.710621+00:00",
+                      "last_triggered": "2026-07-26T03:46:31.728691+00:00",
                       "mode": "restart",
                       "current": 0,
                       "friendly_name": "Airbnb: Reserved Flag Sync"
                     },
-                    "last_changed": "2026-07-26T03:46:11.435904+00:00",
-                    "last_reported": "2026-07-26T03:46:11.435904+00:00",
-                    "last_updated": "2026-07-26T03:46:11.435904+00:00",
+                    "last_changed": "2026-07-26T03:47:07.688666+00:00",
+                    "last_reported": "2026-07-26T03:47:07.688666+00:00",
+                    "last_updated": "2026-07-26T03:47:07.688666+00:00",
                     "context": {
-                      "id": "01KYE8FHBBXXS15E60FCACB4BT",
+                      "id": "01KYE8H898MGZWMM028YNWKFW9",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -56,10 +56,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T03:46:31.728916+00:00",
+                "timestamp": "2026-07-26T03:47:33.698990+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYE8G55GYSBFZEQY4E8X294Q",
+                    "id": "01KYE8J1P2X9ZT8TV0HJX253G7",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -72,7 +72,7 @@
             "action/0/if": [
               {
                 "path": "action/0/if",
-                "timestamp": "2026-07-26T03:46:31.729066+00:00",
+                "timestamp": "2026-07-26T03:47:33.699209+00:00",
                 "result": {
                   "result": false
                 }
@@ -81,7 +81,7 @@
             "action/0/if/condition/0": [
               {
                 "path": "action/0/if/condition/0",
-                "timestamp": "2026-07-26T03:46:31.729106+00:00",
+                "timestamp": "2026-07-26T03:47:33.699250+00:00",
                 "result": {
                   "result": false,
                   "entities": [
@@ -93,7 +93,7 @@
             "action/0/else/0": [
               {
                 "path": "action/0/else/0",
-                "timestamp": "2026-07-26T03:46:31.729420+00:00",
+                "timestamp": "2026-07-26T03:47:33.699536+00:00",
                 "result": {
                   "params": {
                     "domain": "switch",
@@ -161,19 +161,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYE8G55GYSBFZEQY4E8X294Q",
+            "id": "01KYE8J1P2X9ZT8TV0HJX253G7",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/else/0",
-          "run_id": "3bf60d7b689e7f248b5b71757d59bc88",
+          "run_id": "07c1ca72322b1a7534be4cede51ca82d",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.728545+00:00",
-            "finish": "2026-07-26T03:46:31.879027+00:00"
+            "start": "2026-07-26T03:47:33.698641+00:00",
+            "finish": "2026-07-26T03:47:34.168049+00:00"
           },
           "domain": "automation",
           "item_id": "airbnb_reserved_sync",
@@ -185,12 +185,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/choose/1/sequence/0",
-          "run_id": "4d40eeb7ed1c737c21e6db17e99a6d80",
+          "run_id": "e487ea1f0d39f300f2c6e8ee010eabad",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.735804+00:00",
-            "finish": "2026-07-26T03:46:32.352340+00:00"
+            "start": "2026-07-26T03:47:33.705905+00:00",
+            "finish": "2026-07-26T03:47:34.271657+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -199,23 +199,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T03:46:31.735852+00:00",
+                "timestamp": "2026-07-26T03:47:33.705942+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.restore_govee_outdoor_lights_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "govee_restore_after_restart",
-                      "last_triggered": "2026-07-26T03:37:53.716305+00:00",
+                      "last_triggered": "2026-07-26T03:46:31.735923+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Restore Govee outdoor lights after HA restart"
                     },
-                    "last_changed": "2026-07-26T03:46:11.440366+00:00",
-                    "last_reported": "2026-07-26T03:46:11.440366+00:00",
-                    "last_updated": "2026-07-26T03:46:11.440366+00:00",
+                    "last_changed": "2026-07-26T03:47:07.695112+00:00",
+                    "last_reported": "2026-07-26T03:47:07.695112+00:00",
+                    "last_updated": "2026-07-26T03:47:07.695112+00:00",
                     "context": {
-                      "id": "01KYE8FHBGP46DGPG795C7JH46",
+                      "id": "01KYE8H89FAJW4YPHGSCD38GV1",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -234,10 +234,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T03:46:31.736133+00:00",
+                "timestamp": "2026-07-26T03:47:33.706192+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYE8G55QZN1HKB07PNQ84EM5",
+                    "id": "01KYE8J1P90X5T7FV35WVB8VS0",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -250,7 +250,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-07-26T03:46:31.736349+00:00",
+                "timestamp": "2026-07-26T03:47:33.706383+00:00",
                 "result": {
                   "result": false
                 }
@@ -259,7 +259,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-07-26T03:46:31.736385+00:00",
+                "timestamp": "2026-07-26T03:47:33.706418+00:00",
                 "result": {
                   "wanted_time_after": "2026-07-26T00:51:32.241557+00:00",
                   "result": true
@@ -269,7 +269,7 @@
             "action/0/choose/0/conditions/1": [
               {
                 "path": "action/0/choose/0/conditions/1",
-                "timestamp": "2026-07-26T03:46:31.736559+00:00",
+                "timestamp": "2026-07-26T03:47:33.707197+00:00",
                 "result": {
                   "after": {
                     "__type": "<class 'datetime.time'>",
@@ -277,7 +277,7 @@
                   },
                   "now_time": {
                     "__type": "<class 'datetime.time'>",
-                    "isoformat": "23:46:31.736587"
+                    "isoformat": "23:47:33.707229"
                   },
                   "before": {
                     "__type": "<class 'datetime.time'>",
@@ -290,7 +290,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-07-26T03:46:31.736616+00:00",
+                "timestamp": "2026-07-26T03:47:33.707264+00:00",
                 "result": {
                   "result": true
                 }
@@ -299,7 +299,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-07-26T03:46:31.736636+00:00",
+                "timestamp": "2026-07-26T03:47:33.707285+00:00",
                 "result": {
                   "wanted_time_after": "2026-07-26T00:51:32.241557+00:00",
                   "result": true
@@ -309,7 +309,7 @@
             "action/0/choose/1/sequence/0": [
               {
                 "path": "action/0/choose/1/sequence/0",
-                "timestamp": "2026-07-26T03:46:31.736813+00:00",
+                "timestamp": "2026-07-26T03:47:33.707475+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -434,19 +434,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYE8G55QZN1HKB07PNQ84EM5",
+            "id": "01KYE8J1P90X5T7FV35WVB8VS0",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/choose/1/sequence/0",
-          "run_id": "4d40eeb7ed1c737c21e6db17e99a6d80",
+          "run_id": "e487ea1f0d39f300f2c6e8ee010eabad",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.735804+00:00",
-            "finish": "2026-07-26T03:46:32.352340+00:00"
+            "start": "2026-07-26T03:47:33.705905+00:00",
+            "finish": "2026-07-26T03:47:34.271657+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -457,13 +457,13 @@
     "automation.1779331000000": [
       {
         "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "5f242d8d5695e683dd081321f40a7307",
+          "last_step": "action/3",
+          "run_id": "801d7fbe91197120d432f7ef777343b4",
           "state": "stopped",
-          "script_execution": "cancelled",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.743673+00:00",
-            "finish": "2026-07-26T03:46:38.986624+00:00"
+            "start": "2026-07-26T03:47:33.712726+00:00",
+            "finish": "2026-07-26T03:48:07.555709+00:00"
           },
           "domain": "automation",
           "item_id": "1779331000000",
@@ -472,23 +472,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T03:46:31.743702+00:00",
+                "timestamp": "2026-07-26T03:47:33.712753+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.auto_heal_govee_and_local_integrations_after_reboot",
                     "state": "on",
                     "attributes": {
                       "id": "1779331000000",
-                      "last_triggered": "2026-07-26T03:37:53.723644+00:00",
+                      "last_triggered": "2026-07-26T03:46:31.743772+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Auto-heal Govee and local integrations after reboot"
                     },
-                    "last_changed": "2026-07-26T03:46:11.442099+00:00",
-                    "last_reported": "2026-07-26T03:46:11.442099+00:00",
-                    "last_updated": "2026-07-26T03:46:11.442099+00:00",
+                    "last_changed": "2026-07-26T03:47:07.697505+00:00",
+                    "last_reported": "2026-07-26T03:47:07.697505+00:00",
+                    "last_updated": "2026-07-26T03:47:07.697505+00:00",
                     "context": {
-                      "id": "01KYE8FHBJGFBPCMFWDTFYQJ4S",
+                      "id": "01KYE8H89HJS9J51R2WWE0NSWW",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -507,17 +507,72 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T03:46:31.743971+00:00",
+                "timestamp": "2026-07-26T03:47:33.712994+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYE8G55Z62HF9796P4M3D8AF",
+                    "id": "01KYE8J1PGBYWH0ZG43FT0QV1W",
                     "parent_id": null,
                     "user_id": null
                   }
                 },
                 "result": {
                   "delay": 30.0,
-                  "done": false
+                  "done": true
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-07-26T03:48:03.715129+00:00",
+                "result": {
+                  "params": {
+                    "domain": "homeassistant",
+                    "service": "reload_config_entry",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "light.lamppost_bulb_1"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/2": [
+              {
+                "path": "action/2",
+                "timestamp": "2026-07-26T03:48:07.368235+00:00",
+                "result": {
+                  "params": {
+                    "domain": "homeassistant",
+                    "service": "reload_config_entry",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "light.nanoleaf_multicolor_ls_2"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/3": [
+              {
+                "path": "action/3",
+                "timestamp": "2026-07-26T03:48:07.426604+00:00",
+                "result": {
+                  "params": {
+                    "domain": "notify",
+                    "service": "mobile_app_cph2655",
+                    "service_data": {
+                      "message": "Govee/LocalTuya integrations reloaded after HA restart."
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
                 }
               }
             ]
@@ -562,19 +617,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYE8G55Z62HF9796P4M3D8AF",
+            "id": "01KYE8J1PGBYWH0ZG43FT0QV1W",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0",
-          "run_id": "5f242d8d5695e683dd081321f40a7307",
+          "last_step": "action/3",
+          "run_id": "801d7fbe91197120d432f7ef777343b4",
           "state": "stopped",
-          "script_execution": "cancelled",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.743673+00:00",
-            "finish": "2026-07-26T03:46:38.986624+00:00"
+            "start": "2026-07-26T03:47:33.712726+00:00",
+            "finish": "2026-07-26T03:48:07.555709+00:00"
           },
           "domain": "automation",
           "item_id": "1779331000000",
@@ -585,13 +640,13 @@
     "automation.blinds_restart_recovery": [
       {
         "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "d2bd26f9397925581ed3750fd702c246",
+          "last_step": "action/3",
+          "run_id": "ace7ca7da0eebd0f8730b24745d0dab9",
           "state": "stopped",
-          "script_execution": "cancelled",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.745251+00:00",
-            "finish": "2026-07-26T03:46:38.986659+00:00"
+            "start": "2026-07-26T03:47:33.714498+00:00",
+            "finish": "2026-07-26T03:48:39.144496+00:00"
           },
           "domain": "automation",
           "item_id": "blinds_restart_recovery",
@@ -600,23 +655,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T03:46:31.745277+00:00",
+                "timestamp": "2026-07-26T03:47:33.714521+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "blinds_restart_recovery",
-                      "last_triggered": "2026-07-26T03:37:53.730802+00:00",
+                      "last_triggered": "2026-07-26T03:46:31.745328+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Blinds Restart Recovery \u2014 unstick all Zigbee blinds after HA restart"
                     },
-                    "last_changed": "2026-07-26T03:46:11.442490+00:00",
-                    "last_reported": "2026-07-26T03:46:11.442490+00:00",
-                    "last_updated": "2026-07-26T03:46:11.442490+00:00",
+                    "last_changed": "2026-07-26T03:47:07.697940+00:00",
+                    "last_reported": "2026-07-26T03:47:07.697940+00:00",
+                    "last_updated": "2026-07-26T03:47:07.697940+00:00",
                     "context": {
-                      "id": "01KYE8FHBJHQ4R5J999TK6RHVW",
+                      "id": "01KYE8H89HG12WJ2ZKZN5BBXZZ",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -635,17 +690,81 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T03:46:31.745498+00:00",
+                "timestamp": "2026-07-26T03:47:33.714723+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYE8G561KJFD1JJ5QQHWVRVQ",
+                    "id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
                     "parent_id": null,
                     "user_id": null
                   }
                 },
                 "result": {
                   "delay": 60.0,
-                  "done": false
+                  "done": true
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-07-26T03:48:33.716067+00:00",
+                "child_id": {
+                  "domain": "automation",
+                  "item_id": "audit_cover_commands",
+                  "run_id": "1bdb781e411814f753122cb178ed04d7"
+                },
+                "result": {
+                  "params": {
+                    "domain": "cover",
+                    "service": "open_cover",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "cover.dining_room_blinds_curtain",
+                        "cover.family_room_blinds_curtain",
+                        "cover.living_room_blinds_curtain",
+                        "cover.mina_s_blinds_curtain"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/2": [
+              {
+                "path": "action/2",
+                "timestamp": "2026-07-26T03:48:34.037500+00:00",
+                "result": {
+                  "delay": 5.0,
+                  "done": true
+                }
+              }
+            ],
+            "action/3": [
+              {
+                "path": "action/3",
+                "timestamp": "2026-07-26T03:48:39.038335+00:00",
+                "child_id": {
+                  "domain": "automation",
+                  "item_id": "audit_cover_commands",
+                  "run_id": "a2ec30ce6e79abd7db6e6920f7a3b3f5"
+                },
+                "result": {
+                  "params": {
+                    "domain": "cover",
+                    "service": "stop_cover",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "cover.dining_room_blinds_curtain",
+                        "cover.family_room_blinds_curtain",
+                        "cover.living_room_blinds_curtain",
+                        "cover.mina_s_blinds_curtain"
+                      ]
+                    }
+                  },
+                  "running_script": false
                 }
               }
             ]
@@ -699,19 +818,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYE8G561KJFD1JJ5QQHWVRVQ",
+            "id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0",
-          "run_id": "d2bd26f9397925581ed3750fd702c246",
+          "last_step": "action/3",
+          "run_id": "ace7ca7da0eebd0f8730b24745d0dab9",
           "state": "stopped",
-          "script_execution": "cancelled",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.745251+00:00",
-            "finish": "2026-07-26T03:46:38.986659+00:00"
+            "start": "2026-07-26T03:47:33.714498+00:00",
+            "finish": "2026-07-26T03:48:39.144496+00:00"
           },
           "domain": "automation",
           "item_id": "blinds_restart_recovery",
@@ -723,38 +842,37 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "469aec69890e9480582060a637b590be",
+          "run_id": "676db0ca3538a9d6eaccf5cee8d84c7d",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.756018+00:00",
-            "finish": "2026-07-26T03:46:31.756949+00:00"
+            "start": "2026-07-26T03:47:33.717463+00:00",
+            "finish": "2026-07-26T03:47:33.836505+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
-          "error": "Action shell_command.start_esphome_kitchen_bridge not found",
           "trigger": "Home Assistant starting",
           "trace": {
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T03:46:31.756049+00:00",
+                "timestamp": "2026-07-26T03:47:33.717484+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T03:37:53.733924+00:00",
+                      "last_triggered": "2026-07-26T03:46:31.756110+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-07-26T03:46:11.447798+00:00",
-                    "last_reported": "2026-07-26T03:46:11.447798+00:00",
-                    "last_updated": "2026-07-26T03:46:11.447798+00:00",
+                    "last_changed": "2026-07-26T03:47:07.704869+00:00",
+                    "last_reported": "2026-07-26T03:47:07.704869+00:00",
+                    "last_updated": "2026-07-26T03:47:07.704869+00:00",
                     "context": {
-                      "id": "01KYE8FHBQ6KV8SYZFDRY9TKD4",
+                      "id": "01KYE8H89RZK6TF5K8T7QBACSB",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -773,15 +891,14 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T03:46:31.756301+00:00",
+                "timestamp": "2026-07-26T03:47:33.717674+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYE8G56B4DP5YW15PY1E74RK",
+                    "id": "01KYE8J1PNG8JKN2Q964WCBNYB",
                     "parent_id": null,
                     "user_id": null
                   }
                 },
-                "error": "Action shell_command.start_esphome_kitchen_bridge not found",
                 "result": {
                   "params": {
                     "domain": "shell_command",
@@ -812,23 +929,22 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYE8G56B4DP5YW15PY1E74RK",
+            "id": "01KYE8J1PNG8JKN2Q964WCBNYB",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "469aec69890e9480582060a637b590be",
+          "run_id": "676db0ca3538a9d6eaccf5cee8d84c7d",
           "state": "stopped",
-          "script_execution": "error",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.756018+00:00",
-            "finish": "2026-07-26T03:46:31.756949+00:00"
+            "start": "2026-07-26T03:47:33.717463+00:00",
+            "finish": "2026-07-26T03:47:33.836505+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
-          "error": "Action shell_command.start_esphome_kitchen_bridge not found",
           "trigger": "Home Assistant starting"
         }
       }
@@ -836,13 +952,13 @@
     "automation.tuya_kitchen_bridge_startup": [
       {
         "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "7705f8c4540a0ebc0f393b04018e5816",
+          "last_step": "action/1",
+          "run_id": "2f424f384260cf9fbf45745f694dd7c2",
           "state": "stopped",
-          "script_execution": "cancelled",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.761457+00:00",
-            "finish": "2026-07-26T03:46:38.986683+00:00"
+            "start": "2026-07-26T03:47:33.729418+00:00",
+            "finish": "2026-07-26T03:47:43.740717+00:00"
           },
           "domain": "automation",
           "item_id": "tuya_kitchen_bridge_startup",
@@ -851,23 +967,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T03:46:31.761491+00:00",
+                "timestamp": "2026-07-26T03:47:33.729450+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.tuya_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "tuya_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T03:37:53.741473+00:00",
+                      "last_triggered": "2026-07-26T03:46:31.761551+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Tuya Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-07-26T03:46:11.457850+00:00",
-                    "last_reported": "2026-07-26T03:46:11.457850+00:00",
-                    "last_updated": "2026-07-26T03:46:11.457850+00:00",
+                    "last_changed": "2026-07-26T03:47:07.706923+00:00",
+                    "last_reported": "2026-07-26T03:47:07.706923+00:00",
+                    "last_updated": "2026-07-26T03:47:07.706923+00:00",
                     "context": {
-                      "id": "01KYE8FHC115XTFWN9DMAYN70N",
+                      "id": "01KYE8H89TC7M75W6ZZ94Q5E71",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -886,17 +1002,32 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T03:46:31.762052+00:00",
+                "timestamp": "2026-07-26T03:47:33.729747+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYE8G56H6BWVBYSPW4R981JP",
+                    "id": "01KYE8J1Q122C1E9D0RBVQ3TJK",
                     "parent_id": null,
                     "user_id": null
                   }
                 },
                 "result": {
                   "delay": 10.0,
-                  "done": false
+                  "done": true
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-07-26T03:47:43.730325+00:00",
+                "result": {
+                  "params": {
+                    "domain": "shell_command",
+                    "service": "start_tuya_kitchen_bridge",
+                    "service_data": {},
+                    "target": {}
+                  },
+                  "running_script": false
                 }
               }
             ]
@@ -922,23 +1053,307 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYE8G56H6BWVBYSPW4R981JP",
+            "id": "01KYE8J1Q122C1E9D0RBVQ3TJK",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0",
-          "run_id": "7705f8c4540a0ebc0f393b04018e5816",
+          "last_step": "action/1",
+          "run_id": "2f424f384260cf9fbf45745f694dd7c2",
           "state": "stopped",
-          "script_execution": "cancelled",
+          "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T03:46:31.761457+00:00",
-            "finish": "2026-07-26T03:46:38.986683+00:00"
+            "start": "2026-07-26T03:47:33.729418+00:00",
+            "finish": "2026-07-26T03:47:43.740717+00:00"
           },
           "domain": "automation",
           "item_id": "tuya_kitchen_bridge_startup",
           "trigger": "Home Assistant starting"
+        }
+      }
+    ],
+    "automation.audit_cover_commands": [
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "1bdb781e411814f753122cb178ed04d7",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T03:48:33.716701+00:00",
+            "finish": "2026-07-26T03:48:33.718322+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-07-26T03:48:33.716744+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.audit_log_all_cover_service_calls",
+                    "state": "on",
+                    "attributes": {
+                      "id": "audit_cover_commands",
+                      "last_triggered": "2026-07-26T03:38:58.998133+00:00",
+                      "mode": "parallel",
+                      "current": 0,
+                      "max": 10,
+                      "friendly_name": "Audit Log - All Cover Service Calls"
+                    },
+                    "last_changed": "2026-07-26T03:47:07.696166+00:00",
+                    "last_reported": "2026-07-26T03:47:07.696166+00:00",
+                    "last_updated": "2026-07-26T03:47:07.696166+00:00",
+                    "context": {
+                      "id": "01KYE8H89GFEHT8RHY44YFAJV8",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "event",
+                    "event": {
+                      "event_type": "call_service",
+                      "data": {
+                        "domain": "cover",
+                        "service": "open_cover",
+                        "service_data": {
+                          "entity_id": [
+                            "cover.dining_room_blinds_curtain",
+                            "cover.family_room_blinds_curtain",
+                            "cover.living_room_blinds_curtain",
+                            "cover.mina_s_blinds_curtain"
+                          ]
+                        }
+                      },
+                      "origin": "LOCAL",
+                      "time_fired": "2026-07-26T03:48:33.716390+00:00",
+                      "context": {
+                        "id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "description": "event 'call_service'"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-07-26T03:48:33.717080+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KYE8KW9MKYKTD147HRMNTZ52",
+                    "parent_id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "system_log",
+                    "service": "write",
+                    "service_data": {
+                      "logger": "audit_cover",
+                      "message": "COVER: open_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-25 23:48:33.717763-04:00"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "audit_cover_commands",
+            "alias": "Audit Log - All Cover Service Calls",
+            "mode": "parallel",
+            "trigger": [
+              {
+                "platform": "event",
+                "event_type": "call_service",
+                "event_data": {
+                  "domain": "cover"
+                }
+              }
+            ],
+            "action": [
+              {
+                "data": {
+                  "logger": "audit_cover",
+                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
+                },
+                "action": "system_log.write"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KYE8KW9MKYKTD147HRMNTZ52",
+            "parent_id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "1bdb781e411814f753122cb178ed04d7",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T03:48:33.716701+00:00",
+            "finish": "2026-07-26T03:48:33.718322+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'"
+        }
+      },
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "a2ec30ce6e79abd7db6e6920f7a3b3f5",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T03:48:39.038855+00:00",
+            "finish": "2026-07-26T03:48:39.039935+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-07-26T03:48:39.038898+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.audit_log_all_cover_service_calls",
+                    "state": "on",
+                    "attributes": {
+                      "id": "audit_cover_commands",
+                      "last_triggered": "2026-07-26T03:48:33.716812+00:00",
+                      "mode": "parallel",
+                      "current": 0,
+                      "max": 10,
+                      "friendly_name": "Audit Log - All Cover Service Calls"
+                    },
+                    "last_changed": "2026-07-26T03:47:07.696166+00:00",
+                    "last_reported": "2026-07-26T03:48:33.718152+00:00",
+                    "last_updated": "2026-07-26T03:48:33.718152+00:00",
+                    "context": {
+                      "id": "01KYE8KW9MKYKTD147HRMNTZ52",
+                      "parent_id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "event",
+                    "event": {
+                      "event_type": "call_service",
+                      "data": {
+                        "domain": "cover",
+                        "service": "stop_cover",
+                        "service_data": {
+                          "entity_id": [
+                            "cover.dining_room_blinds_curtain",
+                            "cover.family_room_blinds_curtain",
+                            "cover.living_room_blinds_curtain",
+                            "cover.mina_s_blinds_curtain"
+                          ]
+                        }
+                      },
+                      "origin": "LOCAL",
+                      "time_fired": "2026-07-26T03:48:39.038603+00:00",
+                      "context": {
+                        "id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "description": "event 'call_service'"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-07-26T03:48:39.039221+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KYE8M1FY0AM3ZW9046H76TSZ",
+                    "parent_id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "system_log",
+                    "service": "write",
+                    "service_data": {
+                      "logger": "audit_cover",
+                      "message": "COVER: stop_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-25 23:48:39.039411-04:00"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "audit_cover_commands",
+            "alias": "Audit Log - All Cover Service Calls",
+            "mode": "parallel",
+            "trigger": [
+              {
+                "platform": "event",
+                "event_type": "call_service",
+                "event_data": {
+                  "domain": "cover"
+                }
+              }
+            ],
+            "action": [
+              {
+                "data": {
+                  "logger": "audit_cover",
+                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
+                },
+                "action": "system_log.write"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KYE8M1FY0AM3ZW9046H76TSZ",
+            "parent_id": "01KYE8J1PJ62ZGWWE29MXFTBN1",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "a2ec30ce6e79abd7db6e6920f7a3b3f5",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T03:48:39.038855+00:00",
+            "finish": "2026-07-26T03:48:39.039935+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'"
         }
       }
     ]
