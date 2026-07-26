@@ -36,7 +36,12 @@ from .exceptions import (
     GoveeLoginRejectedError,
 )
 
-from ..models.device import LEAK_HUB_SKUS, LEAK_SENSOR_SKUS, THERMO_HYGRO_BFF_SKUS
+from ..models.device import (
+    LEAK_HUB_SKUS,
+    LEAK_SENSOR_SKUS,
+    THERMO_HYGRO_BFF_READ_SKUS,
+    THERMO_HYGRO_BFF_SKUS,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -739,7 +744,13 @@ class GoveeAuthClient:
                 sensors: list[dict[str, Any]] = []
                 for device in devices:
                     sku = device.get("sku", "")
-                    if sku not in THERMO_HYGRO_BFF_SKUS:
+                    # BFF-only SKUs are synthesized; BFF-read SKUs (e.g. H5179)
+                    # already exist from Developer-API discovery but read their
+                    # live value here (#86, #141).
+                    if (
+                        sku not in THERMO_HYGRO_BFF_SKUS
+                        and sku not in THERMO_HYGRO_BFF_READ_SKUS
+                    ):
                         continue
 
                     device_id = device.get("device", "")

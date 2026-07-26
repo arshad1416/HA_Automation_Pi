@@ -475,43 +475,6 @@ command_line:
       scan_interval: 300
 
 
-  # ── Grizzl-E Smart EV charger (read-only /logs scrape) ─────────────
-  - sensor:
-      name: "Grizzl-E Power"
-      unique_id: grizzl_e_power
-      command: "/config/grizzl_e_ha_parser.sh 192.168.0.115 18"
-      unit_of_measurement: "W"
-      device_class: power
-      state_class: measurement
-      scan_interval: 30
-      command_timeout: 25
-      value_template: "{{ value_json.power_w | round(1) }}"
-      json_attributes:
-        - charging
-        - rssi_dbm
-  - binary_sensor:
-      name: "Grizzl-E Charging"
-      unique_id: grizzl_e_charging
-      command: "/config/grizzl_e_ha_parser.sh 192.168.0.115 18"
-      device_class: battery_charging
-      scan_interval: 30
-      command_timeout: 25
-      payload_on: "on"
-      payload_off: "off"
-      value_template: "{{ value_json.charging }}"
-  - sensor:
-      name: "Grizzl-E Diagnostics"
-      unique_id: grizzl_e_diagnostics
-      command: "/config/grizzl_e_ha_parser.sh 192.168.0.115 45"
-      scan_interval: 120
-      command_timeout: 55
-      unit_of_measurement: "bytes"
-      value_template: "{{ value_json.free_heap }}"
-      json_attributes:
-        - disk_free_kb
-        - rssi_dbm
-        - power_w
-
 template:
   - binary_sensor:
       - name: Kitchen Presence

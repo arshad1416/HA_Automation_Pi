@@ -1767,6 +1767,33 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 device_id = sensor["device_id"]
                 if not device_id:
                     continue
+
+                # A device already discovered via the Developer API (e.g. the
+                # H5179 WiFi thermometer, #141) whose live reading only comes
+                # from the BFF lastDeviceData — the Developer poll returns empty
+                # strings. Route it through the BFF path (owns its state, skips
+                # the futile Developer poll via _bff_thermometer_ids) instead of
+                # synthesizing a duplicate device.
+                if device_id in self._devices:
+                    self._bff_thermometer_ids.add(device_id)
+                    state = self._states.get(
+                        device_id
+                    ) or GoveeDeviceState.create_empty(device_id)
+                    state.online = sensor.get("online", state.online)
+                    if sensor.get("temperature") is not None:
+                        state.sensor_temperature = sensor.get("temperature")
+                    if sensor.get("humidity") is not None:
+                        state.sensor_humidity = sensor.get("humidity")
+                    if sensor.get("battery") is not None:
+                        state.battery = sensor.get("battery")
+                    self._states[device_id] = state
+                    if (
+                        state.sensor_temperature is not None
+                        or state.sensor_humidity is not None
+                    ):
+                        self._sensor_reading_changed_at[device_id] = dt_util.utcnow()
+                    continue
+
                 hub_device_id = sensor.get("hub_device_id", "")
                 device = GoveeDevice.synthetic_thermometer(
                     device_id=device_id,

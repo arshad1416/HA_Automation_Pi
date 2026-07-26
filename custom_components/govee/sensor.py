@@ -307,6 +307,14 @@ class GoveeTemperatureSensor(_BffThermometerAvailabilityMixin, SensorEntity):
 
         value = float(state.sensor_temperature)
 
+        # BFF-sourced readings (lastDeviceData) are already canonical °C from
+        # _bff_reading's centi-scaling, so the SKU-based °F conversion below —
+        # which targets the Developer-API path — must NOT apply. The H5179 lives
+        # in both worlds: it's in FAHRENHEIT_REPORTING_SKUS for its Developer
+        # path, but its value here comes via BFF (issue #141).
+        if self.coordinator.is_bff_thermometer(self._device_id):
+            return value
+
         # Some thermometer/hygrometer SKUs (FAHRENHEIT_REPORTING_SKUS) return °F
         # via the Cloud API without unit metadata, while the native unit is
         # tagged °C — surfacing e.g. 101°F as 213.5°F (issues #72, #78, #96).

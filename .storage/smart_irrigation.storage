@@ -38,14 +38,14 @@
         "duration": 1251,
         "module": "0",
         "multiplier": 1.0,
-        "explanation": "Note: this explanation uses '.' as decimal separator, shows rounded and metric values. Module returned Evapotranspiration deficiency ( = et0 * hour_multiplier + precipitation) of -4.01.Bucket was 0.00.<br/>Maximum bucket size is 24.0.<br/>Drainage rate when saturated (bucket at max) is 50.8.<br/>Current drainage is 0 because [old_bucket] + [delta] <= 0 (0.00-4.01 = -4.01).<br/>New bucket value is max(0, min([old_bucket] + [delta], max_bucket) - [drainage]) = max(0, min(0.00-4.01, 24.0) - 0.00) = -4.01.<br/>Since bucket < 0, irrigation is necessary.<br/>To calculate the exact duration, the following steps were taken:<br/><ol><li>The precipitation rate is defined as [throughput] * 60 / [size] = 13.4 * 60 / 69.7 = 11.5.</li><li>The duration is calculated as abs([bucket]) / [precipitation_rate] * 3600 = 4.01 / 11.5 * 3600 = 1251.</li><li>Now, the multiplier is applied. The multiplier is 1.0, hence the duration is 1251.</li><li>Then, the maximum duration is applied. The maximum duration is 5400.</li><li>Finally, the lead time is applied. The lead time is 0.0, hence the final duration is 1251</li></ol>hence the final duration is 1251.</li></ol>",
+        "explanation": null,
         "mapping": "0",
         "lead_time": 0.0,
         "maximum_duration": 5400.0,
         "maximum_bucket": 24,
-        "last_calculated": "2026-07-25T04:00:01.707631",
-        "last_updated": "2026-07-25T23:07:42.627863",
-        "number_of_data_points": 17,
+        "last_calculated": null,
+        "last_updated": "2026-07-25T23:29:49.765108",
+        "number_of_data_points": 18,
         "drainage_rate": 50.8,
         "current_drainage": 0
       }
@@ -331,6 +331,16 @@
             "Current Precipitation": 0.0,
             "Precipitation": 0.0,
             "retrieved": "2026-07-25T23:07:42.627416"
+          },
+          {
+            "Windspeed": 0.7928281396780208,
+            "Pressure": 1013.4200124089191,
+            "Humidity": 84.0,
+            "Temperature": 20.86,
+            "Dewpoint": 18.04,
+            "Current Precipitation": 0.0,
+            "Precipitation": 0.0,
+            "retrieved": "2026-07-25T23:29:49.764642"
           }
         ],
         "data_last_updated": "2026-07-07T13:48:20.534728",

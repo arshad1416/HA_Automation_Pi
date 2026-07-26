@@ -255,6 +255,13 @@
         "domain": "hacs",
         "is_persistent": false,
         "issue_id": "restart_required_1133923244_tags/v2026.7.7"
+      },
+      {
+        "created": "2026-07-26T03:23:40.734237+00:00",
+        "dismissed_version": null,
+        "domain": "hacs",
+        "is_persistent": false,
+        "issue_id": "restart_required_1133923244_tags/v2026.7.8"
       }
     ]
   }

@@ -34,6 +34,14 @@ PRESENCE_SENSOR_SKUS = frozenset({"H5127"})
 # each so the existing temperature/humidity sensor entities attach.
 THERMO_HYGRO_BFF_SKUS = frozenset({"H5301", "H5310"})
 
+# Thermo-hygrometers that ARE returned by the Developer API (so they're
+# discovered normally and get temperature/humidity entities) but whose live
+# reading only arrives via the BFF ``lastDeviceData`` — the Developer poll
+# returns empty strings for their sensorTemperature/sensorHumidity. The
+# coordinator routes these through the BFF read path instead of synthesizing a
+# duplicate device (issue #141, H5179 WiFi thermometer).
+THERMO_HYGRO_BFF_READ_SKUS = frozenset({"H5179"})
+
 # Subset of THERMO_HYGRO_BFF_SKUS that have NO hygrometer (e.g. the H5310 pool
 # thermometer). Govee reports their ``hum`` as the u16 sentinel 0xFFFF, so a
 # synthesized humidity entity would be permanently bogus/unknown (#97). We omit
