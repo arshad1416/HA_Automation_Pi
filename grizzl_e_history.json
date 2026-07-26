@@ -1,1 +1,1 @@
-{"days": {"2026-07-26": {"energy_kwh": 13.490610843395205, "cost_cents": 91.61217502143708, "by_period": {"overnight": 13.490610843395205, "weekend_offpeak": 0.0, "midpeak": 0.0, "onpeak": 0.0}}}, "total_energy_kwh": 13.490610843395205, "total_cost_cents": 91.61217502143708}
+{"days": {"2026-07-26": {"energy_kwh": 15.393868955850825, "cost_cents": 104.53683924408125, "by_period": {"overnight": 15.393868955850825, "weekend_offpeak": 0.0, "midpeak": 0.0, "onpeak": 0.0}}}, "total_energy_kwh": 15.393868955850825, "total_cost_cents": 104.53683924408125}

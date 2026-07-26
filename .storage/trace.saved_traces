@@ -7,12 +7,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/then/0",
-          "run_id": "c792172c79c6f3146681e8fa533ac572",
+          "run_id": "968d4bdbedbc21af2b9a76e03c9f2bc5",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.739085+00:00",
-            "finish": "2026-07-26T05:03:11.881206+00:00"
+            "start": "2026-07-26T05:33:30.635463+00:00",
+            "finish": "2026-07-26T05:33:30.879220+00:00"
           },
           "domain": "automation",
           "item_id": "airbnb_reserved_sync",
@@ -21,23 +21,23 @@
             "trigger/2": [
               {
                 "path": "trigger/2",
-                "timestamp": "2026-07-26T05:03:11.739131+00:00",
+                "timestamp": "2026-07-26T05:33:30.635518+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.airbnb_reserved_flag_sync",
                     "state": "on",
                     "attributes": {
                       "id": "airbnb_reserved_sync",
-                      "last_triggered": "2026-07-26T04:35:08.746820+00:00",
+                      "last_triggered": "2026-07-26T05:03:11.739219+00:00",
                       "mode": "restart",
                       "current": 0,
                       "friendly_name": "Airbnb: Reserved Flag Sync"
                     },
-                    "last_changed": "2026-07-26T05:02:54.855947+00:00",
-                    "last_reported": "2026-07-26T05:02:54.855947+00:00",
-                    "last_updated": "2026-07-26T05:02:54.855947+00:00",
+                    "last_changed": "2026-07-26T05:33:10.184058+00:00",
+                    "last_reported": "2026-07-26T05:33:10.184058+00:00",
+                    "last_updated": "2026-07-26T05:33:10.184058+00:00",
                     "context": {
-                      "id": "01KYECW0W7GR7MA2Z9AW35N6Y2",
+                      "id": "01KYEEKDN8WBM8K8JDZD2BA0AE",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -56,10 +56,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:03:11.739435+00:00",
+                "timestamp": "2026-07-26T05:33:30.635876+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYECWHBV9VXTNXSE9XW801AA",
+                    "id": "01KYEEM1MBNCM5E4BKWYTBZVVN",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -72,7 +72,7 @@
             "action/0/if": [
               {
                 "path": "action/0/if",
-                "timestamp": "2026-07-26T05:03:11.739576+00:00",
+                "timestamp": "2026-07-26T05:33:30.636088+00:00",
                 "result": {
                   "result": true
                 }
@@ -81,7 +81,7 @@
             "action/0/if/condition/0": [
               {
                 "path": "action/0/if/condition/0",
-                "timestamp": "2026-07-26T05:03:11.739614+00:00",
+                "timestamp": "2026-07-26T05:33:30.636999+00:00",
                 "result": {
                   "result": true,
                   "entities": [
@@ -93,7 +93,7 @@
             "action/0/then/0": [
               {
                 "path": "action/0/then/0",
-                "timestamp": "2026-07-26T05:03:11.739909+00:00",
+                "timestamp": "2026-07-26T05:33:30.637447+00:00",
                 "result": {
                   "params": {
                     "domain": "switch",
@@ -161,19 +161,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYECWHBV9VXTNXSE9XW801AA",
+            "id": "01KYEEM1MBNCM5E4BKWYTBZVVN",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/then/0",
-          "run_id": "c792172c79c6f3146681e8fa533ac572",
+          "run_id": "968d4bdbedbc21af2b9a76e03c9f2bc5",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.739085+00:00",
-            "finish": "2026-07-26T05:03:11.881206+00:00"
+            "start": "2026-07-26T05:33:30.635463+00:00",
+            "finish": "2026-07-26T05:33:30.879220+00:00"
           },
           "domain": "automation",
           "item_id": "airbnb_reserved_sync",
@@ -185,12 +185,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "c15b5e5ba3c648a992202f0c3ea42d64",
+          "run_id": "eb04fb23a0c7b372862569077d43ad4c",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.747663+00:00",
-            "finish": "2026-07-26T05:03:12.335731+00:00"
+            "start": "2026-07-26T05:33:30.661529+00:00",
+            "finish": "2026-07-26T05:33:31.187589+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -199,23 +199,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T05:03:11.747704+00:00",
+                "timestamp": "2026-07-26T05:33:30.661577+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.restore_govee_outdoor_lights_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "govee_restore_after_restart",
-                      "last_triggered": "2026-07-26T04:35:08.754377+00:00",
+                      "last_triggered": "2026-07-26T05:03:11.747769+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Restore Govee outdoor lights after HA restart"
                     },
-                    "last_changed": "2026-07-26T05:02:54.865608+00:00",
-                    "last_reported": "2026-07-26T05:02:54.865608+00:00",
-                    "last_updated": "2026-07-26T05:02:54.865608+00:00",
+                    "last_changed": "2026-07-26T05:33:10.187569+00:00",
+                    "last_reported": "2026-07-26T05:33:10.187569+00:00",
+                    "last_updated": "2026-07-26T05:33:10.187569+00:00",
                     "context": {
-                      "id": "01KYECW0WHB7E603RAXSA4Y7NN",
+                      "id": "01KYEEKDNB1HGZTQXTB4DNWTXK",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -234,10 +234,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:03:11.747979+00:00",
+                "timestamp": "2026-07-26T05:33:30.661888+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYECWHC3THGE6FM7VAEY9WXP",
+                    "id": "01KYEEM1N50CWVVGQ8VTSDQYT4",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -250,7 +250,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-07-26T05:03:11.748177+00:00",
+                "timestamp": "2026-07-26T05:33:30.662162+00:00",
                 "result": {
                   "result": false
                 }
@@ -259,7 +259,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-07-26T05:03:11.748212+00:00",
+                "timestamp": "2026-07-26T05:33:30.662232+00:00",
                 "result": {
                   "wanted_time_after": "2026-07-27T00:50:30.664615+00:00",
                   "result": false
@@ -269,7 +269,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-07-26T05:03:11.748395+00:00",
+                "timestamp": "2026-07-26T05:33:30.662522+00:00",
                 "result": {
                   "result": false
                 }
@@ -278,7 +278,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-07-26T05:03:11.748418+00:00",
+                "timestamp": "2026-07-26T05:33:30.662565+00:00",
                 "result": {
                   "wanted_time_after": "2026-07-27T00:50:30.664615+00:00",
                   "result": false
@@ -288,7 +288,7 @@
             "action/0/default/0": [
               {
                 "path": "action/0/default/0",
-                "timestamp": "2026-07-26T05:03:11.748583+00:00",
+                "timestamp": "2026-07-26T05:33:30.662863+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -403,19 +403,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYECWHC3THGE6FM7VAEY9WXP",
+            "id": "01KYEEM1N50CWVVGQ8VTSDQYT4",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "c15b5e5ba3c648a992202f0c3ea42d64",
+          "run_id": "eb04fb23a0c7b372862569077d43ad4c",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.747663+00:00",
-            "finish": "2026-07-26T05:03:12.335731+00:00"
+            "start": "2026-07-26T05:33:30.661529+00:00",
+            "finish": "2026-07-26T05:33:31.187589+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -427,12 +427,12 @@
       {
         "extended_dict": {
           "last_step": "action/3",
-          "run_id": "c24575f1a03f5dacf3cb8eb2e4d0644d",
+          "run_id": "f674f9497842103957a16cc9772a813a",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.752511+00:00",
-            "finish": "2026-07-26T05:03:45.629395+00:00"
+            "start": "2026-07-26T05:33:30.668609+00:00",
+            "finish": "2026-07-26T05:34:05.346684+00:00"
           },
           "domain": "automation",
           "item_id": "1779331000000",
@@ -441,23 +441,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T05:03:11.752542+00:00",
+                "timestamp": "2026-07-26T05:33:30.668643+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.auto_heal_govee_and_local_integrations_after_reboot",
                     "state": "on",
                     "attributes": {
                       "id": "1779331000000",
-                      "last_triggered": "2026-07-26T04:35:08.758469+00:00",
+                      "last_triggered": "2026-07-26T05:03:11.752607+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Auto-heal Govee and local integrations after reboot"
                     },
-                    "last_changed": "2026-07-26T05:02:54.870029+00:00",
-                    "last_reported": "2026-07-26T05:02:54.870029+00:00",
-                    "last_updated": "2026-07-26T05:02:54.870029+00:00",
+                    "last_changed": "2026-07-26T05:33:10.189342+00:00",
+                    "last_reported": "2026-07-26T05:33:10.189342+00:00",
+                    "last_updated": "2026-07-26T05:33:10.189342+00:00",
                     "context": {
-                      "id": "01KYECW0WPFCYT21P9PE081773",
+                      "id": "01KYEEKDNDG6CWQ43ESE1BRHVT",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -476,10 +476,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:03:11.752822+00:00",
+                "timestamp": "2026-07-26T05:33:30.668955+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYECWHC88AMRTFY8F3SAFYMP",
+                    "id": "01KYEEM1NCF6YSHJ03YR2T6XSR",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -493,7 +493,7 @@
             "action/1": [
               {
                 "path": "action/1",
-                "timestamp": "2026-07-26T05:03:41.754435+00:00",
+                "timestamp": "2026-07-26T05:34:00.670658+00:00",
                 "result": {
                   "params": {
                     "domain": "homeassistant",
@@ -512,7 +512,7 @@
             "action/2": [
               {
                 "path": "action/2",
-                "timestamp": "2026-07-26T05:03:45.376112+00:00",
+                "timestamp": "2026-07-26T05:34:05.078407+00:00",
                 "result": {
                   "params": {
                     "domain": "homeassistant",
@@ -531,7 +531,7 @@
             "action/3": [
               {
                 "path": "action/3",
-                "timestamp": "2026-07-26T05:03:45.461673+00:00",
+                "timestamp": "2026-07-26T05:34:05.231677+00:00",
                 "result": {
                   "params": {
                     "domain": "notify",
@@ -586,19 +586,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYECWHC88AMRTFY8F3SAFYMP",
+            "id": "01KYEEM1NCF6YSHJ03YR2T6XSR",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/3",
-          "run_id": "c24575f1a03f5dacf3cb8eb2e4d0644d",
+          "run_id": "f674f9497842103957a16cc9772a813a",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.752511+00:00",
-            "finish": "2026-07-26T05:03:45.629395+00:00"
+            "start": "2026-07-26T05:33:30.668609+00:00",
+            "finish": "2026-07-26T05:34:05.346684+00:00"
           },
           "domain": "automation",
           "item_id": "1779331000000",
@@ -610,12 +610,12 @@
       {
         "extended_dict": {
           "last_step": "action/3",
-          "run_id": "953829988fd8c9f3922b47b333e4c1c4",
+          "run_id": "e0e8fa250cc7b09e9a572414c6e97008",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.754432+00:00",
-            "finish": "2026-07-26T05:04:17.239641+00:00"
+            "start": "2026-07-26T05:33:30.670620+00:00",
+            "finish": "2026-07-26T05:34:36.085926+00:00"
           },
           "domain": "automation",
           "item_id": "blinds_restart_recovery",
@@ -624,23 +624,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T05:03:11.754457+00:00",
+                "timestamp": "2026-07-26T05:33:30.670658+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "blinds_restart_recovery",
-                      "last_triggered": "2026-07-26T04:35:08.763172+00:00",
+                      "last_triggered": "2026-07-26T05:03:11.754504+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Blinds Restart Recovery \u2014 unstick all Zigbee blinds after HA restart"
                     },
-                    "last_changed": "2026-07-26T05:02:54.871037+00:00",
-                    "last_reported": "2026-07-26T05:02:54.871037+00:00",
-                    "last_updated": "2026-07-26T05:02:54.871037+00:00",
+                    "last_changed": "2026-07-26T05:33:10.189712+00:00",
+                    "last_reported": "2026-07-26T05:33:10.189712+00:00",
+                    "last_updated": "2026-07-26T05:33:10.189712+00:00",
                     "context": {
-                      "id": "01KYECW0WQ881AJVK2846PP4TW",
+                      "id": "01KYEEKDND2TTG3WZVRSXHTJXM",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -659,10 +659,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:03:11.754696+00:00",
+                "timestamp": "2026-07-26T05:33:30.670954+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYECWHCANM4EB4NKBGR7TV89",
+                    "id": "01KYEEM1NEB1DV3YCECPEV79EK",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -676,11 +676,11 @@
             "action/1": [
               {
                 "path": "action/1",
-                "timestamp": "2026-07-26T05:04:11.755440+00:00",
+                "timestamp": "2026-07-26T05:34:30.671770+00:00",
                 "child_id": {
                   "domain": "automation",
                   "item_id": "audit_cover_commands",
-                  "run_id": "9124df5326b9608e49a7cb681f8369c8"
+                  "run_id": "9005122f1f0946da9c7c3a4b5b92a913"
                 },
                 "result": {
                   "params": {
@@ -703,7 +703,7 @@
             "action/2": [
               {
                 "path": "action/2",
-                "timestamp": "2026-07-26T05:04:12.006119+00:00",
+                "timestamp": "2026-07-26T05:34:30.977060+00:00",
                 "result": {
                   "delay": 5.0,
                   "done": true
@@ -713,11 +713,11 @@
             "action/3": [
               {
                 "path": "action/3",
-                "timestamp": "2026-07-26T05:04:17.006711+00:00",
+                "timestamp": "2026-07-26T05:34:35.978574+00:00",
                 "child_id": {
                   "domain": "automation",
                   "item_id": "audit_cover_commands",
-                  "run_id": "287136a54216e78b960924535cdecb33"
+                  "run_id": "b1b69c1999fd8904cd21b2632793789b"
                 },
                 "result": {
                   "params": {
@@ -787,19 +787,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYECWHCANM4EB4NKBGR7TV89",
+            "id": "01KYEEM1NEB1DV3YCECPEV79EK",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/3",
-          "run_id": "953829988fd8c9f3922b47b333e4c1c4",
+          "run_id": "e0e8fa250cc7b09e9a572414c6e97008",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.754432+00:00",
-            "finish": "2026-07-26T05:04:17.239641+00:00"
+            "start": "2026-07-26T05:33:30.670620+00:00",
+            "finish": "2026-07-26T05:34:36.085926+00:00"
           },
           "domain": "automation",
           "item_id": "blinds_restart_recovery",
@@ -811,12 +811,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "9b192ad38355f7f2eddf2adcd5cfd422",
+          "run_id": "15b1f12c3714a6e7beab35ee5c355a69",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.758304+00:00",
-            "finish": "2026-07-26T05:03:11.881181+00:00"
+            "start": "2026-07-26T05:33:30.677564+00:00",
+            "finish": "2026-07-26T05:33:30.885145+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -825,23 +825,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T05:03:11.758337+00:00",
+                "timestamp": "2026-07-26T05:33:30.677621+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T04:35:08.766328+00:00",
+                      "last_triggered": "2026-07-26T05:03:11.758393+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-07-26T05:02:54.882580+00:00",
-                    "last_reported": "2026-07-26T05:02:54.882580+00:00",
-                    "last_updated": "2026-07-26T05:02:54.882580+00:00",
+                    "last_changed": "2026-07-26T05:33:10.193733+00:00",
+                    "last_reported": "2026-07-26T05:33:10.193733+00:00",
+                    "last_updated": "2026-07-26T05:33:10.193733+00:00",
                     "context": {
-                      "id": "01KYECW0X2AMW2JVB06PK8B00R",
+                      "id": "01KYEEKDNHN6JS9PCDQQXJB51D",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -860,10 +860,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:03:11.758586+00:00",
+                "timestamp": "2026-07-26T05:33:30.678041+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYECWHCEMQB9699T2EJR2RQP",
+                    "id": "01KYEEM1NNPZBHNCN41N78K4FX",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -898,19 +898,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYECWHCEMQB9699T2EJR2RQP",
+            "id": "01KYEEM1NNPZBHNCN41N78K4FX",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "9b192ad38355f7f2eddf2adcd5cfd422",
+          "run_id": "15b1f12c3714a6e7beab35ee5c355a69",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.758304+00:00",
-            "finish": "2026-07-26T05:03:11.881181+00:00"
+            "start": "2026-07-26T05:33:30.677564+00:00",
+            "finish": "2026-07-26T05:33:30.885145+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -922,12 +922,12 @@
       {
         "extended_dict": {
           "last_step": "action/1",
-          "run_id": "51befd6afe0581efaeb9457f693f579d",
+          "run_id": "26f28475be1379650a83b6f19fc1b1aa",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.762952+00:00",
-            "finish": "2026-07-26T05:03:21.775931+00:00"
+            "start": "2026-07-26T05:33:30.688050+00:00",
+            "finish": "2026-07-26T05:33:40.711488+00:00"
           },
           "domain": "automation",
           "item_id": "tuya_kitchen_bridge_startup",
@@ -936,23 +936,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T05:03:11.762982+00:00",
+                "timestamp": "2026-07-26T05:33:30.688088+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.tuya_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "tuya_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T04:35:08.774156+00:00",
+                      "last_triggered": "2026-07-26T05:03:11.763049+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Tuya Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-07-26T05:02:54.887204+00:00",
-                    "last_reported": "2026-07-26T05:02:54.887204+00:00",
-                    "last_updated": "2026-07-26T05:02:54.887204+00:00",
+                    "last_changed": "2026-07-26T05:33:10.197875+00:00",
+                    "last_reported": "2026-07-26T05:33:10.197875+00:00",
+                    "last_updated": "2026-07-26T05:33:10.197875+00:00",
                     "context": {
-                      "id": "01KYECW0X76DQV768E959KNXNB",
+                      "id": "01KYEEKDNNYVPCBAYGP4R5SJHM",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -971,10 +971,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:03:11.763293+00:00",
+                "timestamp": "2026-07-26T05:33:30.688395+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYECWHCJT5R58CQZZJH3NK1K",
+                    "id": "01KYEEM1P01Y64R8S2PE4H8ZME",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -988,7 +988,7 @@
             "action/1": [
               {
                 "path": "action/1",
-                "timestamp": "2026-07-26T05:03:21.764520+00:00",
+                "timestamp": "2026-07-26T05:33:40.690650+00:00",
                 "result": {
                   "params": {
                     "domain": "shell_command",
@@ -1022,19 +1022,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYECWHCJT5R58CQZZJH3NK1K",
+            "id": "01KYEEM1P01Y64R8S2PE4H8ZME",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/1",
-          "run_id": "51befd6afe0581efaeb9457f693f579d",
+          "run_id": "26f28475be1379650a83b6f19fc1b1aa",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:03:11.762952+00:00",
-            "finish": "2026-07-26T05:03:21.775931+00:00"
+            "start": "2026-07-26T05:33:30.688050+00:00",
+            "finish": "2026-07-26T05:33:40.711488+00:00"
           },
           "domain": "automation",
           "item_id": "tuya_kitchen_bridge_startup",
@@ -1042,16 +1042,176 @@
         }
       }
     ],
+    "automation.1779332000001": [
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "a7038c68d1c5c707910c04e634810e79",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T05:33:45.634047+00:00",
+            "finish": "2026-07-26T05:33:45.859578+00:00"
+          },
+          "domain": "automation",
+          "item_id": "1779332000001",
+          "trigger": "numeric state of sensor.system_monitor_processor_temperature",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-07-26T05:33:45.634097+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.pi_5_thermal_warning",
+                    "state": "on",
+                    "attributes": {
+                      "id": "1779332000001",
+                      "last_triggered": "2026-07-26T05:23:20.730130+00:00",
+                      "mode": "single",
+                      "current": 0,
+                      "friendly_name": "Pi 5 thermal warning"
+                    },
+                    "last_changed": "2026-07-26T05:33:10.191018+00:00",
+                    "last_reported": "2026-07-26T05:33:10.191018+00:00",
+                    "last_updated": "2026-07-26T05:33:10.191018+00:00",
+                    "context": {
+                      "id": "01KYEEKDNFX8J9HYWX36SAT4NE",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "numeric_state",
+                    "entity_id": "sensor.system_monitor_processor_temperature",
+                    "below": null,
+                    "above": 70.0,
+                    "from_state": {
+                      "entity_id": "sensor.system_monitor_processor_temperature",
+                      "state": "67.2",
+                      "attributes": {
+                        "state_class": "measurement",
+                        "unit_of_measurement": "\u00b0C",
+                        "device_class": "temperature",
+                        "friendly_name": "System Monitor Processor temperature"
+                      },
+                      "last_changed": "2026-07-26T05:33:30.733618+00:00",
+                      "last_reported": "2026-07-26T05:33:30.733618+00:00",
+                      "last_updated": "2026-07-26T05:33:30.733618+00:00",
+                      "context": {
+                        "id": "01KYEEM1QD6WJKDW4Z3Q46RWWP",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "to_state": {
+                      "entity_id": "sensor.system_monitor_processor_temperature",
+                      "state": "70.5",
+                      "attributes": {
+                        "state_class": "measurement",
+                        "unit_of_measurement": "\u00b0C",
+                        "device_class": "temperature",
+                        "friendly_name": "System Monitor Processor temperature"
+                      },
+                      "last_changed": "2026-07-26T05:33:45.632652+00:00",
+                      "last_reported": "2026-07-26T05:33:45.632652+00:00",
+                      "last_updated": "2026-07-26T05:33:45.632652+00:00",
+                      "context": {
+                        "id": "01KYEEMG90T8DFRQ3K867E75H6",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "for": null,
+                    "description": "numeric state of sensor.system_monitor_processor_temperature"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-07-26T05:33:45.634663+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KYEEMG92FVZDBCZG6NCD2FM8",
+                    "parent_id": "01KYEEMG90T8DFRQ3K867E75H6",
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "notify",
+                    "service": "mobile_app_cph2655",
+                    "service_data": {
+                      "message": "Warning: Pi 5 CPU temperature is 70.5\u00b0C.",
+                      "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "1779332000001",
+            "alias": "Pi 5 thermal warning",
+            "description": "Warning when Pi 5 CPU temperature exceeds 70\u00b0C.",
+            "mode": "single",
+            "triggers": [
+              {
+                "above": 70,
+                "entity_id": "sensor.system_monitor_processor_temperature",
+                "trigger": "numeric_state"
+              }
+            ],
+            "conditions": [],
+            "actions": [
+              {
+                "action": "notify.mobile_app_cph2655",
+                "data": {
+                  "message": "Warning: Pi 5 CPU temperature is {{ states(\"sensor.system_monitor_processor_temperature\") }}\u00b0C.",
+                  "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
+                }
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KYEEMG92FVZDBCZG6NCD2FM8",
+            "parent_id": "01KYEEMG90T8DFRQ3K867E75H6",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "a7038c68d1c5c707910c04e634810e79",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T05:33:45.634047+00:00",
+            "finish": "2026-07-26T05:33:45.859578+00:00"
+          },
+          "domain": "automation",
+          "item_id": "1779332000001",
+          "trigger": "numeric state of sensor.system_monitor_processor_temperature"
+        }
+      }
+    ],
     "automation.audit_cover_commands": [
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "287136a54216e78b960924535cdecb33",
+          "run_id": "9005122f1f0946da9c7c3a4b5b92a913",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:04:17.007338+00:00",
-            "finish": "2026-07-26T05:04:17.008642+00:00"
+            "start": "2026-07-26T05:34:30.672522+00:00",
+            "finish": "2026-07-26T05:34:30.675189+00:00"
           },
           "domain": "automation",
           "item_id": "audit_cover_commands",
@@ -1060,25 +1220,166 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T05:04:17.007385+00:00",
+                "timestamp": "2026-07-26T05:34:30.672584+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.audit_log_all_cover_service_calls",
                     "state": "on",
                     "attributes": {
                       "id": "audit_cover_commands",
-                      "last_triggered": "2026-07-26T05:04:11.756041+00:00",
+                      "last_triggered": "2026-07-26T05:04:53.735497+00:00",
                       "mode": "parallel",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Audit Log - All Cover Service Calls"
                     },
-                    "last_changed": "2026-07-26T05:02:54.866914+00:00",
-                    "last_reported": "2026-07-26T05:04:11.757281+00:00",
-                    "last_updated": "2026-07-26T05:04:11.757281+00:00",
+                    "last_changed": "2026-07-26T05:33:10.187989+00:00",
+                    "last_reported": "2026-07-26T05:33:10.187989+00:00",
+                    "last_updated": "2026-07-26T05:33:10.187989+00:00",
                     "context": {
-                      "id": "01KYECYBZBW7Q1ABR81Y8RQTVM",
-                      "parent_id": "01KYECWHCANM4EB4NKBGR7TV89",
+                      "id": "01KYEEKDNBAJSEEDQHJ4XMDDNC",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "event",
+                    "event": {
+                      "event_type": "call_service",
+                      "data": {
+                        "domain": "cover",
+                        "service": "open_cover",
+                        "service_data": {
+                          "entity_id": [
+                            "cover.dining_room_blinds_curtain",
+                            "cover.family_room_blinds_curtain",
+                            "cover.living_room_blinds_curtain",
+                            "cover.mina_s_blinds_curtain"
+                          ]
+                        }
+                      },
+                      "origin": "LOCAL",
+                      "time_fired": "2026-07-26T05:34:30.672122+00:00",
+                      "context": {
+                        "id": "01KYEEM1NEB1DV3YCECPEV79EK",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "description": "event 'call_service'"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-07-26T05:34:30.673009+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KYEENW8GEKSGY5AN7DDPMMYF",
+                    "parent_id": "01KYEEM1NEB1DV3YCECPEV79EK",
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "system_log",
+                    "service": "write",
+                    "service_data": {
+                      "logger": "audit_cover",
+                      "message": "COVER: open_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-26 01:34:30.674051-04:00"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "audit_cover_commands",
+            "alias": "Audit Log - All Cover Service Calls",
+            "mode": "parallel",
+            "trigger": [
+              {
+                "platform": "event",
+                "event_type": "call_service",
+                "event_data": {
+                  "domain": "cover"
+                }
+              }
+            ],
+            "action": [
+              {
+                "data": {
+                  "logger": "audit_cover",
+                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
+                },
+                "action": "system_log.write"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KYEENW8GEKSGY5AN7DDPMMYF",
+            "parent_id": "01KYEEM1NEB1DV3YCECPEV79EK",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "9005122f1f0946da9c7c3a4b5b92a913",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T05:34:30.672522+00:00",
+            "finish": "2026-07-26T05:34:30.675189+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'"
+        }
+      },
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "b1b69c1999fd8904cd21b2632793789b",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T05:34:35.979085+00:00",
+            "finish": "2026-07-26T05:34:35.980020+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-07-26T05:34:35.979126+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.audit_log_all_cover_service_calls",
+                    "state": "on",
+                    "attributes": {
+                      "id": "audit_cover_commands",
+                      "last_triggered": "2026-07-26T05:34:30.672668+00:00",
+                      "mode": "parallel",
+                      "current": 0,
+                      "max": 10,
+                      "friendly_name": "Audit Log - All Cover Service Calls"
+                    },
+                    "last_changed": "2026-07-26T05:33:10.187989+00:00",
+                    "last_reported": "2026-07-26T05:34:30.674843+00:00",
+                    "last_updated": "2026-07-26T05:34:30.674843+00:00",
+                    "context": {
+                      "id": "01KYEENW8GEKSGY5AN7DDPMMYF",
+                      "parent_id": "01KYEEM1NEB1DV3YCECPEV79EK",
                       "user_id": null
                     }
                   },
@@ -1102,9 +1403,9 @@
                         }
                       },
                       "origin": "LOCAL",
-                      "time_fired": "2026-07-26T05:04:17.007008+00:00",
+                      "time_fired": "2026-07-26T05:34:35.978832+00:00",
                       "context": {
-                        "id": "01KYECWHCANM4EB4NKBGR7TV89",
+                        "id": "01KYEEM1NEB1DV3YCECPEV79EK",
                         "parent_id": null,
                         "user_id": null
                       }
@@ -1117,11 +1418,11 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:04:17.007730+00:00",
+                "timestamp": "2026-07-26T05:34:35.979393+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYECYH3F61N17ZPW6G41DV4T",
-                    "parent_id": "01KYECWHCANM4EB4NKBGR7TV89",
+                    "id": "01KYEEP1EBN7NMRWRPD3A3J3A8",
+                    "parent_id": "01KYEEM1NEB1DV3YCECPEV79EK",
                     "user_id": null
                   }
                 },
@@ -1131,7 +1432,7 @@
                     "service": "write",
                     "service_data": {
                       "logger": "audit_cover",
-                      "message": "COVER: stop_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-26 01:04:17.007945-04:00"
+                      "message": "COVER: stop_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-26 01:34:35.979569-04:00"
                     },
                     "target": {}
                   },
@@ -1165,567 +1466,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYECYH3F61N17ZPW6G41DV4T",
-            "parent_id": "01KYECWHCANM4EB4NKBGR7TV89",
+            "id": "01KYEEP1EBN7NMRWRPD3A3J3A8",
+            "parent_id": "01KYEEM1NEB1DV3YCECPEV79EK",
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "287136a54216e78b960924535cdecb33",
+          "run_id": "b1b69c1999fd8904cd21b2632793789b",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:04:17.007338+00:00",
-            "finish": "2026-07-26T05:04:17.008642+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "0b9f5cc3fe54c0727290bbe727432c50",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:32.375390+00:00",
-            "finish": "2026-07-26T05:04:32.376386+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:04:32.375429+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.audit_log_all_cover_service_calls",
-                    "state": "on",
-                    "attributes": {
-                      "id": "audit_cover_commands",
-                      "last_triggered": "2026-07-26T05:04:17.007453+00:00",
-                      "mode": "parallel",
-                      "current": 0,
-                      "max": 10,
-                      "friendly_name": "Audit Log - All Cover Service Calls"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.866914+00:00",
-                    "last_reported": "2026-07-26T05:04:17.008444+00:00",
-                    "last_updated": "2026-07-26T05:04:17.008444+00:00",
-                    "context": {
-                      "id": "01KYECYH3F61N17ZPW6G41DV4T",
-                      "parent_id": "01KYECWHCANM4EB4NKBGR7TV89",
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "event",
-                    "event": {
-                      "event_type": "call_service",
-                      "data": {
-                        "domain": "cover",
-                        "service": "set_cover_position",
-                        "service_data": {
-                          "entity_id": "cover.mina_s_blinds_curtain",
-                          "position": 0
-                        }
-                      },
-                      "origin": "LOCAL",
-                      "time_fired": "2026-07-26T05:04:32.375092+00:00",
-                      "context": {
-                        "id": "01KYECZ03PASQJMBRPYWWN6040",
-                        "parent_id": null,
-                        "user_id": "3b4f228b5f7e4c038ec670067287fc67"
-                      }
-                    },
-                    "description": "event 'call_service'"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:04:32.375743+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYECZ03QKVP9RVX5VPK6FFRV",
-                    "parent_id": "01KYECZ03PASQJMBRPYWWN6040",
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "params": {
-                    "domain": "system_log",
-                    "service": "write",
-                    "service_data": {
-                      "logger": "audit_cover",
-                      "message": "COVER: set_cover_position on cover.mina_s_blinds_curtain pos=0 at 2026-07-26 01:04:32.375912-04:00"
-                    },
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "audit_cover_commands",
-            "alias": "Audit Log - All Cover Service Calls",
-            "mode": "parallel",
-            "trigger": [
-              {
-                "platform": "event",
-                "event_type": "call_service",
-                "event_data": {
-                  "domain": "cover"
-                }
-              }
-            ],
-            "action": [
-              {
-                "data": {
-                  "logger": "audit_cover",
-                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
-                },
-                "action": "system_log.write"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYECZ03QKVP9RVX5VPK6FFRV",
-            "parent_id": "01KYECZ03PASQJMBRPYWWN6040",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "0b9f5cc3fe54c0727290bbe727432c50",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:32.375390+00:00",
-            "finish": "2026-07-26T05:04:32.376386+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "76b6f4da5881f216afe416c03c2a82d4",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:39.534744+00:00",
-            "finish": "2026-07-26T05:04:39.536123+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:04:39.534793+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.audit_log_all_cover_service_calls",
-                    "state": "on",
-                    "attributes": {
-                      "id": "audit_cover_commands",
-                      "last_triggered": "2026-07-26T05:04:32.375487+00:00",
-                      "mode": "parallel",
-                      "current": 0,
-                      "max": 10,
-                      "friendly_name": "Audit Log - All Cover Service Calls"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.866914+00:00",
-                    "last_reported": "2026-07-26T05:04:32.376256+00:00",
-                    "last_updated": "2026-07-26T05:04:32.376256+00:00",
-                    "context": {
-                      "id": "01KYECZ03QKVP9RVX5VPK6FFRV",
-                      "parent_id": "01KYECZ03PASQJMBRPYWWN6040",
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "event",
-                    "event": {
-                      "event_type": "call_service",
-                      "data": {
-                        "domain": "cover",
-                        "service": "set_cover_position",
-                        "service_data": {
-                          "entity_id": "cover.living_room_blinds_curtain",
-                          "position": 0
-                        }
-                      },
-                      "origin": "LOCAL",
-                      "time_fired": "2026-07-26T05:04:39.534359+00:00",
-                      "context": {
-                        "id": "01KYECZ73E1QZFDRY92SHB3MWR",
-                        "parent_id": null,
-                        "user_id": "3b4f228b5f7e4c038ec670067287fc67"
-                      }
-                    },
-                    "description": "event 'call_service'"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:04:39.535241+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYECZ73EGXJD25KB92G3P219",
-                    "parent_id": "01KYECZ73E1QZFDRY92SHB3MWR",
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "params": {
-                    "domain": "system_log",
-                    "service": "write",
-                    "service_data": {
-                      "logger": "audit_cover",
-                      "message": "COVER: set_cover_position on cover.living_room_blinds_curtain pos=0 at 2026-07-26 01:04:39.535472-04:00"
-                    },
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "audit_cover_commands",
-            "alias": "Audit Log - All Cover Service Calls",
-            "mode": "parallel",
-            "trigger": [
-              {
-                "platform": "event",
-                "event_type": "call_service",
-                "event_data": {
-                  "domain": "cover"
-                }
-              }
-            ],
-            "action": [
-              {
-                "data": {
-                  "logger": "audit_cover",
-                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
-                },
-                "action": "system_log.write"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYECZ73EGXJD25KB92G3P219",
-            "parent_id": "01KYECZ73E1QZFDRY92SHB3MWR",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "76b6f4da5881f216afe416c03c2a82d4",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:39.534744+00:00",
-            "finish": "2026-07-26T05:04:39.536123+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "acb098b0de34fdff68027906b72d250c",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:46.655297+00:00",
-            "finish": "2026-07-26T05:04:46.656642+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:04:46.655347+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.audit_log_all_cover_service_calls",
-                    "state": "on",
-                    "attributes": {
-                      "id": "audit_cover_commands",
-                      "last_triggered": "2026-07-26T05:04:39.534881+00:00",
-                      "mode": "parallel",
-                      "current": 0,
-                      "max": 10,
-                      "friendly_name": "Audit Log - All Cover Service Calls"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.866914+00:00",
-                    "last_reported": "2026-07-26T05:04:39.535938+00:00",
-                    "last_updated": "2026-07-26T05:04:39.535938+00:00",
-                    "context": {
-                      "id": "01KYECZ73EGXJD25KB92G3P219",
-                      "parent_id": "01KYECZ73E1QZFDRY92SHB3MWR",
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "event",
-                    "event": {
-                      "event_type": "call_service",
-                      "data": {
-                        "domain": "cover",
-                        "service": "set_cover_position",
-                        "service_data": {
-                          "entity_id": "cover.dining_room_blinds_curtain",
-                          "position": 0
-                        }
-                      },
-                      "origin": "LOCAL",
-                      "time_fired": "2026-07-26T05:04:46.654845+00:00",
-                      "context": {
-                        "id": "01KYECZE1Y4TF6JMWYWYQRPBA1",
-                        "parent_id": null,
-                        "user_id": "3b4f228b5f7e4c038ec670067287fc67"
-                      }
-                    },
-                    "description": "event 'call_service'"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:04:46.655750+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYECZE1ZAEVJKTT8JA7D15VP",
-                    "parent_id": "01KYECZE1Y4TF6JMWYWYQRPBA1",
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "params": {
-                    "domain": "system_log",
-                    "service": "write",
-                    "service_data": {
-                      "logger": "audit_cover",
-                      "message": "COVER: set_cover_position on cover.dining_room_blinds_curtain pos=0 at 2026-07-26 01:04:46.655961-04:00"
-                    },
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "audit_cover_commands",
-            "alias": "Audit Log - All Cover Service Calls",
-            "mode": "parallel",
-            "trigger": [
-              {
-                "platform": "event",
-                "event_type": "call_service",
-                "event_data": {
-                  "domain": "cover"
-                }
-              }
-            ],
-            "action": [
-              {
-                "data": {
-                  "logger": "audit_cover",
-                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
-                },
-                "action": "system_log.write"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYECZE1ZAEVJKTT8JA7D15VP",
-            "parent_id": "01KYECZE1Y4TF6JMWYWYQRPBA1",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "acb098b0de34fdff68027906b72d250c",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:46.655297+00:00",
-            "finish": "2026-07-26T05:04:46.656642+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "e59902a67b25f7ed7ada891a7058b765",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:53.735263+00:00",
-            "finish": "2026-07-26T05:04:53.737170+00:00"
-          },
-          "domain": "automation",
-          "item_id": "audit_cover_commands",
-          "trigger": "event 'call_service'",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:04:53.735360+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.audit_log_all_cover_service_calls",
-                    "state": "on",
-                    "attributes": {
-                      "id": "audit_cover_commands",
-                      "last_triggered": "2026-07-26T05:04:46.655425+00:00",
-                      "mode": "parallel",
-                      "current": 0,
-                      "max": 10,
-                      "friendly_name": "Audit Log - All Cover Service Calls"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.866914+00:00",
-                    "last_reported": "2026-07-26T05:04:46.656445+00:00",
-                    "last_updated": "2026-07-26T05:04:46.656445+00:00",
-                    "context": {
-                      "id": "01KYECZE1ZAEVJKTT8JA7D15VP",
-                      "parent_id": "01KYECZE1Y4TF6JMWYWYQRPBA1",
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "event",
-                    "event": {
-                      "event_type": "call_service",
-                      "data": {
-                        "domain": "cover",
-                        "service": "set_cover_position",
-                        "service_data": {
-                          "entity_id": "cover.family_room_blinds_curtain",
-                          "position": 0
-                        }
-                      },
-                      "origin": "LOCAL",
-                      "time_fired": "2026-07-26T05:04:53.722852+00:00",
-                      "context": {
-                        "id": "01KYECZMYTJ5EPK88FQDVV36D0",
-                        "parent_id": null,
-                        "user_id": "3b4f228b5f7e4c038ec670067287fc67"
-                      }
-                    },
-                    "description": "event 'call_service'"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:04:53.735952+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYECZMZ7AKZ0DMC1FPTSXAYS",
-                    "parent_id": "01KYECZMYTJ5EPK88FQDVV36D0",
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "params": {
-                    "domain": "system_log",
-                    "service": "write",
-                    "service_data": {
-                      "logger": "audit_cover",
-                      "message": "COVER: set_cover_position on cover.family_room_blinds_curtain pos=0 at 2026-07-26 01:04:53.736248-04:00"
-                    },
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "audit_cover_commands",
-            "alias": "Audit Log - All Cover Service Calls",
-            "mode": "parallel",
-            "trigger": [
-              {
-                "platform": "event",
-                "event_type": "call_service",
-                "event_data": {
-                  "domain": "cover"
-                }
-              }
-            ],
-            "action": [
-              {
-                "data": {
-                  "logger": "audit_cover",
-                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
-                },
-                "action": "system_log.write"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYECZMZ7AKZ0DMC1FPTSXAYS",
-            "parent_id": "01KYECZMYTJ5EPK88FQDVV36D0",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "e59902a67b25f7ed7ada891a7058b765",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:04:53.735263+00:00",
-            "finish": "2026-07-26T05:04:53.737170+00:00"
+            "start": "2026-07-26T05:34:35.979085+00:00",
+            "finish": "2026-07-26T05:34:35.980020+00:00"
           },
           "domain": "automation",
           "item_id": "audit_cover_commands",
@@ -1733,42 +1486,42 @@
         }
       }
     ],
-    "automation.1779332000001": [
+    "automation.1777488823738": [
       {
         "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "883d52115d742539c5177b9473c5ea4a",
+          "last_step": "action/7",
+          "run_id": "f087609fa055484df21b72de22e24eac",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:17:35.645092+00:00",
-            "finish": "2026-07-26T05:17:35.953520+00:00"
+            "start": "2026-07-26T06:00:00.135003+00:00",
+            "finish": "2026-07-26T06:00:08.869691+00:00"
           },
           "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature",
+          "item_id": "1777488823738",
+          "trigger": "time",
           "trace": {
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T05:17:35.645155+00:00",
+                "timestamp": "2026-07-26T06:00:00.135042+00:00",
                 "changed_variables": {
                   "this": {
-                    "entity_id": "automation.pi_5_thermal_warning",
+                    "entity_id": "automation.turn_off_everything_and_lock_the_doors_at_2am",
                     "state": "on",
                     "attributes": {
-                      "id": "1779332000001",
-                      "last_triggered": "2026-07-26T05:17:05.720091+00:00",
+                      "id": "1777488823738",
+                      "last_triggered": "2026-07-25T06:00:00.471953+00:00",
                       "mode": "single",
                       "current": 0,
-                      "friendly_name": "Pi 5 thermal warning"
+                      "friendly_name": "Turn off everything and lock the doors at 2AM"
                     },
-                    "last_changed": "2026-07-26T05:02:54.874101+00:00",
-                    "last_reported": "2026-07-26T05:17:05.894245+00:00",
-                    "last_updated": "2026-07-26T05:17:05.894245+00:00",
+                    "last_changed": "2026-07-26T05:33:10.185344+00:00",
+                    "last_reported": "2026-07-26T05:33:10.185344+00:00",
+                    "last_updated": "2026-07-26T05:33:10.185344+00:00",
                     "context": {
-                      "id": "01KYEDNZSQ42718ZH2RV8D7N2H",
-                      "parent_id": "01KYEDNZSQA1JCZHHD0HB452W2",
+                      "id": "01KYEEKDN9TEGJWG9KAVY3NMKC",
+                      "parent_id": null,
                       "user_id": null
                     }
                   },
@@ -1776,48 +1529,10 @@
                     "id": "0",
                     "idx": "0",
                     "alias": null,
-                    "platform": "numeric_state",
-                    "entity_id": "sensor.system_monitor_processor_temperature",
-                    "below": null,
-                    "above": 70.0,
-                    "from_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "69.4",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:17:20.679467+00:00",
-                      "last_reported": "2026-07-26T05:17:20.679467+00:00",
-                      "last_updated": "2026-07-26T05:17:20.679467+00:00",
-                      "context": {
-                        "id": "01KYEDPED7A6HSQEEMFR4SCPHW",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "to_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "71.6",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:17:35.644807+00:00",
-                      "last_reported": "2026-07-26T05:17:35.644807+00:00",
-                      "last_updated": "2026-07-26T05:17:35.644807+00:00",
-                      "context": {
-                        "id": "01KYEDPX0WKF9160DS2VQ8X3EA",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "for": null,
-                    "description": "numeric state of sensor.system_monitor_processor_temperature"
+                    "platform": "time",
+                    "now": "2026-07-26T02:00:00.134822-04:00",
+                    "description": "time",
+                    "entity_id": null
                   }
                 }
               }
@@ -1825,655 +1540,309 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T05:17:35.645472+00:00",
+                "timestamp": "2026-07-26T06:00:00.135387+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEDPX0XBNZGTADZTH1XMJ20",
-                    "parent_id": "01KYEDPX0WKF9160DS2VQ8X3EA",
+                    "id": "01KYEG4HW6FSZTQ2XPPGQHB5NP",
+                    "parent_id": null,
                     "user_id": null
                   }
                 },
                 "result": {
                   "params": {
-                    "domain": "notify",
-                    "service": "mobile_app_cph2655",
-                    "service_data": {
-                      "message": "Warning: Pi 5 CPU temperature is 71.6\u00b0C.",
-                      "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                    },
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "1779332000001",
-            "alias": "Pi 5 thermal warning",
-            "description": "Warning when Pi 5 CPU temperature exceeds 70\u00b0C.",
-            "mode": "single",
-            "triggers": [
-              {
-                "above": 70,
-                "entity_id": "sensor.system_monitor_processor_temperature",
-                "trigger": "numeric_state"
-              }
-            ],
-            "conditions": [],
-            "actions": [
-              {
-                "action": "notify.mobile_app_cph2655",
-                "data": {
-                  "message": "Warning: Pi 5 CPU temperature is {{ states(\"sensor.system_monitor_processor_temperature\") }}\u00b0C.",
-                  "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                }
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEDPX0XBNZGTADZTH1XMJ20",
-            "parent_id": "01KYEDPX0WKF9160DS2VQ8X3EA",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "883d52115d742539c5177b9473c5ea4a",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:17:35.645092+00:00",
-            "finish": "2026-07-26T05:17:35.953520+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "a29b61771279dfeac9b8e85a52e467a9",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:19:35.648570+00:00",
-            "finish": "2026-07-26T05:19:35.859795+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:19:35.648641+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.pi_5_thermal_warning",
-                    "state": "on",
-                    "attributes": {
-                      "id": "1779332000001",
-                      "last_triggered": "2026-07-26T05:17:35.645256+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Pi 5 thermal warning"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.874101+00:00",
-                    "last_reported": "2026-07-26T05:17:35.952005+00:00",
-                    "last_updated": "2026-07-26T05:17:35.952005+00:00",
-                    "context": {
-                      "id": "01KYEDPX0XBNZGTADZTH1XMJ20",
-                      "parent_id": "01KYEDPX0WKF9160DS2VQ8X3EA",
-                      "user_id": null
+                    "domain": "light",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                        "light.nanoleaf_multicolor_ls",
+                        "light.nanoleaf_multicolor_ls_2",
+                        "light.kitchen_light_light_1",
+                        "light.curtain_lights_v2",
+                        "light.garage_wall_light"
+                      ]
                     }
                   },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "numeric_state",
-                    "entity_id": "sensor.system_monitor_processor_temperature",
-                    "below": null,
-                    "above": 70.0,
-                    "from_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "69.4",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:19:20.725418+00:00",
-                      "last_reported": "2026-07-26T05:19:20.725418+00:00",
-                      "last_updated": "2026-07-26T05:19:20.725418+00:00",
-                      "context": {
-                        "id": "01KYEDT3MNMHKRJH6656B5BYZG",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "to_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "71.6",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:19:35.648261+00:00",
-                      "last_reported": "2026-07-26T05:19:35.648261+00:00",
-                      "last_updated": "2026-07-26T05:19:35.648261+00:00",
-                      "context": {
-                        "id": "01KYEDTJ702DJWY2T7ABSYKK9S",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "for": null,
-                    "description": "numeric state of sensor.system_monitor_processor_temperature"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:19:35.649019+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEDTJ702QNDFGDV7J2VS1WE",
-                    "parent_id": "01KYEDTJ702DJWY2T7ABSYKK9S",
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "params": {
-                    "domain": "notify",
-                    "service": "mobile_app_cph2655",
-                    "service_data": {
-                      "message": "Warning: Pi 5 CPU temperature is 71.6\u00b0C.",
-                      "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                    },
-                    "target": {}
-                  },
                   "running_script": false
                 }
               }
-            ]
-          },
-          "config": {
-            "id": "1779332000001",
-            "alias": "Pi 5 thermal warning",
-            "description": "Warning when Pi 5 CPU temperature exceeds 70\u00b0C.",
-            "mode": "single",
-            "triggers": [
-              {
-                "above": 70,
-                "entity_id": "sensor.system_monitor_processor_temperature",
-                "trigger": "numeric_state"
-              }
             ],
-            "conditions": [],
-            "actions": [
+            "action/1": [
               {
-                "action": "notify.mobile_app_cph2655",
-                "data": {
-                  "message": "Warning: Pi 5 CPU temperature is {{ states(\"sensor.system_monitor_processor_temperature\") }}\u00b0C.",
-                  "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                }
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEDTJ702QNDFGDV7J2VS1WE",
-            "parent_id": "01KYEDTJ702DJWY2T7ABSYKK9S",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "a29b61771279dfeac9b8e85a52e467a9",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:19:35.648570+00:00",
-            "finish": "2026-07-26T05:19:35.859795+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "d767be4905d0bf0522e46cfc75d14067",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:20:05.657823+00:00",
-            "finish": "2026-07-26T05:20:05.840166+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:20:05.657919+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.pi_5_thermal_warning",
-                    "state": "on",
-                    "attributes": {
-                      "id": "1779332000001",
-                      "last_triggered": "2026-07-26T05:19:35.648737+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Pi 5 thermal warning"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.874101+00:00",
-                    "last_reported": "2026-07-26T05:19:35.856476+00:00",
-                    "last_updated": "2026-07-26T05:19:35.856476+00:00",
-                    "context": {
-                      "id": "01KYEDTJ702QNDFGDV7J2VS1WE",
-                      "parent_id": "01KYEDTJ702DJWY2T7ABSYKK9S",
-                      "user_id": null
+                "path": "action/1",
+                "timestamp": "2026-07-26T06:00:00.555869+00:00",
+                "result": {
+                  "params": {
+                    "domain": "switch",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "switch.back_hallway_light_switch_1_2",
+                        "switch.kitchen_pantry_light"
+                      ]
                     }
                   },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "numeric_state",
-                    "entity_id": "sensor.system_monitor_processor_temperature",
-                    "below": null,
-                    "above": 70.0,
-                    "from_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "70.0",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:19:50.725513+00:00",
-                      "last_reported": "2026-07-26T05:19:50.725513+00:00",
-                      "last_updated": "2026-07-26T05:19:50.725513+00:00",
-                      "context": {
-                        "id": "01KYEDV0Y5THAEGWMVVVAWCQWX",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "to_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "71.6",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:20:05.657341+00:00",
-                      "last_reported": "2026-07-26T05:20:05.657341+00:00",
-                      "last_updated": "2026-07-26T05:20:05.657341+00:00",
-                      "context": {
-                        "id": "01KYEDVFGS1YMK23NAQ9WKP6K9",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "for": null,
-                    "description": "numeric state of sensor.system_monitor_processor_temperature"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:20:05.658429+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEDVFGS1NJPN8MAR0A4MV6D",
-                    "parent_id": "01KYEDVFGS1YMK23NAQ9WKP6K9",
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "params": {
-                    "domain": "notify",
-                    "service": "mobile_app_cph2655",
-                    "service_data": {
-                      "message": "Warning: Pi 5 CPU temperature is 71.6\u00b0C.",
-                      "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                    },
-                    "target": {}
-                  },
                   "running_script": false
                 }
               }
-            ]
-          },
-          "config": {
-            "id": "1779332000001",
-            "alias": "Pi 5 thermal warning",
-            "description": "Warning when Pi 5 CPU temperature exceeds 70\u00b0C.",
-            "mode": "single",
-            "triggers": [
-              {
-                "above": 70,
-                "entity_id": "sensor.system_monitor_processor_temperature",
-                "trigger": "numeric_state"
-              }
             ],
-            "conditions": [],
-            "actions": [
+            "action/2": [
               {
-                "action": "notify.mobile_app_cph2655",
-                "data": {
-                  "message": "Warning: Pi 5 CPU temperature is {{ states(\"sensor.system_monitor_processor_temperature\") }}\u00b0C.",
-                  "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                }
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEDVFGS1NJPN8MAR0A4MV6D",
-            "parent_id": "01KYEDVFGS1YMK23NAQ9WKP6K9",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "d767be4905d0bf0522e46cfc75d14067",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:20:05.657823+00:00",
-            "finish": "2026-07-26T05:20:05.840166+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "08893fbb80ed86e3fc77e4d4811297bb",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:21:35.720861+00:00",
-            "finish": "2026-07-26T05:21:35.895304+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:21:35.720943+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.pi_5_thermal_warning",
-                    "state": "on",
-                    "attributes": {
-                      "id": "1779332000001",
-                      "last_triggered": "2026-07-26T05:20:05.658050+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Pi 5 thermal warning"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.874101+00:00",
-                    "last_reported": "2026-07-26T05:20:05.837162+00:00",
-                    "last_updated": "2026-07-26T05:20:05.837162+00:00",
-                    "context": {
-                      "id": "01KYEDVFGS1NJPN8MAR0A4MV6D",
-                      "parent_id": "01KYEDVFGS1YMK23NAQ9WKP6K9",
-                      "user_id": null
+                "path": "action/2",
+                "timestamp": "2026-07-26T06:00:00.556369+00:00",
+                "result": {
+                  "params": {
+                    "domain": "lock",
+                    "service": "lock",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "lock.front_door",
+                        "lock.garage_entry"
+                      ]
                     }
                   },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "numeric_state",
-                    "entity_id": "sensor.system_monitor_processor_temperature",
-                    "below": null,
-                    "above": 70.0,
-                    "from_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "70.0",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:21:20.723820+00:00",
-                      "last_reported": "2026-07-26T05:21:20.723820+00:00",
-                      "last_updated": "2026-07-26T05:21:20.723820+00:00",
-                      "context": {
-                        "id": "01KYEDXRTK05NSRR3S9J53VXGY",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "to_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "71.6",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:21:35.719578+00:00",
-                      "last_reported": "2026-07-26T05:21:35.719578+00:00",
-                      "last_updated": "2026-07-26T05:21:35.719578+00:00",
-                      "context": {
-                        "id": "01KYEDY7F7HQHFSHPSTVBXJS7S",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "for": null,
-                    "description": "numeric state of sensor.system_monitor_processor_temperature"
-                  }
+                  "running_script": false
                 }
               }
             ],
-            "action/0": [
+            "action/3": [
               {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:21:35.721630+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEDY7F8QBKP9QN7Y8MZ3KGT",
-                    "parent_id": "01KYEDY7F7HQHFSHPSTVBXJS7S",
-                    "user_id": null
-                  }
-                },
+                "path": "action/3",
+                "timestamp": "2026-07-26T06:00:02.190362+00:00"
+              }
+            ],
+            "action/3/if": [
+              {
+                "path": "action/3/if",
+                "timestamp": "2026-07-26T06:00:02.190520+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/3/if/condition/0": [
+              {
+                "path": "action/3/if/condition/0",
+                "timestamp": "2026-07-26T06:00:02.190557+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/3/if/condition/0/entity_id/0": [
+              {
+                "path": "action/3/if/condition/0/entity_id/0",
+                "timestamp": "2026-07-26T06:00:02.190576+00:00",
+                "result": {
+                  "result": false,
+                  "state": "closed",
+                  "wanted_state": "open"
+                }
+              }
+            ],
+            "action/4": [
+              {
+                "path": "action/4",
+                "timestamp": "2026-07-26T06:00:02.190640+00:00"
+              }
+            ],
+            "action/4/if": [
+              {
+                "path": "action/4/if",
+                "timestamp": "2026-07-26T06:00:02.190700+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/4/if/condition/0": [
+              {
+                "path": "action/4/if/condition/0",
+                "timestamp": "2026-07-26T06:00:02.190722+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "action/4/if/condition/0/entity_id/0": [
+              {
+                "path": "action/4/if/condition/0/entity_id/0",
+                "timestamp": "2026-07-26T06:00:02.190738+00:00",
+                "result": {
+                  "result": false,
+                  "state": "unknown",
+                  "wanted_state": "open"
+                }
+              }
+            ],
+            "action/5": [
+              {
+                "path": "action/5",
+                "timestamp": "2026-07-26T06:00:02.190789+00:00",
                 "result": {
                   "params": {
-                    "domain": "notify",
-                    "service": "mobile_app_cph2655",
+                    "domain": "adaptive_lighting",
+                    "service": "set_manual_control",
                     "service_data": {
-                      "message": "Warning: Pi 5 CPU temperature is 71.6\u00b0C.",
-                      "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
+                      "entity_id": "switch.cabinet_strips_adaptive_lighting_cabinet_strips",
+                      "manual_control": false
                     },
                     "target": {}
                   },
                   "running_script": false
                 }
               }
-            ]
-          },
-          "config": {
-            "id": "1779332000001",
-            "alias": "Pi 5 thermal warning",
-            "description": "Warning when Pi 5 CPU temperature exceeds 70\u00b0C.",
-            "mode": "single",
-            "triggers": [
-              {
-                "above": 70,
-                "entity_id": "sensor.system_monitor_processor_temperature",
-                "trigger": "numeric_state"
-              }
             ],
-            "conditions": [],
-            "actions": [
+            "action/6": [
               {
-                "action": "notify.mobile_app_cph2655",
-                "data": {
-                  "message": "Warning: Pi 5 CPU temperature is {{ states(\"sensor.system_monitor_processor_temperature\") }}\u00b0C.",
-                  "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                }
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEDY7F8QBKP9QN7Y8MZ3KGT",
-            "parent_id": "01KYEDY7F7HQHFSHPSTVBXJS7S",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "08893fbb80ed86e3fc77e4d4811297bb",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:21:35.720861+00:00",
-            "finish": "2026-07-26T05:21:35.895304+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "8ed44f319210c27c00ff8a113dbbdbb8",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T05:23:20.729963+00:00",
-            "finish": "2026-07-26T05:23:20.860908+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:23:20.730036+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.pi_5_thermal_warning",
-                    "state": "on",
-                    "attributes": {
-                      "id": "1779332000001",
-                      "last_triggered": "2026-07-26T05:21:35.721115+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Pi 5 thermal warning"
+                "path": "action/6",
+                "timestamp": "2026-07-26T06:00:02.192625+00:00",
+                "result": {
+                  "params": {
+                    "domain": "light",
+                    "service": "turn_on",
+                    "service_data": {
+                      "brightness_pct": 12,
+                      "entity_id": [
+                        "light.elements_b3cd_2",
+                        "light.izaan_s_lamp"
+                      ]
                     },
-                    "last_changed": "2026-07-26T05:02:54.874101+00:00",
-                    "last_reported": "2026-07-26T05:21:35.892091+00:00",
-                    "last_updated": "2026-07-26T05:21:35.892091+00:00",
-                    "context": {
-                      "id": "01KYEDY7F8QBKP9QN7Y8MZ3KGT",
-                      "parent_id": "01KYEDY7F7HQHFSHPSTVBXJS7S",
-                      "user_id": null
+                    "target": {
+                      "entity_id": [
+                        "light.elements_b3cd_2",
+                        "light.izaan_s_lamp"
+                      ]
                     }
                   },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "numeric_state",
-                    "entity_id": "sensor.system_monitor_processor_temperature",
-                    "below": null,
-                    "above": 70.0,
-                    "from_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "69.4",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:23:05.648181+00:00",
-                      "last_reported": "2026-07-26T05:23:05.648181+00:00",
-                      "last_updated": "2026-07-26T05:23:05.648181+00:00",
-                      "context": {
-                        "id": "01KYEE0Z9GK24NWXBRH9HHFE8A",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "to_state": {
-                      "entity_id": "sensor.system_monitor_processor_temperature",
-                      "state": "72.2",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "unit_of_measurement": "\u00b0C",
-                        "device_class": "temperature",
-                        "friendly_name": "System Monitor Processor temperature"
-                      },
-                      "last_changed": "2026-07-26T05:23:20.726975+00:00",
-                      "last_reported": "2026-07-26T05:23:20.726975+00:00",
-                      "last_updated": "2026-07-26T05:23:20.726975+00:00",
-                      "context": {
-                        "id": "01KYEE1E0PSSES2ZJSNJ59ZKPX",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "for": null,
-                    "description": "numeric state of sensor.system_monitor_processor_temperature"
-                  }
+                  "running_script": false
                 }
               }
             ],
-            "action/0": [
+            "action/7": [
               {
-                "path": "action/0",
-                "timestamp": "2026-07-26T05:23:20.730419+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEE1E0S7PTG84CSD5574WDB",
-                    "parent_id": "01KYEE1E0PSSES2ZJSNJ59ZKPX",
-                    "user_id": null
-                  }
-                },
+                "path": "action/7",
+                "timestamp": "2026-07-26T06:00:02.515345+00:00",
                 "result": {
                   "params": {
-                    "domain": "notify",
-                    "service": "mobile_app_cph2655",
+                    "domain": "light",
+                    "service": "turn_on",
                     "service_data": {
-                      "message": "Warning: Pi 5 CPU temperature is 72.2\u00b0C.",
-                      "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
+                      "brightness_pct": 10,
+                      "entity_id": [
+                        "light.lamppost_bulb_1",
+                        "light.lamppost_bulb_2",
+                        "light.lamppost_bulb_3",
+                        "light.front_porch_downlight",
+                        "light.front_porch_downlight_segment_1",
+                        "light.front_porch_downlight_segment_2",
+                        "light.front_porch_downlight_segment_3",
+                        "light.front_porch_downlight_segment_4",
+                        "light.front_porch_downlight_segment_5",
+                        "light.front_porch_downlight_segment_6",
+                        "light.front_porch_downlight_segment_7",
+                        "light.front_porch_downlight_segment_8",
+                        "light.front_porch_downlight_segment_9",
+                        "light.front_porch_downlight_segment_10",
+                        "light.front_porch_downlight_segment_11",
+                        "light.front_porch_downlight_segment_12",
+                        "light.front_porch_downlight_segment_13",
+                        "light.front_porch_downlight_segment_14",
+                        "light.front_porch_downlight_segment_15",
+                        "light.garage_right_downlight",
+                        "light.garage_left_downlight",
+                        "light.garage_left_downlight_segment_1",
+                        "light.garage_left_downlight_segment_2",
+                        "light.garage_left_downlight_segment_3",
+                        "light.garage_left_downlight_segment_4",
+                        "light.garage_left_downlight_segment_5",
+                        "light.garage_left_downlight_segment_6",
+                        "light.garage_left_downlight_segment_7",
+                        "light.garage_left_downlight_segment_8",
+                        "light.garage_left_downlight_segment_9",
+                        "light.garage_left_downlight_segment_10",
+                        "light.garage_left_downlight_segment_11",
+                        "light.garage_left_downlight_segment_12",
+                        "light.garage_left_downlight_segment_13",
+                        "light.garage_left_downlight_segment_14",
+                        "light.garage_left_downlight_segment_15",
+                        "light.garage_right_downlight_segment_1",
+                        "light.garage_right_downlight_segment_2",
+                        "light.garage_right_downlight_segment_3",
+                        "light.garage_right_downlight_segment_4",
+                        "light.garage_right_downlight_segment_5",
+                        "light.garage_right_downlight_segment_6",
+                        "light.garage_right_downlight_segment_7",
+                        "light.garage_right_downlight_segment_8",
+                        "light.garage_right_downlight_segment_9",
+                        "light.garage_right_downlight_segment_10",
+                        "light.garage_right_downlight_segment_11",
+                        "light.garage_right_downlight_segment_12",
+                        "light.garage_right_downlight_segment_13",
+                        "light.garage_right_downlight_segment_14",
+                        "light.garage_right_downlight_segment_15"
+                      ]
                     },
-                    "target": {}
+                    "target": {
+                      "entity_id": [
+                        "light.lamppost_bulb_1",
+                        "light.lamppost_bulb_2",
+                        "light.lamppost_bulb_3",
+                        "light.front_porch_downlight",
+                        "light.front_porch_downlight_segment_1",
+                        "light.front_porch_downlight_segment_2",
+                        "light.front_porch_downlight_segment_3",
+                        "light.front_porch_downlight_segment_4",
+                        "light.front_porch_downlight_segment_5",
+                        "light.front_porch_downlight_segment_6",
+                        "light.front_porch_downlight_segment_7",
+                        "light.front_porch_downlight_segment_8",
+                        "light.front_porch_downlight_segment_9",
+                        "light.front_porch_downlight_segment_10",
+                        "light.front_porch_downlight_segment_11",
+                        "light.front_porch_downlight_segment_12",
+                        "light.front_porch_downlight_segment_13",
+                        "light.front_porch_downlight_segment_14",
+                        "light.front_porch_downlight_segment_15",
+                        "light.garage_right_downlight",
+                        "light.garage_left_downlight",
+                        "light.garage_left_downlight_segment_1",
+                        "light.garage_left_downlight_segment_2",
+                        "light.garage_left_downlight_segment_3",
+                        "light.garage_left_downlight_segment_4",
+                        "light.garage_left_downlight_segment_5",
+                        "light.garage_left_downlight_segment_6",
+                        "light.garage_left_downlight_segment_7",
+                        "light.garage_left_downlight_segment_8",
+                        "light.garage_left_downlight_segment_9",
+                        "light.garage_left_downlight_segment_10",
+                        "light.garage_left_downlight_segment_11",
+                        "light.garage_left_downlight_segment_12",
+                        "light.garage_left_downlight_segment_13",
+                        "light.garage_left_downlight_segment_14",
+                        "light.garage_left_downlight_segment_15",
+                        "light.garage_right_downlight_segment_1",
+                        "light.garage_right_downlight_segment_2",
+                        "light.garage_right_downlight_segment_3",
+                        "light.garage_right_downlight_segment_4",
+                        "light.garage_right_downlight_segment_5",
+                        "light.garage_right_downlight_segment_6",
+                        "light.garage_right_downlight_segment_7",
+                        "light.garage_right_downlight_segment_8",
+                        "light.garage_right_downlight_segment_9",
+                        "light.garage_right_downlight_segment_10",
+                        "light.garage_right_downlight_segment_11",
+                        "light.garage_right_downlight_segment_12",
+                        "light.garage_right_downlight_segment_13",
+                        "light.garage_right_downlight_segment_14",
+                        "light.garage_right_downlight_segment_15"
+                      ]
+                    }
                   },
                   "running_script": false
                 }
@@ -2481,47 +1850,202 @@
             ]
           },
           "config": {
-            "id": "1779332000001",
-            "alias": "Pi 5 thermal warning",
-            "description": "Warning when Pi 5 CPU temperature exceeds 70\u00b0C.",
+            "actions": [
+              {
+                "action": "light.turn_off",
+                "data": {},
+                "metadata": {},
+                "target": {
+                  "entity_id": [
+                    "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                    "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                    "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                    "light.nanoleaf_multicolor_ls",
+                    "light.nanoleaf_multicolor_ls_2",
+                    "light.kitchen_light_light_1",
+                    "light.curtain_lights_v2",
+                    "light.garage_wall_light"
+                  ]
+                }
+              },
+              {
+                "action": "switch.turn_off",
+                "data": {},
+                "target": {
+                  "entity_id": [
+                    "switch.back_hallway_light_switch_1_2",
+                    "switch.kitchen_pantry_light"
+                  ]
+                }
+              },
+              {
+                "action": "lock.lock",
+                "data": {},
+                "metadata": {},
+                "target": {
+                  "entity_id": [
+                    "lock.front_door",
+                    "lock.garage_entry"
+                  ]
+                }
+              },
+              {
+                "if": [
+                  {
+                    "condition": "state",
+                    "entity_id": "cover.larissa_s_garage_door",
+                    "state": "open"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.close_cover",
+                    "target": {
+                      "entity_id": "cover.larissa_s_garage_door"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "state",
+                    "entity_id": "cover.garage_door_wa1nvzx3",
+                    "state": "open"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.close_cover",
+                    "target": {
+                      "entity_id": "cover.garage_door_wa1nvzx3"
+                    }
+                  }
+                ]
+              },
+              {
+                "action": "adaptive_lighting.set_manual_control",
+                "data": {
+                  "entity_id": "switch.cabinet_strips_adaptive_lighting_cabinet_strips",
+                  "manual_control": false
+                }
+              },
+              {
+                "action": "light.turn_on",
+                "data": {
+                  "brightness_pct": 12
+                },
+                "metadata": {},
+                "target": {
+                  "entity_id": [
+                    "light.elements_b3cd_2",
+                    "light.izaan_s_lamp"
+                  ]
+                }
+              },
+              {
+                "action": "light.turn_on",
+                "data": {
+                  "brightness_pct": 10
+                },
+                "metadata": {},
+                "target": {
+                  "entity_id": [
+                    "light.lamppost_bulb_1",
+                    "light.lamppost_bulb_2",
+                    "light.lamppost_bulb_3",
+                    "light.front_porch_downlight",
+                    "light.front_porch_downlight_segment_1",
+                    "light.front_porch_downlight_segment_2",
+                    "light.front_porch_downlight_segment_3",
+                    "light.front_porch_downlight_segment_4",
+                    "light.front_porch_downlight_segment_5",
+                    "light.front_porch_downlight_segment_6",
+                    "light.front_porch_downlight_segment_7",
+                    "light.front_porch_downlight_segment_8",
+                    "light.front_porch_downlight_segment_9",
+                    "light.front_porch_downlight_segment_10",
+                    "light.front_porch_downlight_segment_11",
+                    "light.front_porch_downlight_segment_12",
+                    "light.front_porch_downlight_segment_13",
+                    "light.front_porch_downlight_segment_14",
+                    "light.front_porch_downlight_segment_15",
+                    "light.garage_right_downlight",
+                    "light.garage_left_downlight",
+                    "light.garage_left_downlight_segment_1",
+                    "light.garage_left_downlight_segment_2",
+                    "light.garage_left_downlight_segment_3",
+                    "light.garage_left_downlight_segment_4",
+                    "light.garage_left_downlight_segment_5",
+                    "light.garage_left_downlight_segment_6",
+                    "light.garage_left_downlight_segment_7",
+                    "light.garage_left_downlight_segment_8",
+                    "light.garage_left_downlight_segment_9",
+                    "light.garage_left_downlight_segment_10",
+                    "light.garage_left_downlight_segment_11",
+                    "light.garage_left_downlight_segment_12",
+                    "light.garage_left_downlight_segment_13",
+                    "light.garage_left_downlight_segment_14",
+                    "light.garage_left_downlight_segment_15",
+                    "light.garage_right_downlight_segment_1",
+                    "light.garage_right_downlight_segment_2",
+                    "light.garage_right_downlight_segment_3",
+                    "light.garage_right_downlight_segment_4",
+                    "light.garage_right_downlight_segment_5",
+                    "light.garage_right_downlight_segment_6",
+                    "light.garage_right_downlight_segment_7",
+                    "light.garage_right_downlight_segment_8",
+                    "light.garage_right_downlight_segment_9",
+                    "light.garage_right_downlight_segment_10",
+                    "light.garage_right_downlight_segment_11",
+                    "light.garage_right_downlight_segment_12",
+                    "light.garage_right_downlight_segment_13",
+                    "light.garage_right_downlight_segment_14",
+                    "light.garage_right_downlight_segment_15"
+                  ]
+                }
+              }
+            ],
+            "alias": "Turn off everything and lock the doors at 2AM",
+            "conditions": [],
+            "description": "",
+            "id": "1777488823738",
             "mode": "single",
             "triggers": [
               {
-                "above": 70,
-                "entity_id": "sensor.system_monitor_processor_temperature",
-                "trigger": "numeric_state"
-              }
-            ],
-            "conditions": [],
-            "actions": [
-              {
-                "action": "notify.mobile_app_cph2655",
-                "data": {
-                  "message": "Warning: Pi 5 CPU temperature is {{ states(\"sensor.system_monitor_processor_temperature\") }}\u00b0C.",
-                  "title": "\ud83c\udf21\ufe0f Pi 5 Thermal Warning"
-                }
+                "at": "02:00:00",
+                "trigger": "time",
+                "weekday": [
+                  "mon",
+                  "tue",
+                  "wed",
+                  "thu",
+                  "fri",
+                  "sat",
+                  "sun"
+                ]
               }
             ]
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEE1E0S7PTG84CSD5574WDB",
-            "parent_id": "01KYEE1E0PSSES2ZJSNJ59ZKPX",
+            "id": "01KYEG4HW6FSZTQ2XPPGQHB5NP",
+            "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0",
-          "run_id": "8ed44f319210c27c00ff8a113dbbdbb8",
+          "last_step": "action/7",
+          "run_id": "f087609fa055484df21b72de22e24eac",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T05:23:20.729963+00:00",
-            "finish": "2026-07-26T05:23:20.860908+00:00"
+            "start": "2026-07-26T06:00:00.135003+00:00",
+            "finish": "2026-07-26T06:00:08.869691+00:00"
           },
           "domain": "automation",
-          "item_id": "1779332000001",
-          "trigger": "numeric state of sensor.system_monitor_processor_temperature"
+          "item_id": "1777488823738",
+          "trigger": "time"
         }
       }
     ],
@@ -2529,333 +2053,12 @@
       {
         "extended_dict": {
           "last_step": "condition/0/entity_id/0",
-          "run_id": "b6371ffcc09140564b68a6ee178a145d",
+          "run_id": "5d83505b83de71dc88d0bd37c9329155",
           "state": "stopped",
           "script_execution": "failed_conditions",
           "timestamp": {
-            "start": "2026-07-26T05:21:04.514982+00:00",
-            "finish": "2026-07-26T05:21:04.515410+00:00"
-          },
-          "domain": "automation",
-          "item_id": "bedtime_routine_auto",
-          "trigger": "numeric state of sensor.cph2655_sleep_confidence",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T05:21:04.515113+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.bed_time_light_routine",
-                    "state": "on",
-                    "attributes": {
-                      "id": "bedtime_routine_auto",
-                      "last_triggered": "2026-07-26T04:30:00.295154+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Bed Time Light Routine"
-                    },
-                    "last_changed": "2026-07-26T05:02:54.869612+00:00",
-                    "last_reported": "2026-07-26T05:02:54.869612+00:00",
-                    "last_updated": "2026-07-26T05:02:54.869612+00:00",
-                    "context": {
-                      "id": "01KYECW0WNRR4VN9VJSCW849S4",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "sleep_detected",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "numeric_state",
-                    "entity_id": "sensor.cph2655_sleep_confidence",
-                    "below": null,
-                    "above": 80.0,
-                    "from_state": {
-                      "entity_id": "sensor.cph2655_sleep_confidence",
-                      "state": "41",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "light": 1,
-                        "motion": 6,
-                        "timestamp": 1785042364000,
-                        "unit_of_measurement": "%",
-                        "icon": "mdi:sleep",
-                        "friendly_name": "CPH2655 Sleep confidence"
-                      },
-                      "last_changed": "2026-07-26T05:06:04.545534+00:00",
-                      "last_reported": "2026-07-26T05:06:04.545534+00:00",
-                      "last_updated": "2026-07-26T05:06:04.545534+00:00",
-                      "context": {
-                        "id": "01KYED1T41NHZ89NNJXA9N341R",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "to_state": {
-                      "entity_id": "sensor.cph2655_sleep_confidence",
-                      "state": "82",
-                      "attributes": {
-                        "state_class": "measurement",
-                        "light": 1,
-                        "motion": 2,
-                        "timestamp": 1785042664000,
-                        "unit_of_measurement": "%",
-                        "icon": "mdi:sleep",
-                        "friendly_name": "CPH2655 Sleep confidence"
-                      },
-                      "last_changed": "2026-07-26T05:11:04.512198+00:00",
-                      "last_reported": "2026-07-26T05:11:04.512198+00:00",
-                      "last_updated": "2026-07-26T05:11:04.512198+00:00",
-                      "context": {
-                        "id": "01KYEDAZ20FRP11MB6QPT5SB8N",
-                        "parent_id": null,
-                        "user_id": null
-                      }
-                    },
-                    "for": {
-                      "__type": "<class 'datetime.timedelta'>",
-                      "total_seconds": 600.0
-                    },
-                    "description": "numeric state of sensor.cph2655_sleep_confidence"
-                  }
-                }
-              }
-            ],
-            "condition/0": [
-              {
-                "path": "condition/0",
-                "timestamp": "2026-07-26T05:21:04.515211+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "condition/0/entity_id/0": [
-              {
-                "path": "condition/0/entity_id/0",
-                "timestamp": "2026-07-26T05:21:04.515269+00:00",
-                "result": {
-                  "result": false,
-                  "state": "on",
-                  "wanted_state": "off"
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "bedtime_routine_auto",
-            "alias": "Bed Time Light Routine",
-            "description": "Locks doors, shuts garage, turns off inside lights once we are actually asleep. Instead of a blunt 10 PM shutoff it VERIFIES sleep every 30 min from 9 PM. Runs at most once per night (input_boolean.bedtime_shutdown_done latch, reset at 20:00). Fires when, and only when, one of:\n  (1) IMMEDIATE \u2014 Arshad's phone reports sleep (sensor.cph2655_sleep_confidence >80 for 10 min) or Sleep-as-Android turns on, any time 21:00-11:00 (daytime naps excluded).\n  (2) HALF-HOURLY POLL \u2014 at every :00/:30 from 21:00-04:00, if phone sleep-confidence is currently >80 (verified asleep).\n  (3) FALLBACK for nights the phone isn't sleep-tracking \u2014 same poll, 23:00-04:00, only if the house has clearly settled: family-room TV is confirmed off/idle/standby, all kitchen/family/island lights are confirmed off and unchanged for 30 min, AND no indoor motion has fired for 30 min. Unavailable sensors fail closed.\nFixed 2026-07-10: sleep sensor was the non-existent sensor.oneplus_13_sleep_confidence (phone is CPH2655); TV guard watched an unavailable TV (un8500auj).\nFixed 2026-07-19: unavailable TV/light entities no longer count as a settled house, and the fallback now also requires no motion for 30 minutes.\n",
-            "triggers": [
-              {
-                "entity_id": "sensor.cph2655_sleep_confidence",
-                "above": 80,
-                "for": {
-                  "minutes": 10
-                },
-                "trigger": "numeric_state",
-                "id": "sleep_detected"
-              },
-              {
-                "entity_id": "calendar.sleep_as_android",
-                "to": "on",
-                "trigger": "state",
-                "id": "sleep_detected"
-              },
-              {
-                "trigger": "time_pattern",
-                "minutes": "/30",
-                "id": "sleep_check"
-              }
-            ],
-            "conditions": [
-              {
-                "condition": "state",
-                "entity_id": "input_boolean.bedtime_shutdown_done",
-                "state": "off"
-              },
-              {
-                "condition": "or",
-                "conditions": [
-                  {
-                    "condition": "and",
-                    "conditions": [
-                      {
-                        "condition": "trigger",
-                        "id": "sleep_detected"
-                      },
-                      {
-                        "condition": "time",
-                        "after": "21:00:00",
-                        "before": "11:00:00"
-                      }
-                    ]
-                  },
-                  {
-                    "condition": "and",
-                    "conditions": [
-                      {
-                        "condition": "trigger",
-                        "id": "sleep_check"
-                      },
-                      {
-                        "condition": "time",
-                        "after": "21:00:00",
-                        "before": "04:00:00"
-                      },
-                      {
-                        "condition": "numeric_state",
-                        "entity_id": "sensor.cph2655_sleep_confidence",
-                        "above": 80
-                      }
-                    ]
-                  },
-                  {
-                    "condition": "and",
-                    "conditions": [
-                      {
-                        "condition": "trigger",
-                        "id": "sleep_check"
-                      },
-                      {
-                        "condition": "time",
-                        "after": "23:00:00",
-                        "before": "04:00:00"
-                      },
-                      {
-                        "condition": "template",
-                        "value_template": "{{ states('media_player.lg_webos_tv_cd70') in ['off', 'idle', 'standby'] }}"
-                      },
-                      {
-                        "condition": "template",
-                        "value_template": "{% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | map(attribute='last_changed') | list %} {{ is_state('light.kitchen_light_light_1', 'off') and\n   is_state('light.family_room_light', 'off') and\n   is_state('light.island_light_light', 'off') and\n   (now() - (ch | max)).total_seconds() > 1800 }}"
-                      },
-                      {
-                        "condition": "state",
-                        "entity_id": "binary_sensor.any_home_motion",
-                        "state": "off",
-                        "for": {
-                          "minutes": 30
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ],
-            "actions": [
-              {
-                "action": "lock.lock",
-                "target": {
-                  "entity_id": [
-                    "lock.front_door",
-                    "lock.garages_entry_door",
-                    "lock.front_door_2",
-                    "lock.garage_entry"
-                  ]
-                }
-              },
-              {
-                "action": "cover.close_cover",
-                "target": {
-                  "entity_id": [
-                    "cover.larissa_s_garage_door",
-                    "cover.larissa_s_garage_door_door"
-                  ]
-                }
-              },
-              {
-                "delay": {
-                  "seconds": 10
-                }
-              },
-              {
-                "action": "light.turn_off",
-                "target": {
-                  "entity_id": [
-                    "light.kitchen_light_light_1",
-                    "light.island_light_light",
-                    "light.stair_light",
-                    "light.family_room_light",
-                    "light.master_bedroom_ceiling_fan",
-                    "light.mina_s_ceiling_fan",
-                    "light.guest_room_ceiling_fan",
-                    "light.izaan_s_ceiling_fan",
-                    "light.basement_tv",
-                    "light.cabinet_light_strip_left_nanoleaf_light_strip",
-                    "light.cabinet_light_strip_center_nanoleaf_light_strip",
-                    "light.cabinet_light_strip_right_nanoleaf_light_strip",
-                    "light.nanoleaf_multicolor_ls",
-                    "light.nanoleaf_multicolor_ls_2"
-                  ]
-                },
-                "data": {}
-              },
-              {
-                "action": "switch.turn_off",
-                "target": {
-                  "entity_id": [
-                    "switch.kitchen_pantry_light",
-                    "switch.laundry_room_light_switch",
-                    "switch.living_room_floor_lamp_switch",
-                    "switch.foyer_light_switch_1",
-                    "switch.sonoff_10001dccdc",
-                    "switch.kitchen_pantry_light_socket_1",
-                    "switch.basement_lights",
-                    "switch.basement_stair_light",
-                    "switch.garage_light_switch_switch_1",
-                    "switch.back_hallway_light_main_switch"
-                  ]
-                },
-                "data": {}
-              },
-              {
-                "action": "input_boolean.turn_on",
-                "target": {
-                  "entity_id": "input_boolean.bedtime_shutdown_done"
-                }
-              },
-              {
-                "action": "notify.mobile_app_cph2655",
-                "data": {
-                  "message": "Bedtime routine ran (trigger: {{ trigger.id }}, sleep_confidence {{ states('sensor.cph2655_sleep_confidence') }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.\n"
-                }
-              }
-            ],
-            "mode": "single"
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEDX902JC27WYTD7AKTZ3E6",
-            "parent_id": "01KYEDAZ20FRP11MB6QPT5SB8N",
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "condition/0/entity_id/0",
-          "run_id": "b6371ffcc09140564b68a6ee178a145d",
-          "state": "stopped",
-          "script_execution": "failed_conditions",
-          "timestamp": {
-            "start": "2026-07-26T05:21:04.514982+00:00",
-            "finish": "2026-07-26T05:21:04.515410+00:00"
-          },
-          "domain": "automation",
-          "item_id": "bedtime_routine_auto",
-          "trigger": "numeric state of sensor.cph2655_sleep_confidence"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "condition/0/entity_id/0",
-          "run_id": "bd25d98f5e1107a161d35bd2f84dff96",
-          "state": "stopped",
-          "script_execution": "failed_conditions",
-          "timestamp": {
-            "start": "2026-07-26T05:30:00.255517+00:00",
-            "finish": "2026-07-26T05:30:00.255670+00:00"
+            "start": "2026-07-26T06:00:00.241089+00:00",
+            "finish": "2026-07-26T06:00:00.241208+00:00"
           },
           "domain": "automation",
           "item_id": "bedtime_routine_auto",
@@ -2864,7 +2067,7 @@
             "trigger/2": [
               {
                 "path": "trigger/2",
-                "timestamp": "2026-07-26T05:30:00.255559+00:00",
+                "timestamp": "2026-07-26T06:00:00.241123+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.bed_time_light_routine",
@@ -2876,11 +2079,11 @@
                       "current": 0,
                       "friendly_name": "Bed Time Light Routine"
                     },
-                    "last_changed": "2026-07-26T05:02:54.869612+00:00",
-                    "last_reported": "2026-07-26T05:02:54.869612+00:00",
-                    "last_updated": "2026-07-26T05:02:54.869612+00:00",
+                    "last_changed": "2026-07-26T05:33:10.189194+00:00",
+                    "last_reported": "2026-07-26T05:33:10.189194+00:00",
+                    "last_updated": "2026-07-26T05:33:10.189194+00:00",
                     "context": {
-                      "id": "01KYECW0WNRR4VN9VJSCW849S4",
+                      "id": "01KYEEKDND8Q9FXQ9Y3A4YBFMT",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -2890,7 +2093,7 @@
                     "idx": "2",
                     "alias": null,
                     "platform": "time_pattern",
-                    "now": "2026-07-26T01:30:00.255304-04:00",
+                    "now": "2026-07-26T02:00:00.240944-04:00",
                     "description": "time pattern"
                   }
                 }
@@ -2899,7 +2102,7 @@
             "condition/0": [
               {
                 "path": "condition/0",
-                "timestamp": "2026-07-26T05:30:00.255597+00:00",
+                "timestamp": "2026-07-26T06:00:00.241151+00:00",
                 "result": {
                   "result": false
                 }
@@ -2908,7 +2111,7 @@
             "condition/0/entity_id/0": [
               {
                 "path": "condition/0/entity_id/0",
-                "timestamp": "2026-07-26T05:30:00.255617+00:00",
+                "timestamp": "2026-07-26T06:00:00.241169+00:00",
                 "result": {
                   "result": false,
                   "state": "on",
@@ -3101,22 +2304,504 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEEDM5Z5QTQ1RNT1QF13NDG",
+            "id": "01KYEG4HZH6TASD3C4YDDM4HAK",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "condition/0/entity_id/0",
-          "run_id": "bd25d98f5e1107a161d35bd2f84dff96",
+          "run_id": "5d83505b83de71dc88d0bd37c9329155",
           "state": "stopped",
           "script_execution": "failed_conditions",
           "timestamp": {
-            "start": "2026-07-26T05:30:00.255517+00:00",
-            "finish": "2026-07-26T05:30:00.255670+00:00"
+            "start": "2026-07-26T06:00:00.241089+00:00",
+            "finish": "2026-07-26T06:00:00.241208+00:00"
           },
           "domain": "automation",
           "item_id": "bedtime_routine_auto",
+          "trigger": "time pattern"
+        }
+      }
+    ],
+    "automation.climate_ai_advisor": [
+      {
+        "extended_dict": {
+          "last_step": "condition/1",
+          "run_id": "e218cc5eefa7ca048b3a6b918fc1809a",
+          "state": "stopped",
+          "script_execution": "failed_conditions",
+          "timestamp": {
+            "start": "2026-07-26T06:00:00.358783+00:00",
+            "finish": "2026-07-26T06:00:00.359518+00:00"
+          },
+          "domain": "automation",
+          "item_id": "climate_ai_advisor",
+          "trigger": "time pattern",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-07-26T06:00:00.358824+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.climate_ai_advisor",
+                    "state": "on",
+                    "attributes": {
+                      "id": "climate_ai_advisor",
+                      "last_triggered": "2026-07-26T03:00:00.151649+00:00",
+                      "mode": "queued",
+                      "current": 0,
+                      "max": 2,
+                      "friendly_name": "climate_ai_advisor"
+                    },
+                    "last_changed": "2026-07-26T05:33:10.186117+00:00",
+                    "last_reported": "2026-07-26T05:33:10.186117+00:00",
+                    "last_updated": "2026-07-26T05:33:10.186117+00:00",
+                    "context": {
+                      "id": "01KYEEKDNA9951EH0Z7CP86YCP",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "time_pattern",
+                    "now": "2026-07-26T02:00:00.358603-04:00",
+                    "description": "time pattern"
+                  }
+                }
+              }
+            ],
+            "condition/0": [
+              {
+                "path": "condition/0",
+                "timestamp": "2026-07-26T06:00:00.358854+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/0/entity_id/0": [
+              {
+                "path": "condition/0/entity_id/0",
+                "timestamp": "2026-07-26T06:00:00.358872+00:00",
+                "result": {
+                  "result": true,
+                  "state": "on",
+                  "wanted_state": "on"
+                }
+              }
+            ],
+            "condition/1": [
+              {
+                "path": "condition/1",
+                "timestamp": "2026-07-26T06:00:00.358910+00:00",
+                "result": {
+                  "result": false,
+                  "entities": []
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "climate_ai_advisor",
+            "alias": "climate_ai_advisor",
+            "description": "Hourly Climate AI via Gemini. Recommends setpoint, HVAC mode, fan speed, blinds. Hardened 2026-07-13 (was firing every 15 min and flapping the HVAC): hourly trigger; stability guards (no mode change unless different AND last mode change >60 min ago; setpoint 23.0-25.5C applied only when >=0.5C from current target); prompt carries LastDecision + hysteresis rules; reason logged to input_text.climate_ai_recommendation; phone push only when something actually changed.",
+            "triggers": [
+              {
+                "minutes": 0,
+                "trigger": "time_pattern"
+              }
+            ],
+            "conditions": [
+              {
+                "condition": "state",
+                "entity_id": "input_boolean.climate_ai_enabled",
+                "state": "on"
+              },
+              {
+                "condition": "template",
+                "value_template": "{{ now().hour >= 6 }}"
+              }
+            ],
+            "actions": [
+              {
+                "variables": {
+                  "prompt": "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 23.0-25.5C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.arshad14\") }} Larissa={{ \"home\" if is_state(\"binary_sensor.larissa_s_s22_presence\",\"on\") else \"away\" }} WFHWorkday={{ \"yes\" if is_state(\"calendar.workday_sensor_calendar\",\"on\") else \"no\" }} (Arshad works from home on workdays)\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed. VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%\n                Sw: KFn={{ states(\"switch.kitchen_fan_switch_1\") }} MFn={{ states(\"switch.master_bedroom_fan_light_switch_1\") }}\n                Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}\n                Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open\n                TV: FR_LG={{ states(\"media_player.lg_webos_tv_un8500auj\") }}\n                Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Layout: main floor (elev {{ states(\"input_number.house_elevation\") }}m): kitchen, family, living, dining. Second floor (elev {{ states(\"input_number.house_elevation_second_floor\") }}m): master, mina, izaan, guest. Family is directly below Mina, Living is directly below Izaan, and Kitchen is directly below Master (heat rises between stacked rooms). Kitchen and Family face the same direction as Mina and Master; Izaan is on the exactly opposite side of the house from Mina; Guest is next to Izaan and faces the same direction as Izaan. Ceiling height {{ states(\"input_number.ceiling_height\") }}m.\n                LastDecision: current hvac={{ states(\"climate.ecobee\") }} target={{ state_attr(\"climate.ecobee\",\"temperature\") }}C, mode last changed {{ ((now() - (states.climate.ecobee.last_changed if states.climate.ecobee else now())).total_seconds() / 60) | round(0) }} min ago.\n                HVAC stability rules: Prefer no change \u2014 return null for hvac_mode and setpoint unless a change is clearly warranted. Respect +/-0.5C hysteresis: never move the setpoint by less than 0.5C, and if perceived temps are within 0.5C of the current target, return setpoint null. Do NOT change hvac_mode if the mode changed less than 120 min ago (see LastDecision) \u2014 never reverse a recent mode change. For small corrections adjust the setpoint (23.0-25.5C only), do not toggle the mode off/on. Frequent compressor starts damage the AC.\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15\u00b0, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fans\":{\"kitchen\":\"off|1|2|3\",\"master\":\"...\",\"mina\":\"...\",\"guest\":\"...\",\"izaan\":\"...\"}, \"blinds\":{\"dining\":N,\"family\":N,\"living\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun. Blinds covered: dining, family, living, mina. Prefer PARTIAL positions to balance sun/glare/heat. Only move blinds when sun is up; at night a separate automation closes them.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(states.binary_sensor.front_door_door.last_changed | default(now(), true)) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If FrontOpenDuration > 10 (front door left open >10 min): factor this in \u2014 HVAC is being wasted, so ease off cooling/heating (do not run aggressively), recommend closing the door, and note reduced efficiency.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1\u00a2/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7\u00a2/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9\u00a2/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8\u00a2/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8\u00a2. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
+                }
+              },
+              {
+                "action": "rest_command.climate_ai_gemini",
+                "data": {
+                  "prompt": "{{ prompt }}"
+                },
+                "response_variable": "ai_response"
+              },
+              {
+                "variables": {
+                  "ai_raw": "{{ ai_response.content.candidates[0].content.parts[0].text if ai_response.content.candidates is defined and ai_response.content.candidates and ai_response.content.candidates[0].content is defined and ai_response.content.candidates[0].content.parts is defined and ai_response.content.candidates[0].content.parts else '' }}",
+                  "ai_json": "{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace('(?i)```json\\s*', '') | regex_replace('(?i)```\\s*', '') | trim | from_json if ai_raw is string and ai_raw | trim != '' and (ai_raw | trim | regex_search('[\\{\\[]')) else {}) }}",
+                  "hvac_mode": "{{ ai_json.hvac_mode | default(none, true) }}",
+                  "setpoint": "{{ ai_json.setpoint | default(none) }}",
+                  "reason": "{{ ai_json.reason | default('No recommendation', true) }}",
+                  "hvac_mode_n": "{{ none if hvac_mode is none else ('heat_cool' if hvac_mode | string | lower == 'auto' else hvac_mode | string | lower) }}",
+                  "mode_apply": "{{ hvac_mode_n is not none and hvac_mode_n in ['off', 'heat', 'cool', 'heat_cool']\n   and hvac_mode_n != states('climate.ecobee')\n   and (now() - (states.climate.ecobee.last_changed if states.climate.ecobee else now())).total_seconds() > 3600 }}",
+                  "setp_apply": "{{ setpoint is not none and setpoint | float(-99) >= 23.0 and setpoint | float(-99) <= 25.5\n   and (state_attr('climate.ecobee', 'temperature') is none\n        or (setpoint | float(0) - state_attr('climate.ecobee', 'temperature') | float(0)) | abs >= 0.5) }}"
+                }
+              },
+              {
+                "action": "input_text.set_value",
+                "target": {
+                  "entity_id": "input_text.climate_ai_recommendation"
+                },
+                "data": {
+                  "value": "{{ (now().strftime('%H:%M') ~ ' mode=' ~ (hvac_mode_n if hvac_mode_n is not none else 'keep') ~ ('*' if mode_apply else '') ~ ' set=' ~ (setpoint if setpoint is not none else 'keep') ~ ('*' if setp_apply else '') ~ ' | ' ~ reason)[:250] }}"
+                }
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ mode_apply }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "climate.set_hvac_mode",
+                    "data": {
+                      "hvac_mode": "{{ hvac_mode_n }}"
+                    },
+                    "target": {
+                      "entity_id": "climate.ecobee"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ is_state('binary_sensor.front_door_door', 'on') }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.mobile_app_cph2655",
+                    "data": {
+                      "message": "Front door is open while HVAC is running. Close it to save energy.",
+                      "title": "Front Door Open"
+                    }
+                  }
+                ]
+              },
+              {
+                "repeat": {
+                  "for_each": [
+                    {
+                      "room": "kitchen",
+                      "fan": "fan.kitchen_ceiling_fan",
+                      "sw": "switch.kitchen_fan_switch_1",
+                      "occ": "binary_sensor.kitchen_presence"
+                    },
+                    {
+                      "room": "master",
+                      "fan": "fan.master_bedroom_ceiling_fan",
+                      "sw": "switch.master_bedroom_fan_light_switch_1",
+                      "occ": "binary_sensor.332d_occupancy"
+                    },
+                    {
+                      "room": "mina",
+                      "fan": "fan.mina_s_ceiling_fan",
+                      "sw": "switch.mina_s_light_switch_1",
+                      "occ": "binary_sensor.minas_room_occupancy"
+                    },
+                    {
+                      "room": "guest",
+                      "fan": "fan.guest_room_ceiling_fan",
+                      "sw": "switch.guest_room_light_switch_1",
+                      "occ": "binary_sensor.bbwg_occupancy"
+                    },
+                    {
+                      "room": "izaan",
+                      "fan": "fan.izaan_s_ceiling_fan",
+                      "sw": "switch.izaan_s_bedroom_light_switch_1",
+                      "occ": "binary_sensor.izaans_room_occupancy"
+                    }
+                  ],
+                  "sequence": [
+                    {
+                      "variables": {
+                        "spd": "{{ ai_json.get('fans', {}).get(repeat.item.room, 'no_change') if ai_json is mapping else 'no_change' }}",
+                        "pct": "{{ {'1':33,'2':66,'3':100}.get(spd | string, 0) }}"
+                      }
+                    },
+                    {
+                      "choose": [
+                        {
+                          "conditions": "{{ spd not in [none, 'no_change'] and (spd | string) != 'off' }}",
+                          "sequence": [
+                            {
+                              "action": "switch.turn_on",
+                              "target": {
+                                "entity_id": "{{ repeat.item.sw }}"
+                              }
+                            },
+                            {
+                              "delay": {
+                                "seconds": 2
+                              }
+                            },
+                            {
+                              "action": "fan.set_percentage",
+                              "target": {
+                                "entity_id": "{{ repeat.item.fan }}"
+                              },
+                              "data": {
+                                "percentage": "{{ pct }}"
+                              }
+                            }
+                          ]
+                        },
+                        {
+                          "conditions": "{{ (spd | string) == 'off' }}",
+                          "sequence": [
+                            {
+                              "action": "fan.turn_off",
+                              "target": {
+                                "entity_id": "{{ repeat.item.fan }}"
+                              }
+                            },
+                            {
+                              "if": [
+                                {
+                                  "condition": "template",
+                                  "value_template": "{{ states(repeat.item.occ) == 'off' }}"
+                                }
+                              ],
+                              "then": [
+                                {
+                                  "action": "switch.turn_off",
+                                  "target": {
+                                    "entity_id": "{{ repeat.item.sw }}"
+                                  }
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.dining is defined and ai_json.blinds.dining | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.dining | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.dining_room_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.family is defined and ai_json.blinds.family | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.family | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.family_room_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.mina is defined and ai_json.blinds.mina | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.mina | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.mina_s_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.blinds is mapping and ai_json.blinds.living is defined and ai_json.blinds.living | string | lower != 'no_change' }}"
+                  },
+                  {
+                    "condition": "template",
+                    "value_template": "{{ state_attr(\"sun.sun\", \"elevation\") | float(-1) > -5 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "cover.set_cover_position",
+                    "data": {
+                      "position": "{{ ai_json.blinds.living | int(100) | clamp(0, 100) }}"
+                    },
+                    "target": {
+                      "entity_id": "cover.living_room_blinds_curtain"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined and ai_json.vent_boosters.izaan != None and ai_json.vent_boosters.izaan | int >= 0 and ai_json.vent_boosters.izaan | int <= 100 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ [[(ai_json.vent_boosters.izaan | default(0, true)) | int(0), 0] | max, 30] | min if now().hour >= 21 or now().hour < 7 else [(ai_json.vent_boosters.izaan | default(0, true)) | int(0), 0] | max }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.izaan_s_room_20a970"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined and ai_json.vent_boosters.mina != None and ai_json.vent_boosters.mina | int >= 0 and ai_json.vent_boosters.mina | int <= 100 }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "fan.set_percentage",
+                    "data": {
+                      "percentage": "{{ [[(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max, 30] | min if now().hour >= 21 or now().hour < 7 else [(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max }}"
+                    },
+                    "target": {
+                      "entity_id": "fan.mina_s_room_f851f4"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ setp_apply }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "climate.set_temperature",
+                    "data": {
+                      "temperature": "{{ setpoint }}"
+                    },
+                    "target": {
+                      "entity_id": "climate.ecobee"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ mode_apply or setp_apply }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.persistent_notification",
+                    "data": {
+                      "message": "Set: {{ setpoint }}C Mode: {{ hvac_mode }} Fans: {% set ns = namespace(p=[]) %}{% for k, v in (ai_json.fans | default({})).items() %}{% if v != 'no_change' %}{% set ns.p = ns.p + [k ~ '=' ~ v] %}{% endif %}{% endfor %}{{ ns.p | join(', ') }} Vents: Iz={{ ai_json.vent_boosters.izaan if ai_json.vent_boosters is mapping and ai_json.vent_boosters.izaan is defined else '--' }}% Mi={{ ai_json.vent_boosters.mina if ai_json.vent_boosters is mapping and ai_json.vent_boosters.mina is defined else '--' }}% Blinds: {{ ai_json.blinds | to_json if ai_json.blinds is mapping else 'none' }} - {{ reason }}",
+                      "title": "Climate AI: {{ setpoint }}C {{ hvac_mode }}"
+                    }
+                  }
+                ]
+              },
+              {
+                "if": [
+                  {
+                    "condition": "template",
+                    "value_template": "{{ mode_apply or setp_apply }}"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "notify.mobile_app_cph2655",
+                    "data": {
+                      "message": "Climate AI: {{ 'No change' if setpoint == 'no_change' else 'Set ' ~ setpoint ~ 'C ' ~ hvac_mode }}{% set ns2 = namespace(p=[]) %}{% for k, v in (ai_json.fans | default({})).items() %}{% if v != 'no_change' %}{% set ns2.p = ns2.p + [k ~ '=' ~ v] %}{% endif %}{% endfor %}{{ ' Fans: ' ~ ns2.p | join(', ') if ns2.p | length > 0 else '' }} - {{ reason }}",
+                      "title": "Climate AI"
+                    }
+                  }
+                ]
+              }
+            ],
+            "max": 2,
+            "mode": "queued"
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KYEG4J36RQQ1D9Y71EFBWXS1",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "condition/1",
+          "run_id": "e218cc5eefa7ca048b3a6b918fc1809a",
+          "state": "stopped",
+          "script_execution": "failed_conditions",
+          "timestamp": {
+            "start": "2026-07-26T06:00:00.358783+00:00",
+            "finish": "2026-07-26T06:00:00.359518+00:00"
+          },
+          "domain": "automation",
+          "item_id": "climate_ai_advisor",
           "trigger": "time pattern"
         }
       }
