@@ -1,0 +1,17 @@
+{
+    "config": {
+      "error": {
+        "auth": "Could not authenticate."
+      },
+      "step": {
+        "user": {
+          "data": {
+            "username": "Username",
+            "password": "Password"
+          },
+          "description": "Enter your APS credentials.",
+          "title": "Authentication"
+        }
+      }
+    }
+  }

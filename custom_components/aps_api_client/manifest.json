@@ -1,0 +1,13 @@
+{
+  "domain": "aps_api_client",
+  "name": "Apsystems API Client",
+  "version": "0.0.2",
+  "config_flow": true,
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": [],
+  "homekit": {},
+  "dependencies": [],
+  "codeowners": ["@n0liver"],
+  "iot_class": "cloud_polling"
+}
