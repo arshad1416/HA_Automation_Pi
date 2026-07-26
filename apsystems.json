@@ -1,6 +1,11 @@
 {
-  "power_approx_w": 0,
   "today_kwh": 0,
   "month_kwh": 0,
-  "_note": "Stub file — replace with actual APsystems API data. The original fetch_solar.py on the Pi generates this file periodically via cron."
+  "year_kwh": 0,
+  "lifetime_kwh": 0,
+  "current_hour_kwh": 0,
+  "power_approx_w": 0,
+  "capacity_kw": 11.44,
+  "last_updated": "2026-07-26T05:14:38.700464+00:00",
+  "status": "error: APsystems API error code=2005 (2005=auth expired, regenerate keys at developer.apsystems.com)"
 }
