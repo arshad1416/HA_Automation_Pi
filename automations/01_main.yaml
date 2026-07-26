@@ -2253,9 +2253,8 @@
   description: Restore AC/cool mode on ecobee after a cold day passes and temperature rises. Skips weekday on-peak (16-21h); a 21:00 recovery trigger catches thresholds crossed during peak. Thresholds via input_number helpers (Fix E2/B2).
   mode: single
   triggers:
-  - above: '{{ states(''input_number.ac_restore_indoor_threshold'') | float(22) }}'
-    entity_id: sensor.ecobee_current_temperature
-    trigger: numeric_state
+  - trigger: template
+    value_template: '{{ states(''sensor.ecobee_current_temperature'') | float(0) > states(''input_number.ac_restore_indoor_threshold'') | float(22) }}'
   - at: '21:00:00'
     trigger: time
   conditions:
@@ -2263,10 +2262,8 @@
     entity_id: climate.ecobee
     attribute: hvac_mode
     state: heat
-  - condition: numeric_state
-    entity_id: weather.forecast_home
-    attribute: temperature
-    above: '{{ states(''input_number.ac_restore_outdoor_threshold'') | float(20) }}'
+  - condition: template
+    value_template: '{{ state_attr(''weather.forecast_home'', ''temperature'') | float(0) > states(''input_number.ac_restore_outdoor_threshold'') | float(20) }}'
   - condition: template
     value_template: '{{ not (now().isoweekday() < 6 and 16 <= now().hour < 21) }}'
   - condition: template
