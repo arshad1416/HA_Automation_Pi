@@ -1,0 +1,785 @@
+# =============================================================================
+# 06_enhancements.yaml
+# New automations from the "Home Assistant Automation Enhancements" spec.
+# Deployed alongside 01_main.yaml via `automation: !include_dir_merge_list`.
+#
+# Entity mappings applied (spec placeholders -> real deployed entities):
+#   person.home            -> person.arshad14
+#   person.larissa         -> binary_sensor.larissa_s_s22_presence (on=home/off=away)
+#   sensor.VEHICLE_*       -> sensor.ioniq_6_*  (Hyundai Ioniq 6, 77.4 kWh pack)
+#   switch.patio_door_light-> switch.patio_door_light_switch_1
+#   switch.foyer_light     -> switch.foyer_light_switch_1
+#   cover.family_room_blinds -> cover.family_room_blinds_curtain (LocalTuya)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Enhancement C: Pause HVAC when an exterior door stays open during active run.
+# Sets input_boolean.hvac_paused_door_open so climate_ai_advisor won't fight it.
+# -----------------------------------------------------------------------------
+- id: hvac_pause_door_open
+  alias: "HVAC Pause: Door open too long"
+  description: >-
+    Pause HVAC when front door or garage entry door stays open >2 min while the
+    ecobee is actively heating/cooling. Captures the active mode into
+    input_text.climate_ai_last_mode before pausing and restores it when the door
+    closes (Enhancement C).
+  mode: single
+  triggers:
+  - entity_id: binary_sensor.front_door_door
+    to: 'on'
+    for: "00:02:00"
+    trigger: state
+  - entity_id: binary_sensor.garages_entry_door_door
+    to: 'on'
+    for: "00:02:00"
+    trigger: state
+  conditions:
+  - condition: template
+    value_template: "{{ state_attr('climate.ecobee', 'hvac_action') in ['heating', 'cooling'] }}"
+  - condition: state
+    entity_id: input_boolean.hvac_paused_door_open
+    state: 'off'
+  actions:
+  - action: input_boolean.turn_on
+    target:
+      entity_id: input_boolean.hvac_paused_door_open
+  - action: input_text.set_value
+    target:
+      entity_id: input_text.climate_ai_last_mode
+    data:
+      value: '{{ states(''climate.ecobee'') }}'
+  - action: climate.set_hvac_mode
+    data:
+      hvac_mode: 'off'
+    target:
+      entity_id: climate.ecobee
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "HVAC Paused"
+      message: "{{ trigger.to_state.attributes.friendly_name }} open >2 min while HVAC active. Paused to save energy. Will resume when closed."
+  - wait_for_trigger:
+    - entity_id: "{{ trigger.entity_id }}"
+      to: 'off'
+      trigger: state
+    timeout: "01:00:00"
+  - action: climate.set_hvac_mode
+    data:
+      hvac_mode: >
+        {% set m = states('input_text.climate_ai_last_mode') | default('', true) | trim | lower %}
+        {{ m if m in ['off', 'heat', 'cool', 'heat_cool'] else 'heat_cool' }}
+    target:
+      entity_id: climate.ecobee
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.hvac_paused_door_open
+
+# -----------------------------------------------------------------------------
+# Enhancement E: Run pool pump overnight when tomorrow looks fully overcast
+# (solar trigger will never hit 500 W, so guarantee circulation on ULO).
+# -----------------------------------------------------------------------------
+- id: pool_pump_cloudy_forecast_fallback
+  alias: "Pool Pump: Cloudy day fallback"
+  description: >-
+    If cloud cover is heavy at 21:00, turn the pump + chlorinator on so the
+    overnight ULO window (3.9c/kWh) guarantees circulation on a sunless day.
+  mode: single
+  triggers:
+  - at: "21:00:00"
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: "{{ state_attr('weather.forecast_home', 'cloud_coverage') | default(0, true) | int(0) > 80 }}"
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id:
+      - switch.pool_pump_heater_socket_1
+      - switch.salt_chlorinator
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "Pool Pump: Cloudy Forecast"
+      message: "Heavy cloud cover expected. Running pump overnight ULO (3.9c/kWh) to ensure circulation."
+
+# -----------------------------------------------------------------------------
+# Enhancement F: Unified tiered leak escalation for all 7 sensors.
+#   Tier 1 (immediate): push + announce on 2 Echos.
+#   Tier 2 (30 s sustained): flash strips red + broadcast everywhere + persistent.
+#   Tier 3 (5 min sustained): repeat broadcast, COUNT-LIMITED to 10 (max ~10 min).
+# Replaces the 9 individual per-sensor leak automations (removed from 01_main).
+# -----------------------------------------------------------------------------
+- id: leak_detection_escalation
+  alias: "Leak Detection: Tiered Escalation"
+  description: >-
+    Multi-tier leak response across all 7 moisture sensors. Immediate alert,
+    30 s escalation with red light flash + whole-home broadcast, and a 5 min
+    critical loop limited to 10 repeats so a stuck-wet sensor cannot spam forever.
+  mode: parallel
+  max: 7
+  triggers:
+  - entity_id: binary_sensor.basement_bathroom_leak_sensor_moisture
+    to: 'on'
+    trigger: state
+    id: basement_bathroom
+  - entity_id: binary_sensor.ensuite_leak_sensor_moisture
+    to: 'on'
+    trigger: state
+    id: ensuite
+  - entity_id: binary_sensor.kitchen_leak_sensor_moisture
+    to: 'on'
+    trigger: state
+    id: kitchen
+  - entity_id: binary_sensor.laundry_room_leak_sensor_moisture
+    to: 'on'
+    trigger: state
+    id: laundry
+  - entity_id: binary_sensor.sump_pump_leak_sensor_moisture
+    to: 'on'
+    trigger: state
+    id: sump_pump
+  - entity_id: binary_sensor.powder_room_leak_sensor_moisture
+    to: 'on'
+    trigger: state
+    id: powder_room
+  - entity_id: binary_sensor.guest_bathroom_leak_sensor_moisture
+    to: 'on'
+    trigger: state
+    id: guest_bathroom
+  conditions: []
+  actions:
+  # ---- TIER 1: immediate ----
+  - variables:
+      location: "{{ trigger.id | replace('_', ' ') | title }}"
+  - action: notify.grizzl_ev_phones
+    data:
+      title: "💧 Leak Detected"
+      message: "Water leak in {{ location }}! Check immediately."
+  - action: notify.alexa_media
+    data:
+      data: {type: announce}
+      message: "Warning. Water leak detected in the {{ location }}. Please check immediately."
+      target:
+      - media_player.downstairs_echo_dot
+      - media_player.upstairs_echo_dot
+  # ---- TIER 2: 30-second sustained ----
+  - delay: "00:00:30"
+  - condition: state
+    entity_id: "{{ trigger.entity_id }}"
+    state: 'on'
+  - action: light.turn_on
+    data:
+      color_name: red
+      brightness_pct: 100
+      flash: long
+    target:
+      entity_id:
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
+  - action: notify.alexa_media
+    data:
+      data: {type: announce}
+      message: "URGENT. Sustained water leak in the {{ location }}. This is not a false alarm. Please investigate now."
+      target:
+      - media_player.everywhere
+  - action: notify.persistent_notification
+    data:
+      title: "🚨 Sustained Leak: {{ location }}"
+      message: "Leak persisting >30 seconds in {{ location }}. Tier 2 escalation triggered."
+  # ---- TIER 3: 5-minute sustained, repeat capped at 10 ----
+  - delay: "00:04:30"
+  - condition: state
+    entity_id: "{{ trigger.entity_id }}"
+    state: 'on'
+  - repeat:
+      count: 10
+      sequence:
+      - condition: state
+        entity_id: "{{ trigger.entity_id }}"
+        state: 'on'
+      - action: notify.alexa_media
+        data:
+          data: {type: announce}
+          message: "CRITICAL. Water leak still active in {{ location }}. Immediate action required."
+          target:
+          - media_player.everywhere
+      - delay: "00:01:00"
+
+# -----------------------------------------------------------------------------
+# Enhancement G: Departure security check (locks + office heater) when the
+# last person leaves. Complements house_away_mode (which runs 10 min later and
+# handles ecobee setback / climate AI pause but not locks).
+# -----------------------------------------------------------------------------
+- id: departure_security_check
+  alias: "Departure: Security check when everyone leaves"
+  description: >-
+    When Arshad leaves and Larissa is already away, lock any unlocked locks
+    (excluding Airbnb), turn off the office heater, and report what was secured.
+  mode: single
+  triggers:
+  - entity_id: person.arshad14
+    to: not_home
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.larissa_s_s22_presence
+    state: 'off'
+  actions:
+  - variables:
+      unlocked_locks: >
+        {{ states.lock
+           | rejectattr('entity_id', 'eq', 'lock.airbnb')
+           | selectattr('state', 'eq', 'unlocked')
+           | map(attribute='attributes.friendly_name')
+           | list | join(', ') }}
+      heater_on: "{{ is_state('switch.office_heater_child_lock', 'on') }}"
+  - if:
+    - condition: template
+      value_template: "{{ unlocked_locks != '' }}"
+    then:
+    - action: lock.lock
+      target:
+        entity_id: >
+          {{ states.lock
+             | rejectattr('entity_id', 'eq', 'lock.airbnb')
+             | selectattr('state', 'eq', 'unlocked')
+             | map(attribute='entity_id')
+             | list }}
+  - if:
+    - condition: template
+      value_template: "{{ heater_on }}"
+    then:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.office_heater_child_lock
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "🏠 Departure Check"
+      message: >
+        Everyone left. {{ 'Locked: ' ~ unlocked_locks ~ '. ' if unlocked_locks else '' }}{{ 'Office heater turned off. ' if heater_on else '' }}{{ 'All secure.' if not unlocked_locks and not heater_on else '' }}
+
+# -----------------------------------------------------------------------------
+# Enhancement H: Movie mode on the family-room LG WebOS TV.
+# Supersedes family_room_tv_bias_light (removed) and 1781145049841 (disabled).
+# -----------------------------------------------------------------------------
+- id: family_room_movie_mode
+  alias: "Movie Mode: LG WebOS TV"
+  description: >-
+    When the family room LG TV turns on, dim the family room light to 15% and
+    close the family room blinds if the sun is up. Restore when the TV turns off.
+  mode: restart
+  triggers:
+  - entity_id: media_player.lg_webos_tv_un8500auj
+    to: 'on'
+    id: tv_on
+    trigger: state
+  - entity_id: media_player.lg_webos_tv_un8500auj
+    to: 'off'
+    id: tv_off
+    trigger: state
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: tv_on
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_pct: 15
+        target:
+          entity_id: light.family_room_light
+      - if:
+        - condition: state
+          entity_id: sun.sun
+          state: above_horizon
+        then:
+        - action: cover.set_cover_position
+          data:
+            position: 0
+          target:
+            entity_id: cover.family_room_blinds_curtain
+    - conditions:
+      - condition: trigger
+        id: tv_off
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.family_room_light
+      - if:
+        - condition: state
+          entity_id: sun.sun
+          state: above_horizon
+        then:
+        - action: cover.set_cover_position
+          data:
+            position: 100
+          target:
+            entity_id: cover.family_room_blinds_curtain
+
+# -----------------------------------------------------------------------------
+# Enhancement Q: Nanoleaf graduated dimming (presence-aware) + restore.
+# Works with the existing sunset Nanoleaf automation (which sets initial level).
+# -----------------------------------------------------------------------------
+- id: nanoleaf_graduated_dimming
+  alias: "Nanoleaf: Graduated dimming on no presence"
+  description: >-
+    Dim the bedroom Nanoleaf Elements to 15% after 3 min without kitchen
+    presence, then turn them off after 5 more minutes of no presence.
+  mode: restart
+  triggers:
+  - entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+    to: 'off'
+    for: "00:03:00"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: light.nanoleaf_multicolor_ls
+    state: 'on'
+  actions:
+  - action: light.turn_on
+    data:
+      brightness_pct: 15
+      transition: 10
+    target:
+      entity_id:
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+  - delay: "00:05:00"
+  - condition: state
+    entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+    state: 'off'
+  - action: light.turn_off
+    data:
+      transition: 5
+    target:
+      entity_id:
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+
+- id: nanoleaf_restore_on_presence
+  alias: "Nanoleaf: Restore brightness on presence"
+  description: >-
+    Restore the Nanoleaf Elements to the configured night brightness when
+    presence returns while they are on but dimmed.
+  mode: single
+  triggers:
+  - entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
+    to: 'on'
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: light.nanoleaf_multicolor_ls
+    state: 'on'
+  - condition: template
+    value_template: "{{ state_attr('light.nanoleaf_multicolor_ls', 'brightness') | int(0) < 100 }}"
+  actions:
+  - action: light.turn_on
+    data:
+      brightness_pct: "{{ states('input_number.nanoleaf_night_brightness') | int(50) }}"
+      transition: 3
+    target:
+      entity_id:
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+
+
+# -----------------------------------------------------------------------------
+# Enhancement R: EV charging cross-validation (Grizzl-E vs Ioniq 6 telemetry).
+# Pack size: Ioniq 6 Long Range = 77.4 kWh -> ~0.774 kWh per 1% SoC.
+# -----------------------------------------------------------------------------
+
+# R1: Reconcile kWh delivered vs expected SoC gain at session end.
+- id: ev_soc_energy_reconciliation
+  alias: "EV: SoC vs Grizzl-E energy reconciliation"
+  description: >-
+    After a charging session ends, compare the kWh the Grizzl-E delivered with
+    the expected SoC gain for a 77.4 kWh pack and report the reconciliation.
+  mode: single
+  triggers:
+  - entity_id: binary_sensor.grizzl_e_charging
+    from: 'on'
+    to: 'off'
+    for: "00:02:00"
+    trigger: state
+  conditions: []
+  actions:
+  - variables:
+      kwh_delivered: "{{ state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) }}"
+      soc_now: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+      expected_soc_gain: "{{ (kwh_delivered | float(0) / 0.774) | round(1) }}"
+  - if:
+    - condition: template
+      value_template: "{{ kwh_delivered | float(0) > 2 }}"
+    then:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "EV Charging Reconciliation"
+        message: >
+          Session: {{ kwh_delivered | round(2) }} kWh delivered.
+          Expected ~{{ expected_soc_gain }}% SoC gain (77.4 kWh pack).
+          Current SoC: {{ soc_now }}%.
+
+# R2: Phantom drain / stale telemetry heuristic while parked at home.
+- id: ev_phantom_drain_detection
+  alias: "EV: Phantom drain detection"
+  description: >-
+    Every 6 h, if the car is home, not charging, and its SoC telemetry has been
+    static for >24 h at a non-full level, nudge to check for phantom drain.
+  mode: single
+  triggers:
+  - trigger: time_pattern
+    hours: "/6"
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.grizzl_e_charging
+    state: 'off'
+  - condition: state
+    entity_id: device_tracker.ioniq_6_location
+    state: 'home'
+  actions:
+  - variables:
+      current_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+      soc_last_changed: >
+        {{ states.sensor.ioniq_6_ev_battery_level.last_changed
+           if states.sensor.ioniq_6_ev_battery_level is defined else none }}
+  - if:
+    - condition: template
+      value_template: >
+        {{ current_soc > 0 and current_soc < 90 and soc_last_changed is not none
+           and (as_timestamp(now()) - as_timestamp(soc_last_changed)) > 86400 }}
+    then:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "🔋 Possible Phantom Drain"
+        message: "EV at {{ current_soc }}% and telemetry unchanged >24 h while parked. If SoC keeps dropping, check 12V battery or vampire loads."
+
+# R3: Vehicle says full but charger still drawing power -> investigate.
+- id: ev_charging_completion_verify
+  alias: "EV: Charging completion cross-check"
+  description: >-
+    If the Ioniq 6 reports >99% SoC but the Grizzl-E is still drawing >100 W
+    five minutes later, alert that the charger may be stuck.
+  mode: single
+  triggers:
+  - entity_id: sensor.ioniq_6_ev_battery_level
+    above: 99
+    trigger: numeric_state
+  conditions:
+  - condition: template
+    value_template: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) > 100 }}"
+  actions:
+  - delay: "00:05:00"
+  - condition: template
+    value_template: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) > 100 }}"
+  - action: notify.grizzl_ev_phones
+    data:
+      title: "⚠️ Charger Stuck?"
+      message: "Vehicle reports 100% SoC but Grizzl-E still drawing {{ states('sensor.grizzl_e_power') | default(0, true) }}W. May be stuck — investigate cable/charger."
+
+# -----------------------------------------------------------------------------
+# Perceived Comfort Auto-Mode: switch summer/winter booleans by outdoor temp.
+# -----------------------------------------------------------------------------
+- id: climate_auto_season_switch
+  alias: "Climate: Auto season mode switch"
+  description: >-
+    At 06:00, flip climate_summer_mode / climate_winter_mode based on the
+    current outdoor temperature (>20C -> summer, <10C -> winter).
+  mode: single
+  triggers:
+  - at: "06:00:00"
+    trigger: time
+  conditions: []
+  actions:
+  - variables:
+      outdoor_temp: "{{ state_attr('weather.forecast_home', 'temperature') | default(15, true) | float(15) }}"
+  - choose:
+    - conditions:
+      - condition: template
+        value_template: "{{ outdoor_temp > 20 }}"
+      - condition: state
+        entity_id: input_boolean.climate_summer_mode
+        state: 'off'
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.climate_summer_mode
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.climate_winter_mode
+      - action: notify.mobile_app_cph2655
+        data:
+          title: "Climate Mode"
+          message: "Switched to Summer mode (outdoor: {{ outdoor_temp }}°C)"
+    - conditions:
+      - condition: template
+        value_template: "{{ outdoor_temp < 10 }}"
+      - condition: state
+        entity_id: input_boolean.climate_winter_mode
+        state: 'off'
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.climate_winter_mode
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.climate_summer_mode
+      - action: notify.mobile_app_cph2655
+        data:
+          title: "Climate Mode"
+          message: "Switched to Winter mode (outdoor: {{ outdoor_temp }}°C)"
+
+# -----------------------------------------------------------------------------
+# Whole-home on-peak load shedding (weekdays 16:00-21:00, 39.1c/kWh).
+# SOLE authority for peak-window pool pump / chlorinator / office heater control.
+# (Absorbs Enhancement D; pool_pump_ulo's on_peak/off_peak_return triggers removed.)
+# Office heater restore is guarded by house_away so away mode isn't overridden.
+# -----------------------------------------------------------------------------
+- id: whole_home_onpeak_load_shedding
+  alias: "Energy: Whole-home onpeak load shedding"
+  description: >-
+    Weekdays 16:00 turn off pool pump, chlorinator and office heater for the
+    on-peak window; restore at 21:00 (heater only if the house is not away).
+  mode: single
+  triggers:
+  - at: "16:00:00"
+    id: peak_start
+    trigger: time
+  - at: "21:00:00"
+    id: peak_end
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: "{{ now().isoweekday() < 6 }}"
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: peak_start
+      sequence:
+      - action: switch.turn_off
+        target:
+          entity_id:
+          - switch.pool_pump_heater_socket_1
+          - switch.salt_chlorinator
+          - switch.office_heater_child_lock
+      - if:
+        - condition: state
+          entity_id: binary_sensor.grizzl_e_charging
+          state: 'on'
+        then:
+        - action: notify.grizzl_ev_phones
+          data:
+            title: "⚡ Peak Pricing Active"
+            message: "On-peak started (39.1c/kWh). Pool pump + office heater paused. EV still charging — consider unplugging until 9PM."
+        else:
+        - action: notify.mobile_app_cph2655
+          data:
+            title: "⚡ Peak Load Shedding"
+            message: "On-peak started. Pool pump + office heater paused until 9PM."
+    - conditions:
+      - condition: trigger
+        id: peak_end
+      sequence:
+      - action: switch.turn_on
+        target:
+          entity_id:
+          - switch.pool_pump_heater_socket_1
+          - switch.salt_chlorinator
+      - if:
+        - condition: state
+          entity_id: input_boolean.house_away
+          state: 'off'
+        then:
+        - action: switch.turn_on
+          target:
+            entity_id: switch.office_heater_child_lock
+      - action: notify.mobile_app_cph2655
+        data:
+          title: "✅ Off-Peak Resumed"
+          message: "On-peak ended. Pool pump restored{{ ' and office heater back on.' if is_state('input_boolean.house_away', 'off') else ' (heater left off — away mode).' }}"
+
+# -----------------------------------------------------------------------------
+# Priority 3: Calendar-aware smart charging.
+# -----------------------------------------------------------------------------
+- id: ev_calendar_departure_check
+  alias: "EV: Calendar departure readiness check"
+  description: >-
+    At 21:00 and 06:00, if the EV is below 40% and not charging, remind to plug
+    in ahead of the next calendar event.
+  mode: single
+  triggers:
+  - at: "21:00:00"
+    trigger: time
+  - at: "06:00:00"
+    trigger: time
+  conditions: []
+  actions:
+  - variables:
+      next_event: "{{ state_attr('calendar.arshad14_gmail_com', 'message') | default('None', true) }}"
+      soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+      is_charging: "{{ is_state('binary_sensor.grizzl_e_charging', 'on') }}"
+  - if:
+    - condition: template
+      value_template: "{{ soc > 0 and soc < 40 and not is_charging }}"
+    then:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "🔋 EV Charge Reminder"
+        message: >
+          Your EV is at {{ soc }}% and not plugged in.
+          {% if next_event != 'None' %}Next event: {{ next_event }}.{% endif %}
+          Off-peak (3.9c/kWh) {{ 'starts at 11PM' if now().hour < 23 else 'is active now' }}. Consider plugging in.
+
+- id: ev_no_event_offpeak_reminder
+  alias: "EV: Off-peak charge reminder (no events)"
+  description: >-
+    At 22:30, if SoC < 80% and not charging, remind that the 23:00 ULO window
+    is a cheap time to plug in.
+  mode: single
+  triggers:
+  - at: "22:30:00"
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) < 80 }}"
+  - condition: state
+    entity_id: binary_sensor.grizzl_e_charging
+    state: 'off'
+  actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "🔋 Off-Peak Charging Window"
+      message: "EV at {{ states('sensor.ioniq_6_ev_battery_level') | default('?', true) }}%. No urgent events. Off-peak starts in 30min (3.9c/kWh). Good time to plug in."
+
+- id: ev_long_trip_prep
+  alias: "EV: Long trip preparation alert"
+  description: >-
+    12 h before a calendar event mentioning trip/travel/road trip, remind to
+    charge to 100% and consider climate preconditioning.
+  mode: single
+  triggers:
+  - trigger: calendar
+    entity_id: calendar.arshad14_gmail_com
+    event: start
+    offset: "-12:00:00"
+  conditions:
+  - condition: template
+    value_template: >
+      {{ ('road trip' in (trigger.calendar_event.summary | lower)) or
+         ('trip' in (trigger.calendar_event.summary | lower)) or
+         ('travel' in (trigger.calendar_event.summary | lower)) }}
+  actions:
+  - variables:
+      soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+  - action: notify.grizzl_ev_phones
+    data:
+      title: "🚗 Road Trip Prep"
+      message: >
+        "{{ trigger.calendar_event.summary }}" starts in ~12h.
+        EV at {{ soc }}%. {% if soc < 90 %}Charge to 100% tonight during off-peak.{% else %}Good charge level.{% endif %}
+        Consider climate preconditioning 20 min before departure.
+
+# -----------------------------------------------------------------------------
+# Priority 4: Cross-device coordination.
+# -----------------------------------------------------------------------------
+- id: ev_arrival_low_charge_alert
+  alias: "EV: Low charge arrival alert"
+  description: >-
+    When Arshad arrives home with SoC < 30% and the charger idle, announce a
+    plug-in reminder on the downstairs Echo.
+  mode: single
+  triggers:
+  - entity_id: person.arshad14
+    to: home
+    trigger: state
+  conditions:
+  - condition: template
+    value_template: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) < 30 }}"
+  - condition: template
+    value_template: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) < 50 }}"
+  actions:
+  - delay: "00:05:00"
+  - condition: template
+    value_template: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) < 50 }}"
+  - action: notify.alexa_media
+    data:
+      data: {type: announce}
+      message: "Welcome home. Your car is at {{ states('sensor.ioniq_6_ev_battery_level') | default('unknown', true) }} percent. Consider plugging in to catch off-peak rates."
+      target:
+      - media_player.downstairs_echo_dot
+
+- id: away_mode_energy_optimization
+  alias: "Energy: Away mode optimization"
+  description: >-
+    When everyone leaves during a weekday on-peak window, make sure the pool
+    pump and chlorinator are off (complements house_away_mode, which does not
+    touch the pool).
+  mode: single
+  triggers:
+  - entity_id: person.arshad14
+    to: not_home
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.larissa_s_s22_presence
+    state: 'off'
+  - condition: template
+    value_template: "{{ now().isoweekday() < 6 and 16 <= now().hour < 21 }}"
+  actions:
+  - action: switch.turn_off
+    target:
+      entity_id:
+      - switch.pool_pump_heater_socket_1
+      - switch.salt_chlorinator
+
+- id: ev_cold_weather_range_alert
+  alias: "EV: Cold weather range alert"
+  description: >-
+    At 20:00, if it's below -10C and SoC < 60%, warn that cold reduces range
+    and to charge overnight.
+  mode: single
+  triggers:
+  - at: "20:00:00"
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: "{{ state_attr('weather.forecast_home', 'temperature') | default(20, true) | float(20) < -10 }}"
+  - condition: template
+    value_template: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) < 60 }}"
+  actions:
+  - action: notify.grizzl_ev_phones
+    data:
+      title: "❄️ Cold Weather + Low EV"
+      message: "Forecast: {{ state_attr('weather.forecast_home', 'temperature') | default('?', true) }}°C. EV at {{ states('sensor.ioniq_6_ev_battery_level') | default('?', true) }}% — range reduced ~25% in cold. Charge tonight."
+
+- id: ev_climate_precondition_departure
+  alias: "EV: Climate preconditioning before calendar event"
+  description: >-
+    20 min before a calendar event, if Arshad is home and it's very cold or hot,
+    start the Ioniq 6 remote climate and announce it.
+  mode: single
+  triggers:
+  - trigger: calendar
+    entity_id: calendar.arshad14_gmail_com
+    event: start
+    offset: "-00:20:00"
+  conditions:
+  - condition: state
+    entity_id: person.arshad14
+    state: home
+  - condition: template
+    value_template: >
+      {{ state_attr('weather.forecast_home', 'temperature') | default(20, true) | float(20) < 5 or
+         state_attr('weather.forecast_home', 'temperature') | default(20, true) | float(20) > 28 }}
+  actions:
+  - action: climate.turn_on
+    target:
+      entity_id: climate.ioniq_6_climate_control
+  - action: notify.alexa_media
+    data:
+      data: {type: announce}
+      message: "Your car is getting ready for your {{ trigger.calendar_event.summary }} in 20 minutes."
+      target:
+      - media_player.downstairs_echo_dot

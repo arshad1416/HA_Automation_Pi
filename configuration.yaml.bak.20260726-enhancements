@@ -216,48 +216,6 @@ input_number:
     max: 2
     step: 1
     initial: 1
-  # ── Fix B1: tunable brightness (was hardcoded in automations) ──────────
-  outdoor_lights_sunset_brightness:
-    name: Outdoor Lights Sunset Brightness
-    icon: mdi:lightbulb-on
-    min: 1
-    max: 100
-    step: 5
-    unit_of_measurement: '%'
-    initial: 90
-  outdoor_lights_dim_brightness:
-    name: Outdoor Lights Dim Brightness
-    icon: mdi:lightbulb-on-40
-    min: 1
-    max: 100
-    step: 5
-    unit_of_measurement: '%'
-    initial: 10
-  nanoleaf_night_brightness:
-    name: Nanoleaf Night Brightness
-    icon: mdi:led-strip-variant
-    min: 1
-    max: 100
-    step: 5
-    unit_of_measurement: '%'
-    initial: 50
-  # ── Fix B2: tunable AC-restore thresholds (auto_restore_ac_after_cold_day) ──
-  ac_restore_indoor_threshold:
-    name: AC Restore Indoor Temperature
-    icon: mdi:home-thermometer
-    min: 15
-    max: 30
-    step: 0.5
-    unit_of_measurement: °C
-    initial: 22
-  ac_restore_outdoor_threshold:
-    name: AC Restore Outdoor Temperature
-    icon: mdi:thermometer
-    min: 15
-    max: 30
-    step: 0.5
-    unit_of_measurement: °C
-    initial: 20
 input_datetime:
   airbnb_check_in_time:
     name: Airbnb Check-In Time
@@ -317,12 +275,6 @@ input_boolean:
   bedtime_shutdown_done:
     name: "Bedtime Shutdown Done (nightly latch)"
     icon: mdi:sleep
-  # Enhancement C — set ON by hvac_pause_door_open while HVAC is paused for an open
-  # exterior door; climate_ai_advisor checks this so it does not fight the pause.
-  hvac_paused_door_open:
-    name: HVAC Paused (Door Open)
-    icon: mdi:door-open
-    initial: false
 input_text:
   climate_ai_recommendation:
     name: Climate AI Recommendation
@@ -332,12 +284,6 @@ input_text:
     name: Climate AI Debug
     icon: mdi:code-json
     max: 255
-  # Enhancement C — climate_ai_advisor writes the active HVAC mode here so
-  # hvac_pause_door_open can restore the correct mode after the door closes.
-  climate_ai_last_mode:
-    name: Climate AI Last HVAC Mode
-    icon: mdi:thermostat
-    max: 32
 
 counter:
   season_switch_summer:
@@ -645,42 +591,6 @@ template:
         state: >
           {{ (state_attr('sensor.grizzl_e_total_cost', 'fixed_monthly_cad') | default(33.57, true)
               + (states('sensor.grizzl_e_cost_monthly') | float(0))) | round(2) }}
-  # ── Priority 5: Energy dashboard sensors (Enhancement spec) ────────────
-  # Unified daily energy cost estimate (EV + house @ blended 15¢/kWh).
-  - sensor:
-      - name: "Home Daily Energy Cost Estimate"
-        unique_id: home_daily_energy_cost
-        unit_of_measurement: "$"
-        device_class: monetary
-        state: >
-          {{ (states('sensor.grizzl_e_cost_daily') | float(0) +
-              (states('sensor.grizzl_e_energy_daily') | float(0) * 0.15)) | round(2) }}
-        attributes:
-          ev_cost: "{{ states('sensor.grizzl_e_cost_daily') | default('unavailable', true) }}"
-          pool_pump_state: "{{ states('switch.pool_pump_heater_socket_1') | default('unavailable', true) }}"
-  # Monthly EV charging cost rollup.
-  - sensor:
-      - name: "Monthly EV Charging Cost"
-        unique_id: monthly_ev_charging_cost
-        unit_of_measurement: "$"
-        device_class: monetary
-        state: "{{ states('sensor.grizzl_e_cost_monthly') | float(0) | round(2) }}"
-  # Charging efficiency (kWh delivered per 1% SoC). Ioniq 6 Long Range = 77.4 kWh pack
-  # (≈0.774 kWh/%). Availability-gated so it is not computed when charger/session idle.
-  - sensor:
-      - name: "EV Charging Efficiency"
-        unique_id: ev_charging_efficiency
-        unit_of_measurement: "kWh/%"
-        availability: >
-          {{ (state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0)) > 1
-             and (states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0)) > 0 }}
-        state: >
-          {% set session_kwh = state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) %}
-          {% set soc = states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) %}
-          {{ (session_kwh / (soc * 0.01 * 77.4)) | round(3) }}
-        attributes:
-          nominal_pack_kwh: 77.4
-          expected_range: "0.74-0.80 kWh/% when healthy (Ioniq 6 77.4 kWh pack)"
 
 shell_command:
   start_esphome_kitchen_bridge: "for pid in $(pgrep -f esphome_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/esphome_kitchen_bridge.py > /config/esphome_bridge.log 2>&1 &"
