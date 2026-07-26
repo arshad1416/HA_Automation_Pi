@@ -473,58 +473,6 @@
       message: "Vehicle reports 100% SoC but Grizzl-E still drawing {{ states('sensor.grizzl_e_power') | default(0, true) }}W. May be stuck — investigate cable/charger."
 
 # -----------------------------------------------------------------------------
-# Perceived Comfort Auto-Mode: switch summer/winter booleans by outdoor temp.
-# -----------------------------------------------------------------------------
-- id: climate_auto_season_switch
-  alias: "Climate: Auto season mode switch"
-  description: >-
-    At 06:00, flip climate_summer_mode / climate_winter_mode based on the
-    current outdoor temperature (>20C -> summer, <10C -> winter).
-  mode: single
-  triggers:
-  - at: "06:00:00"
-    trigger: time
-  conditions: []
-  actions:
-  - variables:
-      outdoor_temp: "{{ state_attr('weather.forecast_home', 'temperature') | default(15, true) | float(15) }}"
-  - choose:
-    - conditions:
-      - condition: template
-        value_template: "{{ outdoor_temp > 20 }}"
-      - condition: state
-        entity_id: input_boolean.climate_summer_mode
-        state: 'off'
-      sequence:
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.climate_summer_mode
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.climate_winter_mode
-      - action: notify.mobile_app_cph2655
-        data:
-          title: "Climate Mode"
-          message: "Switched to Summer mode (outdoor: {{ outdoor_temp }}°C)"
-    - conditions:
-      - condition: template
-        value_template: "{{ outdoor_temp < 10 }}"
-      - condition: state
-        entity_id: input_boolean.climate_winter_mode
-        state: 'off'
-      sequence:
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.climate_winter_mode
-      - action: input_boolean.turn_off
-        target:
-          entity_id: input_boolean.climate_summer_mode
-      - action: notify.mobile_app_cph2655
-        data:
-          title: "Climate Mode"
-          message: "Switched to Winter mode (outdoor: {{ outdoor_temp }}°C)"
-
-# -----------------------------------------------------------------------------
 # Whole-home on-peak load shedding (weekdays 16:00-21:00, 39.1c/kWh).
 # SOLE authority for peak-window pool pump / chlorinator / office heater control.
 # (Absorbs Enhancement D; pool_pump_ulo's on_peak/off_peak_return triggers removed.)
