@@ -1,19 +1,11 @@
 {
-  "ebaa5f77f7fce4cb15l6t6": {
-    "ip": "192.168.0.96",
-    "name": "UNKNOWN DEVICE",
-    "product": "l4rlmt9ko5v1xq8o",
+  "eb799ab5470604253bnhi7": {
+    "ip": "192.168.0.138",
+    "name": "Massage Room Heater",
+    "product": "hhs4ani0a2zrztof",
     "version": "3.3",
-    "configured_ip": "?",
-    "first_seen": "2026-07-25T23:29:39.056456"
-  },
-  "15004183cc50e351f530": {
-    "ip": "192.168.0.29",
-    "name": "Stair light (LED)",
-    "product": "4T0aYRs5TZOaHQTQ",
-    "version": "3.1",
-    "configured_ip": "192.168.0.29",
-    "first_seen": "2026-07-25T23:29:39.359987"
+    "configured_ip": "192.168.0.37",
+    "first_seen": "2026-07-25T23:46:59.494027"
   },
   "131052773c61058ba305": {
     "ip": "192.168.0.65",
@@ -21,7 +13,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.65",
-    "first_seen": "2026-07-25T23:29:39.544263"
+    "first_seen": "2026-07-25T23:46:59.544048"
   },
   "131052773c61058b5cb5": {
     "ip": "192.168.0.70",
@@ -29,23 +21,7 @@
     "product": "la5v5qkk4saxjtx8",
     "version": "3.3",
     "configured_ip": "192.168.0.70",
-    "first_seen": "2026-07-25T23:29:39.631721"
-  },
-  "eb9883b5def5e30cd1zakb": {
-    "ip": "192.168.0.105",
-    "name": "Wasserstein Smart Floodlight 2",
-    "product": "keyqj4cqs54ger7r",
-    "version": "3.3",
-    "configured_ip": "192.168.0.105",
-    "first_seen": "2026-07-25T23:29:39.756075"
-  },
-  "131052773c61058a9f6b": {
-    "ip": "192.168.0.53",
-    "name": "Laundry Room Light",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.69",
-    "first_seen": "2026-07-25T23:29:39.916120"
+    "first_seen": "2026-07-25T23:46:59.628310"
   },
   "eb68c40bc6f3c68e69ygrv": {
     "ip": "192.168.0.87",
@@ -53,47 +29,23 @@
     "product": "key37qxed4yeqxag",
     "version": "3.3",
     "configured_ip": "192.168.0.109",
-    "first_seen": "2026-07-25T23:29:40.076478"
+    "first_seen": "2026-07-25T23:47:00.304210"
   },
-  "131052773c61058b9a1d": {
-    "ip": "192.168.0.57",
-    "name": "Kitchen Fan",
-    "product": "la5v5qkk4saxjtx8",
+  "eb9883b5def5e30cd1zakb": {
+    "ip": "192.168.0.105",
+    "name": "Wasserstein Smart Floodlight 2",
+    "product": "keyqj4cqs54ger7r",
     "version": "3.3",
-    "configured_ip": "192.168.0.57",
-    "first_seen": "2026-07-25T23:29:40.169688"
+    "configured_ip": "192.168.0.105",
+    "first_seen": "2026-07-25T23:47:00.468624"
   },
-  "3258883224a160340ee9": {
-    "ip": "192.168.0.66",
-    "name": "Kitchen Light",
-    "product": "ubadjqh45i98tdel",
+  "ebaa5f77f7fce4cb15l6t6": {
+    "ip": "192.168.0.96",
+    "name": "UNKNOWN DEVICE",
+    "product": "l4rlmt9ko5v1xq8o",
     "version": "3.3",
-    "configured_ip": "192.168.0.66",
-    "first_seen": "2026-07-25T23:29:40.260258"
-  },
-  "13105277c4dd573160d3": {
-    "ip": "192.168.0.63",
-    "name": "Mina's Light",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.63",
-    "first_seen": "2026-07-25T23:29:40.407136"
-  },
-  "50535623c44f33c2b17d": {
-    "ip": "192.168.0.131",
-    "name": "Basement Lights",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.25",
-    "first_seen": "2026-07-25T23:29:40.466949"
-  },
-  "131052773c61058b5101": {
-    "ip": "192.168.0.41",
-    "name": "Guest Room Light",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.41",
-    "first_seen": "2026-07-25T23:29:40.615858"
+    "configured_ip": "?",
+    "first_seen": "2026-07-25T23:47:00.705392"
   },
   "eb228bea36b97bb1bcag3w": {
     "ip": "192.168.0.78",
@@ -101,31 +53,7 @@
     "product": "key37qxed4yeqxag",
     "version": "3.3",
     "configured_ip": "192.168.0.48",
-    "first_seen": "2026-07-25T23:29:40.642756"
-  },
-  "131052773c61058b7d1b": {
-    "ip": "192.168.0.88",
-    "name": "Basement Stair Light",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.88",
-    "first_seen": "2026-07-25T23:29:40.645573"
-  },
-  "53365228bcddc28c3747": {
-    "ip": "192.168.0.229",
-    "name": "UNKNOWN DEVICE",
-    "product": "DsS0exXElZJSWIdc",
-    "version": "3.1",
-    "configured_ip": "?",
-    "first_seen": "2026-07-25T23:29:40.670709"
-  },
-  "ebc2cdd6b08d7469ealqcv": {
-    "ip": "192.168.0.91",
-    "name": "Mina's Lamp",
-    "product": "key37qxed4yeqxag",
-    "version": "3.3",
-    "configured_ip": "192.168.0.93",
-    "first_seen": "2026-07-25T23:29:40.882078"
+    "first_seen": "2026-07-25T23:47:00.870369"
   },
   "20327148c44f33af4ea0": {
     "ip": "192.168.0.119",
@@ -133,118 +61,14 @@
     "product": "key4puh75hpvxcdw",
     "version": "3.3",
     "configured_ip": "?",
-    "first_seen": "2026-07-25T23:29:40.965846"
+    "first_seen": "2026-07-25T23:47:00.981818"
   },
-  "45142045c82b96c1f60f": {
-    "ip": "192.168.0.94",
-    "name": "Foyer Light",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.94",
-    "first_seen": "2026-07-25T23:29:41.005558"
-  },
-  "67100068483fda16c660": {
-    "ip": "192.168.0.83",
-    "name": "Office Heater",
-    "product": "wuz1ys71acov8sx6",
-    "version": "3.3",
-    "configured_ip": "192.168.0.83",
-    "first_seen": "2026-07-25T23:29:41.065561"
-  },
-  "eb814f71bb6ded1077903w": {
-    "ip": "192.168.0.117",
-    "name": "Outdoor Decoration SmartPlug",
-    "product": "keyjup78v54myhan",
-    "version": "3.4",
-    "configured_ip": "192.168.0.117",
-    "first_seen": "2026-07-25T23:29:41.219340"
-  },
-  "66483875c4dd571483e4": {
-    "ip": "192.168.0.95",
-    "name": "Back Hallway Light Main",
-    "product": "tmspliigatvf20yl",
-    "version": "3.3",
-    "configured_ip": "192.168.0.95",
-    "first_seen": "2026-07-25T23:29:41.276402"
-  },
-  "131052773c61058b5cac": {
-    "ip": "192.168.0.69",
-    "name": "Bathroom Light",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.73",
-    "first_seen": "2026-07-25T23:29:41.376220"
-  },
-  "ebf5071fb7d8c3303eha2l": {
-    "ip": "192.168.0.85",
-    "name": "Living Room Floor Lamp",
+  "ebc2cdd6b08d7469ealqcv": {
+    "ip": "192.168.0.91",
+    "name": "Mina's Lamp",
     "product": "key37qxed4yeqxag",
     "version": "3.3",
-    "configured_ip": "192.168.0.52",
-    "first_seen": "2026-07-25T23:29:41.779303"
-  },
-  "13105277c4dd57315edd": {
-    "ip": "192.168.0.51",
-    "name": "Izaan's Bedroom light",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.51",
-    "first_seen": "2026-07-25T23:29:42.115851"
-  },
-  "6715478070039fce0412": {
-    "ip": "192.168.0.55",
-    "name": "Garage Light Switch",
-    "product": "la5v5qkk4saxjtx8",
-    "version": "3.3",
-    "configured_ip": "192.168.0.175",
-    "first_seen": "2026-07-25T23:29:42.143729"
-  },
-  "eb9349f92e7f4acaaaccvg": {
-    "ip": "192.168.0.137",
-    "name": "Cat Feeder",
-    "product": "abtatdzmlavpawxo",
-    "version": "3.3",
-    "configured_ip": "192.168.0.111",
-    "first_seen": "2026-07-25T23:29:42.755885"
-  },
-  "eb63d6fd2a642f6bf4r3iy": {
-    "ip": "192.168.0.73",
-    "name": "Airbnb Infrared Heater",
-    "product": "sy7r45n4x2dqzkgc",
-    "version": "3.3",
-    "configured_ip": "192.168.0.49",
-    "first_seen": "2026-07-25T23:29:42.908256"
-  },
-  "eb1780072f130dadaci0cm": {
-    "ip": "192.168.0.93",
-    "name": "Larissa's Garage Door",
-    "product": "keyftvxappyrem5a",
-    "version": "3.3",
-    "configured_ip": "192.168.0.21",
-    "first_seen": "2026-07-25T23:29:42.909087"
-  },
-  "eb3b9e64d0208b5c04gt4z": {
-    "ip": "192.168.0.92",
-    "name": "Side Rain barrel",
-    "product": "keyjup78v54myhan",
-    "version": "3.4",
-    "configured_ip": "192.168.0.53",
-    "first_seen": "2026-07-25T23:29:42.909930"
-  },
-  "eb152e8acdf2a0c29aprxc": {
-    "ip": "192.168.0.89",
-    "name": "UNKNOWN DEVICE",
-    "product": "keyjup78v54myhan",
-    "version": "3.4",
-    "configured_ip": "?",
-    "first_seen": "2026-07-25T23:29:42.997876"
-  },
-  "eb799ab5470604253bnhi7": {
-    "ip": "192.168.0.138",
-    "name": "Massage Room Heater",
-    "product": "hhs4ani0a2zrztof",
-    "version": "3.3",
-    "configured_ip": "192.168.0.37",
-    "first_seen": "2026-07-25T23:29:43.682078"
+    "configured_ip": "192.168.0.93",
+    "first_seen": "2026-07-25T23:47:01.103267"
   }
 }
