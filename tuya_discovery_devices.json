@@ -222,5 +222,21 @@
     "version": "3.3",
     "configured_ip": "192.168.0.37",
     "first_seen": "2026-07-26T19:01:08.853641"
+  },
+  "888020473c6105e8b1ab": {
+    "ip": "192.168.0.76",
+    "name": "Family Room",
+    "product": "ubadjqh45i98tdel",
+    "version": "3.3",
+    "configured_ip": "192.168.0.76",
+    "first_seen": "2026-07-26T19:15:02.537132"
+  },
+  "131052773c61058b58d1": {
+    "ip": "192.168.0.49",
+    "name": "Powder Room Light",
+    "product": "la5v5qkk4saxjtx8",
+    "version": "3.3",
+    "configured_ip": "192.168.0.22",
+    "first_seen": "2026-07-26T19:15:02.630069"
   }
 }

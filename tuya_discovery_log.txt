@@ -7872,3 +7872,5 @@
 [2026-07-26 19:01:08] DISCOVERED: Airbnb Infrared Heater | gwId=eb63d6fd2a642f6bf4r3iy | IP=192.168.0.73 | 🔄 IP CHANGED (was 192.168.0.49) | Product=sy7r45n4x2dqzkgc | v3.3
 [2026-07-26 19:01:08] DISCOVERED: UNKNOWN DEVICE | gwId=eb152e8acdf2a0c29aprxc | IP=192.168.0.89 | 🆕 NEW DEVICE (not in HA config) | Product=keyjup78v54myhan | v3.4
 [2026-07-26 19:01:08] DISCOVERED: Massage Room Heater | gwId=eb799ab5470604253bnhi7 | IP=192.168.0.138 | 🔄 IP CHANGED (was 192.168.0.37) | Product=hhs4ani0a2zrztof | v3.3
+[2026-07-26 19:15:02] DISCOVERED: Family Room | gwId=888020473c6105e8b1ab | IP=192.168.0.76 | ✅ IP unchanged | Product=ubadjqh45i98tdel | v3.3
+[2026-07-26 19:15:02] DISCOVERED: Powder Room Light | gwId=131052773c61058b58d1 | IP=192.168.0.49 | 🔄 IP CHANGED (was 192.168.0.22) | Product=la5v5qkk4saxjtx8 | v3.3
