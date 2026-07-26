@@ -1,0 +1,28 @@
+{
+  "effective": "2025-11-01",
+  "valid_through": "2026-10-31",
+  "source": "OEB regulated ULO + Alectra (Horizon/Hamilton zone) residential delivery, alectrautilities.com/rates-service-charges",
+  "currency": "CAD",
+  "timezone": "America/Toronto",
+  "ulo_energy_cents_kwh": {
+    "overnight": 3.9,
+    "weekend_offpeak": 9.8,
+    "midpeak": 15.7,
+    "onpeak": 39.1
+  },
+  "period_rules_comment": "Evaluated in order: overnight (23:00-07:00 daily) > weekend_offpeak (weekends/holidays 07:00-23:00) > onpeak (weekdays 16:00-21:00) > midpeak (weekdays otherwise)",
+  "delivery": {
+    "fixed_monthly_cad": {
+      "service_charge": 33.32,
+      "regulatory_supply": 0.25
+    },
+    "variable_cents_kwh": {
+      "transmission": 2.18,
+      "wholesale_market_service": 0.53,
+      "distribution": 0.033
+    },
+    "line_loss_pct_of_energy_charge": 3.79
+  },
+  "holidays_comment": "Ontario statutory holidays (OEB schedule); computed in daemon",
+  "notes": "ULO energy rates are identical summer/winter and apply province-wide. Delivery fixed charges are unavoidable monthly costs (not caused by EV charging); only the variable delivery + line-loss scale with charging kWh."
+}
