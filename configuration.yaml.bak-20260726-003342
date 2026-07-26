@@ -666,14 +666,3 @@ notify:
     services:
       - service: mobile_app_sm_s926w
       - service: mobile_app_cph2655
-
-# ── Grizzl-E YAML-managed dashboard ─────────────────────────
-lovelace:
-  mode: storage
-  dashboards:
-    ev-charging:
-      mode: yaml
-      title: EV Charging
-      icon: mdi:ev-station
-      show_in_sidebar: true
-      filename: dashboards/ev-charging.yaml

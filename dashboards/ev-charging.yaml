@@ -1,0 +1,115 @@
+# Grizzl-E Smart — YAML-managed Lovelace dashboard  [DEPLOYED]
+# Deployed to: /opt/homeassistant/dashboards/ev-charging.yaml (= /config/dashboards/...)
+# Registered via the `lovelace:` block in configuration.yaml (url_path: ev-charging).
+# NOTE: YAML-managed dashboards must start with `views:` (no top-level `title:`).
+views:
+  - title: Overview
+    path: overview
+    icon: mdi:ev-station
+    cards:
+      # ── Live status ────────────────────────────────────────────────
+      - type: horizontal-stack
+        cards:
+          - type: tile
+            entity: binary_sensor.grizzl_e_charging
+            name: Charging
+            icon: mdi:ev-plug-type2
+          - type: tile
+            entity: sensor.grizzl_e_power
+            name: Power
+            icon: mdi:flash
+      - type: gauge
+        entity: sensor.grizzl_e_power
+        name: Live Charging Power
+        unit: W
+        min: 0
+        max: 8000
+        severity:
+          green: 0
+          yellow: 3000
+          red: 6500
+        needle: true
+
+      # ── Cost drill-down (Day / Week / Month / Year) ────────────────
+      - type: entities
+        title: 💲 Charging Cost — Drill-Down
+        show_header_toggle: false
+        entities:
+          - entity: sensor.grizzl_e_cost_daily
+            name: Today
+            icon: mdi:calendar-today
+          - entity: sensor.grizzl_e_cost_weekly
+            name: This Week
+            icon: mdi:calendar-week
+          - entity: sensor.grizzl_e_cost_monthly
+            name: This Month
+            icon: mdi:calendar-month
+          - entity: sensor.grizzl_e_cost_yearly
+            name: This Year
+            icon: mdi:calendar-range
+          - type: divider
+          - entity: sensor.grizzl_e_est_monthly_bill
+            name: Est. Monthly Bill
+            icon: mdi:receipt-text
+
+      # ── Energy drill-down (Day / Week / Month / Year) ──────────────
+      - type: entities
+        title: ⚡ Energy — Drill-Down
+        show_header_toggle: false
+        entities:
+          - entity: sensor.grizzl_e_energy_daily
+            name: Today
+            icon: mdi:calendar-today
+          - entity: sensor.grizzl_e_energy_weekly
+            name: This Week
+            icon: mdi:calendar-week
+          - entity: sensor.grizzl_e_energy_monthly
+            name: This Month
+            icon: mdi:calendar-month
+          - entity: sensor.grizzl_e_energy_yearly
+            name: This Year
+            icon: mdi:calendar-range
+
+      # ── Current session + rate period ──────────────────────────────
+      - type: entities
+        title: 🔌 Current Session
+        show_header_toggle: false
+        entities:
+          - entity: sensor.grizzl_e_total_cost
+            name: Session Energy
+            icon: mdi:battery-charging
+            attribute: session_energy_kwh
+            suffix: " kWh"
+          - entity: sensor.grizzl_e_total_cost
+            name: Rate Period
+            icon: mdi:clock-outline
+            attribute: period_label
+          - entity: sensor.grizzl_e_total_cost
+            name: Rate
+            icon: mdi:currency-usd
+            attribute: rate_cents_kwh
+            suffix: " ¢/kWh"
+
+      # ── Cost trend (last 30 days) ──────────────────────────────────
+      - type: statistics-graph
+        title: Cost Trend (30d)
+        entities:
+          - sensor.grizzl_e_cost_daily
+        stat_types:
+          - sum
+        days_to_show: 30
+        chart_type: bar
+
+      # ── Diagnostics ────────────────────────────────────────────────
+      - type: entities
+        title: 📡 Diagnostics
+        show_header_toggle: false
+        entities:
+          - entity: sensor.grizzl_e_diagnostics
+            name: Free Heap
+            icon: mdi:memory
+          - entity: sensor.grizzl_e_power
+            name: Wi-Fi RSSI
+            icon: mdi:wifi
+            attribute: rssi_dbm
+            suffix: " dBm"

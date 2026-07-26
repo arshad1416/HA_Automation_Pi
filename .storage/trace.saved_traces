@@ -7,12 +7,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/then/0",
-          "run_id": "ed1eca8c78a7ec654a3811822ad12002",
+          "run_id": "6f92dd5b2ca4b0d15f846be129fffc74",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.790259+00:00",
-            "finish": "2026-07-26T04:18:15.948034+00:00"
+            "start": "2026-07-26T04:29:53.766581+00:00",
+            "finish": "2026-07-26T04:29:53.988870+00:00"
           },
           "domain": "automation",
           "item_id": "airbnb_reserved_sync",
@@ -21,23 +21,23 @@
             "trigger/2": [
               {
                 "path": "trigger/2",
-                "timestamp": "2026-07-26T04:18:15.790305+00:00",
+                "timestamp": "2026-07-26T04:29:53.766625+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.airbnb_reserved_flag_sync",
                     "state": "on",
                     "attributes": {
                       "id": "airbnb_reserved_sync",
-                      "last_triggered": "2026-07-26T04:00:00.027458+00:00",
+                      "last_triggered": "2026-07-26T04:20:04.726160+00:00",
                       "mode": "restart",
                       "current": 0,
                       "friendly_name": "Airbnb: Reserved Flag Sync"
                     },
-                    "last_changed": "2026-07-26T04:17:53.026778+00:00",
-                    "last_reported": "2026-07-26T04:17:53.026778+00:00",
-                    "last_updated": "2026-07-26T04:17:53.026778+00:00",
+                    "last_changed": "2026-07-26T04:29:29.000726+00:00",
+                    "last_reported": "2026-07-26T04:29:29.000726+00:00",
+                    "last_updated": "2026-07-26T04:29:29.000726+00:00",
                     "context": {
-                      "id": "01KYEA9JC2SRQCQYDXVJXBV66N",
+                      "id": "01KYEAYT1883YCFSQW6NZR5ACD",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -56,10 +56,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:18:15.790604+00:00",
+                "timestamp": "2026-07-26T04:29:53.766921+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAA8KERXYN5KQFP9R9WTQB",
+                    "id": "01KYEAZJ76SBBBVNQTKA93TT8R",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -72,7 +72,7 @@
             "action/0/if": [
               {
                 "path": "action/0/if",
-                "timestamp": "2026-07-26T04:18:15.790751+00:00",
+                "timestamp": "2026-07-26T04:29:53.767086+00:00",
                 "result": {
                   "result": true
                 }
@@ -81,7 +81,7 @@
             "action/0/if/condition/0": [
               {
                 "path": "action/0/if/condition/0",
-                "timestamp": "2026-07-26T04:18:15.790790+00:00",
+                "timestamp": "2026-07-26T04:29:53.767126+00:00",
                 "result": {
                   "result": true,
                   "entities": [
@@ -93,7 +93,7 @@
             "action/0/then/0": [
               {
                 "path": "action/0/then/0",
-                "timestamp": "2026-07-26T04:18:15.791153+00:00",
+                "timestamp": "2026-07-26T04:29:53.767396+00:00",
                 "result": {
                   "params": {
                     "domain": "switch",
@@ -161,195 +161,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAA8KERXYN5KQFP9R9WTQB",
+            "id": "01KYEAZJ76SBBBVNQTKA93TT8R",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/then/0",
-          "run_id": "ed1eca8c78a7ec654a3811822ad12002",
+          "run_id": "6f92dd5b2ca4b0d15f846be129fffc74",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.790259+00:00",
-            "finish": "2026-07-26T04:18:15.948034+00:00"
-          },
-          "domain": "automation",
-          "item_id": "airbnb_reserved_sync",
-          "trigger": "Home Assistant starting"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0/then/0",
-          "run_id": "ef42e4416f031ad6fdd9fb0aa7fdb497",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.726031+00:00",
-            "finish": "2026-07-26T04:20:04.930862+00:00"
-          },
-          "domain": "automation",
-          "item_id": "airbnb_reserved_sync",
-          "trigger": "Home Assistant starting",
-          "trace": {
-            "trigger/2": [
-              {
-                "path": "trigger/2",
-                "timestamp": "2026-07-26T04:20:04.726074+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.airbnb_reserved_flag_sync",
-                    "state": "on",
-                    "attributes": {
-                      "id": "airbnb_reserved_sync",
-                      "last_triggered": "2026-07-26T04:18:15.790397+00:00",
-                      "mode": "restart",
-                      "current": 0,
-                      "friendly_name": "Airbnb: Reserved Flag Sync"
-                    },
-                    "last_changed": "2026-07-26T04:19:42.144866+00:00",
-                    "last_reported": "2026-07-26T04:19:42.144866+00:00",
-                    "last_updated": "2026-07-26T04:19:42.144866+00:00",
-                    "context": {
-                      "id": "01KYEACWY0JFB2SEMAWFVF0MGS",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "2",
-                    "idx": "2",
-                    "alias": null,
-                    "platform": "homeassistant",
-                    "event": "start",
-                    "description": "Home Assistant starting"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T04:20:04.726365+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEADJZPNMZ3PT0HBJKXD0CV",
-                    "parent_id": null,
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "choice": "then"
-                }
-              }
-            ],
-            "action/0/if": [
-              {
-                "path": "action/0/if",
-                "timestamp": "2026-07-26T04:20:04.726497+00:00",
-                "result": {
-                  "result": true
-                }
-              }
-            ],
-            "action/0/if/condition/0": [
-              {
-                "path": "action/0/if/condition/0",
-                "timestamp": "2026-07-26T04:20:04.726535+00:00",
-                "result": {
-                  "result": true,
-                  "entities": [
-                    "calendar.airbnb_ics"
-                  ]
-                }
-              }
-            ],
-            "action/0/then/0": [
-              {
-                "path": "action/0/then/0",
-                "timestamp": "2026-07-26T04:20:04.726795+00:00",
-                "result": {
-                  "params": {
-                    "domain": "switch",
-                    "service": "turn_on",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "switch.airbnb_reserved"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "airbnb_reserved_sync",
-            "alias": "Airbnb: Reserved Flag Sync",
-            "description": "Keeps switch.airbnb_reserved in sync with calendar.airbnb_ics state \u2014 on when reservation active, off when vacant. Fires on HA start to recover from restarts during iCal sync gaps.",
-            "mode": "restart",
-            "triggers": [
-              {
-                "trigger": "calendar",
-                "entity_id": "calendar.airbnb_ics",
-                "event": "start"
-              },
-              {
-                "trigger": "calendar",
-                "entity_id": "calendar.airbnb_ics",
-                "event": "end"
-              },
-              {
-                "trigger": "homeassistant",
-                "event": "start"
-              }
-            ],
-            "conditions": [],
-            "actions": [
-              {
-                "if": [
-                  {
-                    "condition": "template",
-                    "value_template": "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
-                  }
-                ],
-                "then": [
-                  {
-                    "action": "switch.turn_on",
-                    "target": {
-                      "entity_id": "switch.airbnb_reserved"
-                    }
-                  }
-                ],
-                "else": [
-                  {
-                    "action": "switch.turn_off",
-                    "target": {
-                      "entity_id": "switch.airbnb_reserved"
-                    }
-                  }
-                ]
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEADJZPNMZ3PT0HBJKXD0CV",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0/then/0",
-          "run_id": "ef42e4416f031ad6fdd9fb0aa7fdb497",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.726031+00:00",
-            "finish": "2026-07-26T04:20:04.930862+00:00"
+            "start": "2026-07-26T04:29:53.766581+00:00",
+            "finish": "2026-07-26T04:29:53.988870+00:00"
           },
           "domain": "automation",
           "item_id": "airbnb_reserved_sync",
@@ -361,12 +185,12 @@
       {
         "extended_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "1c00a29565943b32091d6433ee42f264",
+          "run_id": "b9e102b157586fd9d226dc8b6a5b3d7d",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.797534+00:00",
-            "finish": "2026-07-26T04:18:16.304429+00:00"
+            "start": "2026-07-26T04:29:53.773969+00:00",
+            "finish": "2026-07-26T04:29:54.346033+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -375,23 +199,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T04:18:15.797588+00:00",
+                "timestamp": "2026-07-26T04:29:53.774009+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.restore_govee_outdoor_lights_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "govee_restore_after_restart",
-                      "last_triggered": "2026-07-26T03:53:28.833607+00:00",
+                      "last_triggered": "2026-07-26T04:20:04.732259+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Restore Govee outdoor lights after HA restart"
                     },
-                    "last_changed": "2026-07-26T04:17:53.041845+00:00",
-                    "last_reported": "2026-07-26T04:17:53.041845+00:00",
-                    "last_updated": "2026-07-26T04:17:53.041845+00:00",
+                    "last_changed": "2026-07-26T04:29:29.004671+00:00",
+                    "last_reported": "2026-07-26T04:29:29.004671+00:00",
+                    "last_updated": "2026-07-26T04:29:29.004671+00:00",
                     "context": {
-                      "id": "01KYEA9JCHZBC6KP0XKSRWT52P",
+                      "id": "01KYEAYT1CBEFF2NZB3BXDASBC",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -410,10 +234,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:18:15.799945+00:00",
+                "timestamp": "2026-07-26T04:29:53.774259+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAA8KNCZABT7J37RPQH9JK",
+                    "id": "01KYEAZJ7DNDDXB5NEJ5DZSERV",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -426,7 +250,7 @@
             "action/0/choose/0": [
               {
                 "path": "action/0/choose/0",
-                "timestamp": "2026-07-26T04:18:15.800163+00:00",
+                "timestamp": "2026-07-26T04:29:53.774893+00:00",
                 "result": {
                   "result": false
                 }
@@ -435,7 +259,7 @@
             "action/0/choose/0/conditions/0": [
               {
                 "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-07-26T04:18:15.800198+00:00",
+                "timestamp": "2026-07-26T04:29:53.774928+00:00",
                 "result": {
                   "wanted_time_after": "2026-07-27T00:50:30.664615+00:00",
                   "result": false
@@ -445,7 +269,7 @@
             "action/0/choose/1": [
               {
                 "path": "action/0/choose/1",
-                "timestamp": "2026-07-26T04:18:15.800386+00:00",
+                "timestamp": "2026-07-26T04:29:53.775130+00:00",
                 "result": {
                   "result": false
                 }
@@ -454,7 +278,7 @@
             "action/0/choose/1/conditions/0": [
               {
                 "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-07-26T04:18:15.800410+00:00",
+                "timestamp": "2026-07-26T04:29:53.775155+00:00",
                 "result": {
                   "wanted_time_after": "2026-07-27T00:50:30.664615+00:00",
                   "result": false
@@ -464,7 +288,7 @@
             "action/0/default/0": [
               {
                 "path": "action/0/default/0",
-                "timestamp": "2026-07-26T04:18:15.800593+00:00",
+                "timestamp": "2026-07-26T04:29:53.775337+00:00",
                 "result": {
                   "params": {
                     "domain": "light",
@@ -579,259 +403,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAA8KNCZABT7J37RPQH9JK",
+            "id": "01KYEAZJ7DNDDXB5NEJ5DZSERV",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0/default/0",
-          "run_id": "1c00a29565943b32091d6433ee42f264",
+          "run_id": "b9e102b157586fd9d226dc8b6a5b3d7d",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.797534+00:00",
-            "finish": "2026-07-26T04:18:16.304429+00:00"
-          },
-          "domain": "automation",
-          "item_id": "govee_restore_after_restart",
-          "trigger": "Home Assistant starting"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0/default/0",
-          "run_id": "929917eeca21ea7c305b8180167d78e0",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.732151+00:00",
-            "finish": "2026-07-26T04:20:05.335321+00:00"
-          },
-          "domain": "automation",
-          "item_id": "govee_restore_after_restart",
-          "trigger": "Home Assistant starting",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T04:20:04.732192+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.restore_govee_outdoor_lights_after_ha_restart",
-                    "state": "on",
-                    "attributes": {
-                      "id": "govee_restore_after_restart",
-                      "last_triggered": "2026-07-26T04:18:15.799691+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Restore Govee outdoor lights after HA restart"
-                    },
-                    "last_changed": "2026-07-26T04:19:42.149673+00:00",
-                    "last_reported": "2026-07-26T04:19:42.149673+00:00",
-                    "last_updated": "2026-07-26T04:19:42.149673+00:00",
-                    "context": {
-                      "id": "01KYEACWY51HQEDX6RTWS52WWK",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "homeassistant",
-                    "event": "start",
-                    "description": "Home Assistant starting"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T04:20:04.732445+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEADJZWF5BQDW0Q06YFE7Z2",
-                    "parent_id": null,
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "choice": "default"
-                }
-              }
-            ],
-            "action/0/choose/0": [
-              {
-                "path": "action/0/choose/0",
-                "timestamp": "2026-07-26T04:20:04.733712+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/0/conditions/0": [
-              {
-                "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-07-26T04:20:04.733760+00:00",
-                "result": {
-                  "wanted_time_after": "2026-07-27T00:50:30.664615+00:00",
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/1": [
-              {
-                "path": "action/0/choose/1",
-                "timestamp": "2026-07-26T04:20:04.733940+00:00",
-                "result": {
-                  "result": false
-                }
-              }
-            ],
-            "action/0/choose/1/conditions/0": [
-              {
-                "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-07-26T04:20:04.733965+00:00",
-                "result": {
-                  "wanted_time_after": "2026-07-27T00:50:30.664615+00:00",
-                  "result": false
-                }
-              }
-            ],
-            "action/0/default/0": [
-              {
-                "path": "action/0/default/0",
-                "timestamp": "2026-07-26T04:20:04.734157+00:00",
-                "result": {
-                  "params": {
-                    "domain": "light",
-                    "service": "turn_off",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "light.lamppost_bulb_1",
-                        "light.lamppost_bulb_2",
-                        "light.lamppost_bulb_3",
-                        "light.front_porch_downlight",
-                        "light.garage_left_downlight",
-                        "light.garage_right_downlight"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "actions": [
-              {
-                "choose": [
-                  {
-                    "conditions": [
-                      {
-                        "after": "sunset",
-                        "condition": "sun"
-                      },
-                      {
-                        "after": "02:00:00",
-                        "before": "06:00:00",
-                        "condition": "time"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "light.turn_on",
-                        "data": {
-                          "brightness_pct": 10
-                        },
-                        "target": {
-                          "entity_id": [
-                            "light.lamppost_bulb_1",
-                            "light.lamppost_bulb_2",
-                            "light.lamppost_bulb_3",
-                            "light.front_porch_downlight",
-                            "light.garage_left_downlight",
-                            "light.garage_right_downlight"
-                          ]
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "conditions": [
-                      {
-                        "after": "sunset",
-                        "condition": "sun"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "light.turn_on",
-                        "data": {
-                          "brightness_pct": 90
-                        },
-                        "target": {
-                          "entity_id": [
-                            "light.lamppost_bulb_1",
-                            "light.lamppost_bulb_2",
-                            "light.lamppost_bulb_3",
-                            "light.front_porch_downlight",
-                            "light.garage_left_downlight",
-                            "light.garage_right_downlight"
-                          ]
-                        }
-                      }
-                    ]
-                  }
-                ],
-                "default": [
-                  {
-                    "action": "light.turn_off",
-                    "target": {
-                      "entity_id": [
-                        "light.lamppost_bulb_1",
-                        "light.lamppost_bulb_2",
-                        "light.lamppost_bulb_3",
-                        "light.front_porch_downlight",
-                        "light.garage_left_downlight",
-                        "light.garage_right_downlight"
-                      ]
-                    }
-                  }
-                ]
-              }
-            ],
-            "alias": "Restore Govee outdoor lights after HA restart",
-            "conditions": [],
-            "description": "Govee lights lose state on restart. Restore based on time of day.",
-            "id": "govee_restore_after_restart",
-            "mode": "single",
-            "triggers": [
-              {
-                "event": "start",
-                "trigger": "homeassistant"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEADJZWF5BQDW0Q06YFE7Z2",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0/default/0",
-          "run_id": "929917eeca21ea7c305b8180167d78e0",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.732151+00:00",
-            "finish": "2026-07-26T04:20:05.335321+00:00"
+            "start": "2026-07-26T04:29:53.773969+00:00",
+            "finish": "2026-07-26T04:29:54.346033+00:00"
           },
           "domain": "automation",
           "item_id": "govee_restore_after_restart",
@@ -843,12 +427,12 @@
       {
         "extended_dict": {
           "last_step": "action/3",
-          "run_id": "6550d75343b5acb1214d01caf2fb6140",
+          "run_id": "56bd977c05d553820252696baf7aeeca",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.803369+00:00",
-            "finish": "2026-07-26T04:18:49.708545+00:00"
+            "start": "2026-07-26T04:29:53.778276+00:00",
+            "finish": "2026-07-26T04:30:27.690183+00:00"
           },
           "domain": "automation",
           "item_id": "1779331000000",
@@ -857,23 +441,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T04:18:15.803395+00:00",
+                "timestamp": "2026-07-26T04:29:53.778303+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.auto_heal_govee_and_local_integrations_after_reboot",
                     "state": "on",
                     "attributes": {
                       "id": "1779331000000",
-                      "last_triggered": "2026-07-26T03:53:28.848943+00:00",
+                      "last_triggered": "2026-07-26T04:20:04.736942+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Auto-heal Govee and local integrations after reboot"
                     },
-                    "last_changed": "2026-07-26T04:17:53.044308+00:00",
-                    "last_reported": "2026-07-26T04:17:53.044308+00:00",
-                    "last_updated": "2026-07-26T04:17:53.044308+00:00",
+                    "last_changed": "2026-07-26T04:29:29.006536+00:00",
+                    "last_reported": "2026-07-26T04:29:29.006536+00:00",
+                    "last_updated": "2026-07-26T04:29:29.006536+00:00",
                     "context": {
-                      "id": "01KYEA9JCMGGP9498MY0XTB6RX",
+                      "id": "01KYEAYT1E3HYHXDS2RJWG68YJ",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -892,10 +476,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:18:15.803620+00:00",
+                "timestamp": "2026-07-26T04:29:53.778538+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAA8KVPXSHWYSJ6DJEDRNP",
+                    "id": "01KYEAZJ7JTC3PRGR7TJW398FP",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -909,7 +493,7 @@
             "action/1": [
               {
                 "path": "action/1",
-                "timestamp": "2026-07-26T04:18:45.805066+00:00",
+                "timestamp": "2026-07-26T04:30:23.780787+00:00",
                 "result": {
                   "params": {
                     "domain": "homeassistant",
@@ -928,7 +512,7 @@
             "action/2": [
               {
                 "path": "action/2",
-                "timestamp": "2026-07-26T04:18:49.513682+00:00",
+                "timestamp": "2026-07-26T04:30:27.469571+00:00",
                 "result": {
                   "params": {
                     "domain": "homeassistant",
@@ -947,7 +531,7 @@
             "action/3": [
               {
                 "path": "action/3",
-                "timestamp": "2026-07-26T04:18:49.577200+00:00",
+                "timestamp": "2026-07-26T04:30:27.544551+00:00",
                 "result": {
                   "params": {
                     "domain": "notify",
@@ -1002,200 +586,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAA8KVPXSHWYSJ6DJEDRNP",
+            "id": "01KYEAZJ7JTC3PRGR7TJW398FP",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/3",
-          "run_id": "6550d75343b5acb1214d01caf2fb6140",
+          "run_id": "56bd977c05d553820252696baf7aeeca",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.803369+00:00",
-            "finish": "2026-07-26T04:18:49.708545+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779331000000",
-          "trigger": "Home Assistant starting"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/3",
-          "run_id": "e3688a284636fc4dfc40a931cdc1ecdb",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.736865+00:00",
-            "finish": "2026-07-26T04:20:38.586974+00:00"
-          },
-          "domain": "automation",
-          "item_id": "1779331000000",
-          "trigger": "Home Assistant starting",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T04:20:04.736892+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.auto_heal_govee_and_local_integrations_after_reboot",
-                    "state": "on",
-                    "attributes": {
-                      "id": "1779331000000",
-                      "last_triggered": "2026-07-26T04:18:15.803445+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Auto-heal Govee and local integrations after reboot"
-                    },
-                    "last_changed": "2026-07-26T04:19:42.151361+00:00",
-                    "last_reported": "2026-07-26T04:19:42.151361+00:00",
-                    "last_updated": "2026-07-26T04:19:42.151361+00:00",
-                    "context": {
-                      "id": "01KYEACWY70YET44C463B65AFK",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "homeassistant",
-                    "event": "start",
-                    "description": "Home Assistant starting"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T04:20:04.737123+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEADK009V2BJTE1VPY617TW",
-                    "parent_id": null,
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "delay": 30.0,
-                  "done": true
-                }
-              }
-            ],
-            "action/1": [
-              {
-                "path": "action/1",
-                "timestamp": "2026-07-26T04:20:34.745162+00:00",
-                "result": {
-                  "params": {
-                    "domain": "homeassistant",
-                    "service": "reload_config_entry",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "light.lamppost_bulb_1"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ],
-            "action/2": [
-              {
-                "path": "action/2",
-                "timestamp": "2026-07-26T04:20:38.411112+00:00",
-                "result": {
-                  "params": {
-                    "domain": "homeassistant",
-                    "service": "reload_config_entry",
-                    "service_data": {},
-                    "target": {
-                      "entity_id": [
-                        "light.nanoleaf_multicolor_ls_2"
-                      ]
-                    }
-                  },
-                  "running_script": false
-                }
-              }
-            ],
-            "action/3": [
-              {
-                "path": "action/3",
-                "timestamp": "2026-07-26T04:20:38.473759+00:00",
-                "result": {
-                  "params": {
-                    "domain": "notify",
-                    "service": "mobile_app_cph2655",
-                    "service_data": {
-                      "message": "Govee/LocalTuya integrations reloaded after HA restart."
-                    },
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "1779331000000",
-            "alias": "Auto-heal Govee and local integrations after reboot",
-            "description": "Reload Govee and LocalTuya integrations after HA restart to restore connectivity.",
-            "mode": "single",
-            "triggers": [
-              {
-                "event": "start",
-                "trigger": "homeassistant"
-              }
-            ],
-            "conditions": [],
-            "actions": [
-              {
-                "delay": {
-                  "seconds": 30
-                }
-              },
-              {
-                "action": "homeassistant.reload_config_entry",
-                "target": {
-                  "entity_id": "light.lamppost_bulb_1"
-                }
-              },
-              {
-                "action": "homeassistant.reload_config_entry",
-                "target": {
-                  "entity_id": "light.nanoleaf_multicolor_ls_2"
-                }
-              },
-              {
-                "action": "notify.mobile_app_cph2655",
-                "data": {
-                  "message": "Govee/LocalTuya integrations reloaded after HA restart."
-                }
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEADK009V2BJTE1VPY617TW",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/3",
-          "run_id": "e3688a284636fc4dfc40a931cdc1ecdb",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.736865+00:00",
-            "finish": "2026-07-26T04:20:38.586974+00:00"
+            "start": "2026-07-26T04:29:53.778276+00:00",
+            "finish": "2026-07-26T04:30:27.690183+00:00"
           },
           "domain": "automation",
           "item_id": "1779331000000",
@@ -1206,148 +609,13 @@
     "automation.blinds_restart_recovery": [
       {
         "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "5a7b37cfe363d2c4c75760d1eaca22d9",
-          "state": "stopped",
-          "script_execution": "cancelled",
-          "timestamp": {
-            "start": "2026-07-26T04:18:15.805016+00:00",
-            "finish": "2026-07-26T04:19:14.441985+00:00"
-          },
-          "domain": "automation",
-          "item_id": "blinds_restart_recovery",
-          "trigger": "Home Assistant starting",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T04:18:15.805039+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
-                    "state": "on",
-                    "attributes": {
-                      "id": "blinds_restart_recovery",
-                      "last_triggered": "2026-07-26T03:53:28.850968+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Blinds Restart Recovery \u2014 unstick all Zigbee blinds after HA restart"
-                    },
-                    "last_changed": "2026-07-26T04:17:53.044703+00:00",
-                    "last_reported": "2026-07-26T04:17:53.044703+00:00",
-                    "last_updated": "2026-07-26T04:17:53.044703+00:00",
-                    "context": {
-                      "id": "01KYEA9JCM52D4W63JJQMWX7PK",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "homeassistant",
-                    "event": "start",
-                    "description": "Home Assistant starting"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T04:18:15.805244+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEAA8KXR1Y3BWG74HAT0MVE",
-                    "parent_id": null,
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "delay": 60.0,
-                  "done": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "blinds_restart_recovery",
-            "alias": "Blinds Restart Recovery \u2014 unstick all Zigbee blinds after HA restart",
-            "description": "After HA restart, cycle all blinds to unstick them from wedged positions.",
-            "mode": "single",
-            "triggers": [
-              {
-                "event": "start",
-                "trigger": "homeassistant"
-              }
-            ],
-            "conditions": [],
-            "actions": [
-              {
-                "delay": {
-                  "seconds": 60
-                }
-              },
-              {
-                "action": "cover.open_cover",
-                "target": {
-                  "entity_id": [
-                    "cover.dining_room_blinds_curtain",
-                    "cover.family_room_blinds_curtain",
-                    "cover.living_room_blinds_curtain",
-                    "cover.mina_s_blinds_curtain"
-                  ]
-                }
-              },
-              {
-                "delay": {
-                  "seconds": 5
-                }
-              },
-              {
-                "action": "cover.stop_cover",
-                "target": {
-                  "entity_id": [
-                    "cover.dining_room_blinds_curtain",
-                    "cover.family_room_blinds_curtain",
-                    "cover.living_room_blinds_curtain",
-                    "cover.mina_s_blinds_curtain"
-                  ]
-                }
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEAA8KXR1Y3BWG74HAT0MVE",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "5a7b37cfe363d2c4c75760d1eaca22d9",
-          "state": "stopped",
-          "script_execution": "cancelled",
-          "timestamp": {
-            "start": "2026-07-26T04:18:15.805016+00:00",
-            "finish": "2026-07-26T04:19:14.441985+00:00"
-          },
-          "domain": "automation",
-          "item_id": "blinds_restart_recovery",
-          "trigger": "Home Assistant starting"
-        }
-      },
-      {
-        "extended_dict": {
           "last_step": "action/3",
-          "run_id": "4702da815650fb3ae509a4636de00104",
+          "run_id": "10a4d473c6398986262da95a2ba2e02b",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:20:04.744138+00:00",
-            "finish": "2026-07-26T04:21:10.180335+00:00"
+            "start": "2026-07-26T04:29:53.779647+00:00",
+            "finish": "2026-07-26T04:30:59.280571+00:00"
           },
           "domain": "automation",
           "item_id": "blinds_restart_recovery",
@@ -1356,23 +624,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T04:20:04.744167+00:00",
+                "timestamp": "2026-07-26T04:29:53.779669+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.blinds_restart_recovery_unstick_all_zigbee_blinds_after_ha_restart",
                     "state": "on",
                     "attributes": {
                       "id": "blinds_restart_recovery",
-                      "last_triggered": "2026-07-26T04:18:15.805082+00:00",
+                      "last_triggered": "2026-07-26T04:20:04.744227+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Blinds Restart Recovery \u2014 unstick all Zigbee blinds after HA restart"
                     },
-                    "last_changed": "2026-07-26T04:19:42.151749+00:00",
-                    "last_reported": "2026-07-26T04:19:42.151749+00:00",
-                    "last_updated": "2026-07-26T04:19:42.151749+00:00",
+                    "last_changed": "2026-07-26T04:29:29.006953+00:00",
+                    "last_reported": "2026-07-26T04:29:29.006953+00:00",
+                    "last_updated": "2026-07-26T04:29:29.006953+00:00",
                     "context": {
-                      "id": "01KYEACWY77ZK6Q17EX2HEVPY4",
+                      "id": "01KYEAYT1EYJFX5Z27TQHR6AXB",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -1391,10 +659,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:20:04.744415+00:00",
+                "timestamp": "2026-07-26T04:29:53.780962+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+                    "id": "01KYEAZJ7K3GY36XTG5Z214QWD",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -1408,11 +676,11 @@
             "action/1": [
               {
                 "path": "action/1",
-                "timestamp": "2026-07-26T04:21:04.746423+00:00",
+                "timestamp": "2026-07-26T04:30:53.781610+00:00",
                 "child_id": {
                   "domain": "automation",
                   "item_id": "audit_cover_commands",
-                  "run_id": "456cb0b8c527d487dcf44c176735bf08"
+                  "run_id": "afd24ba7bb88af87d062b0fa9d01d54b"
                 },
                 "result": {
                   "params": {
@@ -1435,7 +703,7 @@
             "action/2": [
               {
                 "path": "action/2",
-                "timestamp": "2026-07-26T04:21:05.069384+00:00",
+                "timestamp": "2026-07-26T04:30:54.165807+00:00",
                 "result": {
                   "delay": 5.0,
                   "done": true
@@ -1445,11 +713,11 @@
             "action/3": [
               {
                 "path": "action/3",
-                "timestamp": "2026-07-26T04:21:10.070994+00:00",
+                "timestamp": "2026-07-26T04:30:59.167683+00:00",
                 "child_id": {
                   "domain": "automation",
                   "item_id": "audit_cover_commands",
-                  "run_id": "4caca27d840f19af5641b2d918452fed"
+                  "run_id": "fb8810dbe3d2248ebf53fa9411c93489"
                 },
                 "result": {
                   "params": {
@@ -1519,19 +787,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+            "id": "01KYEAZJ7K3GY36XTG5Z214QWD",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/3",
-          "run_id": "4702da815650fb3ae509a4636de00104",
+          "run_id": "10a4d473c6398986262da95a2ba2e02b",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:20:04.744138+00:00",
-            "finish": "2026-07-26T04:21:10.180335+00:00"
+            "start": "2026-07-26T04:29:53.779647+00:00",
+            "finish": "2026-07-26T04:30:59.280571+00:00"
           },
           "domain": "automation",
           "item_id": "blinds_restart_recovery",
@@ -1543,12 +811,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "a13c7a6f4d2a6cd5d08257148a2228c6",
+          "run_id": "ef347a8d99fc56ce512dccda6fe0e32c",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.807980+00:00",
-            "finish": "2026-07-26T04:18:15.950841+00:00"
+            "start": "2026-07-26T04:29:53.784873+00:00",
+            "finish": "2026-07-26T04:29:54.091139+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -1557,23 +825,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T04:18:15.808004+00:00",
+                "timestamp": "2026-07-26T04:29:53.784900+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.esphome_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T03:53:28.856748+00:00",
+                      "last_triggered": "2026-07-26T04:20:04.747240+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "ESPHome Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-07-26T04:17:53.061783+00:00",
-                    "last_reported": "2026-07-26T04:17:53.061783+00:00",
-                    "last_updated": "2026-07-26T04:17:53.061783+00:00",
+                    "last_changed": "2026-07-26T04:29:29.011515+00:00",
+                    "last_reported": "2026-07-26T04:29:29.011515+00:00",
+                    "last_updated": "2026-07-26T04:29:29.011515+00:00",
                     "context": {
-                      "id": "01KYEA9JD5XC9C8QEE5YVF9Y1K",
+                      "id": "01KYEAYT1KZ2ZKGK1AKEXN6EPH",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -1592,10 +860,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:18:15.808349+00:00",
+                "timestamp": "2026-07-26T04:29:53.785166+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAA8KZCX9JWRMN2F27SJFG",
+                    "id": "01KYEAZJ7R7Z7ATXN70AGECXZZ",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -1630,128 +898,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAA8KZCX9JWRMN2F27SJFG",
+            "id": "01KYEAZJ7R7Z7ATXN70AGECXZZ",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "a13c7a6f4d2a6cd5d08257148a2228c6",
+          "run_id": "ef347a8d99fc56ce512dccda6fe0e32c",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.807980+00:00",
-            "finish": "2026-07-26T04:18:15.950841+00:00"
-          },
-          "domain": "automation",
-          "item_id": "esphome_kitchen_bridge_startup",
-          "trigger": "Home Assistant starting"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/0",
-          "run_id": "a7e3bc542feb66c85f83688ce310a099",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.747167+00:00",
-            "finish": "2026-07-26T04:20:04.950006+00:00"
-          },
-          "domain": "automation",
-          "item_id": "esphome_kitchen_bridge_startup",
-          "trigger": "Home Assistant starting",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T04:20:04.747192+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.esphome_kitchen_bridge_startup",
-                    "state": "on",
-                    "attributes": {
-                      "id": "esphome_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T04:18:15.808053+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "ESPHome Kitchen Bridge Startup"
-                    },
-                    "last_changed": "2026-07-26T04:19:42.157068+00:00",
-                    "last_reported": "2026-07-26T04:19:42.157068+00:00",
-                    "last_updated": "2026-07-26T04:19:42.157068+00:00",
-                    "context": {
-                      "id": "01KYEACWYD88X796EB1C6R8QR9",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "homeassistant",
-                    "event": "start",
-                    "description": "Home Assistant starting"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T04:20:04.747408+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEADK0BPB0CME7WBDN05Y2V",
-                    "parent_id": null,
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "params": {
-                    "domain": "shell_command",
-                    "service": "start_esphome_kitchen_bridge",
-                    "service_data": {},
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "esphome_kitchen_bridge_startup",
-            "alias": "ESPHome Kitchen Bridge Startup",
-            "description": "Starts the ESPHome-HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.",
-            "triggers": [
-              {
-                "trigger": "homeassistant",
-                "event": "start"
-              }
-            ],
-            "actions": [
-              {
-                "action": "shell_command.start_esphome_kitchen_bridge"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEADK0BPB0CME7WBDN05Y2V",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/0",
-          "run_id": "a7e3bc542feb66c85f83688ce310a099",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.747167+00:00",
-            "finish": "2026-07-26T04:20:04.950006+00:00"
+            "start": "2026-07-26T04:29:53.784873+00:00",
+            "finish": "2026-07-26T04:29:54.091139+00:00"
           },
           "domain": "automation",
           "item_id": "esphome_kitchen_bridge_startup",
@@ -1763,12 +922,12 @@
       {
         "extended_dict": {
           "last_step": "action/1",
-          "run_id": "152d3344596e213f96485f740adae207",
+          "run_id": "9ffea32dfd039d86fc29185c16c8d880",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.815109+00:00",
-            "finish": "2026-07-26T04:18:25.827932+00:00"
+            "start": "2026-07-26T04:29:53.793484+00:00",
+            "finish": "2026-07-26T04:30:03.808545+00:00"
           },
           "domain": "automation",
           "item_id": "tuya_kitchen_bridge_startup",
@@ -1777,23 +936,23 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T04:18:15.815150+00:00",
+                "timestamp": "2026-07-26T04:29:53.793511+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.tuya_kitchen_bridge_startup",
                     "state": "on",
                     "attributes": {
                       "id": "tuya_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T03:53:28.866829+00:00",
+                      "last_triggered": "2026-07-26T04:20:04.754359+00:00",
                       "mode": "single",
                       "current": 0,
                       "friendly_name": "Tuya Kitchen Bridge Startup"
                     },
-                    "last_changed": "2026-07-26T04:17:53.063755+00:00",
-                    "last_reported": "2026-07-26T04:17:53.063755+00:00",
-                    "last_updated": "2026-07-26T04:17:53.063755+00:00",
+                    "last_changed": "2026-07-26T04:29:29.013648+00:00",
+                    "last_reported": "2026-07-26T04:29:29.013648+00:00",
+                    "last_updated": "2026-07-26T04:29:29.013648+00:00",
                     "context": {
-                      "id": "01KYEA9JD7CF96QVCNVC01HN50",
+                      "id": "01KYEAYT1NQHF3JXJ0RQD82KZ4",
                       "parent_id": null,
                       "user_id": null
                     }
@@ -1812,10 +971,10 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:18:15.815662+00:00",
+                "timestamp": "2026-07-26T04:29:53.793763+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAA8M7FTVDETY7NA41PZY0",
+                    "id": "01KYEAZJ8163EP7J50KW64CFGS",
                     "parent_id": null,
                     "user_id": null
                   }
@@ -1829,7 +988,7 @@
             "action/1": [
               {
                 "path": "action/1",
-                "timestamp": "2026-07-26T04:18:25.816251+00:00",
+                "timestamp": "2026-07-26T04:30:03.795533+00:00",
                 "result": {
                   "params": {
                     "domain": "shell_command",
@@ -1863,141 +1022,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAA8M7FTVDETY7NA41PZY0",
+            "id": "01KYEAZJ8163EP7J50KW64CFGS",
             "parent_id": null,
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/1",
-          "run_id": "152d3344596e213f96485f740adae207",
+          "run_id": "9ffea32dfd039d86fc29185c16c8d880",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:18:15.815109+00:00",
-            "finish": "2026-07-26T04:18:25.827932+00:00"
-          },
-          "domain": "automation",
-          "item_id": "tuya_kitchen_bridge_startup",
-          "trigger": "Home Assistant starting"
-        }
-      },
-      {
-        "extended_dict": {
-          "last_step": "action/1",
-          "run_id": "52d6df2543a2bfc54d4f91e60f83ede1",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.754272+00:00",
-            "finish": "2026-07-26T04:20:14.768583+00:00"
-          },
-          "domain": "automation",
-          "item_id": "tuya_kitchen_bridge_startup",
-          "trigger": "Home Assistant starting",
-          "trace": {
-            "trigger/0": [
-              {
-                "path": "trigger/0",
-                "timestamp": "2026-07-26T04:20:04.754302+00:00",
-                "changed_variables": {
-                  "this": {
-                    "entity_id": "automation.tuya_kitchen_bridge_startup",
-                    "state": "on",
-                    "attributes": {
-                      "id": "tuya_kitchen_bridge_startup",
-                      "last_triggered": "2026-07-26T04:18:15.815417+00:00",
-                      "mode": "single",
-                      "current": 0,
-                      "friendly_name": "Tuya Kitchen Bridge Startup"
-                    },
-                    "last_changed": "2026-07-26T04:19:42.159026+00:00",
-                    "last_reported": "2026-07-26T04:19:42.159026+00:00",
-                    "last_updated": "2026-07-26T04:19:42.159026+00:00",
-                    "context": {
-                      "id": "01KYEACWYFXAYWZK4R7SZHATXX",
-                      "parent_id": null,
-                      "user_id": null
-                    }
-                  },
-                  "trigger": {
-                    "id": "0",
-                    "idx": "0",
-                    "alias": null,
-                    "platform": "homeassistant",
-                    "event": "start",
-                    "description": "Home Assistant starting"
-                  }
-                }
-              }
-            ],
-            "action/0": [
-              {
-                "path": "action/0",
-                "timestamp": "2026-07-26T04:20:04.754549+00:00",
-                "changed_variables": {
-                  "context": {
-                    "id": "01KYEADK0J793G2CNXBKBK9YXC",
-                    "parent_id": null,
-                    "user_id": null
-                  }
-                },
-                "result": {
-                  "delay": 10.0,
-                  "done": true
-                }
-              }
-            ],
-            "action/1": [
-              {
-                "path": "action/1",
-                "timestamp": "2026-07-26T04:20:14.755996+00:00",
-                "result": {
-                  "params": {
-                    "domain": "shell_command",
-                    "service": "start_tuya_kitchen_bridge",
-                    "service_data": {},
-                    "target": {}
-                  },
-                  "running_script": false
-                }
-              }
-            ]
-          },
-          "config": {
-            "id": "tuya_kitchen_bridge_startup",
-            "alias": "Tuya Kitchen Bridge Startup",
-            "description": "Starts the Tuya Human Presence Sensor bridge on HA startup",
-            "trigger": [
-              {
-                "platform": "homeassistant",
-                "event": "start"
-              }
-            ],
-            "action": [
-              {
-                "delay": 10
-              },
-              {
-                "action": "shell_command.start_tuya_kitchen_bridge"
-              }
-            ]
-          },
-          "blueprint_inputs": null,
-          "context": {
-            "id": "01KYEADK0J793G2CNXBKBK9YXC",
-            "parent_id": null,
-            "user_id": null
-          }
-        },
-        "short_dict": {
-          "last_step": "action/1",
-          "run_id": "52d6df2543a2bfc54d4f91e60f83ede1",
-          "state": "stopped",
-          "script_execution": "finished",
-          "timestamp": {
-            "start": "2026-07-26T04:20:04.754272+00:00",
-            "finish": "2026-07-26T04:20:14.768583+00:00"
+            "start": "2026-07-26T04:29:53.793484+00:00",
+            "finish": "2026-07-26T04:30:03.808545+00:00"
           },
           "domain": "automation",
           "item_id": "tuya_kitchen_bridge_startup",
@@ -2005,16 +1042,536 @@
         }
       }
     ],
+    "automation.bedtime_routine_auto": [
+      {
+        "extended_dict": {
+          "last_step": "action/6",
+          "run_id": "e47636501bffdbf9d552908e286fc4e9",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T04:30:00.294821+00:00",
+            "finish": "2026-07-26T04:30:14.583804+00:00"
+          },
+          "domain": "automation",
+          "item_id": "bedtime_routine_auto",
+          "trigger": "time pattern",
+          "trace": {
+            "trigger/2": [
+              {
+                "path": "trigger/2",
+                "timestamp": "2026-07-26T04:30:00.294855+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.bed_time_light_routine",
+                    "state": "on",
+                    "attributes": {
+                      "id": "bedtime_routine_auto",
+                      "last_triggered": "2026-07-25T04:27:25.674928+00:00",
+                      "mode": "single",
+                      "current": 0,
+                      "friendly_name": "Bed Time Light Routine"
+                    },
+                    "last_changed": "2026-07-26T04:29:29.006408+00:00",
+                    "last_reported": "2026-07-26T04:29:29.006408+00:00",
+                    "last_updated": "2026-07-26T04:29:29.006408+00:00",
+                    "context": {
+                      "id": "01KYEAYT1EWV48N7ENHF3703V0",
+                      "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "sleep_check",
+                    "idx": "2",
+                    "alias": null,
+                    "platform": "time_pattern",
+                    "now": "2026-07-26T00:30:00.294680-04:00",
+                    "description": "time pattern"
+                  }
+                }
+              }
+            ],
+            "condition/0": [
+              {
+                "path": "condition/0",
+                "timestamp": "2026-07-26T04:30:00.294883+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/0/entity_id/0": [
+              {
+                "path": "condition/0/entity_id/0",
+                "timestamp": "2026-07-26T04:30:00.294901+00:00",
+                "result": {
+                  "result": true,
+                  "state": "off",
+                  "wanted_state": "off"
+                }
+              }
+            ],
+            "condition/1": [
+              {
+                "path": "condition/1",
+                "timestamp": "2026-07-26T04:30:00.294943+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/1/conditions/0": [
+              {
+                "path": "condition/1/conditions/0",
+                "timestamp": "2026-07-26T04:30:00.294957+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "condition/1/conditions/0/conditions/0": [
+              {
+                "path": "condition/1/conditions/0/conditions/0",
+                "timestamp": "2026-07-26T04:30:00.294967+00:00",
+                "result": {
+                  "result": false
+                }
+              }
+            ],
+            "condition/1/conditions/1": [
+              {
+                "path": "condition/1/conditions/1",
+                "timestamp": "2026-07-26T04:30:00.294988+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/1/conditions/1/conditions/0": [
+              {
+                "path": "condition/1/conditions/1/conditions/0",
+                "timestamp": "2026-07-26T04:30:00.294997+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/1/conditions/1/conditions/1": [
+              {
+                "path": "condition/1/conditions/1/conditions/1",
+                "timestamp": "2026-07-26T04:30:00.295010+00:00",
+                "result": {
+                  "after": {
+                    "__type": "<class 'datetime.time'>",
+                    "isoformat": "21:00:00"
+                  },
+                  "now_time": {
+                    "__type": "<class 'datetime.time'>",
+                    "isoformat": "00:30:00.295025"
+                  },
+                  "before": {
+                    "__type": "<class 'datetime.time'>",
+                    "isoformat": "04:00:00"
+                  },
+                  "result": true
+                }
+              }
+            ],
+            "condition/1/conditions/1/conditions/2": [
+              {
+                "path": "condition/1/conditions/1/conditions/2",
+                "timestamp": "2026-07-26T04:30:00.295041+00:00",
+                "result": {
+                  "result": true
+                }
+              }
+            ],
+            "condition/1/conditions/1/conditions/2/entity_id/0": [
+              {
+                "path": "condition/1/conditions/1/conditions/2/entity_id/0",
+                "timestamp": "2026-07-26T04:30:00.295051+00:00",
+                "result": {
+                  "result": true,
+                  "state": 91.0
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-07-26T04:30:00.295403+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KYEAZRK6BZ52KWG894JZMQFG",
+                    "parent_id": null,
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "lock",
+                    "service": "lock",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "lock.front_door",
+                        "lock.garages_entry_door",
+                        "lock.front_door_2",
+                        "lock.garage_entry"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/1": [
+              {
+                "path": "action/1",
+                "timestamp": "2026-07-26T04:30:01.888408+00:00",
+                "child_id": {
+                  "domain": "automation",
+                  "item_id": "audit_cover_commands",
+                  "run_id": "5231c94f8e18755d389967d29fd28981"
+                },
+                "result": {
+                  "params": {
+                    "domain": "cover",
+                    "service": "close_cover",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "cover.larissa_s_garage_door",
+                        "cover.larissa_s_garage_door_door"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/2": [
+              {
+                "path": "action/2",
+                "timestamp": "2026-07-26T04:30:02.420666+00:00",
+                "result": {
+                  "delay": 10.0,
+                  "done": true
+                }
+              }
+            ],
+            "action/3": [
+              {
+                "path": "action/3",
+                "timestamp": "2026-07-26T04:30:12.422017+00:00",
+                "result": {
+                  "params": {
+                    "domain": "light",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "light.kitchen_light_light_1",
+                        "light.island_light_light",
+                        "light.stair_light",
+                        "light.family_room_light",
+                        "light.master_bedroom_ceiling_fan",
+                        "light.mina_s_ceiling_fan",
+                        "light.guest_room_ceiling_fan",
+                        "light.izaan_s_ceiling_fan",
+                        "light.basement_tv",
+                        "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                        "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                        "light.nanoleaf_multicolor_ls",
+                        "light.nanoleaf_multicolor_ls_2"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/4": [
+              {
+                "path": "action/4",
+                "timestamp": "2026-07-26T04:30:12.884122+00:00",
+                "result": {
+                  "params": {
+                    "domain": "switch",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "switch.kitchen_pantry_light",
+                        "switch.laundry_room_light_switch",
+                        "switch.living_room_floor_lamp_switch",
+                        "switch.foyer_light_switch_1",
+                        "switch.sonoff_10001dccdc",
+                        "switch.kitchen_pantry_light_socket_1",
+                        "switch.basement_lights",
+                        "switch.basement_stair_light",
+                        "switch.garage_light_switch_switch_1",
+                        "switch.back_hallway_light_main_switch"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/5": [
+              {
+                "path": "action/5",
+                "timestamp": "2026-07-26T04:30:14.421757+00:00",
+                "result": {
+                  "params": {
+                    "domain": "input_boolean",
+                    "service": "turn_on",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "input_boolean.bedtime_shutdown_done"
+                      ]
+                    }
+                  },
+                  "running_script": false
+                }
+              }
+            ],
+            "action/6": [
+              {
+                "path": "action/6",
+                "timestamp": "2026-07-26T04:30:14.422360+00:00",
+                "result": {
+                  "params": {
+                    "domain": "notify",
+                    "service": "mobile_app_cph2655",
+                    "service_data": {
+                      "message": "Bedtime routine ran (trigger: sleep_check, sleep_confidence 91). Locks: locking/locking, Garage: closed."
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "bedtime_routine_auto",
+            "alias": "Bed Time Light Routine",
+            "description": "Locks doors, shuts garage, turns off inside lights once we are actually asleep. Instead of a blunt 10 PM shutoff it VERIFIES sleep every 30 min from 9 PM. Runs at most once per night (input_boolean.bedtime_shutdown_done latch, reset at 20:00). Fires when, and only when, one of:\n  (1) IMMEDIATE \u2014 Arshad's phone reports sleep (sensor.cph2655_sleep_confidence >80 for 10 min) or Sleep-as-Android turns on, any time 21:00-11:00 (daytime naps excluded).\n  (2) HALF-HOURLY POLL \u2014 at every :00/:30 from 21:00-04:00, if phone sleep-confidence is currently >80 (verified asleep).\n  (3) FALLBACK for nights the phone isn't sleep-tracking \u2014 same poll, 23:00-04:00, only if the house has clearly settled: family-room TV is confirmed off/idle/standby, all kitchen/family/island lights are confirmed off and unchanged for 30 min, AND no indoor motion has fired for 30 min. Unavailable sensors fail closed.\nFixed 2026-07-10: sleep sensor was the non-existent sensor.oneplus_13_sleep_confidence (phone is CPH2655); TV guard watched an unavailable TV (un8500auj).\nFixed 2026-07-19: unavailable TV/light entities no longer count as a settled house, and the fallback now also requires no motion for 30 minutes.\n",
+            "triggers": [
+              {
+                "entity_id": "sensor.cph2655_sleep_confidence",
+                "above": 80,
+                "for": {
+                  "minutes": 10
+                },
+                "trigger": "numeric_state",
+                "id": "sleep_detected"
+              },
+              {
+                "entity_id": "calendar.sleep_as_android",
+                "to": "on",
+                "trigger": "state",
+                "id": "sleep_detected"
+              },
+              {
+                "trigger": "time_pattern",
+                "minutes": "/30",
+                "id": "sleep_check"
+              }
+            ],
+            "conditions": [
+              {
+                "condition": "state",
+                "entity_id": "input_boolean.bedtime_shutdown_done",
+                "state": "off"
+              },
+              {
+                "condition": "or",
+                "conditions": [
+                  {
+                    "condition": "and",
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "sleep_detected"
+                      },
+                      {
+                        "condition": "time",
+                        "after": "21:00:00",
+                        "before": "11:00:00"
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "and",
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "sleep_check"
+                      },
+                      {
+                        "condition": "time",
+                        "after": "21:00:00",
+                        "before": "04:00:00"
+                      },
+                      {
+                        "condition": "numeric_state",
+                        "entity_id": "sensor.cph2655_sleep_confidence",
+                        "above": 80
+                      }
+                    ]
+                  },
+                  {
+                    "condition": "and",
+                    "conditions": [
+                      {
+                        "condition": "trigger",
+                        "id": "sleep_check"
+                      },
+                      {
+                        "condition": "time",
+                        "after": "23:00:00",
+                        "before": "04:00:00"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{{ states('media_player.lg_webos_tv_cd70') in ['off', 'idle', 'standby'] }}"
+                      },
+                      {
+                        "condition": "template",
+                        "value_template": "{% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | map(attribute='last_changed') | list %} {{ is_state('light.kitchen_light_light_1', 'off') and\n   is_state('light.family_room_light', 'off') and\n   is_state('light.island_light_light', 'off') and\n   (now() - (ch | max)).total_seconds() > 1800 }}"
+                      },
+                      {
+                        "condition": "state",
+                        "entity_id": "binary_sensor.any_home_motion",
+                        "state": "off",
+                        "for": {
+                          "minutes": 30
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "actions": [
+              {
+                "action": "lock.lock",
+                "target": {
+                  "entity_id": [
+                    "lock.front_door",
+                    "lock.garages_entry_door",
+                    "lock.front_door_2",
+                    "lock.garage_entry"
+                  ]
+                }
+              },
+              {
+                "action": "cover.close_cover",
+                "target": {
+                  "entity_id": [
+                    "cover.larissa_s_garage_door",
+                    "cover.larissa_s_garage_door_door"
+                  ]
+                }
+              },
+              {
+                "delay": {
+                  "seconds": 10
+                }
+              },
+              {
+                "action": "light.turn_off",
+                "target": {
+                  "entity_id": [
+                    "light.kitchen_light_light_1",
+                    "light.island_light_light",
+                    "light.stair_light",
+                    "light.family_room_light",
+                    "light.master_bedroom_ceiling_fan",
+                    "light.mina_s_ceiling_fan",
+                    "light.guest_room_ceiling_fan",
+                    "light.izaan_s_ceiling_fan",
+                    "light.basement_tv",
+                    "light.cabinet_light_strip_left_nanoleaf_light_strip",
+                    "light.cabinet_light_strip_center_nanoleaf_light_strip",
+                    "light.cabinet_light_strip_right_nanoleaf_light_strip",
+                    "light.nanoleaf_multicolor_ls",
+                    "light.nanoleaf_multicolor_ls_2"
+                  ]
+                },
+                "data": {}
+              },
+              {
+                "action": "switch.turn_off",
+                "target": {
+                  "entity_id": [
+                    "switch.kitchen_pantry_light",
+                    "switch.laundry_room_light_switch",
+                    "switch.living_room_floor_lamp_switch",
+                    "switch.foyer_light_switch_1",
+                    "switch.sonoff_10001dccdc",
+                    "switch.kitchen_pantry_light_socket_1",
+                    "switch.basement_lights",
+                    "switch.basement_stair_light",
+                    "switch.garage_light_switch_switch_1",
+                    "switch.back_hallway_light_main_switch"
+                  ]
+                },
+                "data": {}
+              },
+              {
+                "action": "input_boolean.turn_on",
+                "target": {
+                  "entity_id": "input_boolean.bedtime_shutdown_done"
+                }
+              },
+              {
+                "action": "notify.mobile_app_cph2655",
+                "data": {
+                  "message": "Bedtime routine ran (trigger: {{ trigger.id }}, sleep_confidence {{ states('sensor.cph2655_sleep_confidence') }}). Locks: {{ states('lock.front_door') }}/{{ states('lock.garages_entry_door') }}, Garage: {{ states('cover.larissa_s_garage_door') }}.\n"
+                }
+              }
+            ],
+            "mode": "single"
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KYEAZRK6BZ52KWG894JZMQFG",
+            "parent_id": null,
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/6",
+          "run_id": "e47636501bffdbf9d552908e286fc4e9",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T04:30:00.294821+00:00",
+            "finish": "2026-07-26T04:30:14.583804+00:00"
+          },
+          "domain": "automation",
+          "item_id": "bedtime_routine_auto",
+          "trigger": "time pattern"
+        }
+      }
+    ],
     "automation.audit_cover_commands": [
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "456cb0b8c527d487dcf44c176735bf08",
+          "run_id": "5231c94f8e18755d389967d29fd28981",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:21:04.747366+00:00",
-            "finish": "2026-07-26T04:21:04.751863+00:00"
+            "start": "2026-07-26T04:30:01.888881+00:00",
+            "finish": "2026-07-26T04:30:01.890339+00:00"
           },
           "domain": "automation",
           "item_id": "audit_cover_commands",
@@ -2023,25 +1580,164 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T04:21:04.747432+00:00",
+                "timestamp": "2026-07-26T04:30:01.888918+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.audit_log_all_cover_service_calls",
                     "state": "on",
                     "attributes": {
                       "id": "audit_cover_commands",
-                      "last_triggered": "2026-07-26T03:55:20.328296+00:00",
+                      "last_triggered": "2026-07-26T04:21:10.071865+00:00",
                       "mode": "parallel",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Audit Log - All Cover Service Calls"
                     },
-                    "last_changed": "2026-07-26T04:19:42.150282+00:00",
-                    "last_reported": "2026-07-26T04:19:42.150282+00:00",
-                    "last_updated": "2026-07-26T04:19:42.150282+00:00",
+                    "last_changed": "2026-07-26T04:29:29.005142+00:00",
+                    "last_reported": "2026-07-26T04:29:29.005142+00:00",
+                    "last_updated": "2026-07-26T04:29:29.005142+00:00",
                     "context": {
-                      "id": "01KYEACWY6V2RVSPNSSBD34X2T",
+                      "id": "01KYEAYT1DASPPJXB4KXAJHZ9K",
                       "parent_id": null,
+                      "user_id": null
+                    }
+                  },
+                  "trigger": {
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "event",
+                    "event": {
+                      "event_type": "call_service",
+                      "data": {
+                        "domain": "cover",
+                        "service": "close_cover",
+                        "service_data": {
+                          "entity_id": [
+                            "cover.larissa_s_garage_door",
+                            "cover.larissa_s_garage_door_door"
+                          ]
+                        }
+                      },
+                      "origin": "LOCAL",
+                      "time_fired": "2026-07-26T04:30:01.888643+00:00",
+                      "context": {
+                        "id": "01KYEAZRK6BZ52KWG894JZMQFG",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "description": "event 'call_service'"
+                  }
+                }
+              }
+            ],
+            "action/0": [
+              {
+                "path": "action/0",
+                "timestamp": "2026-07-26T04:30:01.889197+00:00",
+                "changed_variables": {
+                  "context": {
+                    "id": "01KYEAZT50ZWXBTC2ZCA31EDTD",
+                    "parent_id": "01KYEAZRK6BZ52KWG894JZMQFG",
+                    "user_id": null
+                  }
+                },
+                "result": {
+                  "params": {
+                    "domain": "system_log",
+                    "service": "write",
+                    "service_data": {
+                      "logger": "audit_cover",
+                      "message": "COVER: close_cover on ['cover.larissa_s_garage_door', 'cover.larissa_s_garage_door_door'] pos=none at 2026-07-26 00:30:01.889834-04:00"
+                    },
+                    "target": {}
+                  },
+                  "running_script": false
+                }
+              }
+            ]
+          },
+          "config": {
+            "id": "audit_cover_commands",
+            "alias": "Audit Log - All Cover Service Calls",
+            "mode": "parallel",
+            "trigger": [
+              {
+                "platform": "event",
+                "event_type": "call_service",
+                "event_data": {
+                  "domain": "cover"
+                }
+              }
+            ],
+            "action": [
+              {
+                "data": {
+                  "logger": "audit_cover",
+                  "message": "COVER: {{ trigger.event.data.service }} on {{ trigger.event.data.service_data.entity_id }} pos={{ trigger.event.data.service_data.position | default('none') }} at {{ now() }}"
+                },
+                "action": "system_log.write"
+              }
+            ]
+          },
+          "blueprint_inputs": null,
+          "context": {
+            "id": "01KYEAZT50ZWXBTC2ZCA31EDTD",
+            "parent_id": "01KYEAZRK6BZ52KWG894JZMQFG",
+            "user_id": null
+          }
+        },
+        "short_dict": {
+          "last_step": "action/0",
+          "run_id": "5231c94f8e18755d389967d29fd28981",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T04:30:01.888881+00:00",
+            "finish": "2026-07-26T04:30:01.890339+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'"
+        }
+      },
+      {
+        "extended_dict": {
+          "last_step": "action/0",
+          "run_id": "afd24ba7bb88af87d062b0fa9d01d54b",
+          "state": "stopped",
+          "script_execution": "finished",
+          "timestamp": {
+            "start": "2026-07-26T04:30:53.783098+00:00",
+            "finish": "2026-07-26T04:30:53.785356+00:00"
+          },
+          "domain": "automation",
+          "item_id": "audit_cover_commands",
+          "trigger": "event 'call_service'",
+          "trace": {
+            "trigger/0": [
+              {
+                "path": "trigger/0",
+                "timestamp": "2026-07-26T04:30:53.783175+00:00",
+                "changed_variables": {
+                  "this": {
+                    "entity_id": "automation.audit_log_all_cover_service_calls",
+                    "state": "on",
+                    "attributes": {
+                      "id": "audit_cover_commands",
+                      "last_triggered": "2026-07-26T04:30:01.888971+00:00",
+                      "mode": "parallel",
+                      "current": 0,
+                      "max": 10,
+                      "friendly_name": "Audit Log - All Cover Service Calls"
+                    },
+                    "last_changed": "2026-07-26T04:29:29.005142+00:00",
+                    "last_reported": "2026-07-26T04:30:01.890199+00:00",
+                    "last_updated": "2026-07-26T04:30:01.890199+00:00",
+                    "context": {
+                      "id": "01KYEAZT50ZWXBTC2ZCA31EDTD",
+                      "parent_id": "01KYEAZRK6BZ52KWG894JZMQFG",
                       "user_id": null
                     }
                   },
@@ -2065,9 +1761,9 @@
                         }
                       },
                       "origin": "LOCAL",
-                      "time_fired": "2026-07-26T04:21:04.746797+00:00",
+                      "time_fired": "2026-07-26T04:30:53.781998+00:00",
                       "context": {
-                        "id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+                        "id": "01KYEAZJ7K3GY36XTG5Z214QWD",
                         "parent_id": null,
                         "user_id": null
                       }
@@ -2080,11 +1776,11 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:21:04.747935+00:00",
+                "timestamp": "2026-07-26T04:30:53.783638+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAFDKBT773P9CBFW29NWA3",
-                    "parent_id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+                    "id": "01KYEB1CTQDX8S5WCEW4BSP8DM",
+                    "parent_id": "01KYEAZJ7K3GY36XTG5Z214QWD",
                     "user_id": null
                   }
                 },
@@ -2094,7 +1790,7 @@
                     "service": "write",
                     "service_data": {
                       "logger": "audit_cover",
-                      "message": "COVER: open_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-26 00:21:04.750371-04:00"
+                      "message": "COVER: open_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-26 00:30:53.783918-04:00"
                     },
                     "target": {}
                   },
@@ -2128,19 +1824,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAFDKBT773P9CBFW29NWA3",
-            "parent_id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+            "id": "01KYEB1CTQDX8S5WCEW4BSP8DM",
+            "parent_id": "01KYEAZJ7K3GY36XTG5Z214QWD",
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "456cb0b8c527d487dcf44c176735bf08",
+          "run_id": "afd24ba7bb88af87d062b0fa9d01d54b",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:21:04.747366+00:00",
-            "finish": "2026-07-26T04:21:04.751863+00:00"
+            "start": "2026-07-26T04:30:53.783098+00:00",
+            "finish": "2026-07-26T04:30:53.785356+00:00"
           },
           "domain": "automation",
           "item_id": "audit_cover_commands",
@@ -2150,12 +1846,12 @@
       {
         "extended_dict": {
           "last_step": "action/0",
-          "run_id": "4caca27d840f19af5641b2d918452fed",
+          "run_id": "fb8810dbe3d2248ebf53fa9411c93489",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:21:10.071719+00:00",
-            "finish": "2026-07-26T04:21:10.073162+00:00"
+            "start": "2026-07-26T04:30:59.168209+00:00",
+            "finish": "2026-07-26T04:30:59.169491+00:00"
           },
           "domain": "automation",
           "item_id": "audit_cover_commands",
@@ -2164,25 +1860,25 @@
             "trigger/0": [
               {
                 "path": "trigger/0",
-                "timestamp": "2026-07-26T04:21:10.071773+00:00",
+                "timestamp": "2026-07-26T04:30:59.168251+00:00",
                 "changed_variables": {
                   "this": {
                     "entity_id": "automation.audit_log_all_cover_service_calls",
                     "state": "on",
                     "attributes": {
                       "id": "audit_cover_commands",
-                      "last_triggered": "2026-07-26T04:21:04.747525+00:00",
+                      "last_triggered": "2026-07-26T04:30:53.783290+00:00",
                       "mode": "parallel",
                       "current": 0,
                       "max": 10,
                       "friendly_name": "Audit Log - All Cover Service Calls"
                     },
-                    "last_changed": "2026-07-26T04:19:42.150282+00:00",
-                    "last_reported": "2026-07-26T04:21:04.751007+00:00",
-                    "last_updated": "2026-07-26T04:21:04.751007+00:00",
+                    "last_changed": "2026-07-26T04:29:29.005142+00:00",
+                    "last_reported": "2026-07-26T04:30:53.785084+00:00",
+                    "last_updated": "2026-07-26T04:30:53.785084+00:00",
                     "context": {
-                      "id": "01KYEAFDKBT773P9CBFW29NWA3",
-                      "parent_id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+                      "id": "01KYEB1CTQDX8S5WCEW4BSP8DM",
+                      "parent_id": "01KYEAZJ7K3GY36XTG5Z214QWD",
                       "user_id": null
                     }
                   },
@@ -2206,9 +1902,9 @@
                         }
                       },
                       "origin": "LOCAL",
-                      "time_fired": "2026-07-26T04:21:10.071365+00:00",
+                      "time_fired": "2026-07-26T04:30:59.167947+00:00",
                       "context": {
-                        "id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+                        "id": "01KYEAZJ7K3GY36XTG5Z214QWD",
                         "parent_id": null,
                         "user_id": null
                       }
@@ -2221,11 +1917,11 @@
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:21:10.072184+00:00",
+                "timestamp": "2026-07-26T04:30:59.168575+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAFJSQMRREV3W4JRK8DF1Z",
-                    "parent_id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+                    "id": "01KYEB1J30XVBEE2SMT2VVQ5DA",
+                    "parent_id": "01KYEAZJ7K3GY36XTG5Z214QWD",
                     "user_id": null
                   }
                 },
@@ -2235,7 +1931,7 @@
                     "service": "write",
                     "service_data": {
                       "logger": "audit_cover",
-                      "message": "COVER: stop_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-26 00:21:10.072427-04:00"
+                      "message": "COVER: stop_cover on ['cover.dining_room_blinds_curtain', 'cover.family_room_blinds_curtain', 'cover.living_room_blinds_curtain', 'cover.mina_s_blinds_curtain'] pos=none at 2026-07-26 00:30:59.168761-04:00"
                     },
                     "target": {}
                   },
@@ -2269,19 +1965,19 @@
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAFJSQMRREV3W4JRK8DF1Z",
-            "parent_id": "01KYEADK08S49VMWN4TKBZ1Z8C",
+            "id": "01KYEB1J30XVBEE2SMT2VVQ5DA",
+            "parent_id": "01KYEAZJ7K3GY36XTG5Z214QWD",
             "user_id": null
           }
         },
         "short_dict": {
           "last_step": "action/0",
-          "run_id": "4caca27d840f19af5641b2d918452fed",
+          "run_id": "fb8810dbe3d2248ebf53fa9411c93489",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:21:10.071719+00:00",
-            "finish": "2026-07-26T04:21:10.073162+00:00"
+            "start": "2026-07-26T04:30:59.168209+00:00",
+            "finish": "2026-07-26T04:30:59.169491+00:00"
           },
           "domain": "automation",
           "item_id": "audit_cover_commands",
@@ -2289,182 +1985,231 @@
         }
       }
     ],
-    "automation.grizzl_e_charging_notify": [
+    "automation.back_hallway_3way_sync": [
       {
         "extended_dict": {
-          "last_step": "action/0/choose/1/conditions/0",
-          "run_id": "5e5ab2bbd7ed8fc47cbdfde0318817f4",
+          "last_step": "action/0/else/0",
+          "run_id": "8317c6eb198c3d044aebed633ceccca3",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:21:42.169501+00:00",
-            "finish": "2026-07-26T04:21:42.170366+00:00"
+            "start": "2026-07-26T04:30:13.055036+00:00",
+            "finish": "2026-07-26T04:30:18.066325+00:00"
           },
           "domain": "automation",
-          "item_id": "grizzl_e_charging_notify",
-          "trigger": null,
+          "item_id": "back_hallway_3way_sync",
+          "trigger": "state of switch.back_hallway_light_main_switch",
           "trace": {
-            "trigger": [
+            "trigger/0": [
               {
-                "path": "trigger",
-                "timestamp": "2026-07-26T04:21:42.169537+00:00",
+                "path": "trigger/0",
+                "timestamp": "2026-07-26T04:30:13.055089+00:00",
                 "changed_variables": {
                   "this": {
-                    "entity_id": "automation.grizzl_e_charging_notifications",
+                    "entity_id": "automation.back_hallway_light_3_way_sync",
                     "state": "on",
                     "attributes": {
-                      "id": "grizzl_e_charging_notify",
-                      "last_triggered": null,
-                      "mode": "queued",
+                      "id": "back_hallway_3way_sync",
+                      "last_triggered": "2026-07-26T00:51:32.535852+00:00",
+                      "mode": "single",
                       "current": 0,
-                      "max": 5,
-                      "friendly_name": "Grizzl-E Charging Notifications"
+                      "friendly_name": "Back Hallway Light 3-Way Sync"
                     },
-                    "last_changed": "2026-07-26T04:19:42.159213+00:00",
-                    "last_reported": "2026-07-26T04:19:42.159213+00:00",
-                    "last_updated": "2026-07-26T04:19:42.159213+00:00",
+                    "last_changed": "2026-07-26T04:29:29.004909+00:00",
+                    "last_reported": "2026-07-26T04:29:29.004909+00:00",
+                    "last_updated": "2026-07-26T04:29:29.004909+00:00",
                     "context": {
-                      "id": "01KYEACWYF366Z9NB5XQA7M4R7",
+                      "id": "01KYEAYT1CJ03NX7370MW1ATC9",
                       "parent_id": null,
                       "user_id": null
                     }
                   },
                   "trigger": {
-                    "platform": null
+                    "id": "0",
+                    "idx": "0",
+                    "alias": null,
+                    "platform": "state",
+                    "entity_id": "switch.back_hallway_light_main_switch",
+                    "from_state": {
+                      "entity_id": "switch.back_hallway_light_main_switch",
+                      "state": "on",
+                      "attributes": {
+                        "raw_state": true,
+                        "friendly_name": "Back Hallway Light Main Switch 1"
+                      },
+                      "last_changed": "2026-07-26T04:29:18.863127+00:00",
+                      "last_reported": "2026-07-26T04:29:18.863127+00:00",
+                      "last_updated": "2026-07-26T04:29:18.863127+00:00",
+                      "context": {
+                        "id": "01KYEAYG4FDJC0G3KP6BJJPYZA",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "to_state": {
+                      "entity_id": "switch.back_hallway_light_main_switch",
+                      "state": "off",
+                      "attributes": {
+                        "raw_state": false,
+                        "friendly_name": "Back Hallway Light Main Switch 1"
+                      },
+                      "last_changed": "2026-07-26T04:30:13.054216+00:00",
+                      "last_reported": "2026-07-26T04:30:13.054216+00:00",
+                      "last_updated": "2026-07-26T04:30:13.054216+00:00",
+                      "context": {
+                        "id": "01KYEAZRK6BZ52KWG894JZMQFG",
+                        "parent_id": null,
+                        "user_id": null
+                      }
+                    },
+                    "for": null,
+                    "attribute": null,
+                    "description": "state of switch.back_hallway_light_main_switch"
                   }
+                }
+              }
+            ],
+            "condition/0": [
+              {
+                "path": "condition/0",
+                "timestamp": "2026-07-26T04:30:13.055115+00:00",
+                "result": {
+                  "result": true,
+                  "entities": [
+                    "switch.back_hallway_light_main_switch"
+                  ]
                 }
               }
             ],
             "action/0": [
               {
                 "path": "action/0",
-                "timestamp": "2026-07-26T04:21:42.169895+00:00",
+                "timestamp": "2026-07-26T04:30:13.055528+00:00",
                 "changed_variables": {
                   "context": {
-                    "id": "01KYEAGJ4SM44K1VCBJCE9YTQF",
-                    "parent_id": "01KYEAGJ4S511BQDPGN0JCQ73Z",
+                    "id": "01KYEB051ZZQ29GYXHF7NY0PX5",
+                    "parent_id": "01KYEAZRK6BZ52KWG894JZMQFG",
                     "user_id": null
                   }
+                },
+                "result": {
+                  "choice": "else"
                 }
               }
             ],
-            "action/0/choose/0": [
+            "action/0/if": [
               {
-                "path": "action/0/choose/0",
-                "timestamp": "2026-07-26T04:21:42.170060+00:00",
+                "path": "action/0/if",
+                "timestamp": "2026-07-26T04:30:13.055672+00:00",
                 "result": {
                   "result": false
                 }
               }
             ],
-            "action/0/choose/0/conditions/0": [
+            "action/0/if/condition/0": [
               {
-                "path": "action/0/choose/0/conditions/0",
-                "timestamp": "2026-07-26T04:21:42.170092+00:00",
+                "path": "action/0/if/condition/0",
+                "timestamp": "2026-07-26T04:30:13.055703+00:00",
                 "result": {
                   "result": false
                 }
               }
             ],
-            "action/0/choose/1": [
+            "action/0/if/condition/0/entity_id/0": [
               {
-                "path": "action/0/choose/1",
-                "timestamp": "2026-07-26T04:21:42.170139+00:00",
+                "path": "action/0/if/condition/0/entity_id/0",
+                "timestamp": "2026-07-26T04:30:13.055724+00:00",
                 "result": {
-                  "result": false
+                  "result": false,
+                  "state": "off",
+                  "wanted_state": "on"
                 }
               }
             ],
-            "action/0/choose/1/conditions/0": [
+            "action/0/else/0": [
               {
-                "path": "action/0/choose/1/conditions/0",
-                "timestamp": "2026-07-26T04:21:42.170160+00:00",
+                "path": "action/0/else/0",
+                "timestamp": "2026-07-26T04:30:13.055833+00:00",
                 "result": {
-                  "result": false
+                  "params": {
+                    "domain": "switch",
+                    "service": "turn_off",
+                    "service_data": {},
+                    "target": {
+                      "entity_id": [
+                        "switch.back_hallway_light_switch_1_2"
+                      ]
+                    }
+                  },
+                  "running_script": false
                 }
               }
             ]
           },
           "config": {
-            "id": "grizzl_e_charging_notify",
-            "alias": "Grizzl-E Charging Notifications",
-            "description": "Push a mobile notification when EV charging starts and stops (with energy/cost).",
-            "mode": "queued",
-            "max": 5,
-            "triggers": [
-              {
-                "trigger": "state",
-                "entity_id": "binary_sensor.grizzl_e_charging",
-                "to": "on",
-                "id": "started"
-              },
-              {
-                "trigger": "state",
-                "entity_id": "binary_sensor.grizzl_e_charging",
-                "to": "off",
-                "id": "stopped"
-              }
-            ],
             "actions": [
               {
-                "choose": [
+                "else": [
                   {
-                    "conditions": [
-                      {
-                        "condition": "trigger",
-                        "id": "started"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "notify.mobile_app_sm_s926w",
-                        "data": {
-                          "title": "\ud83d\udd0c EV Charging Started",
-                          "message": "Drawing {{ states('sensor.grizzl_e_power') }} W on {{ state_attr('sensor.grizzl_e_total_cost', 'period_label') }} ({{ state_attr('sensor.grizzl_e_total_cost', 'rate_cents_kwh') }}\u00a2/kWh)."
-                        }
-                      }
-                    ]
-                  },
+                    "action": "switch.turn_off",
+                    "target": {
+                      "entity_id": "switch.back_hallway_light_switch_1_2"
+                    }
+                  }
+                ],
+                "if": [
                   {
-                    "conditions": [
-                      {
-                        "condition": "trigger",
-                        "id": "stopped"
-                      }
-                    ],
-                    "sequence": [
-                      {
-                        "action": "notify.mobile_app_sm_s926w",
-                        "data": {
-                          "title": "\u2705 EV Charging Complete",
-                          "message": "Session added {{ state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | round(2) }} kWh for ${{ (state_attr('sensor.grizzl_e_total_cost', 'session_cost_cents') / 100) | round(2) }}. Today: {{ states('sensor.grizzl_e_energy_daily') | round(2) }} kWh / ${{ states('sensor.grizzl_e_cost_daily') | round(2) }}."
-                        }
-                      }
-                    ]
+                    "condition": "state",
+                    "entity_id": "switch.back_hallway_light_main_switch",
+                    "state": "on"
+                  }
+                ],
+                "then": [
+                  {
+                    "action": "switch.turn_on",
+                    "target": {
+                      "entity_id": "switch.back_hallway_light_switch_1_2"
+                    }
                   }
                 ]
+              }
+            ],
+            "alias": "Back Hallway Light 3-Way Sync",
+            "conditions": [
+              {
+                "condition": "template",
+                "value_template": "{{ states('switch.back_hallway_light_main_switch') in ['on', 'off'] }}"
+              }
+            ],
+            "description": "Sync the secondary 3-way switch with the primary back hallway switch",
+            "id": "back_hallway_3way_sync",
+            "mode": "single",
+            "triggers": [
+              {
+                "entity_id": "switch.back_hallway_light_main_switch",
+                "trigger": "state"
               }
             ]
           },
           "blueprint_inputs": null,
           "context": {
-            "id": "01KYEAGJ4SM44K1VCBJCE9YTQF",
-            "parent_id": "01KYEAGJ4S511BQDPGN0JCQ73Z",
+            "id": "01KYEB051ZZQ29GYXHF7NY0PX5",
+            "parent_id": "01KYEAZRK6BZ52KWG894JZMQFG",
             "user_id": null
           }
         },
         "short_dict": {
-          "last_step": "action/0/choose/1/conditions/0",
-          "run_id": "5e5ab2bbd7ed8fc47cbdfde0318817f4",
+          "last_step": "action/0/else/0",
+          "run_id": "8317c6eb198c3d044aebed633ceccca3",
           "state": "stopped",
           "script_execution": "finished",
           "timestamp": {
-            "start": "2026-07-26T04:21:42.169501+00:00",
-            "finish": "2026-07-26T04:21:42.170366+00:00"
+            "start": "2026-07-26T04:30:13.055036+00:00",
+            "finish": "2026-07-26T04:30:18.066325+00:00"
           },
           "domain": "automation",
-          "item_id": "grizzl_e_charging_notify",
-          "trigger": null
+          "item_id": "back_hallway_3way_sync",
+          "trigger": "state of switch.back_hallway_light_main_switch"
         }
       }
     ]
