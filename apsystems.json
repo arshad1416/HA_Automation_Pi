@@ -6,6 +6,6 @@
   "current_hour_kwh": 0,
   "power_approx_w": 0,
   "capacity_kw": 11.44,
-  "last_updated": "2026-07-26T20:00:02.641839+00:00",
+  "last_updated": "2026-07-26T21:00:02.854702+00:00",
   "status": "error: APsystems API error code=2005 (2005=auth expired, regenerate keys at developer.apsystems.com)"
 }

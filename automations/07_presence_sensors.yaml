@@ -123,3 +123,122 @@
   - action: switch.turn_off
     target:
       entity_id: switch.master_bedroom_fan_light
+
+# -----------------------------------------------------------------------------
+# Family Room — auto-on lights when presence detected after sunset.
+# Only if lights are off and TV is NOT playing (movie mode handles that case).
+# -----------------------------------------------------------------------------
+- id: family_room_presence_auto_on
+  alias: "Family Room — Lights on when someone enters after sunset"
+  description: >-
+    Turn on the family room ceiling light at 80% when mmWave detects presence
+    and the sun is below horizon. Skipped if the TV is already playing (movie
+    mode owns the lighting in that case).
+  mode: restart
+  triggers:
+  - entity_id: binary_sensor.family_room_mmwave_presence
+    to: "on"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: sun.sun
+    state: below_horizon
+  - condition: state
+    entity_id: light.family_room_light
+    state: "off"
+  - condition: not
+    conditions:
+    - condition: state
+      entity_id: media_player.lg_webos_tv_un8500auj
+      state: "playing"
+  actions:
+  - action: light.turn_on
+    data:
+      brightness_pct: 80
+    target:
+      entity_id: light.family_room_light
+
+# -----------------------------------------------------------------------------
+# Family Room — auto-pause TV if room empty for 10 min while playing.
+# Complements the 30-min idle ALERT: this actually pauses at 10 min.
+# -----------------------------------------------------------------------------
+- id: family_room_tv_auto_pause_empty
+  alias: "Family Room — Pause TV when room empty 10 min"
+  description: >-
+    Pause the LG TV if it is playing but no mmWave presence has been detected
+    for 10 minutes. Prevents wasted streaming / screen burn-in.
+  mode: single
+  max_exceeded: silent
+  triggers:
+  - entity_id: binary_sensor.family_room_mmwave_presence
+    to: "off"
+    for: "00:10:00"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: media_player.lg_webos_tv_un8500auj
+    state: "playing"
+  actions:
+  - action: media_player.media_pause
+    target:
+      entity_id: media_player.lg_webos_tv_un8500auj
+
+# -----------------------------------------------------------------------------
+# Master Bedroom — fan light auto-on when presence detected in the evening.
+# -----------------------------------------------------------------------------
+- id: master_bedroom_presence_light_auto_on
+  alias: "Master Bedroom — Fan light on when someone enters (evening)"
+  description: >-
+    Turn on the master bedroom fan light when mmWave detects presence between
+    sunset and 23:00, and the light is currently off.
+  mode: restart
+  triggers:
+  - entity_id: binary_sensor.master_bedroom_mmwave_presence
+    to: "on"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: sun.sun
+    state: below_horizon
+  - condition: time
+    before: "23:00:00"
+  - condition: state
+    entity_id: switch.master_bedroom_fan_light
+    state: "off"
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.master_bedroom_fan_light
+
+# -----------------------------------------------------------------------------
+# Master Bedroom — ceiling fan auto-on when presence + warm (summer evenings).
+# -----------------------------------------------------------------------------
+- id: master_bedroom_fan_auto_on_presence
+  alias: "Master Bedroom — Ceiling fan on when occupied and warm"
+  description: >-
+    Turn on the master bedroom ceiling fan at low speed when presence is
+    detected, summer mode is active, and the upstairs temperature is above 24C.
+  mode: restart
+  triggers:
+  - entity_id: binary_sensor.master_bedroom_mmwave_presence
+    to: "on"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: input_boolean.climate_summer_mode
+    state: "on"
+  - condition: numeric_state
+    entity_id: sensor.upstairs_echo_dot_temperature
+    above: 24
+  - condition: state
+    entity_id: fan.master_bedroom_ceiling_fan
+    state: "off"
+  actions:
+  - action: switch.turn_on
+    target:
+      entity_id: switch.master_bedroom_fan_light_switch_1
+  - action: fan.set_percentage
+    data:
+      percentage: 33
+    target:
+      entity_id: fan.master_bedroom_ceiling_fan
