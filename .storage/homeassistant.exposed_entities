@@ -46,6 +46,20 @@
             "should_expose": false
           }
         }
+      },
+      "binary_sensor.kitchen_mmwave_presence_sensor_presence": {
+        "assistants": {
+          "conversation": {
+            "should_expose": false
+          }
+        }
+      },
+      "sensor.kitchen_mmwave_presence_sensor_moving_distance": {
+        "assistants": {
+          "conversation": {
+            "should_expose": false
+          }
+        }
       }
     }
   }
