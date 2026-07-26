@@ -80,6 +80,9 @@ views:
             icon: mdi:battery-charging
             attribute: session_energy_kwh
             suffix: " kWh"
+          - entity: sensor.grizzl_e_session_cost
+            name: Session Cost
+            icon: mdi:cash
           - entity: sensor.grizzl_e_total_cost
             name: Rate Period
             icon: mdi:clock-outline
@@ -132,7 +135,7 @@ views:
         title: Lifetime Totals
         show_header_toggle: false
         entities:
-          - entity: sensor.grizzl_e_total_cost
+          - entity: sensor.grizzl_e_total_energy
             name: Lifetime Energy
             icon: mdi:lightning-bolt-circle
           - entity: sensor.grizzl_e_total_cost

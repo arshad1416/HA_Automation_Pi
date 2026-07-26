@@ -665,6 +665,14 @@ template:
         unit_of_measurement: "$"
         device_class: monetary
         state: "{{ states('sensor.grizzl_e_cost_monthly') | float(0) | round(2) }}"
+  # Last/current charging session cost (from daemon session_cost_cents attribute).
+  - sensor:
+      - name: "Grizzl-E Session Cost"
+        unique_id: grizzl_e_session_cost
+        unit_of_measurement: "$"
+        device_class: monetary
+        state: >
+          {{ (state_attr('sensor.grizzl_e_total_cost', 'session_cost_cents') | default(0, true) | float(0) / 100) | round(2) }}
   # Charging efficiency (kWh delivered per 1% SoC). Ioniq 6 Long Range = 77.4 kWh pack
   # (≈0.774 kWh/%). Availability-gated so it is not computed when charger/session idle.
   - sensor:
