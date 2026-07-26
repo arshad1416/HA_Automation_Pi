@@ -278,6 +278,9 @@
     - conditions:
       - condition: trigger
         id: tv_on
+      - condition: state
+        entity_id: binary_sensor.family_room_mmwave_presence
+        state: 'on'
       sequence:
       - action: light.turn_on
         data:
