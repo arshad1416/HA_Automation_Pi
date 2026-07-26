@@ -511,32 +511,6 @@ command_line:
         - power_w
         - updated
 
-  - sensor:
-      name: "Grizzl-E Total Energy"
-      unique_id: grizzl_e_total_energy
-      command: "cat /config/grizzl_e_state.json"
-      unit_of_measurement: "kWh"
-      device_class: energy
-      state_class: total_increasing
-      scan_interval: 15
-      value_template: "{{ value_json.total_energy_kwh | round(4) }}"
-  - sensor:
-      name: "Grizzl-E Total Cost"
-      unique_id: grizzl_e_total_cost
-      command: "cat /config/grizzl_e_state.json"
-      unit_of_measurement: "$"
-      device_class: monetary
-      state_class: total_increasing
-      scan_interval: 15
-      value_template: "{{ (value_json.total_cost_cents / 100) | round(4) }}"
-      json_attributes:
-        - total_cost_cents
-        - session_energy_kwh
-        - session_cost_cents
-        - period_label
-        - rate_cents_kwh
-        - fixed_monthly_cad
-
 template:
   - binary_sensor:
       - name: Kitchen Presence
@@ -583,15 +557,6 @@ template:
 
 
 # ESPHome Kitchen mmWave Bridge — workaround for HA 2026.6.3 + Python 3.14 ESPHome integration bug
-  - sensor:
-      - name: "Grizzl-E Est. Monthly Bill"
-        unique_id: grizzl_e_est_monthly_bill
-        unit_of_measurement: "$"
-        device_class: monetary
-        state: >
-          {{ (state_attr('sensor.grizzl_e_total_cost', 'fixed_monthly_cad') | default(33.57, true)
-              + (states('sensor.grizzl_e_cost_monthly') | float(0))) | round(2) }}
-
 shell_command:
   start_esphome_kitchen_bridge: "for pid in $(pgrep -f esphome_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/esphome_kitchen_bridge.py > /config/esphome_bridge.log 2>&1 &"
   start_tuya_kitchen_bridge: "for pid in $(pgrep -f tuya_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/tuya_kitchen_bridge.py > /config/tuya_bridge.log 2>&1 &"
@@ -616,53 +581,3 @@ shell_command:
 #     - lock
 #     - binary_sensor
 #     - sensor
-# ── Grizzl-E charging rollups (Day / Week / Month / Year) ─────────────
-utility_meter:
-  grizzl_energy_daily:
-    source: sensor.grizzl_e_total_energy
-    name: "Grizzl-E Energy Daily"
-    unique_id: grizzl_e_energy_daily
-    cycle: daily
-  grizzl_energy_weekly:
-    source: sensor.grizzl_e_total_energy
-    name: "Grizzl-E Energy Weekly"
-    unique_id: grizzl_e_energy_weekly
-    cycle: weekly
-  grizzl_energy_monthly:
-    source: sensor.grizzl_e_total_energy
-    name: "Grizzl-E Energy Monthly"
-    unique_id: grizzl_e_energy_monthly
-    cycle: monthly
-  grizzl_energy_yearly:
-    source: sensor.grizzl_e_total_energy
-    name: "Grizzl-E Energy Yearly"
-    unique_id: grizzl_e_energy_yearly
-    cycle: yearly
-  grizzl_cost_daily:
-    source: sensor.grizzl_e_total_cost
-    name: "Grizzl-E Cost Daily"
-    unique_id: grizzl_e_cost_daily
-    cycle: daily
-  grizzl_cost_weekly:
-    source: sensor.grizzl_e_total_cost
-    name: "Grizzl-E Cost Weekly"
-    unique_id: grizzl_e_cost_weekly
-    cycle: weekly
-  grizzl_cost_monthly:
-    source: sensor.grizzl_e_total_cost
-    name: "Grizzl-E Cost Monthly"
-    unique_id: grizzl_e_cost_monthly
-    cycle: monthly
-  grizzl_cost_yearly:
-    source: sensor.grizzl_e_total_cost
-    name: "Grizzl-E Cost Yearly"
-    unique_id: grizzl_e_cost_yearly
-    cycle: yearly
-# ── Grizzl-E notification group (Samsung S23 + OnePlus 13) ──────
-notify:
-  - name: grizzl_ev_phones
-    platform: group
-    unique_id: grizzl_ev_phones
-    services:
-      - service: mobile_app_sm_s926w
-      - service: mobile_app_cph2655
