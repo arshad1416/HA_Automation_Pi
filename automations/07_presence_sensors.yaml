@@ -1,32 +1,24 @@
 # =============================================================================
 # 07_presence_sensors.yaml — mmWave presence-sensor automations
 # -----------------------------------------------------------------------------
-# Family Room LD2420  -> binary_sensor.family_room_mmwave_presence  (flashed OTA
-#                        2026-07-26, node family-room-mmwave @ 192.168.0.121)
-# Master Bedroom LD2420-> binary_sensor.master_bedroom_mmwave_presence (config
-#                        staged at /opt/esphome/master-bedroom-mmwave.yaml; flash
-#                        when the sensor is plugged in — automations below are
-#                        inert until the entity exists)
+# Family Room LD2420   -> binary_sensor.family_room_mmwave_presence
+#                         (node family-room-mmwave @ 192.168.0.121, timeout 120s)
+# Master Bedroom LD2420-> binary_sensor.master_bedroom_mmwave_presence
+#                         (node master-bedroom-mmwave @ 192.168.0.108, timeout 120s)
 #
-# NOTE: Foyer PIR (binary_sensor.foyer_hallway_pir_motion) and Garage Wyze
-# (binary_sensor.wyze_cam_garage_motion) automations from the spec are NOT
-# implemented yet — those entity IDs do not currently exist in HA. Add them once
-# the foyer PIR / garage cam motion entities are created.
+# Ceiling fan speeds are NOT controlled here — the Climate AI owns all fan/HVAC
+# decisions and already receives both sensors via RoomPresence in its prompt.
 # =============================================================================
 
-# -----------------------------------------------------------------------------
-# Family Room — lights off after 10 min no presence (TV must be off).
-# -----------------------------------------------------------------------------
 - id: family_room_auto_off_empty
-  alias: "Family Room — Lights off after 10 min no presence"
-  description: >-
-    Turn off the family room ceiling light after 10 minutes with no mmWave
-    presence, but only if the LG TV is off (so movie mode isn't fighting it).
+  alias: Family Room — Lights off after 10 min no presence
+  description: Turn off the family room ceiling light after 10 minutes with no mmWave presence, but only if the LG TV is off
+    (so movie mode isn't fighting it).
   mode: restart
   triggers:
   - entity_id: binary_sensor.family_room_mmwave_presence
     to: 'off'
-    for: "00:10:00"
+    for: 00:10:00
     trigger: state
   conditions:
   - condition: state
@@ -39,57 +31,45 @@
   - action: light.turn_off
     target:
       entity_id: light.family_room_light
-
-# -----------------------------------------------------------------------------
-# Family Room — alert if TV playing but nobody watching for 30 min.
-# -----------------------------------------------------------------------------
 - id: family_room_tv_idle_alert
-  alias: "Family Room — TV on but nobody watching for 30 min"
-  description: >-
-    Notify the primary phone if the LG TV is playing but no mmWave presence has
-    been detected for 30 minutes (likely left on by accident).
+  alias: Family Room — TV on but nobody watching for 30 min
+  description: Notify the primary phone if the LG TV is playing but no mmWave presence has been detected for 30 minutes (likely
+    left on by accident).
   mode: single
   max_exceeded: silent
   triggers:
   - entity_id: binary_sensor.family_room_mmwave_presence
     to: 'off'
-    for: "00:30:00"
+    for: 00:30:00
     trigger: state
   conditions:
   - condition: state
     entity_id: media_player.lg_webos_tv_un8500auj
-    state: 'playing'
+    state: playing
   actions:
   - action: notify.mobile_app_cph2655
     data:
-      title: "📺 TV still on"
-      message: "Family room TV is playing but no one detected for 30 min. Turn off?"
+      title: 📺 TV still on
+      message: Family room TV is playing but no one detected for 30 min. Turn off?
       data:
         actions:
         - action: TURN_OFF_TV
-          title: "Turn Off TV"
-
-# -----------------------------------------------------------------------------
-# Master Bedroom — bedtime detected: presence + lights off after 22:00 ->
-# run the nightly lock check early.
-# -----------------------------------------------------------------------------
+          title: Turn Off TV
 - id: master_bedroom_bedtime_detection
-  alias: "Master Bedroom — Bedtime detected, trigger early lock check"
-  description: >-
-    If there is sustained presence in the master bedroom after 22:00 and both
-    Nanoleaf bedside lights are off, assume bedtime and trigger the nightly
-    lock check automation early.
+  alias: Master Bedroom — Bedtime detected, trigger early lock check
+  description: If there is sustained presence in the master bedroom after 22:00 and both Nanoleaf bedside lights are off,
+    assume bedtime and trigger the nightly lock check automation early.
   mode: single
   max_exceeded: silent
   triggers:
   - entity_id: binary_sensor.master_bedroom_mmwave_presence
     to: 'on'
-    for: "00:05:00"
+    for: 00:05:00
     trigger: state
   conditions:
   - condition: time
-    after: "22:00:00"
-    before: "23:30:00"
+    after: '22:00:00'
+    before: '23:30:00'
   - condition: state
     entity_id: light.nanoleaf_multicolor_ls
     state: 'off'
@@ -100,20 +80,14 @@
   - action: automation.trigger
     target:
       entity_id: automation.proactive_nightly_lock_check
-
-# -----------------------------------------------------------------------------
-# Master Bedroom — fan light off after 30 min no presence.
-# -----------------------------------------------------------------------------
 - id: master_bedroom_supernova_auto_off
-  alias: "Master Bedroom — Fan light off after 30 min no presence"
-  description: >-
-    Turn off the master bedroom fan light after 30 minutes with no mmWave
-    presence.
+  alias: Master Bedroom — Fan light off after 30 min no presence
+  description: Turn off the master bedroom fan light after 30 minutes with no mmWave presence.
   mode: restart
   triggers:
   - entity_id: binary_sensor.master_bedroom_mmwave_presence
     to: 'off'
-    for: "00:30:00"
+    for: 00:30:00
     trigger: state
   conditions:
   - condition: state
@@ -123,21 +97,14 @@
   - action: switch.turn_off
     target:
       entity_id: switch.master_bedroom_fan_light
-
-# -----------------------------------------------------------------------------
-# Family Room — auto-on lights when presence detected after sunset.
-# Only if lights are off and TV is NOT playing (movie mode handles that case).
-# -----------------------------------------------------------------------------
 - id: family_room_presence_auto_on
-  alias: "Family Room — Lights on when someone enters after sunset"
-  description: >-
-    Turn on the family room ceiling light at 80% when mmWave detects presence
-    and the sun is below horizon. Skipped if the TV is already playing (movie
-    mode owns the lighting in that case).
+  alias: Family Room — Lights on when someone enters after sunset
+  description: Turn on the family room ceiling light at 80% when mmWave detects presence and the sun is below horizon. Skipped
+    if the TV is already playing (movie mode owns the lighting in that case).
   mode: restart
   triggers:
   - entity_id: binary_sensor.family_room_mmwave_presence
-    to: "on"
+    to: 'on'
     trigger: state
   conditions:
   - condition: state
@@ -145,100 +112,56 @@
     state: below_horizon
   - condition: state
     entity_id: light.family_room_light
-    state: "off"
+    state: 'off'
   - condition: not
     conditions:
     - condition: state
       entity_id: media_player.lg_webos_tv_un8500auj
-      state: "playing"
+      state: playing
   actions:
   - action: light.turn_on
     data:
       brightness_pct: 80
     target:
       entity_id: light.family_room_light
-
-# -----------------------------------------------------------------------------
-# Family Room — auto-pause TV if room empty for 10 min while playing.
-# Complements the 30-min idle ALERT: this actually pauses at 10 min.
-# -----------------------------------------------------------------------------
 - id: family_room_tv_auto_pause_empty
-  alias: "Family Room — Pause TV when room empty 10 min"
-  description: >-
-    Pause the LG TV if it is playing but no mmWave presence has been detected
-    for 10 minutes. Prevents wasted streaming / screen burn-in.
+  alias: Family Room — Pause TV when room empty 10 min
+  description: Pause the LG TV if it is playing but no mmWave presence has been detected for 10 minutes. Prevents wasted streaming
+    / screen burn-in.
   mode: single
   max_exceeded: silent
   triggers:
   - entity_id: binary_sensor.family_room_mmwave_presence
-    to: "off"
-    for: "00:10:00"
+    to: 'off'
+    for: 00:10:00
     trigger: state
   conditions:
   - condition: state
     entity_id: media_player.lg_webos_tv_un8500auj
-    state: "playing"
+    state: playing
   actions:
   - action: media_player.media_pause
     target:
       entity_id: media_player.lg_webos_tv_un8500auj
-
-# -----------------------------------------------------------------------------
-# Master Bedroom — fan light auto-on when presence detected in the evening.
-# -----------------------------------------------------------------------------
 - id: master_bedroom_presence_light_auto_on
-  alias: "Master Bedroom — Fan light on when someone enters (evening)"
-  description: >-
-    Turn on the master bedroom fan light when mmWave detects presence between
-    sunset and 23:00, and the light is currently off.
+  alias: Master Bedroom — Fan light on when someone enters (evening)
+  description: Turn on the master bedroom fan light when mmWave detects presence between sunset and 23:00, and the light is
+    currently off.
   mode: restart
   triggers:
   - entity_id: binary_sensor.master_bedroom_mmwave_presence
-    to: "on"
+    to: 'on'
     trigger: state
   conditions:
   - condition: state
     entity_id: sun.sun
     state: below_horizon
   - condition: time
-    before: "23:00:00"
+    before: '23:00:00'
   - condition: state
     entity_id: switch.master_bedroom_fan_light
-    state: "off"
+    state: 'off'
   actions:
   - action: switch.turn_on
     target:
       entity_id: switch.master_bedroom_fan_light
-
-# -----------------------------------------------------------------------------
-# Master Bedroom — ceiling fan auto-on when presence + warm (summer evenings).
-# -----------------------------------------------------------------------------
-- id: master_bedroom_fan_auto_on_presence
-  alias: "Master Bedroom — Ceiling fan on when occupied and warm"
-  description: >-
-    Turn on the master bedroom ceiling fan at low speed when presence is
-    detected, summer mode is active, and the upstairs temperature is above 24C.
-  mode: restart
-  triggers:
-  - entity_id: binary_sensor.master_bedroom_mmwave_presence
-    to: "on"
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: input_boolean.climate_summer_mode
-    state: "on"
-  - condition: numeric_state
-    entity_id: sensor.upstairs_echo_dot_temperature
-    above: 24
-  - condition: state
-    entity_id: fan.master_bedroom_ceiling_fan
-    state: "off"
-  actions:
-  - action: switch.turn_on
-    target:
-      entity_id: switch.master_bedroom_fan_light_switch_1
-  - action: fan.set_percentage
-    data:
-      percentage: 33
-    target:
-      entity_id: fan.master_bedroom_ceiling_fan
