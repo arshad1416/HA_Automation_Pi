@@ -241,6 +241,9 @@
   - condition: state
     entity_id: switch.master_bedroom_fan_light_switch_1
     state: "off"
+  - condition: state
+    entity_id: switch.sonoff_10001d2a24
+    state: "off"
   actions:
   - action: light.turn_on
     data:
@@ -284,6 +287,9 @@
     state: "off"
   - condition: state
     entity_id: switch.master_bedroom_fan_light_switch_1
+    state: "off"
+  - condition: state
+    entity_id: switch.sonoff_10001d2a24
     state: "off"
   - condition: template
     value_template: "{{ state_attr(light.nanoleaf_multicolor_ls, brightness) | int(0) < 128 }}"
