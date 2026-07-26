@@ -1,0 +1,113 @@
+# Family Room LD2420 mmWave presence sensor (ESPHome)
+# Flashed OTA 2026-07-26 onto the node formerly "presence-3" (MAC B0:B2:1C:0B:36:84,
+# static IP 192.168.0.121). Produces binary_sensor.family_room_mmwave_presence in HA.
+#
+# Connectivity mirrors the WORKING office node (usb_c_mmwave_sensor):
+#   - api: NO encryption (matches the HA ESPHome integration, avoids reconnect failures)
+#   - ota: empty password (allows OTA flash via `esphome run ... --device 192.168.0.121`
+#          or HTTP POST to the webserver /update endpoint)
+#   - logger baud_rate: 0 (UART0 is used by the LD2420 on GPIO16/17)
+#
+# SANITIZED for git: WiFi credentials use !secret references. On the Pi the live
+# config at /opt/esphome/family-room-mmwave.yaml has credentials inline. Provide
+# an esphome secrets.yaml (see secrets.yaml.example) to compile this version.
+#
+# Post-flash tuning (applied 2026-07-26): max_gate_distance 4.0m, min_gate_distance
+# 0.5m (module floored to 0.0), presence_timeout 10s. Still/move sensitivity should
+# be calibrated in an empty room (still ~150%, move ~200% of empty energy).
+esphome:
+  name: family-room-mmwave
+  friendly_name: Family Room mmWave
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+    version: recommended
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+  manual_ip:
+    static_ip: 192.168.0.121
+    gateway: 192.168.0.1
+    subnet: 255.255.255.0
+    dns1: 192.168.0.1
+
+api:
+
+ota:
+  - platform: esphome
+    password: ""
+
+logger:
+  level: WARN
+  baud_rate: 0
+
+uart:
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 115200
+  parity: NONE
+  stop_bits: 1
+
+ld2420:
+  id: ld2420_family
+  # presence timeout is set at runtime via number.family_room_mmwave_presence_timeout
+  # (target 10s) — it is NOT a valid yaml option for ld2420: in ESPHome 2026.5.3.
+
+binary_sensor:
+  - platform: ld2420
+    ld2420_id: ld2420_family
+    has_target:
+      name: "Presence"
+      id: family_room_presence
+      device_class: occupancy
+
+sensor:
+  - platform: ld2420
+    ld2420_id: ld2420_family
+    moving_distance:
+      name: "Moving Distance"
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+text_sensor:
+  - platform: ld2420
+    ld2420_id: ld2420_family
+    fw_version:
+      name: "LD2420 Firmware"
+
+number:
+  - platform: ld2420
+    ld2420_id: ld2420_family
+    presence_timeout:
+      name: "Presence Timeout"
+    min_gate_distance:
+      name: "Min Gate Distance"
+    max_gate_distance:
+      name: "Max Gate Distance"
+    gate_move_sensitivity:
+      name: "Move Sensitivity"
+    gate_still_sensitivity:
+      name: "Still Sensitivity"
+
+select:
+  - platform: ld2420
+    ld2420_id: ld2420_family
+    operating_mode:
+      name: "Operating Mode"
+
+button:
+  - platform: ld2420
+    ld2420_id: ld2420_family
+    apply_config:
+      name: "Apply Config"
+    revert_config:
+      name: "Revert Config"
+    restart_module:
+      name: "Restart Module"
+    factory_reset:
+      name: "Factory Reset"

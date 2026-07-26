@@ -51,3 +51,10 @@ tmp_backups/
 .storage/core.config_entries*
 .storage/core.config_entries.bak.*
 automations/.*.yaml.bak.*
+
+# === ESPHome (curated configs live in esphome/; the LIVE configs with real WiFi
+# credentials stay in /opt/esphome on the Pi and are NEVER committed) ===
+esphome/secrets.yaml
+esphome/.esphome/
+esphome/**/.pioenvs/
+*.pioenvs/

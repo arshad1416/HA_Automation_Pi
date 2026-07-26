@@ -1,0 +1,108 @@
+# Master Bedroom LD2420 mmWave presence sensor (ESPHome) — STAGED, not yet flashed.
+# Flash when the sensor is plugged in and online:
+#   esphome run master-bedroom-mmwave.yaml --device <discovered-ip>
+# Produces binary_sensor.master_bedroom_mmwave_presence in HA after flashing.
+#
+# Connectivity mirrors the WORKING office node: no API encryption, empty OTA password,
+# arduino framework, logger baud_rate: 0. Uses DHCP (discover its IP after first
+# boot, then optionally pin a static IP via manual_ip).
+#
+# SANITIZED for git: WiFi credentials use !secret references (see secrets.yaml.example).
+# On the Pi the live config at /opt/esphome/master-bedroom-mmwave.yaml has credentials
+# inline.
+#
+# Post-flash tuning (TODO after flash): presence_timeout 120s (sleep/breathing hold;
+# raise to 180s if false-away during sleep), max_gate_distance 3.5m, min_gate_distance
+# 0.3m, still/move sensitivity calibrated in an empty room (~200% of empty energy —
+# bedroom needs higher margin due to fan/AC airflow).
+esphome:
+  name: master-bedroom-mmwave
+  friendly_name: Master Bedroom mmWave
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+    version: recommended
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+
+api:
+
+ota:
+  - platform: esphome
+    password: ""
+
+logger:
+  level: WARN
+  baud_rate: 0
+
+uart:
+  tx_pin: GPIO17
+  rx_pin: GPIO16
+  baud_rate: 115200
+  parity: NONE
+  stop_bits: 1
+
+ld2420:
+  id: ld2420_bedroom
+  # presence timeout is set at runtime via number.master_bedroom_mmwave_presence_timeout
+  # (target 120s) — NOT a valid yaml option for ld2420: in ESPHome 2026.5.3.
+
+binary_sensor:
+  - platform: ld2420
+    ld2420_id: ld2420_bedroom
+    has_target:
+      name: "Presence"
+      id: master_bedroom_presence
+      device_class: occupancy
+
+sensor:
+  - platform: ld2420
+    ld2420_id: ld2420_bedroom
+    moving_distance:
+      name: "Moving Distance"
+  - platform: wifi_signal
+    name: "WiFi Signal"
+    update_interval: 60s
+
+text_sensor:
+  - platform: ld2420
+    ld2420_id: ld2420_bedroom
+    fw_version:
+      name: "LD2420 Firmware"
+
+number:
+  - platform: ld2420
+    ld2420_id: ld2420_bedroom
+    presence_timeout:
+      name: "Presence Timeout"
+    min_gate_distance:
+      name: "Min Gate Distance"
+    max_gate_distance:
+      name: "Max Gate Distance"
+    gate_move_sensitivity:
+      name: "Move Sensitivity"
+    gate_still_sensitivity:
+      name: "Still Sensitivity"
+
+select:
+  - platform: ld2420
+    ld2420_id: ld2420_bedroom
+    operating_mode:
+      name: "Operating Mode"
+
+button:
+  - platform: ld2420
+    ld2420_id: ld2420_bedroom
+    apply_config:
+      name: "Apply Config"
+    revert_config:
+      name: "Revert Config"
+    restart_module:
+      name: "Restart Module"
+    factory_reset:
+      name: "Factory Reset"
