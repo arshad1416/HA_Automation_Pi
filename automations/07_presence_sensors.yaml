@@ -212,3 +212,87 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
+
+# -----------------------------------------------------------------------------
+# Kitchen / Nanoleaf Elements — graduated dimming on no presence (Enhancement Q)
+# Only acts when the Nanoleafs are in "sunset ambient" mode (kitchen main light
+# OFF and master bedroom fan-light switch OFF). Dim to 15% after 3 min empty,
+# off after 5 more min. Restore to 50% when presence returns while dimmed.
+# -----------------------------------------------------------------------------
+- id: nanoleaf_graduated_dimming
+  alias: "Nanoleaf — Graduated dimming on no kitchen presence"
+  description: >-
+    Dim Nanoleaf Elements to 15% after 3 min no kitchen presence, then off
+    after 5 more min. Only when kitchen light and bedroom switch are both off
+    (i.e. Nanoleafs are in sunset-ambient mode, not actively controlled).
+  mode: restart
+  triggers:
+  - entity_id: binary_sensor.kitchen_presence
+    to: "off"
+    for: "00:03:00"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: light.nanoleaf_multicolor_ls
+    state: "on"
+  - condition: state
+    entity_id: light.kitchen_light_light_1
+    state: "off"
+  - condition: state
+    entity_id: switch.master_bedroom_fan_light_switch_1
+    state: "off"
+  actions:
+  - action: light.turn_on
+    data:
+      brightness_pct: 15
+      transition: 10
+    target:
+      entity_id:
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+  - delay: "00:05:00"
+  - condition: state
+    entity_id: binary_sensor.kitchen_presence
+    state: "off"
+  - condition: state
+    entity_id: light.kitchen_light_light_1
+    state: "off"
+  - action: light.turn_off
+    data:
+      transition: 5
+    target:
+      entity_id:
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+
+- id: nanoleaf_restore_on_presence
+  alias: "Nanoleaf — Restore brightness on kitchen presence"
+  description: >-
+    Restore Nanoleaf Elements to 50% when kitchen presence returns and they
+    are currently dimmed below 50%. Only in sunset-ambient mode.
+  mode: single
+  triggers:
+  - entity_id: binary_sensor.kitchen_presence
+    to: "on"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: light.nanoleaf_multicolor_ls
+    state: "on"
+  - condition: state
+    entity_id: light.kitchen_light_light_1
+    state: "off"
+  - condition: state
+    entity_id: switch.master_bedroom_fan_light_switch_1
+    state: "off"
+  - condition: template
+    value_template: "{{ state_attr(light.nanoleaf_multicolor_ls, brightness) | int(0) < 128 }}"
+  actions:
+  - action: light.turn_on
+    data:
+      brightness_pct: 50
+      transition: 3
+    target:
+      entity_id:
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
