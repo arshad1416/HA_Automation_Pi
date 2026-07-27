@@ -223,6 +223,7 @@
       {{ (now() - (state_attr('automation.proactive_welcome_home', 'last_triggered') or (now() - timedelta(hours=2)))).total_seconds() > 1800 }}
   description: '2026-07-10: retriggered on person.arshad14 (old person.home was a deleted ghost — never fired) and agent swapped to Google AI. LLM-generated greeting via Alexa when Arshad arrives home, with weather + calendar context.'
   id: proactive_welcome_home
+  initial_state: false
   mode: single
   triggers:
   - entity_id: person.arshad14
