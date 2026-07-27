@@ -24,9 +24,8 @@
   - condition: state
     entity_id: light.family_room_light
     state: 'on'
-  - condition: state
-    entity_id: media_player.lg_webos_tv_un8500auj
-    state: 'off'
+  - condition: template
+    value_template: "{{ states('media_player.lg_webos_tv_un8500auj') in ('off', 'unavailable', 'standby', 'unknown') }}"
   actions:
   - action: light.turn_off
     target:
@@ -91,12 +90,12 @@
     trigger: state
   conditions:
   - condition: state
-    entity_id: switch.master_bedroom_fan_light
+    entity_id: switch.master_bedroom_fan_light_switch_1
     state: 'on'
   actions:
   - action: switch.turn_off
     target:
-      entity_id: switch.master_bedroom_fan_light
+      entity_id: switch.master_bedroom_fan_light_switch_1
   - action: switch.turn_off
     target:
       entity_id: switch.sonoff_10001d2a24
@@ -168,12 +167,12 @@
   - condition: time
     before: '23:00:00'
   - condition: state
-    entity_id: switch.master_bedroom_fan_light
+    entity_id: switch.master_bedroom_fan_light_switch_1
     state: 'off'
   actions:
   - action: switch.turn_on
     target:
-      entity_id: switch.master_bedroom_fan_light
+      entity_id: switch.master_bedroom_fan_light_switch_1
   - action: light.turn_on
     data:
       brightness_pct: 100
