@@ -313,8 +313,15 @@
     - condition: template
       value_template: "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
     then:
+    # scene.manual_on (Tuya cloud) only sets the floodlight work-mode to
+    # manual; it does NOT switch the light on. Give the mode change a moment
+    # to land, then turn the light on via the LocalTuya entity.
     - action: scene.turn_on
       target: {entity_id: scene.manual_on}
+    - delay: "00:00:03"
+    - action: light.turn_on
+      target: {entity_id: light.wasserstein_smart_floodlight_2}
+      continue_on_error: true
     else:
     - action: scene.turn_on
       target: {entity_id: scene.sensor_mode}

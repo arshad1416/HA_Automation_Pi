@@ -8342,3 +8342,25 @@
 [2026-07-26 22:52:41] DISCOVERED: Wasserstein Smart Floodlight 2 | gwId=eb9883b5def5e30cd1zakb | IP=192.168.0.105 | ✅ IP unchanged | Product=keyqj4cqs54ger7r | v3.3
 [2026-07-26 22:52:41] DISCOVERED: UNKNOWN DEVICE | gwId=20327148c44f33af4ea0 | IP=192.168.0.119 | 🆕 NEW DEVICE (not in HA config) | Product=key4puh75hpvxcdw | v3.3
 [2026-07-26 22:52:41] DISCOVERED: Larissa's Garage Door | gwId=eb1780072f130dadaci0cm | IP=192.168.0.93 | 🔄 IP CHANGED (was 192.168.0.21) | Product=keyftvxappyrem5a | v3.3
+[2026-07-26 23:38:06] ======================================================================
+[2026-07-26 23:38:06] Tuya UDP Discovery Listener started
+[2026-07-26 23:38:06] Listening on UDP 6666 + 6667 (indefinite)
+[2026-07-26 23:38:06] Logging to /config/tuya_discovery_log.txt
+[2026-07-26 23:38:06] Known devices in config: 38
+[2026-07-26 23:38:06] Devices at wrong IPs (need discovery): 38
+[2026-07-26 23:38:06] ======================================================================
+[2026-07-26 23:38:06] DISCOVERED: UNKNOWN DEVICE | gwId=20327148c44f33af4ea0 | IP=192.168.0.119 | 🆕 NEW DEVICE (not in HA config) | Product=key4puh75hpvxcdw | v3.3
+[2026-07-26 23:38:06] DISCOVERED: Larissa's Garage Door | gwId=eb1780072f130dadaci0cm | IP=192.168.0.93 | 🔄 IP CHANGED (was 192.168.0.21) | Product=keyftvxappyrem5a | v3.3
+[2026-07-26 23:38:06] DISCOVERED: Side Rain barrel | gwId=eb3b9e64d0208b5c04gt4z | IP=192.168.0.92 | 🔄 IP CHANGED (was 192.168.0.53) | Product=keyjup78v54myhan | v3.4
+[2026-07-26 23:38:08] DISCOVERED: Holiday Lights | gwId=eb68c40bc6f3c68e69ygrv | IP=192.168.0.87 | 🔄 IP CHANGED (was 192.168.0.109) | Product=key37qxed4yeqxag | v3.3
+[2026-07-26 23:38:08] DISCOVERED: Wasserstein Smart Floodlight 2 | gwId=eb9883b5def5e30cd1zakb | IP=192.168.0.105 | ✅ IP unchanged | Product=keyqj4cqs54ger7r | v3.3
+[2026-07-26 23:38:08] DISCOVERED: UNKNOWN DEVICE | gwId=ebc58b2216f7097c49t1i4 | IP=192.168.0.250 | 🆕 NEW DEVICE (not in HA config) | Product=key37qxed4yeqxag | v3.3
+[2026-07-26 23:38:08] DISCOVERED: Cat Feeder | gwId=eb9349f92e7f4acaaaccvg | IP=192.168.0.137 | 🔄 IP CHANGED (was 192.168.0.111) | Product=abtatdzmlavpawxo | v3.3
+[2026-07-26 23:38:09] DISCOVERED: Powder Room Mirror | gwId=eb228bea36b97bb1bcag3w | IP=192.168.0.78 | 🔄 IP CHANGED (was 192.168.0.48) | Product=key37qxed4yeqxag | v3.3
+[2026-07-26 23:38:09] DISCOVERED: Outdoor Decoration SmartPlug | gwId=eb814f71bb6ded1077903w | IP=192.168.0.117 | ✅ IP unchanged | Product=keyjup78v54myhan | v3.4
+[2026-07-26 23:38:09] DISCOVERED: Mina's Lamp | gwId=ebc2cdd6b08d7469ealqcv | IP=192.168.0.91 | 🔄 IP CHANGED (was 192.168.0.93) | Product=key37qxed4yeqxag | v3.3
+[2026-07-26 23:38:09] DISCOVERED: UNKNOWN DEVICE | gwId=eb152e8acdf2a0c29aprxc | IP=192.168.0.89 | 🆕 NEW DEVICE (not in HA config) | Product=keyjup78v54myhan | v3.4
+[2026-07-26 23:38:10] DISCOVERED: Airbnb Infrared Heater | gwId=eb63d6fd2a642f6bf4r3iy | IP=192.168.0.73 | 🔄 IP CHANGED (was 192.168.0.49) | Product=sy7r45n4x2dqzkgc | v3.3
+[2026-07-26 23:38:10] DISCOVERED: UNKNOWN DEVICE | gwId=ebaa5f77f7fce4cb15l6t6 | IP=192.168.0.96 | 🆕 NEW DEVICE (not in HA config) | Product=l4rlmt9ko5v1xq8o | v3.3
+[2026-07-26 23:38:10] DISCOVERED: Living Room Floor Lamp | gwId=ebf5071fb7d8c3303eha2l | IP=192.168.0.85 | 🔄 IP CHANGED (was 192.168.0.52) | Product=key37qxed4yeqxag | v3.3
+[2026-07-26 23:38:10] DISCOVERED: Massage Room Heater | gwId=eb799ab5470604253bnhi7 | IP=192.168.0.138 | 🔄 IP CHANGED (was 192.168.0.37) | Product=hhs4ani0a2zrztof | v3.3
