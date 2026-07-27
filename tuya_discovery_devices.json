@@ -294,5 +294,13 @@
     "version": "3.3",
     "configured_ip": "192.168.0.88",
     "first_seen": "2026-07-27T00:08:46.120458"
+  },
+  "53365228bcddc28c3747": {
+    "ip": "192.168.0.209",
+    "name": "UNKNOWN DEVICE",
+    "product": "DsS0exXElZJSWIdc",
+    "version": "3.1",
+    "configured_ip": "?",
+    "first_seen": "2026-07-27T10:02:44.173177"
   }
 }
