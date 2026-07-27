@@ -104,9 +104,8 @@
     data:
       brightness_pct: 10
     target:
-      entity_id:
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
+      entity_id: light.elements_b3cd
+
 - id: family_room_presence_auto_on
   alias: Family Room — Lights on when someone enters after sunset
   description: Turn on the family room ceiling light at 80% when mmWave detects presence and the sun is below horizon. Skipped
@@ -175,43 +174,11 @@
   - action: switch.turn_on
     target:
       entity_id: switch.master_bedroom_fan_light
-
-# -----------------------------------------------------------------------------
-# Master Bedroom — Supernova + Elements on when someone enters (evening).
-# Runs from sunset until 22:00 (bedtime window). The existing bedtime
-# detection automation handles the "lights off" side after 22:00.
-# -----------------------------------------------------------------------------
-- id: master_bedroom_supernova_presence_on
-  alias: "Master Bedroom — Supernova on when someone enters (evening)"
-  description: >-
-    Turn on the Supernova and set Nanoleaf Elements to 100% when mmWave
-    detects presence between sunset and 22:00. Mirrors what the physical
-    fan-light switch does, but triggered by presence instead of the switch.
-  mode: restart
-  triggers:
-  - entity_id: binary_sensor.master_bedroom_mmwave_presence
-    to: "on"
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: sun.sun
-    state: "below_horizon"
-  - condition: time
-    before: "22:00:00"
-  - condition: state
-    entity_id: switch.sonoff_10001d2a24
-    state: "off"
-  actions:
-  - action: switch.turn_on
-    target:
-      entity_id: switch.sonoff_10001d2a24
   - action: light.turn_on
     data:
       brightness_pct: 100
     target:
-      entity_id:
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
+      entity_id: light.elements_b3cd
 
 # -----------------------------------------------------------------------------
 # Kitchen Cabinet Strips — graduated dimming on no presence (Enhancement Q)
