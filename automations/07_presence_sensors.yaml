@@ -13,15 +13,20 @@
 - id: family_room_auto_off_empty
   alias: Family Room — Lights off after 10 min no presence
   description: Turn off the family room ceiling light after 10 minutes with no mmWave
-    presence, but only when the LG TV is confidently off. The WebOS integration is flaky
-    and reports "unavailable" both when the TV is genuinely off AND during transient
-    network hiccups while it is on - so "unavailable" only counts as off after 30 min.
-    A 10-min periodic backstop re-checks in case the first pass ran too early.
+    presence AND the TV plug is off. The TV is plugged into a switched smart plug
+    (switch.family_room_speaker_plug_socket_1) - plug off means the TV is definitely
+    off; plug on means it may be in use (movie mode), so the lights are never turned
+    off while the plug is on. This replaces the flaky LG WebOS state, which reports
+    "unavailable" both when the TV is off and during transient hiccups while it is on.
+    A plug-off trigger and a 10-min periodic backstop catch every shutdown path.
   mode: restart
   triggers:
   - entity_id: binary_sensor.family_room_mmwave_presence
     to: 'off'
     for: 00:10:00
+    trigger: state
+  - entity_id: switch.family_room_speaker_plug_socket_1
+    to: 'off'
     trigger: state
   - trigger: time_pattern
     minutes: '/10'
@@ -29,12 +34,14 @@
   - condition: state
     entity_id: light.family_room_light
     state: 'on'
-  # Room must have been empty for at least 10 minutes (covers the time_pattern backstop).
+  # Room must have been empty for at least 10 minutes.
   - condition: template
     value_template: "{{ is_state('binary_sensor.family_room_mmwave_presence','off') and (now() - states.binary_sensor.family_room_mmwave_presence.last_changed).total_seconds() >= 600 }}"
-  # TV is off/standby, OR has been unreachable for 30+ min (genuinely off, not a hiccup).
-  - condition: template
-    value_template: "{% set tv = states('media_player.lg_webos_tv_un8500auj') %}{{ tv in ('off','standby') or (tv == 'unavailable' and (now() - states.media_player.lg_webos_tv_un8500auj.last_changed).total_seconds() >= 1800) }}"
+  # TV plug must be off (TV definitely not in use). While the plug is on the
+  # lights are protected, even if the presence sensor briefly misses someone.
+  - condition: state
+    entity_id: switch.family_room_speaker_plug_socket_1
+    state: 'off'
   actions:
   - action: light.turn_off
     target:
