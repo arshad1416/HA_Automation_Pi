@@ -214,17 +214,17 @@
       - light.nanoleaf_multicolor_ls_2
 
 # -----------------------------------------------------------------------------
-# Kitchen / Nanoleaf Elements — graduated dimming on no presence (Enhancement Q)
-# Only acts when the Nanoleafs are in "sunset ambient" mode (kitchen main light
-# OFF and master bedroom fan-light switch OFF). Dim to 15% after 3 min empty,
-# off after 5 more min. Restore to 50% when presence returns while dimmed.
+# Kitchen Cabinet Strips — graduated dimming on no presence (Enhancement Q)
+# Dim the Nanoleaf cabinet light strips when the kitchen is empty, and restore
+# when someone returns. Only acts when the main kitchen light is OFF (if the
+# main light is on, 02_kitchen_light_sync.yaml owns the strips).
 # -----------------------------------------------------------------------------
-- id: nanoleaf_graduated_dimming
-  alias: "Nanoleaf — Graduated dimming on no kitchen presence"
+- id: kitchen_cabinet_graduated_dimming
+  alias: "Kitchen — Cabinet strips graduated dimming on no presence"
   description: >-
-    Dim Nanoleaf Elements to 15% after 3 min no kitchen presence, then off
-    after 5 more min. Only when kitchen light and bedroom switch are both off
-    (i.e. Nanoleafs are in sunset-ambient mode, not actively controlled).
+    Dim kitchen cabinet Nanoleaf strips to 15% after 3 min no presence,
+    then off after 5 more min. Only when the main kitchen light is off
+    (strips left on as ambient after someone turned off the main light).
   mode: restart
   triggers:
   - entity_id: binary_sensor.kitchen_presence
@@ -233,16 +233,10 @@
     trigger: state
   conditions:
   - condition: state
-    entity_id: light.nanoleaf_multicolor_ls
+    entity_id: light.cabinet_light_strip_left_nanoleaf_light_strip
     state: "on"
   - condition: state
     entity_id: light.kitchen_light_light_1
-    state: "off"
-  - condition: state
-    entity_id: switch.master_bedroom_fan_light_switch_1
-    state: "off"
-  - condition: state
-    entity_id: switch.sonoff_10001d2a24
     state: "off"
   actions:
   - action: light.turn_on
@@ -251,6 +245,9 @@
       transition: 10
     target:
       entity_id:
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
   - delay: "00:05:00"
@@ -265,14 +262,17 @@
       transition: 5
     target:
       entity_id:
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
 
-- id: nanoleaf_restore_on_presence
-  alias: "Nanoleaf — Restore brightness on kitchen presence"
+- id: kitchen_cabinet_restore_on_presence
+  alias: "Kitchen — Cabinet strips restore brightness on presence"
   description: >-
-    Restore Nanoleaf Elements to 50% when kitchen presence returns and they
-    are currently dimmed below 50%. Only in sunset-ambient mode.
+    Restore kitchen cabinet strips to 100% when presence returns and they
+    are currently dimmed. Only when main kitchen light is off.
   mode: single
   triggers:
   - entity_id: binary_sensor.kitchen_presence
@@ -280,25 +280,22 @@
     trigger: state
   conditions:
   - condition: state
-    entity_id: light.nanoleaf_multicolor_ls
+    entity_id: light.cabinet_light_strip_left_nanoleaf_light_strip
     state: "on"
   - condition: state
     entity_id: light.kitchen_light_light_1
     state: "off"
-  - condition: state
-    entity_id: switch.master_bedroom_fan_light_switch_1
-    state: "off"
-  - condition: state
-    entity_id: switch.sonoff_10001d2a24
-    state: "off"
   - condition: template
-    value_template: "{{ state_attr(light.nanoleaf_multicolor_ls, brightness) | int(0) < 128 }}"
+    value_template: "{{ state_attr(light.cabinet_light_strip_left_nanoleaf_light_strip, brightness) | int(0) < 128 }}"
   actions:
   - action: light.turn_on
     data:
-      brightness_pct: 50
+      brightness_pct: 100
       transition: 3
     target:
       entity_id:
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
