@@ -5,6 +5,8 @@ secrets.yaml
 .storage/http.auth
 .storage/onboarding
 .storage/core.config
+# Thread operational dataset TLV embeds the mesh network key
+.storage/thread.datasets
 
 # === Databases ===
 *.db
@@ -50,7 +52,30 @@ tmp_backups/
 .storage/core.labs
 .storage/core.config_entries*
 .storage/core.config_entries.bak.*
-automations/.*.yaml.bak.*
+
+# === Editor backup copies (git history is the backup; don't track snapshots) ===
+*.bak
+*.bak.*
+*.bak-*
+*.pre-*-fix
+
+# === Volatile machine state (rewritten by HA/daemons on the Pi; tracking these
+# drowned curated changes in history — .storage/ registries stay tracked for recovery) ===
+.storage/smart_irrigation.storage*
+.storage/trace.saved_traces
+.storage/repairs.issue_registry
+.storage/core.analytics
+.storage/bluetooth.*
+.storage/nest.event_media
+.storage/homekit_controller-entity-map
+.storage/hacs.data
+.storage/hacs.repositories
+.storage/http
+tuya_discovery_log.txt
+tuya_discovery_devices.json
+grizzl_e_state.json
+grizzl_e_history.json
+apsystems.json
 
 # === ESPHome (curated configs live in esphome/; the LIVE configs with real WiFi
 # credentials stay in /opt/esphome on the Pi and are NEVER committed) ===
