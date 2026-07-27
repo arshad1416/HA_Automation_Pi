@@ -2994,14 +2994,6 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
-- id: esphome_kitchen_bridge_startup
-  alias: ESPHome Kitchen Bridge Startup
-  description: Starts the ESPHome-HA bridge daemon on HA startup. Workaround for Python 3.14 ESPHome integration bug.
-  triggers:
-  - trigger: homeassistant
-    event: start
-  actions:
-  - action: shell_command.start_esphome_kitchen_bridge
 - id: stairs_echo_ecobee_motion
   alias: 'Stairs Light - Echo + Ecobee Motion (100%)'
   description: 'When the upstairs Echo presence (switch.stairs_occupancy) AND the ecobee motion sensor both detect motion, and it is dark out (overcast day or after sunset), turn the stair light to 100%.'

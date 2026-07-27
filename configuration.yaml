@@ -691,7 +691,6 @@ template:
           expected_range: "0.74-0.80 kWh/% when healthy (Ioniq 6 77.4 kWh pack)"
 
 shell_command:
-  start_esphome_kitchen_bridge: "for pid in $(pgrep -f esphome_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/esphome_kitchen_bridge.py > /config/esphome_bridge.log 2>&1 &"
   start_tuya_kitchen_bridge: "for pid in $(pgrep -f tuya_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/tuya_kitchen_bridge.py > /config/tuya_bridge.log 2>&1 &"
 
 
