@@ -1,59 +1,11 @@
 {
-  "20327148c44f33af4ea0": {
-    "ip": "192.168.0.119",
-    "name": "UNKNOWN DEVICE",
-    "product": "key4puh75hpvxcdw",
-    "version": "3.3",
-    "configured_ip": "?",
-    "first_seen": "2026-07-26T23:38:06.642308"
-  },
-  "eb1780072f130dadaci0cm": {
-    "ip": "192.168.0.93",
-    "name": "Larissa's Garage Door",
-    "product": "keyftvxappyrem5a",
-    "version": "3.3",
-    "configured_ip": "192.168.0.21",
-    "first_seen": "2026-07-26T23:38:06.841430"
-  },
-  "eb3b9e64d0208b5c04gt4z": {
-    "ip": "192.168.0.92",
-    "name": "Side Rain barrel",
-    "product": "keyjup78v54myhan",
-    "version": "3.4",
-    "configured_ip": "192.168.0.53",
-    "first_seen": "2026-07-26T23:38:06.942785"
-  },
-  "eb68c40bc6f3c68e69ygrv": {
-    "ip": "192.168.0.87",
-    "name": "Holiday Lights",
-    "product": "key37qxed4yeqxag",
-    "version": "3.3",
-    "configured_ip": "192.168.0.109",
-    "first_seen": "2026-07-26T23:38:08.327334"
-  },
   "eb9883b5def5e30cd1zakb": {
     "ip": "192.168.0.105",
     "name": "Wasserstein Smart Floodlight 2",
     "product": "keyqj4cqs54ger7r",
     "version": "3.3",
     "configured_ip": "192.168.0.105",
-    "first_seen": "2026-07-26T23:38:08.447623"
-  },
-  "ebc58b2216f7097c49t1i4": {
-    "ip": "192.168.0.250",
-    "name": "UNKNOWN DEVICE",
-    "product": "key37qxed4yeqxag",
-    "version": "3.3",
-    "configured_ip": "?",
-    "first_seen": "2026-07-26T23:38:08.598015"
-  },
-  "eb9349f92e7f4acaaaccvg": {
-    "ip": "192.168.0.137",
-    "name": "Cat Feeder",
-    "product": "abtatdzmlavpawxo",
-    "version": "3.3",
-    "configured_ip": "192.168.0.111",
-    "first_seen": "2026-07-26T23:38:08.766250"
+    "first_seen": "2026-07-26T23:56:34.328585"
   },
   "eb228bea36b97bb1bcag3w": {
     "ip": "192.168.0.78",
@@ -61,15 +13,15 @@
     "product": "key37qxed4yeqxag",
     "version": "3.3",
     "configured_ip": "192.168.0.48",
-    "first_seen": "2026-07-26T23:38:09.175674"
+    "first_seen": "2026-07-26T23:56:34.404804"
   },
-  "eb814f71bb6ded1077903w": {
-    "ip": "192.168.0.117",
-    "name": "Outdoor Decoration SmartPlug",
-    "product": "keyjup78v54myhan",
-    "version": "3.4",
-    "configured_ip": "192.168.0.117",
-    "first_seen": "2026-07-26T23:38:09.297207"
+  "eb9349f92e7f4acaaaccvg": {
+    "ip": "192.168.0.137",
+    "name": "Cat Feeder",
+    "product": "abtatdzmlavpawxo",
+    "version": "3.3",
+    "configured_ip": "192.168.0.111",
+    "first_seen": "2026-07-26T23:56:34.545462"
   },
   "ebc2cdd6b08d7469ealqcv": {
     "ip": "192.168.0.91",
@@ -77,7 +29,15 @@
     "product": "key37qxed4yeqxag",
     "version": "3.3",
     "configured_ip": "192.168.0.93",
-    "first_seen": "2026-07-26T23:38:09.384271"
+    "first_seen": "2026-07-26T23:56:34.619513"
+  },
+  "eb814f71bb6ded1077903w": {
+    "ip": "192.168.0.117",
+    "name": "Outdoor Decoration SmartPlug",
+    "product": "keyjup78v54myhan",
+    "version": "3.4",
+    "configured_ip": "192.168.0.117",
+    "first_seen": "2026-07-26T23:56:35.049050"
   },
   "eb152e8acdf2a0c29aprxc": {
     "ip": "192.168.0.89",
@@ -85,23 +45,7 @@
     "product": "keyjup78v54myhan",
     "version": "3.4",
     "configured_ip": "?",
-    "first_seen": "2026-07-26T23:38:09.551313"
-  },
-  "eb63d6fd2a642f6bf4r3iy": {
-    "ip": "192.168.0.73",
-    "name": "Airbnb Infrared Heater",
-    "product": "sy7r45n4x2dqzkgc",
-    "version": "3.3",
-    "configured_ip": "192.168.0.49",
-    "first_seen": "2026-07-26T23:38:10.094509"
-  },
-  "ebaa5f77f7fce4cb15l6t6": {
-    "ip": "192.168.0.96",
-    "name": "UNKNOWN DEVICE",
-    "product": "l4rlmt9ko5v1xq8o",
-    "version": "3.3",
-    "configured_ip": "?",
-    "first_seen": "2026-07-26T23:38:10.110469"
+    "first_seen": "2026-07-26T23:56:35.347349"
   },
   "ebf5071fb7d8c3303eha2l": {
     "ip": "192.168.0.85",
@@ -109,7 +53,23 @@
     "product": "key37qxed4yeqxag",
     "version": "3.3",
     "configured_ip": "192.168.0.52",
-    "first_seen": "2026-07-26T23:38:10.148281"
+    "first_seen": "2026-07-26T23:56:35.381224"
+  },
+  "eb63d6fd2a642f6bf4r3iy": {
+    "ip": "192.168.0.73",
+    "name": "Airbnb Infrared Heater",
+    "product": "sy7r45n4x2dqzkgc",
+    "version": "3.3",
+    "configured_ip": "192.168.0.49",
+    "first_seen": "2026-07-26T23:56:35.886212"
+  },
+  "20327148c44f33af4ea0": {
+    "ip": "192.168.0.119",
+    "name": "UNKNOWN DEVICE",
+    "product": "key4puh75hpvxcdw",
+    "version": "3.3",
+    "configured_ip": "?",
+    "first_seen": "2026-07-26T23:56:36.600990"
   },
   "eb799ab5470604253bnhi7": {
     "ip": "192.168.0.138",
@@ -117,6 +77,46 @@
     "product": "hhs4ani0a2zrztof",
     "version": "3.3",
     "configured_ip": "192.168.0.37",
-    "first_seen": "2026-07-26T23:38:10.858223"
+    "first_seen": "2026-07-26T23:56:36.659551"
+  },
+  "ebaa5f77f7fce4cb15l6t6": {
+    "ip": "192.168.0.96",
+    "name": "UNKNOWN DEVICE",
+    "product": "l4rlmt9ko5v1xq8o",
+    "version": "3.3",
+    "configured_ip": "?",
+    "first_seen": "2026-07-26T23:56:36.939942"
+  },
+  "eb1780072f130dadaci0cm": {
+    "ip": "192.168.0.93",
+    "name": "Larissa's Garage Door",
+    "product": "keyftvxappyrem5a",
+    "version": "3.3",
+    "configured_ip": "192.168.0.21",
+    "first_seen": "2026-07-26T23:56:36.969913"
+  },
+  "eb3b9e64d0208b5c04gt4z": {
+    "ip": "192.168.0.92",
+    "name": "Side Rain barrel",
+    "product": "keyjup78v54myhan",
+    "version": "3.4",
+    "configured_ip": "192.168.0.53",
+    "first_seen": "2026-07-26T23:56:37.804123"
+  },
+  "eb68c40bc6f3c68e69ygrv": {
+    "ip": "192.168.0.87",
+    "name": "Holiday Lights",
+    "product": "key37qxed4yeqxag",
+    "version": "3.3",
+    "configured_ip": "192.168.0.109",
+    "first_seen": "2026-07-26T23:56:38.559497"
+  },
+  "ebc58b2216f7097c49t1i4": {
+    "ip": "192.168.0.250",
+    "name": "UNKNOWN DEVICE",
+    "product": "key37qxed4yeqxag",
+    "version": "3.3",
+    "configured_ip": "?",
+    "first_seen": "2026-07-26T23:56:38.841474"
   }
 }
