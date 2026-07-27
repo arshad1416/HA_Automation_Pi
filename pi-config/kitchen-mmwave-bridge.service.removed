@@ -1,0 +1,36 @@
+# REMOVED 2026-07-27 — kept here only as a record. Do not reinstall.
+#
+# Was: /etc/systemd/system/kitchen-mmwave-bridge.service on the Pi, enabled and
+# active, holding esphome_kitchen_bridge.py alive with Restart=always. It was
+# never tracked in git, which made the daemon hard to account for: the HA
+# shell_command that nominally started it was failing (return code -15) while
+# systemd kept the process running, and /config/esphome_bridge.log stayed frozen
+# at 2026-06-25 because systemd runs the daemon without that redirect.
+#
+# Why it was removed: the daemon connected to the ESPHome node at 192.168.0.121
+# and republished its presence under kitchen entity names
+# (binary_sensor.kitchen_mmwave_presence_sensor_presence and friends, created via
+# POST /api/states/ so they never appear in the entity registry). That node is
+# HA config entry "presence-3" — the Family Room mmWave — and it is natively
+# integrated as binary_sensor.family_room_mmwave_presence, confirmed live on
+# 2026-07-27. The Python 3.14 ESPHome connect bug the bridge worked around is
+# fixed, and nothing in the loaded config consumed the entities it wrote.
+#
+# Removed alongside: esphome_kitchen_bridge.py, shell_command.start_esphome_kitchen_bridge
+# (configuration.yaml), and the esphome_kitchen_bridge_startup automation
+# (automations/01_main.yaml).
+
+[Unit]
+Description=Kitchen mmWave ESPHome->HA Bridge (workaround for native ESPHome connect bug)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/docker exec homeassistant pkill -f esphome_kitchen_bridge.py
+ExecStart=/usr/bin/docker exec homeassistant python3 /config/esphome_kitchen_bridge.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
