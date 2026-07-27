@@ -16,11 +16,13 @@ import pathlib
 
 import homeassistant.helpers.config_validation as cv
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.typing import ConfigType
 
 from .const import CONF_ZONE_NAME, CONF_ZONES, CONFIG_VERSION, DOMAIN
+from .services import async_unload_services
 
 
 def zone_slug(zone_name: str) -> str:
@@ -220,12 +222,62 @@ async def _async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)
 
 
+async def _async_migrate_unique_ids(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Prefix legacy unique_ids with the config entry id.
+
+    Up to 0.11.0-beta.1 the core sensors used static unique_ids
+    ("et_hourly_estimate", "never_dry") and the per-zone entities were
+    scoped on the zone slug only, so a second config entry collided and
+    HA silently dropped its entities (GH #116). Every unique_id is now
+    ``<entry_id>_<legacy_id>``; this migration renames the registry
+    entries of THIS config entry in place, preserving entity_id, history
+    and user customisations. Idempotent: already-prefixed ids are left
+    untouched.
+    """
+    prefix = f"{entry.entry_id}_"
+
+    @callback
+    def _migrate(reg_entry: er.RegistryEntry) -> dict[str, str] | None:
+        if reg_entry.unique_id.startswith(prefix):
+            return None
+        return {"new_unique_id": f"{prefix}{reg_entry.unique_id}"}
+
+    await er.async_migrate_entries(hass, entry.entry_id, _migrate)
+
+
+@callback
+def _async_remove_legacy_rain_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove the pre-rework per-zone rain entities.
+
+    The per-zone rain sensor moved from lifetime millimetres (device_class
+    precipitation) to yearly litres (device_class water) and got a new
+    unique_id (``rain_zone_`` -> ``rain_yearly_zone_``). Deleting the old
+    entity here means the user never sees an ``unavailable`` orphan, and the
+    new entity starts with no statistics so Home Assistant's "unit of
+    measurement changed" repair never fires. The old lifetime-mm history
+    (a field install read 6418 mm) is intentionally discarded.
+    """
+    registry = er.async_get(hass)
+    for reg_entry in list(er.async_entries_for_config_entry(registry, entry.entry_id)):
+        uid = reg_entry.unique_id or ""
+        if "rain_zone_" in uid and "rain_yearly_zone_" not in uid:
+            registry.async_remove(reg_entry.entity_id)
+            _LOGGER.info(
+                "Removed legacy rain entity %s (replaced by Rain Yearly)",
+                reg_entry.entity_id,
+            )
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up NeverDry from a config entry (UI)."""
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = entry.data
+    await _async_migrate_unique_ids(hass, entry)
     handler = await hass.async_add_executor_job(_setup_file_logger, hass)
     hass.data[DOMAIN][f"_log_handler_{entry.entry_id}"] = handler
+    # After the file logger is attached, so the removals are visible in the
+    # NeverDry activity log; still before platforms create the new entities.
+    _async_remove_legacy_rain_entities(hass, entry)
     await _async_register_frontend(hass)
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(_async_reload_entry))
@@ -244,6 +296,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             await hass.async_add_executor_job(_teardown_file_logger, handler)
         hass.data[DOMAIN].pop(entry.entry_id, None)
         hass.data[DOMAIN].pop(f"_operators_{entry.entry_id}", None)
+        # Drop the domain services when the last controller is gone.
+        async_unload_services(hass)
     return unload_ok
 
 

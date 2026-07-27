@@ -73,13 +73,26 @@
             - condition: trigger
               id: light_off
           sequence:
+            # Island always off (task lighting)
             - action: light.turn_off
               target:
-                entity_id:
-                  - light.island_light_light
-                  - light.cabinet_light_strip_right_nanoleaf_light_strip
-                  - light.cabinet_light_strip_center_nanoleaf_light_strip
-                  - light.cabinet_light_strip_left_nanoleaf_light_strip
-                  - light.nanoleaf_multicolor_ls
-                  - light.nanoleaf_multicolor_ls_2
+                entity_id: light.island_light_light
               continue_on_error: true
+            # Cabinet strips + Elements: only off if kitchen is EMPTY.
+            # If someone is still present, leave them on — the graduated
+            # dimming automation (07_presence_sensors.yaml) will slowly
+            # fade them to 15% then off over ~8 minutes.
+            - if:
+                - condition: state
+                  entity_id: binary_sensor.kitchen_presence
+                  state: "off"
+              then:
+                - action: light.turn_off
+                  target:
+                    entity_id:
+                      - light.cabinet_light_strip_right_nanoleaf_light_strip
+                      - light.cabinet_light_strip_center_nanoleaf_light_strip
+                      - light.cabinet_light_strip_left_nanoleaf_light_strip
+                      - light.nanoleaf_multicolor_ls
+                      - light.nanoleaf_multicolor_ls_2
+                  continue_on_error: true

@@ -13,6 +13,13 @@ CONF_RAIN_SENSOR_TYPE = "rain_sensor_type"
 RAIN_TYPE_EVENT = "event"  # mm per event (tipping bucket pulse)
 RAIN_TYPE_DAILY_TOTAL = "daily_total"  # cumulative mm since midnight
 
+# Accumulator rain sensors (daily_total, rolling 24h, lifetime cumulative)
+# credit only positive increments between readings: a decrease is a reset,
+# a window age-out, or a glitch — never precipitation. This replaced the
+# earlier near-zero reset heuristic, which both wiped deficits at 05:00 with
+# clear skies (rolling sensor, 2026-07-18) and dropped legitimate overnight
+# rain on true daily totals (#123).
+
 # ── ET model parameters ──────────────────────────────────
 CONF_ALPHA = "alpha"
 CONF_T_BASE = "t_base"

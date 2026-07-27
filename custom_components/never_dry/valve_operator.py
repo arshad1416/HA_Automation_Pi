@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import StrEnum
 from time import monotonic
@@ -106,7 +107,7 @@ _OPERATION_FOR_FAILURE: dict[FailureKind, str] = {
 class ValveOperator:
     """HA-aware driver for a single valve, sitting on top of a :class:`ValveFsm`."""
 
-    DEFAULT_BACKOFF_S: ClassVar[tuple[float, ...]] = (1.0, 2.0, 4.0)
+    DEFAULT_BACKOFF_S: ClassVar[tuple[float, ...]] = (1.0, 2.0, 4.0, 8.0, 16.0)
 
     def __init__(
         self,
@@ -115,11 +116,11 @@ class ValveOperator:
         flow_sensor_entity_id: str | None = None,
         zone_name: str = "",
         fsm_config: FsmConfig | None = None,
-        max_retries: int = 2,
+        max_retries: int = 5,
         backoff_s: tuple[float, ...] | None = None,
         flow_zero_threshold: float = 0.05,
         notifier: ValveNotifier | None = None,
-        max_open_duration_s: float = 3600.0,
+        max_open_duration_s: float | Callable[[], float] = 3600.0,
         hw_max_duration_entity: str | None = None,
         hw_max_duration_multiplier: float = 1.0,
         hw_max_duration_topic: str | None = None,
@@ -130,12 +131,22 @@ class ValveOperator:
         self._switch_entity_id = switch_entity_id
         self._flow_sensor_entity_id = flow_sensor_entity_id
         self._zone_name = zone_name or switch_entity_id
-        self._fsm_config = fsm_config or FsmConfig(has_flow_meter=flow_sensor_entity_id is not None)
+        # Derived maintenance threshold: one command owns 1 + max_retries
+        # attempts, so the retry budget can never trip MAINTENANCE
+        # mid-command — a fully-failed command reaches it exactly at its
+        # definitive failure.
+        self._fsm_config = fsm_config or FsmConfig(
+            has_flow_meter=flow_sensor_entity_id is not None,
+            max_consecutive_failures=max_retries + 1,
+        )
         self._fsm = ValveFsm(self._fsm_config)
         self._max_retries = max_retries
         self._backoff_s = backoff_s if backoff_s is not None else self.DEFAULT_BACKOFF_S
         self._flow_zero_threshold = flow_zero_threshold
         self._notifier = notifier
+        # Static float or zero-arg callable re-evaluated at every valve
+        # open, so the watchdog and the hardware timer track the current
+        # deficit instead of a setup-time snapshot.
         self._max_open_duration_s = max_open_duration_s
         self._hw_max_duration_entity = hw_max_duration_entity
         self._hw_max_duration_multiplier = hw_max_duration_multiplier
@@ -147,6 +158,7 @@ class ValveOperator:
         self._completion: asyncio.Future[OperationResult] | None = None
         self._expected_terminal: tuple[ValveState, ...] = ()
         self._leak_recovery_attempted: bool = False
+        self._retries_left: int = 0
         self._watchdog_task: asyncio.Task | None = None
         self._hw_duration_set: bool = False
 
@@ -180,6 +192,12 @@ class ValveOperator:
     def latency_diagnostics(self) -> dict:
         """Return latency statistics for this valve (open and close windows)."""
         return self._latency.as_dict()
+
+    def _current_max_open_duration(self) -> float:
+        """Resolve the max-open duration, evaluating the provider if callable."""
+        if callable(self._max_open_duration_s):
+            return float(self._max_open_duration_s())
+        return float(self._max_open_duration_s)
 
     # ── Public API ───────────────────────────────────────────────────
 
@@ -271,6 +289,7 @@ class ValveOperator:
         async with self._lock:
             retries = 0
             while True:
+                self._retries_left = self._max_retries - retries
                 outcome = await self._run_cycle(cmd, terminals)
                 if outcome.status == OperationStatus.OK:
                     return self._finalise(outcome, retries, start)
@@ -393,7 +412,22 @@ class ValveOperator:
         recovery first, and _escalate_stuck_open() sends CRITICAL only if
         recovery fails.  Sending CRITICAL before recovery is known causes
         spurious "Valve stuck open" alerts.
+
+        Transient failures (OPEN_FAILED, CLOSE_VERIFICATION_FAILED) are
+        also suppressed while retry attempts remain: on a flaky Zigbee
+        mesh a late confirmation is routine, and alerting on every
+        attempt produced spurious CRITICALs (GH #105). The notification
+        fires only when the retry budget is exhausted and the command is
+        definitively failed.
         """
+        if kind in _TRANSIENT_FAILURES and self._retries_left > 0:
+            _LOGGER.warning(
+                "Valve '%s' transient failure %s — retrying (%d attempt(s) left)",
+                self._zone_name,
+                kind.name,
+                self._retries_left,
+            )
+            return
         _LOGGER.error("Valve '%s' failure: %s", self._zone_name, kind.name)
         if self._notifier is None:
             return
@@ -556,7 +590,7 @@ class ValveOperator:
         if not has_entity and not has_topic:
             return
         self._hw_duration_set = True
-        value = round(self._max_open_duration_s * self._hw_max_duration_multiplier, 1)
+        value = round(self._current_max_open_duration() * self._hw_max_duration_multiplier, 1)
 
         if has_entity:
             try:
@@ -607,14 +641,15 @@ class ValveOperator:
 
     async def _watchdog(self) -> None:
         """Absolute safety timer: force-close the valve if it stays open too long."""
+        max_open_s = self._current_max_open_duration()
         try:
-            await asyncio.sleep(self._max_open_duration_s)
+            await asyncio.sleep(max_open_s)
         except asyncio.CancelledError:
             return
         _LOGGER.error(
             "Valve '%s' watchdog triggered after %.0f s open — forcing turn_off",
             self._zone_name,
-            self._max_open_duration_s,
+            max_open_s,
         )
         await self._call_switch("turn_off")
         if self._notifier is not None:
@@ -622,7 +657,7 @@ class ValveOperator:
                 self._zone_name,
                 NotificationKind.WATCHDOG_TRIGGERED,
                 Severity.CRITICAL,
-                context={"duration_min": int(self._max_open_duration_s / 60)},
+                context={"duration_min": int(max_open_s / 60)},
             )
 
     # ── Timer plumbing ───────────────────────────────────────────────

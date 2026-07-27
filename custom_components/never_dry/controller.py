@@ -25,6 +25,7 @@ from homeassistant.helpers.event import (
     async_track_time_interval,
 )
 
+from . import flow_utils
 from .const import (
     ANOMALY_DEFICIT_MULTIPLIER,
     ATTR_DEFICIT_MM,
@@ -39,14 +40,6 @@ from .const import (
     EVENT_IRRIGATION_COMPLETE,
     FLOW_METER_POLL_INTERVAL_S,
     MIN_SERVICE_INTERVAL_S,
-    SERVICE_IRRIGATE_ALL,
-    SERVICE_IRRIGATE_ZONE,
-    SERVICE_MARK_IRRIGATED,
-    SERVICE_RESET,
-    SERVICE_RESET_VALVE,
-    SERVICE_SET_DEFICIT,
-    SERVICE_STOP,
-    SERVICE_STOP_ZONE,
 )
 from .valve_fsm import ValveState
 from .valve_notifier import NotificationKind, Severity, ValveNotifier
@@ -54,7 +47,6 @@ from .valve_operator import OperationStatus, ValveOperator
 
 MONITORING_INTERVAL = 6 * 3600  # 6 hours in seconds
 AUTO_OPEN_GRACE_S = 3.0  # volume_preset: wait this long for smart-valve auto-open
-_GALLON_TO_LITER = 3.785411784  # US liquid gallon → liters
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -145,17 +137,23 @@ class IrrigationController:
         """Return the mapping of switch entity_id → ValveOperator."""
         return self._valve_operators
 
-    def register_services(self) -> None:
-        """Register all irrigation services with Home Assistant."""
-        self._hass.services.async_register(DOMAIN, SERVICE_RESET, self._handle_reset)
-        self._hass.services.async_register(DOMAIN, SERVICE_IRRIGATE_ZONE, self._handle_irrigate_zone)
-        self._hass.services.async_register(DOMAIN, SERVICE_IRRIGATE_ALL, self._handle_irrigate_all)
-        self._hass.services.async_register(DOMAIN, SERVICE_STOP, self._handle_stop)
-        self._hass.services.async_register(DOMAIN, SERVICE_STOP_ZONE, self._handle_stop_zone)
-        self._hass.services.async_register(DOMAIN, SERVICE_MARK_IRRIGATED, self._handle_mark_irrigated)
-        self._hass.services.async_register(DOMAIN, SERVICE_RESET_VALVE, self._handle_reset_valve)
-        self._hass.services.async_register(DOMAIN, SERVICE_SET_DEFICIT, self._handle_set_deficit)
+    @property
+    def zone_names(self) -> list[str]:
+        """Names of the zones this controller manages."""
+        return list(self._zones.keys())
 
+    def has_zone(self, zone_name: str) -> bool:
+        """True when this controller manages the given zone."""
+        return zone_name in self._zones
+
+    def register_services(self) -> None:
+        """Register this controller's state listeners and schedulers.
+
+        HA services are NOT registered here: they are per-domain, so a
+        second config entry would silently capture every ``never_dry.*``
+        call (GH #105). ``services.async_setup_services`` registers them
+        once and dispatches to the controller that owns the target zone.
+        """
         # Monitor valve state changes to detect manual irrigation
         valve_entities = [v for v in self._valve_to_zone if v]
         if valve_entities:
@@ -235,29 +233,32 @@ class IrrigationController:
     # ── Scheduled irrigation ────────────────────────────────
 
     def _make_scheduled_handler(self, zone_name: str):
-        """Create a time-triggered handler for a specific zone."""
+        """Create a time-triggered handler for a specific zone.
+
+        Scheduled mode irrigates **at the scheduled hour regardless of the
+        threshold** — that is the whole point of a schedule. The dose is
+        whatever deficit has accumulated (``_irrigate_zones`` sizes the volume
+        from the zone deficit), so the zone is topped back up even when the
+        deficit is below the reactive threshold. The only skip is a zone with
+        nothing to refill (deficit <= 0). The threshold stays a *reactive*-mode
+        concept. See AI-183.
+        """
 
         @callback
         def _handler(now) -> None:
             zone = self._zones.get(zone_name)
             if zone is None:
                 return
-            threshold = zone.extra_state_attributes.get(
-                "threshold_mm",
-                DEFAULT_THRESHOLD,
-            )
             _LOGGER.info(
-                "Scheduled check fired: zone='%s', deficit=%.1fmm, threshold=%.1fmm",
+                "Scheduled check fired: zone='%s', deficit=%.1fmm",
                 zone_name,
                 zone._zone_deficit,
-                threshold,
             )
-            if zone._zone_deficit < threshold:
+            if zone._zone_deficit <= 0:
                 _LOGGER.info(
-                    "Scheduled check: zone='%s' deficit=%.1fmm < threshold=%.1fmm — no irrigation needed",
+                    "Scheduled check: zone='%s' deficit=%.1fmm — nothing to refill, skipping",
                     zone_name,
                     zone._zone_deficit,
-                    threshold,
                 )
                 return
             if self._running:
@@ -267,10 +268,9 @@ class IrrigationController:
                 )
                 return
             _LOGGER.info(
-                "Scheduled irrigation triggered: zone='%s', deficit=%.1fmm, threshold=%.1fmm",
+                "Scheduled irrigation triggered: zone='%s', deficit=%.1fmm (topping up regardless of threshold)",
                 zone_name,
                 zone._zone_deficit,
-                threshold,
             )
             self._current_source = "scheduled"
             self._irrigation_task = self._hass.async_create_task(
@@ -415,6 +415,32 @@ class IrrigationController:
         for unsub in self._unsubs:
             unsub()
         self._unsubs.clear()
+        # Settle any manual session still open: the safety monitor dies
+        # with this controller, and the successor has no baseline for a
+        # valve it never saw open — its close event would be ignored and
+        # the delivered water never credited. Close the valve and credit
+        # what accrued so far, exactly once. Listeners are already
+        # unsubscribed above, so the close cannot re-enter the manual
+        # accounting through the state listener.
+        for entity_id in list(self._manual_valve_open):
+            zone_name = self._valve_to_zone.get(entity_id)
+            zone = self._zones.get(zone_name) if zone_name else None
+            if zone is None:
+                self._manual_valve_open.pop(entity_id, None)
+                self._manual_session_meta.pop(entity_id, None)
+                mtask = self._manual_safety_tasks.pop(entity_id, None)
+                if mtask and not mtask.done():
+                    mtask.cancel()
+                continue
+            state = self._hass.states.get(entity_id)
+            if state is not None and state.state == "on":
+                _LOGGER.info(
+                    "Unload with manual session open: zone='%s' — closing valve and settling",
+                    zone_name,
+                )
+                with contextlib.suppress(Exception):
+                    await self._close_valve(entity_id)
+            self._finalize_manual_session(entity_id, zone_name, zone)
 
     async def _handle_stop(self, call: ServiceCall) -> None:
         """Emergency stop: close every configured valve concurrently."""
@@ -1069,90 +1095,34 @@ class IrrigationController:
         zone.async_write_ha_state()
         return self._fallback_volume_estimate(zone, elapsed, delivered)
 
-    def _is_flow_rate_sensor(self, entity_id: str) -> bool:
-        """Check if the sensor reports a flow rate (not cumulative volume).
+    # Thin wrappers around the shared helpers in ``flow_utils`` — kept as
+    # methods so existing call sites and tests keep working unchanged.
 
-        Recognizes both metric (L/h, L/min, m³/h) and imperial (gal/min,
-        gal/h) units. When Home Assistant runs in US-customary mode, ZHA
-        flow sensors are exposed in gallons, so these must be detected too.
-        """
-        unit = (self._get_flow_meter_unit(entity_id) or "").lower()
-        return unit in (
-            "l/h",
-            "l/min",
-            "m³/h",
-            "gal/min",
-            "gal/h",
-        )
+    def _is_flow_rate_sensor(self, entity_id: str) -> bool:
+        """Check if the sensor reports a flow rate (not cumulative volume)."""
+        return flow_utils.is_flow_rate_sensor(self._hass, entity_id)
 
     def _get_flow_meter_unit(self, entity_id: str) -> str | None:
         """Get the unit of measurement of a flow meter sensor."""
-        state = self._hass.states.get(entity_id)
-        if state is None:
-            return None
-        return state.attributes.get("unit_of_measurement")
+        return flow_utils.get_flow_meter_unit(self._hass, entity_id)
 
     def _read_flow_meter(self, entity_id: str) -> float | None:
         """Read the current value of a flow meter sensor."""
-        state = self._hass.states.get(entity_id)
-        if state is None or state.state in ("unknown", "unavailable"):
-            return None
-        try:
-            return float(state.state)
-        except (ValueError, TypeError):
-            return None
+        return flow_utils.read_flow_meter(self._hass, entity_id)
 
     def _read_volume_liters(self, entity_id: str) -> float | None:
-        """Read a cumulative-volume sensor and normalize to liters in one fetch.
-
-        Reads value and unit from a single ``states.get`` so the result is
-        consistent and imperial (gallons) readings are converted to liters.
-        """
-        state = self._hass.states.get(entity_id)
-        if state is None or state.state in ("unknown", "unavailable"):
-            return None
-        try:
-            value = float(state.state)
-        except (ValueError, TypeError):
-            return None
-        return self._volume_to_liters(value, state.attributes.get("unit_of_measurement"))
+        """Read a cumulative-volume sensor and normalize to liters in one fetch."""
+        return flow_utils.read_volume_liters(self._hass, entity_id)
 
     @staticmethod
     def _rate_to_lpm(rate: float, unit: str | None) -> float:
-        """Normalize a flow-rate reading to liters per minute.
-
-        Handles metric (L/min, L/h, m³/h) and imperial (gal/min, gal/h)
-        units. When HA runs in US-customary mode the underlying ZHA sensor
-        is exposed in gallons, so the raw value must be converted before it
-        is integrated into a delivered volume.
-        """
-        u = (unit or "").lower()
-        if u == "l/min":
-            return rate
-        if u == "l/h":
-            return rate / 60.0
-        if u == "m³/h":
-            return rate * 1000.0 / 60.0
-        if u == "gal/min":
-            return rate * _GALLON_TO_LITER
-        if u == "gal/h":
-            return rate * _GALLON_TO_LITER / 60.0
-        # Unknown unit: assume already L/h (legacy default).
-        return rate / 60.0
+        """Normalize a flow-rate reading to liters per minute."""
+        return flow_utils.rate_to_lpm(rate, unit)
 
     @staticmethod
     def _volume_to_liters(value: float, unit: str | None) -> float:
-        """Normalize a cumulative-volume reading to liters.
-
-        Converts gallons → liters when the sensor is exposed in US-customary
-        units; passes metric volumes through unchanged.
-        """
-        u = (unit or "").lower()
-        if u in ("gal", "gallon", "gallons"):
-            return value * _GALLON_TO_LITER
-        if u == "m³":
-            return value * 1000.0
-        return value
+        """Normalize a cumulative-volume reading to liters."""
+        return flow_utils.volume_to_liters(value, unit)
 
     # ── Deficit live-update helper ────────────────────────
 
@@ -1173,7 +1143,12 @@ class IrrigationController:
             return
         delivered_mm = delivered_liters * zone._efficiency / zone._area
         zone._zone_deficit = max(0.0, snapshot - delivered_mm)
+        # Session water must rise live during a flow-metered cycle, not only at
+        # completion — otherwise the card shows Volume/Duration counting down
+        # while Session water stays 0 (field report, flow_meter zone).
+        zone._session_water_delivered = round(delivered_liters, 1)
         zone.async_write_ha_state()
+        zone.notify_session_listeners()
 
     # ── Valve helpers ─────────────────────────────────────
 
@@ -1299,6 +1274,18 @@ class IrrigationController:
         global ``_running`` flag for valves without an operator.
         """
         entity_id = event.data.get("entity_id")
+        if self._running and self._active_valve == entity_id:
+            # Commanded delivery in progress for THIS valve: any state
+            # change belongs to that session and its loop settles it.
+            # Do NOT trust the operator FSM here — on a hardware
+            # self-close (e.g. Sonoff ZFE on-device dose) the operator
+            # processes the 'off' event first and is already back to
+            # IDLE by the time this listener runs, which used to make
+            # the close look manual and fully reset the deficit while
+            # the delivery loop was about to credit the partial
+            # (field bug, 2026-07-15: 640 s delivered of 1055 s planned,
+            # deficit zeroed instead of keeping the remaining third).
+            return
         operator = self._valve_operators.get(entity_id) if entity_id else None
         if operator is not None:
             if operator.state != ValveState.IDLE:
@@ -1353,84 +1340,113 @@ class IrrigationController:
         elif old_state.state == "on" and new_state.state == "off":
             if entity_id in self._controller_closing:
                 return  # NeverDry-initiated close — not a manual event
-            # Cancel the safety watchdog: the user (or the watchdog itself)
-            # already closed the valve.
-            task = self._manual_safety_tasks.pop(entity_id, None)
-            if task and not task.done():
-                task.cancel()
-            # Valve closed — compensate deficit
-            baseline = self._manual_valve_open.pop(entity_id, None)
-            zone.set_irrigating(False)
+            if entity_id not in self._manual_valve_open:
+                # No manual session was ever tracked for this valve: the
+                # close belongs to a commanded delivery (its loop settles
+                # the session — even in the window where an emergency stop
+                # has already cleared _running/_active_valve) or it is a
+                # stray event. Treating it as manual used to fully reset
+                # the deficit (field bug, 2026-07-15).
+                return
+            self._finalize_manual_session(entity_id, zone_name, zone)
 
-            delivered_for_log: float = 0.0
-            if zone.flow_meter_sensor and baseline is not None:
-                is_rate = self._is_flow_rate_sensor(zone.flow_meter_sensor)
-                if is_rate:
-                    # Estimate volume from average flow rate x duration
-                    duration_s = time.monotonic() - baseline
-                    current_rate = self._read_flow_meter(zone.flow_meter_sensor)
-                    if current_rate is not None and current_rate > 0:
-                        unit = self._get_flow_meter_unit(zone.flow_meter_sensor)
-                        lpm = self._rate_to_lpm(current_rate, unit)
-                        delivered_liters = lpm / 60 * duration_s
-                    else:
-                        delivered_liters = 0.0
-                else:
-                    # Cumulative: simple difference (baseline already in liters)
-                    flow_end = self._read_volume_liters(zone.flow_meter_sensor)
-                    delivered_liters = max(0.0, flow_end - baseline) if flow_end is not None else 0.0
+    def _finalize_manual_session(self, entity_id: str, zone_name: str, zone) -> None:
+        """Account a tracked manual session and settle the zone exactly once.
 
-                if delivered_liters > 0 and zone._area > 0:
-                    delivered_mm = delivered_liters / zone._area
-                    zone._zone_deficit = max(0.0, zone._zone_deficit - delivered_mm * zone._efficiency)
-                    zone._last_irrigation_source = "manual"
-                    zone._last_irrigated = datetime.now()
-                    zone._last_volume_delivered = round(delivered_liters, 1)
-                    delivered_for_log = delivered_liters
-                    _LOGGER.info(
-                        "Manual irrigation measured: zone='%s', delivered=%.1fL, new deficit=%.2fmm",
-                        zone_name,
-                        delivered_liters,
-                        zone._zone_deficit,
-                    )
-                else:
-                    zone.reset_deficit("manual")
-                    _LOGGER.info(
-                        "Manual irrigation detected (flow meter reading zero): zone='%s', deficit reset",
-                        zone_name,
-                    )
+        Cancels the safety monitor, credits the delivered water — measured
+        by the flow meter when possible, estimated from flow_rate x elapsed
+        otherwise — and writes the session history. A close NEVER fully
+        resets the deficit: that is mark_irrigated's exclusive semantics.
+
+        Called from the valve state listener on the manual on→off
+        transition, and from :meth:`async_stop` for sessions still open at
+        entry unload — the monitor dies with this controller and the
+        successor has no baseline for a valve it never saw open, so the
+        water must be credited here or never.
+        """
+        task = self._manual_safety_tasks.pop(entity_id, None)
+        if task and not task.done():
+            task.cancel()
+        baseline = self._manual_valve_open.pop(entity_id)
+        zone.set_irrigating(False)
+
+        session_meta = self._manual_session_meta.pop(entity_id, None)
+        ts_end = datetime.now()
+        elapsed_s = (ts_end - session_meta[0]).total_seconds() if session_meta else 0.0
+
+        delivered_liters = 0.0
+        if zone.flow_meter_sensor and baseline is not None:
+            is_rate = self._is_flow_rate_sensor(zone.flow_meter_sensor)
+            if is_rate:
+                # Estimate volume from average flow rate x duration
+                duration_s = time.monotonic() - baseline
+                current_rate = self._read_flow_meter(zone.flow_meter_sensor)
+                if current_rate is not None and current_rate > 0:
+                    unit = self._get_flow_meter_unit(zone.flow_meter_sensor)
+                    lpm = self._rate_to_lpm(current_rate, unit)
+                    delivered_liters = lpm / 60 * duration_s
             else:
-                # No flow meter — full deficit reset
-                zone.reset_deficit("manual")
-                _LOGGER.info(
-                    "Manual irrigation detected (no flow meter): zone='%s', deficit reset",
-                    zone_name,
-                )
-
-            zone.async_write_ha_state()
-            self._hass.bus.async_fire(
-                EVENT_IRRIGATION_COMPLETE,
-                {
-                    "zone": zone_name,
-                    "source": "manual",
-                    "deficit_mm": round(zone._zone_deficit, 2),
-                },
+                # Cumulative: simple difference (baseline already in liters)
+                flow_end = self._read_volume_liters(zone.flow_meter_sensor)
+                delivered_liters = max(0.0, flow_end - baseline) if flow_end is not None else 0.0
+            # Meter measured nothing → credit the guard-flow estimate.
+            delivered_liters = self._fallback_volume_estimate(zone, elapsed_s, delivered_liters)
+        elif zone._flow_rate > 0 and elapsed_s > 0:
+            delivered_liters = zone._flow_rate * elapsed_s / 60.0
+            _LOGGER.info(
+                "Manual irrigation estimated: zone='%s', %.1fL from flow_rate %.2f L/min x %.0fs",
+                zone_name,
+                delivered_liters,
+                zone._flow_rate,
+                elapsed_s,
             )
-            session_meta = self._manual_session_meta.pop(entity_id, None)
-            if session_meta is not None:
-                ts_start, deficit_pre = session_meta
-                zone._last_session_duration_s = round((datetime.now() - ts_start).total_seconds())
-                self._log_session_result(
-                    zone_name=zone_name,
-                    zone=zone,
-                    source="manual",
-                    ts_start=ts_start,
-                    ts_end=datetime.now(),
-                    volume_target_L=None,
-                    volume_delivered_L=delivered_for_log,
-                    deficit_mm_pre=deficit_pre,
-                    deficit_mm_post=zone._zone_deficit,
-                )
+        else:
+            _LOGGER.warning(
+                "Manual irrigation on zone '%s' cannot be quantified (no flow meter,"
+                " no flow_rate) — deficit left unchanged; use mark_irrigated if the"
+                " zone was fully watered",
+                zone_name,
+            )
+
+        if delivered_liters > 0 and zone._area > 0:
+            delivered_mm = delivered_liters * zone._efficiency / zone._area
+            zone._zone_deficit = max(0.0, zone._zone_deficit - delivered_mm)
+            zone._last_irrigation_source = "manual"
+            zone._last_irrigated = ts_end
+            zone._last_volume_delivered = round(delivered_liters, 1)
+            zone._session_water_delivered = round(delivered_liters, 1)
+            zone._total_water_delivered += delivered_liters
+            zone._yearly_water_delivered += delivered_liters
+            _LOGGER.info(
+                "Manual irrigation accounted: zone='%s', delivered=%.1fL, new deficit=%.2fmm",
+                zone_name,
+                delivered_liters,
+                zone._zone_deficit,
+            )
+
+        zone.async_write_ha_state()
+        self._hass.bus.async_fire(
+            EVENT_IRRIGATION_COMPLETE,
+            {
+                "zone": zone_name,
+                "source": "manual",
+                "deficit_mm": round(zone._zone_deficit, 2),
+            },
+        )
+        if session_meta is not None:
+            ts_start, deficit_pre = session_meta
+            zone._last_session_duration_s = round(elapsed_s)
+            self._log_session_result(
+                zone_name=zone_name,
+                zone=zone,
+                source="manual",
+                ts_start=ts_start,
+                ts_end=ts_end,
+                volume_target_L=None,
+                volume_delivered_L=delivered_liters,
+                deficit_mm_pre=deficit_pre,
+                deficit_mm_post=zone._zone_deficit,
+            )
 
     async def _external_session_monitor(self, entity_id: str, zone_name: str) -> None:
         """Auto-close a manually-opened valve at min(volume_needed, timeout).
