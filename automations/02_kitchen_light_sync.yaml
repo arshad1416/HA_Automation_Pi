@@ -73,12 +73,7 @@
             - condition: trigger
               id: light_off
           sequence:
-            # Island always off (task lighting)
-            - action: light.turn_off
-              target:
-                entity_id: light.island_light_light
-              continue_on_error: true
-            # Cabinet strips + Elements: only off if kitchen is EMPTY.
+            # Island + strips: only off if kitchen is EMPTY.
             # If someone is still present, leave them on — the graduated
             # dimming automation (07_presence_sensors.yaml) will slowly
             # fade them to 15% then off over ~8 minutes.
@@ -90,9 +85,38 @@
                 - action: light.turn_off
                   target:
                     entity_id:
+                      - light.island_light_light
                       - light.cabinet_light_strip_right_nanoleaf_light_strip
                       - light.cabinet_light_strip_center_nanoleaf_light_strip
                       - light.cabinet_light_strip_left_nanoleaf_light_strip
                       - light.nanoleaf_multicolor_ls
                       - light.nanoleaf_multicolor_ls_2
                   continue_on_error: true
+
+# ── Presence guard: do not let the kitchen go dark while occupied ──────
+# If the main light is turned off (e.g. accidental switch flip) while
+# someone is still in the kitchen, turn it back on.
+- id: kitchen_main_light_presence_guard
+  alias: Kitchen — Main light stays on while occupied
+  description: >-
+    Re-turns on the main kitchen light if it goes off while presence is
+    still detected. Prevents the kitchen from going dark on someone.
+  mode: single
+  triggers:
+  - entity_id: light.kitchen_light_light_1
+    to: "off"
+    trigger: state
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.kitchen_presence
+    state: "on"
+  actions:
+  - delay: "00:00:02"
+  - condition: state
+    entity_id: binary_sensor.kitchen_presence
+    state: "on"
+  - action: light.turn_on
+    target:
+      entity_id: light.kitchen_light_light_1
+    data:
+      brightness_pct: 100

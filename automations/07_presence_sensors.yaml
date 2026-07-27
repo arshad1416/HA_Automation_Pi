@@ -217,6 +217,7 @@
       - light.cabinet_light_strip_right_nanoleaf_light_strip
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
+      - light.island_light_light
   - delay: "00:05:00"
   - condition: state
     entity_id: binary_sensor.kitchen_presence
@@ -234,6 +235,7 @@
       - light.cabinet_light_strip_right_nanoleaf_light_strip
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
+      - light.island_light_light
 
 - id: kitchen_cabinet_restore_on_presence
   alias: "Kitchen — Cabinet strips restore brightness on presence"
@@ -266,3 +268,12 @@
       - light.cabinet_light_strip_right_nanoleaf_light_strip
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
+  - condition: state
+    entity_id: light.island_light_light
+    state: "on"
+  - action: light.turn_on
+    data:
+      brightness_pct: 100
+      transition: 3
+    target:
+      entity_id: light.island_light_light
