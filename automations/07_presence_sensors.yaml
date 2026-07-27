@@ -196,17 +196,26 @@
       entity_id: light.elements_b3cd
 
 # -----------------------------------------------------------------------------
-# Kitchen Cabinet Strips — graduated dimming on no presence (Enhancement Q)
-# Dim the Nanoleaf cabinet light strips when the kitchen is empty, and restore
-# when someone returns. Only acts when the main kitchen light is OFF (if the
-# main light is on, 02_kitchen_light_sync.yaml owns the strips).
+# Kitchen ambient lighting — graduated dimming on no presence (Enhancement Q)
+#
+# Single owner for all seven kitchen lights: the Tuya presence sensor
+# (binary_sensor.kitchen_presence <- input_boolean.kitchen_tuya_presence,
+# pushed by tuya_kitchen_bridge.py). The kitchen mmWave radar no longer drives
+# these lights — that sensor was physically moved to the master bedroom.
+#
+#   no presence for 3 min  -> all seven dim to 15%
+#   no presence for 5 min  -> all seven off      (3 min trigger + 2 min delay)
+#   presence returns       -> back up, level depends on time of night
+#
+# Turning the main light off at the 5 min mark re-triggers kitchen_light_sync
+# (02_kitchen_light_sync.yaml), whose light_off branch turns off the same
+# ambient lights we just turned off. Harmless duplicate, same end state.
 # -----------------------------------------------------------------------------
-- id: kitchen_cabinet_graduated_dimming
-  alias: "Kitchen — Cabinet strips graduated dimming on no presence"
+- id: kitchen_ambient_graduated_dimming
+  alias: "Kitchen — Ambient graduated dimming on no presence"
   description: >-
-    Dim kitchen cabinet Nanoleaf strips to 15% after 3 min no presence,
-    then off after 5 more min. Only when the main kitchen light is off
-    (strips left on as ambient after someone turned off the main light).
+    Dim every kitchen light to 15% after 3 min without Tuya presence, then
+    turn them off at the 5 min mark.
   mode: restart
   triggers:
   - entity_id: binary_sensor.kitchen_presence
@@ -214,12 +223,15 @@
     for: "00:03:00"
     trigger: state
   conditions:
-  - condition: state
-    entity_id: light.cabinet_light_strip_left_nanoleaf_light_strip
-    state: "on"
-  - condition: state
-    entity_id: light.kitchen_light_light_1
-    state: "off"
+  # Ambient mode is active if either the cabinet strips or the main light is on.
+  - condition: or
+    conditions:
+    - condition: state
+      entity_id: light.cabinet_light_strip_left_nanoleaf_light_strip
+      state: "on"
+    - condition: state
+      entity_id: light.kitchen_light_light_1
+      state: "on"
   actions:
   - action: light.turn_on
     data:
@@ -233,12 +245,11 @@
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
       - light.island_light_light
-  - delay: "00:05:00"
+      - light.kitchen_light_light_1
+  # 3 min trigger + 2 min delay = off at the 5 min mark.
+  - delay: "00:02:00"
   - condition: state
     entity_id: binary_sensor.kitchen_presence
-    state: "off"
-  - condition: state
-    entity_id: light.kitchen_light_light_1
     state: "off"
   - action: light.turn_off
     data:
@@ -251,12 +262,15 @@
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
       - light.island_light_light
+      - light.kitchen_light_light_1
 
-- id: kitchen_cabinet_restore_on_presence
-  alias: "Kitchen — Cabinet strips restore brightness on presence"
+- id: kitchen_ambient_restore_on_presence
+  alias: "Kitchen — Ambient lights up on presence"
   description: >-
-    Restore kitchen cabinet strips to 100% when presence returns and they
-    are currently dimmed. Only when main kitchen light is off.
+    Bring the kitchen lights back up when Tuya presence returns. Between the
+    bedtime shutdown and sunrise only the cabinet strips and Nanoleaf
+    multicolor strips come up, at 50%; the rest of the evening every kitchen
+    light goes to 100%. Does nothing while the sun is up.
   mode: single
   triggers:
   - entity_id: binary_sensor.kitchen_presence
@@ -264,31 +278,46 @@
     trigger: state
   conditions:
   - condition: state
-    entity_id: light.cabinet_light_strip_left_nanoleaf_light_strip
-    state: "on"
-  - condition: state
-    entity_id: light.kitchen_light_light_1
-    state: "off"
-  - condition: template
-    value_template: "{{ state_attr(light.cabinet_light_strip_left_nanoleaf_light_strip, brightness) | int(0) < 128 }}"
+    entity_id: sun.sun
+    state: below_horizon
   actions:
-  - action: light.turn_on
-    data:
-      brightness_pct: 100
-      transition: 3
-    target:
-      entity_id:
-      - light.cabinet_light_strip_left_nanoleaf_light_strip
-      - light.cabinet_light_strip_center_nanoleaf_light_strip
-      - light.cabinet_light_strip_right_nanoleaf_light_strip
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-  - condition: state
-    entity_id: light.island_light_light
-    state: "on"
-  - action: light.turn_on
-    data:
-      brightness_pct: 100
-      transition: 3
-    target:
-      entity_id: light.island_light_light
+  - choose:
+    # ── Between bedtime and sunrise: dim, cabinet + Nanoleaf strips only ──
+    # The 21:00-09:00 window matters. input_boolean.bedtime_shutdown_done stays
+    # on until its 20:00 reset, so the latch alone would treat a winter evening
+    # (sunset ~16:45) as overnight. sun.sun below_horizon ends the window at
+    # sunrise, so the 09:00 bound is only a backstop.
+    - conditions:
+      - condition: state
+        entity_id: input_boolean.bedtime_shutdown_done
+        state: "on"
+      - condition: time
+        after: "21:00:00"
+        before: "09:00:00"
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_pct: 50
+          transition: 3
+        target:
+          entity_id:
+          - light.cabinet_light_strip_left_nanoleaf_light_strip
+          - light.cabinet_light_strip_center_nanoleaf_light_strip
+          - light.cabinet_light_strip_right_nanoleaf_light_strip
+          - light.nanoleaf_multicolor_ls
+          - light.nanoleaf_multicolor_ls_2
+    # ── Rest of the evening: everything to 100% ──────────────────────────
+    default:
+    - action: light.turn_on
+      data:
+        brightness_pct: 100
+        transition: 3
+      target:
+        entity_id:
+        - light.cabinet_light_strip_left_nanoleaf_light_strip
+        - light.cabinet_light_strip_center_nanoleaf_light_strip
+        - light.cabinet_light_strip_right_nanoleaf_light_strip
+        - light.nanoleaf_multicolor_ls
+        - light.nanoleaf_multicolor_ls_2
+        - light.island_light_light
+        - light.kitchen_light_light_1

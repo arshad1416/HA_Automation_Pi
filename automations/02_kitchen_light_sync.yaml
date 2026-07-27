@@ -74,9 +74,9 @@
               id: light_off
           sequence:
             # Island + strips: only off if kitchen is EMPTY.
-            # If someone is still present, leave them on — the graduated
-            # dimming automation (07_presence_sensors.yaml) will slowly
-            # fade them to 15% then off over ~8 minutes.
+            # If someone is still present, leave them on —
+            # kitchen_ambient_graduated_dimming (07_presence_sensors.yaml)
+            # fades them to 15% at 3 min and off at 5 min once presence ends.
             - if:
                 - condition: state
                   entity_id: binary_sensor.kitchen_presence

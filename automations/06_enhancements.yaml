@@ -316,71 +316,11 @@
             entity_id: cover.family_room_blinds_curtain
 
 # -----------------------------------------------------------------------------
-# Enhancement Q: Nanoleaf graduated dimming (presence-aware) + restore.
-# Works with the existing sunset Nanoleaf automation (which sets initial level).
+# Enhancement Q lived here (Nanoleaf graduated dimming driven by the kitchen
+# mmWave radar). Removed 2026-07-27: that radar was moved to the master bedroom,
+# so it was dimming the kitchen Nanoleafs on bedroom presence. Enhancement Q is
+# now owned entirely by Tuya presence in 07_presence_sensors.yaml.
 # -----------------------------------------------------------------------------
-- id: nanoleaf_graduated_dimming
-  alias: "Nanoleaf: Graduated dimming on no presence"
-  description: >-
-    Dim the bedroom Nanoleaf Elements to 15% after 3 min without kitchen
-    presence, then turn them off after 5 more minutes of no presence.
-  mode: restart
-  triggers:
-  - entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
-    to: 'off'
-    for: "00:03:00"
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: light.nanoleaf_multicolor_ls
-    state: 'on'
-  actions:
-  - action: light.turn_on
-    data:
-      brightness_pct: 15
-      transition: 10
-    target:
-      entity_id:
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-  - delay: "00:05:00"
-  - condition: state
-    entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
-    state: 'off'
-  - action: light.turn_off
-    data:
-      transition: 5
-    target:
-      entity_id:
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-
-- id: nanoleaf_restore_on_presence
-  alias: "Nanoleaf: Restore brightness on presence"
-  description: >-
-    Restore the Nanoleaf Elements to the configured night brightness when
-    presence returns while they are on but dimmed.
-  mode: single
-  triggers:
-  - entity_id: binary_sensor.kitchen_mmwave_presence_sensor_presence
-    to: 'on'
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: light.nanoleaf_multicolor_ls
-    state: 'on'
-  - condition: template
-    value_template: "{{ state_attr('light.nanoleaf_multicolor_ls', 'brightness') | int(0) < 100 }}"
-  actions:
-  - action: light.turn_on
-    data:
-      brightness_pct: "{{ states('input_number.nanoleaf_night_brightness') | int(50) }}"
-      transition: 3
-    target:
-      entity_id:
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-
 
 # -----------------------------------------------------------------------------
 # Enhancement R: EV charging cross-validation (Grizzl-E vs Ioniq 6 telemetry).
