@@ -517,14 +517,7 @@ camera:
     name: Garage Cam
     input: rtsp://127.0.0.1:8554/garage
 
-# ── Garage door vision check sensors ─────────────────────────────────
 command_line:
-  - sensor:
-      name: Garage Door Vision State
-      unique_id: garage_door_vision_state
-      command: "python3 /config/check_garage_vision.py"
-      scan_interval: 60
-      command_timeout: 35
   - sensor:
       name: Solar Power Now
       unique_id: solar_power_now
@@ -623,14 +616,6 @@ template:
         device_class: occupancy
         state: >
           {{ is_state('input_boolean.kitchen_tuya_presence', 'on') }}
-  - binary_sensor:
-      - name: Garage Door (Vision)
-        unique_id: garage_door_vision
-        device_class: garage_door
-        state: >
-          {{ states('sensor.garage_door_vision_state') | lower == 'open' }}
-        availability: >
-          {{ states('sensor.garage_door_vision_state') not in ('unknown', 'unavailable', 'error') }}
   # Aggregate of every indoor MOTION sensor (Ecobee + Echo presence switches included).
   # ON if anything is currently moving. Only device_class=motion sources + the two Echo
   # presence switches — occupancy/presence (mmWave) is deliberately EXCLUDED because it
