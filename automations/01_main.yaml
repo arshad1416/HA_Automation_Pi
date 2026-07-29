@@ -2897,6 +2897,140 @@
       entity_id:
       - light.nanoleaf_multicolor_ls
       - light.nanoleaf_multicolor_ls_2
+- id: stairs_pir_motion_light
+  alias: Stairs Light — PIR Motion (100%, 25% after bedtime)
+  description: >-
+    Motion on the Upstairs Stair Sensor (binary_sensor.pir_motion_sensor_2_motion) lights
+    light.stair_light: 100% when it is dark out before bedtime, 25% from bedtime until
+    sunrise. Off after 5 minutes with no motion.
+
+    Replaces stairs_light_auto / stairs_echo_ecobee_motion / stairs_presence_timeout /
+    stairs_safety_off (deleted 2026-07-29), which all keyed on switch.stairs_occupancy —
+    a SmartThings virtual switch only an external Alexa routine could set. This drives
+    off the physical PIR instead, so no Alexa or emulated_hue round-trip is involved.
+
+    "Dark out" prefers sensor.illuminance (ha-illuminance custom integration: US Naval
+    Observatory solar position blended with weather.forecast_home), compared against
+    input_number.stairs_dark_lux. The previous weather-state test was inaccurate — it
+    counted 'partlycloudy' as dark, which fired on mornings at 14% cloud cover. If
+    sensor.illuminance is missing or unavailable the conditions fall back to numeric
+    cloud_coverage plus sun elevation, so this automation still works before that
+    integration is installed.
+
+    "Bedtime" is input_boolean.bedtime_shutdown_done, set by bedtime_routine_auto on real
+    sleep detection. That latch is only reset at 20:00, so it reads stale-ON through the
+    evening; the extra time condition pins it to the current night.
+
+    input_boolean.stair_light_pir_owned tracks whether this automation is the one holding
+    the light on. It is claimed only when the light was found OFF and released whenever
+    the light goes off by any path, so a manually lit staircase is never auto-killed.
+  mode: queued
+  max: 10
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.pir_motion_sensor_2_motion
+    to: 'on'
+    id: motion
+  - trigger: state
+    entity_id: binary_sensor.pir_motion_sensor_2_motion
+    to: 'off'
+    for:
+      minutes: 5
+    id: no_motion
+  - trigger: state
+    entity_id: light.stair_light
+    to: 'off'
+    id: light_went_off
+  conditions: []
+  actions:
+  - choose:
+    # Light went off by any path (us, manual, scene, bedtime routine) — drop our claim.
+    - conditions:
+      - condition: trigger
+        id: light_went_off
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.stair_light_pir_owned
+    # 5 minutes with no motion, and we are the ones holding it on — turn off.
+    - conditions:
+      - condition: trigger
+        id: no_motion
+      - condition: state
+        entity_id: input_boolean.stair_light_pir_owned
+        state: 'on'
+      sequence:
+      - action: light.turn_off
+        target:
+          entity_id: light.stair_light
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.stair_light_pir_owned
+    # Motion, light currently off, after bedtime and before sunrise -> 25%.
+    - conditions:
+      - condition: trigger
+        id: motion
+      - condition: state
+        entity_id: light.stair_light
+        state: 'off'
+      - condition: state
+        entity_id: sun.sun
+        state: below_horizon
+      - condition: state
+        entity_id: input_boolean.bedtime_shutdown_done
+        state: 'on'
+      # bedtime_shutdown_done is only cleared at 20:00, so between sunset and 20:00 it is
+      # still last night's ON. Restrict the dim branch to the actual overnight window.
+      - condition: or
+        conditions:
+        - condition: time
+          after: '20:00:00'
+        - condition: time
+          before: '12:00:00'
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.stair_light
+        data:
+          brightness_pct: 25
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.stair_light_pir_owned
+    # Motion, light currently off, dark out (night before bedtime, or a genuinely dim day) -> 100%.
+    - conditions:
+      - condition: trigger
+        id: motion
+      - condition: state
+        entity_id: light.stair_light
+        state: 'off'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: sun.sun
+          state: below_horizon
+        # Preferred: measured-ish estimated outdoor lux below the tunable threshold.
+        - condition: template
+          value_template: >-
+            {{ states('sensor.illuminance') | float(-1) >= 0
+               and states('sensor.illuminance') | float(-1)
+                   < states('input_number.stairs_dark_lux') | float(1000) }}
+        # Fallback only while sensor.illuminance is absent/unavailable: numeric cloud
+        # cover with a sun-elevation gate, instead of the old 'partlycloudy' string.
+        - condition: template
+          value_template: >-
+            {{ states('sensor.illuminance') | float(-1) < 0
+               and ( state_attr('sun.sun', 'elevation') | float(90) < 5
+                     or ( state_attr('weather.forecast_home', 'cloud_coverage') | float(0) > 70
+                          and state_attr('sun.sun', 'elevation') | float(90) < 25 ) ) }}
+      sequence:
+      - action: light.turn_on
+        target:
+          entity_id: light.stair_light
+        data:
+          brightness_pct: 100
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.stair_light_pir_owned
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.

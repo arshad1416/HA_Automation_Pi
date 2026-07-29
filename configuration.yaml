@@ -66,6 +66,18 @@ input_number:
     step: 5
     unit_of_measurement: '%'
     initial: 100
+  # "Dark out" threshold for stairs_pir_motion_light, in estimated outdoor lux from
+  # the ha-illuminance custom integration (sensor.illuminance). Below this the stair
+  # light comes on when the PIR sees motion. ~1000 lx ≈ heavy overcast; full summer
+  # daylight reads ~74000 lx. Tune here rather than editing the automation.
+  stairs_dark_lux:
+    name: Stairs Dark Threshold (lux)
+    icon: mdi:brightness-6
+    min: 100
+    max: 20000
+    step: 100
+    unit_of_measurement: lx
+    initial: 1000
 
 # Manual override toggle for kitchen auto lights
 # Set by manual-off trigger in downstairs_cabinet_occupancy_auto
@@ -317,6 +329,19 @@ input_boolean:
   bedtime_shutdown_done:
     name: "Bedtime Shutdown Done (nightly latch)"
     icon: mdi:sleep
+  # Ownership marker for stairs_pir_motion_light: ON only while that automation is the
+  # one keeping light.stair_light lit. The automation claims it only when it finds the
+  # light OFF, and releases it whenever the light goes off by ANY path — so a stair
+  # light turned on manually, by a scene, or by another automation is never auto-killed
+  # by the 5-minute no-motion timer.
+  # initial: false is deliberate — without it HA restores the last state, and a restart
+  # while the light was on would strand the claim ON (light_went_off never fires, since
+  # the light never went off). A stale claim would let the 5-minute timer switch off a
+  # staircase somebody else had lit, which is the exact case this flag exists to prevent.
+  stair_light_pir_owned:
+    name: "Stair Light Held by PIR Automation"
+    icon: mdi:motion-sensor
+    initial: false
   # Enhancement C — set ON by hvac_pause_door_open while HVAC is paused for an open
   # exterior door; climate_ai_advisor checks this so it does not fight the pause.
   hvac_paused_door_open:
