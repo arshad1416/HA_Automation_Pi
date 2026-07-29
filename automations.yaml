@@ -1459,3 +1459,13 @@
       entity_id: light.kitchen_light
       message: Kitchen lights forced off by stuck-on failsafe (light ON 2h, no motion).
       name: Kitchen Failsafe
+- id: '1785335886148'
+  alias: Stair Light Auto On/Off
+  description: ''
+  use_blueprint:
+    path: homeassistant/motion_light.yaml
+    input:
+      motion_entity: binary_sensor.pir_motion_sensor_2_motion
+      light_target:
+        entity_id: light.stair_light_2
+      no_motion_wait: 300
