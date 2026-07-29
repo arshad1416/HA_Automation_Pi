@@ -1469,3 +1469,14 @@
       light_target:
         entity_id: light.stair_light_2
       no_motion_wait: 300
+- id: '1785338319034'
+  alias: Stair Light — Motion activation
+  description: Automatically turns on the stair light when motion is detected and
+    turns it off after 5 minutes of inactivity.
+  use_blueprint:
+    path: homeassistant/motion_light.yaml
+    input:
+      motion_entity: binary_sensor.pir_motion_sensor_2_motion
+      light_target:
+        entity_id: light.stair_light
+      no_motion_wait: 300
