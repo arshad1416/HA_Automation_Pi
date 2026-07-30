@@ -884,12 +884,12 @@
       target:
       - media_player.everywhere
 
-# V3: Door/window/trunk/hood open while parked. Alerts after 10 min if still open.
+# V3: Door/window/trunk/hood open while parked. Alerts after 60 min if still open.
 - id: vf9_door_open_when_parked
   alias: "VF9: Door or window open while parked"
   description: >-
     When any VF9 door, window, trunk, or hood opens while the vehicle is parked
-    (speed 0), wait 10 minutes and alert if still open.
+    (speed 0), wait 60 minutes and alert if still open.
   mode: parallel
   max: 10
   triggers:
@@ -929,33 +929,44 @@
   - condition: template
     value_template: "{{ states('sensor.vf9_rllv2cja5rh000847_toc_do_hien_tai') | default(0,true) | float(0) == 0 }}"
   actions:
-  - delay: "00:10:00"
+  - delay: "01:00:00"
   - condition: template
     value_template: "{{ trigger.to_state.state | lower in ['open','on','mo'] }}"
   - action: notify.mobile_app_cph2655
     data:
       title: "VF9 Open While Parked"
-      message: "{{ trigger.to_state.attributes.friendly_name | default(trigger.id | replace('_',' ')) }} has been open for 10 min while parked."
+      message: "{{ trigger.to_state.attributes.friendly_name | default(trigger.id | replace('_',' ')) }} has been open for 60 min while parked."
 
-# V4: Auto-lock doors when Arshad departs.
+# V4: Auto-lock doors when Arshad or Larissa departs.
 - id: vf9_auto_lock_on_departure
   alias: "VF9: Auto-lock on departure"
   description: >-
-    When Arshad leaves home, press the VF9 lock doors button and notify.
+    When Arshad or Larissa leaves home, press the VF9 lock doors button and notify.
   mode: single
   triggers:
   - entity_id: person.arshad14
     to: not_home
     trigger: state
+    id: arshad
+  - entity_id: binary_sensor.larissa_s_s22_presence
+    to: 'off'
+    trigger: state
+    id: larissa
   conditions: []
   actions:
+  - variables:
+      who_left: "{{ 'Arshad' if trigger.id == 'arshad' else 'Larissa' }}"
   - action: button.press
     target:
       entity_id: button.vf9_rllv2cja5rh000847_khoa_cua
   - action: notify.mobile_app_cph2655
     data:
       title: "VF9 Locked"
-      message: "Arshad left home. VF9 doors lock command sent."
+      message: "{{ who_left }} left home. VF9 doors lock command sent."
+  - action: notify.sm_s926w
+    data:
+      title: "VF9 Locked"
+      message: "{{ who_left }} left home. VF9 doors lock command sent."
 
 # V5: Battery health monitor. Alerts when SOH < 80 or degradation > 20.
 - id: vf9_battery_health_monitor
