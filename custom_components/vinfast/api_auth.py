@@ -51,9 +51,13 @@ class AuthManager:
             "username": self.core.email, "password": self.core.password,
             "scope": "openid profile email offline_access", "audience": self.core.audience
         }, timeout=15) 
-        if res and res.status_code == 200:
+        if res is not None and res.status_code == 200:
             self.core.access_token = res.json()["access_token"]
             return self.core.access_token
+        if res is not None:
+            _LOGGER.error(f"VinFast login failed: HTTP {res.status_code} - {res.text[:200]}")
+        else:
+            _LOGGER.error("VinFast login failed: No response from Auth0")
         return None
 
     def get_vehicles(self):
