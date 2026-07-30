@@ -50,11 +50,11 @@ WWW_DIR = os.path.join(HA_CONFIG_DIR, "www")
 MOCK_FILE = os.path.join(WWW_DIR, "mock_console_cmd.txt")
 
 KNOWN_COMMANDS = {
-    1: ("Khóa cửa", "mdi:lock", "khoa_cua"),
-    2: ("Mở cửa", "mdi:lock-open", "mo_cua"),
-    3: ("Bấm còi", "mdi:bullhorn", "bam_coi"),
-    4: ("Nháy đèn", "mdi:car-light-high", "nhay_den"),
-    5: ("Bật điều hòa", "mdi:fan", "bat_dieu_hoa"),
-    6: ("Tắt điều hòa", "mdi:fan-off", "tat_dieu_hoa"),
-    7: ("Mở cốp", "mdi:car-back", "mo_cop"),
+    1: ("Lock Doors", "mdi:lock", "khoa_cua"),
+    2: ("Unlock Doors", "mdi:lock-open", "mo_cua"),
+    3: ("Horn", "mdi:bullhorn", "bam_coi"),
+    4: ("Flash Lights", "mdi:car-light-high", "nhay_den"),
+    5: ("AC On", "mdi:fan", "bat_dieu_hoa"),
+    6: ("AC Off", "mdi:fan-off", "tat_dieu_hoa"),
+    7: ("Open Trunk", "mdi:car-back", "mo_cop"),
 }

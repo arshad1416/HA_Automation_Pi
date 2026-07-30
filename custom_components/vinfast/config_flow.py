@@ -24,8 +24,8 @@ CONF_AUTH_MODE = "auth_mode"
 CONF_ACCESS_TOKEN = "access_token"
 CONF_REFRESH_TOKEN = "refresh_token"
 
-REGIONS = {"VN": "Việt Nam (VN)", "US": "United States (US)", "EU": "Europe (EU)"}
-LANGUAGES = {"vi": "Tiếng Việt (VI)", "en": "English (EN)"}
+REGIONS = {"VN": "Vietnam (VN)", "US": "United States (US)", "EU": "Europe (EU)"}
+LANGUAGES = {"vi": "Vietnamese (VI)", "en": "English (EN)"}
 
 def safe_int(val, default):
     try: return int(float(val))
@@ -35,10 +35,10 @@ def safe_int(val, default):
 # THUẬT TOÁN TỰ ĐỘNG QUÉT DANH SÁCH MODEL MỚI NHẤT TỪ GOOGLE GEMINI
 # =====================================================================
 def fetch_gemini_models_sync(api_key):
-    # Danh sách dự phòng nếu mạng lỗi hoặc người dùng không nhập Key
+    # Fallback list if network fails or user does not enter Key
     default_models = {
-        "gemini-2.5-flash": "Gemini 2.5 Flash (Khuyên dùng/Nhanh/Free)",
-        "gemini-2.5-pro": "Gemini 2.5 Pro (Cao cấp)",
+        "gemini-2.5-flash": "Gemini 2.5 Flash (Recommended/Fast/Free)",
+        "gemini-2.5-pro": "Gemini 2.5 Pro (Premium)",
         "gemini-2.0-flash": "Gemini 2.0 Flash (Nhanh/Free)",
         "gemini-1.5-flash": "Gemini 1.5 Flash",
     }
@@ -59,18 +59,18 @@ def fetch_gemini_models_sync(api_key):
                 display = m.get("displayName", name)
                 methods = m.get("supportedGenerationMethods", [])
                 
-                # Chỉ lấy các model sinh text (Bỏ qua model nhúng/âm thanh/cũ)
+                # Only get text generation models (Skip embedding/audio/legacy models)
                 if "generateContent" in methods and "gemini" in name.lower() and "vision" not in name.lower():
-                    # Gắn tag phân loại thông minh
+                    # Apply smart classification tag
                     if "flash" in name.lower():
                         display = f"{display} (Nhanh/Free)"
                     elif "pro" in name.lower():
-                        display = f"{display} (Cao cấp)"
+                        display = f"{display} (Premium)"
                     
                     models[name] = display
             
             if models:
-                # Thuật toán Sắp xếp: Ưu tiên bản 2.5 lên đầu -> Đến dòng Flash -> Các dòng khác
+                # Sort algorithm: Prioritize 2.5 series first -> Then Flash series -> Others
                 sorted_models = dict(sorted(models.items(), key=lambda item: (
                     not ("2.5" in item[0]), 
                     not ("flash" in item[0]), 
@@ -79,7 +79,7 @@ def fetch_gemini_models_sync(api_key):
                 return sorted_models
                 
     except Exception as e:
-        _LOGGER.error(f"VinFast: Lỗi khi lấy danh sách Gemini models động: {e}")
+        _LOGGER.error(f"VinFast: Error fetching dynamic Gemini model list: {e}")
         
     return default_models
 
@@ -378,7 +378,7 @@ class VinFastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         api_key = self._setup_data.get(CONF_GEMINI_API_KEY, "")
         
-        # Chạy ngầm hàm lấy API để không làm treo giao diện Home Assistant
+        # Run API fetch in background to avoid blocking Home Assistant UI
         models = await self.hass.async_add_executor_job(fetch_gemini_models_sync, api_key)
         
         data_schema = vol.Schema({
@@ -409,12 +409,12 @@ class VinFastOptionsFlowHandler(config_entries.OptionsFlow):
         current_mapbox = opts.get(CONF_MAPBOX_TOKEN, data.get(CONF_MAPBOX_TOKEN, ""))
         current_stadia = opts.get(CONF_STADIA_TOKEN, data.get(CONF_STADIA_TOKEN, ""))
 
-        # Cập nhật lại danh sách Model mỗi khi người dùng bấm Cấu hình lại
+        # Refresh model list each time user clicks Reconfigure
         available_models = await self.hass.async_add_executor_job(fetch_gemini_models_sync, current_gemini_key)
         if current_gemini_model not in available_models:
             available_models[current_gemini_model] = current_gemini_model
 
-        # Bổ sung Mapbox và Stadia vào Form Cấu hình lại (Configure)
+        # Add Mapbox and Stadia to the Reconfigure form
         options_schema = vol.Schema({
             vol.Required(CONF_REGION, default=current_region): vol.In(REGIONS),
             vol.Required(CONF_LANGUAGE, default=current_lang): vol.In(LANGUAGES),

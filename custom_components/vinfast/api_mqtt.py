@@ -168,7 +168,7 @@ class MQTTManager:
                     is_bad_weather = w_data["code"] in bad_wmo_codes
                     is_extreme_temp = w_data["temp"] >= 35 or w_data["temp"] <= 15
                     cond_lower = str(w_data["condition"]).lower()
-                    has_bad_keyword = any(k in cond_lower for k in ["mưa", "bão", "sương mù", "tuyết", "gió", "sấm chớp", "mù"])
+                    has_bad_keyword = any(k in cond_lower for k in ["rain", "storm", "fog", "snow", "wind", "thunder", "mist"])
 
                     if now - getattr(core, '_last_ai_weather_time', 0) > 1800 and (is_bad_weather or is_extreme_temp or has_bad_keyword):
                         core._last_ai_weather_time = now
@@ -180,7 +180,7 @@ class MQTTManager:
             threading.Thread(target=fetch_weather, daemon=True).start()
             
             with core._geocode_lock:
-                if getattr(core, '_last_geocoded_grid', None) != grid_coord or "Tọa độ" in curr_addr or "Đang kết nối" in curr_addr or "Loading" in curr_addr:
+                if getattr(core, '_last_geocoded_grid', None) != grid_coord or "Coordinates" in curr_addr or "Connecting" in curr_addr or "Loading" in curr_addr:
                     addr = get_address_from_osm(lat, lon)
                     if addr:
                         core._last_data["api_current_address"] = addr
@@ -214,11 +214,11 @@ class MQTTManager:
             vi = core.lang == "vi"
             
             if mode == "weather":
-                core._last_data["api_ai_advisor"] = f"☁️ Thời tiết khắc nghiệt. Đang gọi AI..." if vi else "☁️ Extreme weather. Asking AI..."
+                core._last_data["api_ai_advisor"] = f"☁️ Extreme weather. Asking AI..." if vi else "☁️ Extreme weather. Asking AI..."
             elif mode == "anomaly":
-                core._last_data["api_ai_advisor"] = f"⚠️ Sụt pin nhanh! Đang chờ AI phân tích..." if vi else "⚠️ Fast battery drop! Analyzing..."
+                core._last_data["api_ai_advisor"] = f"⚠️ Fast battery drop! Analyzing..." if vi else "⚠️ Fast battery drop! Analyzing..."
             else:
-                core._last_data["api_ai_advisor"] = "🔄 Đang gửi dữ liệu cho AI..." if vi else "🔄 Sending trip data to AI..."
+                core._last_data["api_ai_advisor"] = "🔄 Sending trip data to AI..." if vi else "🔄 Sending trip data to AI..."
                 
             core.trigger_callbacks()
             result = get_ai_advice(core.gemini_api_key, ai_model, mode, data_payload, context_data)
@@ -293,7 +293,7 @@ class MQTTManager:
                 except: pass
 
             core._last_data.update(data_dict)
-            core._last_data["api_debug_raw"] = f"Nhận: {len(data_dict)} mã ({time_str})"
+            core._last_data["api_debug_raw"] = f"Received: {len(data_dict)} codes ({time_str})"
             
             for k in ["34180_00001_00010", "34183_00001_00010", "34181_00001_00007"]:
                 if k in data_dict and isinstance(data_dict[k], str): core._update_vehicle_name(data_dict[k])
@@ -318,7 +318,7 @@ class MQTTManager:
                 core._is_moving = False
 
             vi = core.lang == "vi"
-            base_status = ("Đang di chuyển" if vi else "Moving") if core._is_moving else (("Đang đỗ" if vi else "Parked") if gear == "1" else ("Đang dừng" if vi else "Stopped"))
+            base_status = ("Moving" if vi else "Moving") if core._is_moving else (("Parked" if vi else "Parked") if gear == "1" else ("Stopped" if vi else "Stopped"))
 
             if core._is_moving and not getattr(core, '_is_trip_active', False):
                 core._trip_start_time = current_time
@@ -455,8 +455,8 @@ class MQTTManager:
             core._is_charging = is_charging
             vi = core.lang == "vi"
 
-            if is_charging: core._last_data["api_vehicle_status"] = "Đang sạc" if vi else "Charging"
-            elif is_fully_charged: core._last_data["api_vehicle_status"] = "Đã sạc xong" if vi else "Fully Charged"
+            if is_charging: core._last_data["api_vehicle_status"] = "Charging" if vi else "Charging"
+            elif is_fully_charged: core._last_data["api_vehicle_status"] = "Fully Charged" if vi else "Fully Charged"
             else: core._last_data["api_vehicle_status"] = base_status
 
             if getattr(core, '_is_first_mqtt_message', True):
@@ -559,7 +559,7 @@ class MQTTManager:
                         date_str = datetime.datetime.fromtimestamp(getattr(core, '_charge_start_time', current_time)).strftime('%d/%m/%Y %H:%M')
                         local_rec = {
                             "date": date_str, 
-                            "address": "Sạc tại Nhà (Tạm tính)" if is_home_charge else "Trạm sạc VinFast (Đang đồng bộ...)", 
+                            "address": "Home Charging (Estimated)" if is_home_charge else "VinFast Charging Station (Syncing...)", 
                             "kwh": round(added_kwh, 2), 
                             "duration": round(core._last_data.get("api_last_charge_duration", 0))
                         }
@@ -572,7 +572,7 @@ class MQTTManager:
                             hist_data.insert(0, local_rec)
                             with open(history_file, 'w', encoding='utf-8') as f: json.dump(hist_data[:20], f, ensure_ascii=False)
                             
-                            # Tăng biến đếm để thẻ JS tự động Refresh file JSON
+                            # Increment counter so JS card auto-refreshes JSON file
                             if is_home_charge:
                                 core._last_data["api_home_charge_sessions"] = int(core._last_data.get("api_home_charge_sessions", 0)) + 1
                             else:
@@ -632,16 +632,16 @@ class MQTTManager:
             open_doors = []
             
             door_map = {
-                "10351_00002_00050": "Cửa lái", "10351_00001_00050": "Cửa phụ",
-                "10351_00004_00050": "Cửa sau T", "10351_00003_00050": "Cửa sau P",
-                "10351_00006_00050": "Cốp", "10351_00005_00050": "Capo"
+                "10351_00002_00050": "Driver Door", "10351_00001_00050": "Passenger Door",
+                "10351_00004_00050": "Rear Left Door", "10351_00003_00050": "Rear Right Door",
+                "10351_00006_00050": "Trunk", "10351_00005_00050": "Hood"
             }
             for dk, dname in door_map.items():
                 if str(core._last_data.get(dk, "0")) == "1": open_doors.append(dname)
                 
             window_map = {
-                "34215_00002_00002": "Kính lái", "34215_00001_00002": "Kính phụ",
-                "34215_00004_00002": "Kính sau T", "34215_00003_00002": "Kính sau P"
+                "34215_00002_00002": "Driver Window", "34215_00001_00002": "Passenger Window",
+                "34215_00004_00002": "Rear Left Window", "34215_00003_00002": "Rear Right Window"
             }
             for wk, wname in window_map.items():
                 if str(core._last_data.get(wk, "0")) == "2": open_doors.append(wname)
@@ -660,14 +660,14 @@ class MQTTManager:
             
             warnings = []
             if open_doors: 
-                warnings.append(f"Đang mở {', '.join(open_doors)}")
+                warnings.append(f"Open: {', '.join(open_doors)}")
             if is_parked and is_unlocked: 
-                warnings.append("Chưa khóa xe")
+                warnings.append("Not locked")
             
             if warnings:
                 core._last_data["api_security_warning"] = " | ".join(warnings)
             else:
-                core._last_data["api_security_warning"] = "An toàn"
+                core._last_data["api_security_warning"] = "Safe"
         except Exception as e: 
             pass
 

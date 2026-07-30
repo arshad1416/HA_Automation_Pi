@@ -1,7 +1,7 @@
 from . import const_vf3, const_vf5, const_vfe34, const_vf6, const_vf7, const_vf8, const_vf9
 
 def get_vehicle_profile(model_name):
-    """Router tự động trả về đúng từ điển Sensor và Specs theo tên xe."""
+    """Router that automatically returns the correct Sensor and Specs dictionaries by vehicle name."""
     name = str(model_name).upper().replace(" ", "")
     
     if "VF3" in name:
@@ -19,5 +19,5 @@ def get_vehicle_profile(model_name):
     elif "VF9" in name:
         return {"sensors": const_vf9.SENSORS, "spec": const_vf9.SPEC}
     
-    # Mặc định an toàn (Fallback cho xe lạ)
+    # Safe default (Fallback for unknown vehicles)
     return {"sensors": const_vf5.SENSORS, "spec": const_vf5.SPEC}

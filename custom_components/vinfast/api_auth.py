@@ -177,7 +177,7 @@ class AuthManager:
             })
             try:
                 res = requests.post(f"{self.core.api_base}/{path}", headers=headers, json=payload, timeout=15)
-                # CHÌA KHÓA: Nếu API trả về 401 hoặc 403 (Hết hạn Token), tự động Login lấy Token mới và gọi lại
+                # KEY: If API returns 401 or 403 (Token expired), auto-login to get new Token and retry
                 if res.status_code in [401, 403]:
                     _LOGGER.warning(f"VinFast: Token expired ({res.status_code}), refreshing...")
                     if not self.refresh_access_token():
@@ -185,7 +185,7 @@ class AuthManager:
                     continue
                 return res
             except Exception as e:
-                _LOGGER.error(f"VinFast: Lỗi kết nối API POST - {e}")
+                _LOGGER.error(f"VinFast: API POST connection error - {e}")
                 time.sleep(2)
         return None
 
@@ -299,12 +299,12 @@ class AuthManager:
             if not force and now - getattr(self.core, '_last_station_fetch_time', 0) < 60:
                 return
 
-            # XỬ LÝ LỖI KHỞI ĐỘNG KHI XE ĐANG NGỦ (Không có MQTT): Lấy vị trí từ bộ nhớ đệm
+            # HANDLE STARTUP ERROR WHEN VEHICLE IS SLEEPING (No MQTT): Get location from cache
             lat_str = getattr(self.core, '_last_lat_lon', "").split(',')[0] if getattr(self.core, '_last_lat_lon', "") else self.core._last_data.get("api_last_lat")
             lon_str = getattr(self.core, '_last_lat_lon', "").split(',')[1] if getattr(self.core, '_last_lat_lon', "") else self.core._last_data.get("api_last_lon")
             
             if not lat_str or not lon_str: 
-                _LOGGER.warning("VinFast: Chưa xác định được tọa độ, không thể tìm trạm sạc.")
+                _LOGGER.warning("VinFast: Coordinates not determined, cannot find charging stations.")
                 return
             
             remain_range = safe_float(self.core._last_data.get("api_calc_remain_range", self.core._last_data.get("34180_00001_00007", 50)))
@@ -339,14 +339,14 @@ class AuthManager:
                         total += int(evse.get("totalEvse", 0))
                         power_kw = int(evse.get("type", 0)) / 1000 if int(evse.get("type", 0)) >= 1000 else int(evse.get("type", 0))
                         if power_kw > max_power: max_power = int(power_kw)
-                    stations.append({"id": st.get("locationId", ""), "name": st.get("stationName", "Trạm sạc VinFast").strip(), "lat": st_lat, "lng": st_lng, "power": max_power, "avail": avail, "total": total, "dist": dist})
+                    stations.append({"id": st.get("locationId", ""), "name": st.get("stationName", "VinFast Charging Station").strip(), "lat": st_lat, "lng": st_lng, "power": max_power, "avail": avail, "total": total, "dist": dist})
                 
                 stations = sorted(stations, key=lambda x: x["dist"])
                 self.core._last_data["api_nearby_stations"] = json.dumps(stations)
-                _LOGGER.warning(f"VinFast: Đã tải thành công {len(stations)} trạm sạc lân cận (Bán kính {search_radius/1000}km)")
+                _LOGGER.warning(f"VinFast: Successfully loaded {len(stations)} nearby charging stations (Radius {search_radius/1000}km)")
                 self.core.trigger_callbacks()
         except Exception as e: 
-            _LOGGER.error(f"VinFast: Lỗi tải trạm sạc - {e}")
+            _LOGGER.error(f"VinFast: Error loading charging stations - {e}")
 
     def fetch_charging_history(self):
         max_retries = 5 
@@ -389,7 +389,7 @@ class AuthManager:
                     if actual_public_sessions >= prev_public_count or prev_public_count == 0:
                         detailed_history = []
                         for s in valid_sessions[:10]:
-                            addr = s.get("chargingStationAddress", "Trạm sạc VinFast")
+                            addr = s.get("chargingStationAddress", "VinFast Charging Station")
                             kwh = safe_float(s.get("totalKWCharged", 0))
                             p_time = safe_float(s.get("pluggedTime", 0))
                             u_time = safe_float(s.get("unpluggedTime", 0))

@@ -4,5 +4,5 @@ SPEC = {"capacity": 18.64, "range": 210, "ev_kwh_per_km": 0.09, "gas_km_per_lite
 SENSORS = PLATFORM_A_BASE.copy()
 SENSORS.update(VIRTUAL_SENSORS)
 SENSORS.update({
-    "34193_00001_00019": ("Mục tiêu sạc (Target)", "%", "mdi:battery-charging-100", "battery"),
+    "34193_00001_00019": ("Charge Target", "%", "mdi:battery-charging-100", "battery"),
 })

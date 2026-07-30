@@ -5,5 +5,5 @@ SENSORS = PLATFORM_A_BASE.copy()
 SENSORS.update(VIRTUAL_SENSORS)
 SENSORS.update(REAR_DOORS_WINDOWS)
 SENSORS.update({
-    "34193_00001_00014": ("Mục tiêu sạc (Target)", "%", "mdi:battery-charging-100", "battery"),
+    "34193_00001_00014": ("Charge Target", "%", "mdi:battery-charging-100", "battery"),
 })

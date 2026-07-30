@@ -8,13 +8,13 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 KNOWN_COMMANDS = {
-    1: ("Khóa cửa", "mdi:lock", "khoa_cua"),
-    2: ("Mở cửa", "mdi:lock-open", "mo_cua"),
-    3: ("Bấm còi", "mdi:bullhorn", "bam_coi"),
-    4: ("Nháy đèn", "mdi:car-light-high", "nhay_den"),
-    5: ("Bật điều hòa", "mdi:fan", "bat_dieu_hoa"),
-    6: ("Tắt điều hòa", "mdi:fan-off", "tat_dieu_hoa"),
-    7: ("Mở cốp", "mdi:car-back", "mo_cop"),
+    1: ("Lock Doors", "mdi:lock", "khoa_cua"),
+    2: ("Unlock Doors", "mdi:lock-open", "mo_cua"),
+    3: ("Horn", "mdi:bullhorn", "bam_coi"),
+    4: ("Flash Lights", "mdi:car-light-high", "nhay_den"),
+    5: ("AC On", "mdi:fan", "bat_dieu_hoa"),
+    6: ("AC Off", "mdi:fan-off", "tat_dieu_hoa"),
+    7: ("Open Trunk", "mdi:car-back", "mo_cop"),
 }
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
@@ -22,7 +22,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     buttons = []
 
     # 1. TẠO NÚT LOCAL: TÌM TRẠM SẠC
-    buttons.append(VinFastLocalAction(api, "Tìm trạm sạc", "mdi:ev-station", "tim_tram_sac", "fetch_nearby_stations"))
+    buttons.append(VinFastLocalAction(api, "Find Charging Station", "mdi:ev-station", "tim_tram_sac", "fetch_nearby_stations"))
     
     # 2. TẠO NÚT NẮN BẢN ĐỒ (MAGIC STAFF)
     buttons.append(VinFastFixMapButton(api))
@@ -32,7 +32,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         if cmd_id in KNOWN_COMMANDS:
             name, icon, slug = KNOWN_COMMANDS[cmd_id]
         else:
-            name = f"Lệnh Raw (Mã {cmd_id})"
+            name = f"Raw Command (Code {cmd_id})"
             icon = "mdi:flask-outline"
             slug = f"raw_cmd_{cmd_id}"
             
@@ -68,14 +68,14 @@ class VinFastLocalAction(ButtonEntity):
         if hasattr(self.api, self._action_method):
             method = getattr(self.api, self._action_method)
             await self.hass.async_add_executor_job(method)
-            _LOGGER.info(f"VinFast: Đã chạy hàm nội bộ [{self._attr_name}]")
+            _LOGGER.info(f"VinFast: Executed internal function [{self._attr_name}]")
 
 
 class VinFastFixMapButton(ButtonEntity):
     def __init__(self, api):
         self.api = api
         self._attr_has_entity_name = True
-        self._attr_name = "Tối ưu Bản đồ"
+        self._attr_name = "Optimize Map"
         self._attr_icon = "mdi:magic-staff"
         
         model_slug = slugify(getattr(api, "vehicle_model_display", "VF")).replace("_", "")
@@ -94,11 +94,11 @@ class VinFastFixMapButton(ButtonEntity):
         }
 
     async def async_press(self) -> None:
-        _LOGGER.warning("VinFast: Đã bấm nút Tối ưu Bản đồ. Đang ép chạy lại thuật toán (Force=True)...")
+        _LOGGER.warning("VinFast: Optimize Map button pressed. Forcing re-run of algorithm (Force=True)...")
         if hasattr(self.api, "async_fix_all_historical_trips"):
             self.hass.async_create_task(self.api.async_fix_all_historical_trips(force=True))
         else:
-            _LOGGER.error("VinFast: Lỗi - Không tìm thấy hàm nắn đường trong api.py")
+            _LOGGER.error("VinFast: Error - Map matching function not found in api.py")
 
 
 class VinFastRemoteCommand(ButtonEntity):
@@ -125,7 +125,7 @@ class VinFastRemoteCommand(ButtonEntity):
         }
 
     async def async_press(self) -> None:
-        _LOGGER.warning(f"VinFast: Đang gửi lệnh [{self._attr_name}] với mã = {self._cmd_id}...")
+        _LOGGER.warning(f"VinFast: Sending command [{self._attr_name}] with code = {self._cmd_id}...")
         result = await self.hass.async_add_executor_job(self.api.send_remote_command, self._cmd_id)
-        if result: _LOGGER.warning(f"VinFast: Lệnh {self._cmd_id} Thành Công!")
-        else: _LOGGER.error(f"VinFast: Lệnh {self._cmd_id} Thất Bại.")
+        if result: _LOGGER.warning(f"VinFast: Command {self._cmd_id} Successful!")
+        else: _LOGGER.error(f"VinFast: Command {self._cmd_id} Failed.")

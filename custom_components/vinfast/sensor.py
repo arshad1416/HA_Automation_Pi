@@ -63,96 +63,96 @@ class VinFastSensor(SensorEntity):
             vi = getattr(self.api, "lang", "vi") == "vi"
 
             if self._device_key in ["34183_00001_00001", "34187_00000_00000"]:
-                if val_clean == "1": self._attr_native_value = "P (Đỗ)" if vi else "P (Park)"
-                elif val_clean == "2": self._attr_native_value = "R (Lùi)" if vi else "R (Reverse)"
+                if val_clean == "1": self._attr_native_value = "P (Park)" if vi else "P (Park)"
+                elif val_clean == "2": self._attr_native_value = "R (Reverse)" if vi else "R (Reverse)"
                 elif val_clean == "3": self._attr_native_value = "N (Mo)" if vi else "N (Neutral)"
                 elif val_clean == "4": self._attr_native_value = "D (Đi)" if vi else "D (Drive)"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34183_00001_00029":
-                if val_clean == "0": self._attr_native_value = "Nhả phanh tay" if vi else "Released"
-                elif val_clean == "1": self._attr_native_value = "Kéo phanh tay" if vi else "Engaged"
+                if val_clean == "0": self._attr_native_value = "Released" if vi else "Released"
+                elif val_clean == "1": self._attr_native_value = "Engaged" if vi else "Engaged"
                 else: self._attr_native_value = val
                 
             elif self._device_key == "34183_00001_00010":
-                if val_clean == "2": self._attr_native_value = "Chưa sẵn sàng" if vi else "Not Ready"
-                elif val_clean == "3": self._attr_native_value = "Sẵn sàng chạy (Ready)" if vi else "Ready to Drive"
+                if val_clean == "2": self._attr_native_value = "Not Ready" if vi else "Not Ready"
+                elif val_clean == "3": self._attr_native_value = "Ready to Drive" if vi else "Ready to Drive"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34193_00001_00031":
-                if val_clean == "1": self._attr_native_value = "Đã cắm súng sạc" if vi else "Plugged In"
-                elif val_clean == "0": self._attr_native_value = "Chưa cắm súng sạc" if vi else "Unplugged"
+                if val_clean == "1": self._attr_native_value = "Plugged In" if vi else "Plugged In"
+                elif val_clean == "0": self._attr_native_value = "Unplugged" if vi else "Unplugged"
                 else: self._attr_native_value = val
 
             elif self._device_key in ["34193_00001_00005", "34183_00000_00001"]:
-                if val_clean == "1": self._attr_native_value = "Đang sạc" if vi else "Charging"
-                elif val_clean == "2": self._attr_native_value = "Sạc xong (Đầy)" if vi else "Fully Charged"
-                elif val_clean in ["0", "3", "4"]: self._attr_native_value = "Không Sạc" if vi else "Not Charging"
+                if val_clean == "1": self._attr_native_value = "Charging" if vi else "Charging"
+                elif val_clean == "2": self._attr_native_value = "Fully Charged" if vi else "Fully Charged"
+                elif val_clean in ["0", "3", "4"]: self._attr_native_value = "Not Charging" if vi else "Not Charging"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34213_00001_00003":
-                if val_clean == "1": self._attr_native_value = "Đã Khóa" if vi else "Locked"
-                elif val_clean == "0": self._attr_native_value = "Mở Khóa" if vi else "Unlocked"
+                if val_clean == "1": self._attr_native_value = "Locked" if vi else "Locked"
+                elif val_clean == "0": self._attr_native_value = "Unlocked" if vi else "Unlocked"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34234_00001_00003":
-                if val_clean in ["1", "2"]: self._attr_native_value = "Đã Bật An Ninh" if vi else "Armed"
-                elif val_clean == "0": self._attr_native_value = "Đã Tắt An Ninh" if vi else "Disarmed"
+                if val_clean in ["1", "2"]: self._attr_native_value = "Armed" if vi else "Armed"
+                elif val_clean == "0": self._attr_native_value = "Disarmed" if vi else "Disarmed"
                 else: self._attr_native_value = val
 
             # --- LOGIC PHÂN BIỆT THÔNG MINH CHO MÃ 34206 ---
             elif self._device_key == "34206_00001_00001":
-                if self._attr_name == "Khóa tổng": # Xử lý cho nhóm VF5/6/7
-                    if val_clean == "1": self._attr_native_value = "Đã Khóa" if vi else "Locked"
-                    elif val_clean == "0": self._attr_native_value = "Mở Khóa" if vi else "Unlocked"
+                if self._attr_name == "Master Lock": # Handle VF5/6/7 group
+                    if val_clean == "1": self._attr_native_value = "Locked" if vi else "Locked"
+                    elif val_clean == "0": self._attr_native_value = "Unlocked" if vi else "Unlocked"
                     else: self._attr_native_value = val
-                else: # Xử lý cho nhóm VF3/8/9 (Cắm trại)
-                    if val_clean == "1": self._attr_native_value = "Đang Bật" if vi else "On"
-                    elif val_clean == "0": self._attr_native_value = "Đã Tắt" if vi else "Off"
+                else: # Handle VF3/8/9 group (Camp mode)
+                    if val_clean == "1": self._attr_native_value = "On" if vi else "On"
+                    elif val_clean == "0": self._attr_native_value = "Off" if vi else "Off"
                     else: self._attr_native_value = val
 
             elif self._device_key in ["34205_00001_00001", "34207_00001_00001", "34186_00005_00004"]:
-                if val_clean == "1": self._attr_native_value = "Đang Bật" if vi else "On"
-                elif val_clean == "0": self._attr_native_value = "Đã Tắt" if vi else "Off"
+                if val_clean == "1": self._attr_native_value = "On" if vi else "On"
+                elif val_clean == "0": self._attr_native_value = "Off" if vi else "Off"
                 else: self._attr_native_value = val
 
             elif self._device_key.startswith("10351_"):
-                if val_clean == "0": self._attr_native_value = "Đóng kín" if vi else "Closed"
-                elif val_clean == "1": self._attr_native_value = "Đang mở" if vi else "Open"
+                if val_clean == "0": self._attr_native_value = "Closed" if vi else "Closed"
+                elif val_clean == "1": self._attr_native_value = "Open" if vi else "Open"
                 else: self._attr_native_value = val
 
             elif self._device_key.startswith("34215_"):
-                if val_clean == "1": self._attr_native_value = "Đóng kín" if vi else "Closed"
-                elif val_clean == "2": self._attr_native_value = "Đang mở" if vi else "Open"
-                elif val_clean == "0": self._attr_native_value = "Đóng kín" if vi else "Closed"
+                if val_clean == "1": self._attr_native_value = "Closed" if vi else "Closed"
+                elif val_clean == "2": self._attr_native_value = "Open" if vi else "Open"
+                elif val_clean == "0": self._attr_native_value = "Closed" if vi else "Closed"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34184_00001_00004":
-                if val_clean == "0": self._attr_native_value = "Tắt" if vi else "Off"
-                elif val_clean == "1": self._attr_native_value = "Bật" if vi else "On"
+                if val_clean == "0": self._attr_native_value = "Off" if vi else "Off"
+                elif val_clean == "1": self._attr_native_value = "On" if vi else "On"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34184_00001_00011":
-                if val_clean == "0": self._attr_native_value = "Lấy gió ngoài" if vi else "Fresh Air"
-                elif val_clean == "1": self._attr_native_value = "Lấy gió trong" if vi else "Recirculation"
+                if val_clean == "0": self._attr_native_value = "Fresh Air" if vi else "Fresh Air"
+                elif val_clean == "1": self._attr_native_value = "Recirculation" if vi else "Recirculation"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34184_00001_00012":
-                if val_clean == "1": self._attr_native_value = "Gió mặt" if vi else "Face"
-                elif val_clean == "2": self._attr_native_value = "Gió mặt & chân" if vi else "Face & Floor"
-                elif val_clean == "3": self._attr_native_value = "Gió chân" if vi else "Floor"
-                elif val_clean == "4": self._attr_native_value = "Gió kính & chân" if vi else "Defrost & Floor"
-                elif val_clean == "0": self._attr_native_value = "Gió mặt (Auto)" if vi else "Face (Auto)"
+                if val_clean == "1": self._attr_native_value = "Face" if vi else "Face"
+                elif val_clean == "2": self._attr_native_value = "Face & Floor" if vi else "Face & Floor"
+                elif val_clean == "3": self._attr_native_value = "Floor" if vi else "Floor"
+                elif val_clean == "4": self._attr_native_value = "Defrost & Floor" if vi else "Defrost & Floor"
+                elif val_clean == "0": self._attr_native_value = "Face (Auto)" if vi else "Face (Auto)"
                 else: self._attr_native_value = val
 
             elif self._device_key == "34184_00001_00009":
-                if val_clean == "0": self._attr_native_value = "Tắt sấy" if vi else "Defrost Off"
-                elif val_clean == "1": self._attr_native_value = "Bật sấy kính lái" if vi else "Defrost On"
+                if val_clean == "0": self._attr_native_value = "Defrost Off" if vi else "Defrost Off"
+                elif val_clean == "1": self._attr_native_value = "Defrost On" if vi else "Defrost On"
                 else: self._attr_native_value = val
 
             elif self._device_key in ["34213_00004_00003", "56789_00001_00005"]:
-                if val_clean == "0": self._attr_native_value = "Tắt" if vi else "Off"
-                elif val_clean == "1": self._attr_native_value = "Bật" if vi else "On"
+                if val_clean == "0": self._attr_native_value = "Off" if vi else "Off"
+                elif val_clean == "1": self._attr_native_value = "On" if vi else "On"
                 else: self._attr_native_value = val
 
             elif self._device_key in ["34184_00001_00025", "34184_00001_00041"]:
@@ -161,17 +161,17 @@ class VinFastSensor(SensorEntity):
             elif self._device_key in ["00006_00001_00000", "00006_00001_00001"]:
                 try:
                     num_val = float(val)
-                    if num_val == 0.0: self._attr_native_value = "Đang tìm GPS..." if vi else "Searching GPS..."
+                    if num_val == 0.0: self._attr_native_value = "Searching GPS..." if vi else "Searching GPS..."
                     else: self._attr_native_value = round(num_val, 6)
                 except (ValueError, TypeError):
-                    self._attr_native_value = "Không có tín hiệu" if vi else "No Signal"
+                    self._attr_native_value = "No Signal" if vi else "No Signal"
 
             elif self._device_key == "api_trip_route":
-                self._attr_native_value = "Dữ liệu Map" if vi else "Map Data"
+                self._attr_native_value = "Map Data" if vi else "Map Data"
                 self._attr_extra_state_attributes = {"route_json": val if isinstance(val, str) else json.dumps(val)}
                 
             elif self._device_key == "api_nearby_stations":
-                self._attr_native_value = "Danh sách Trạm" if vi else "Station List"
+                self._attr_native_value = "Station List" if vi else "Station List"
                 self._attr_extra_state_attributes = {"stations": val if isinstance(val, str) else json.dumps(val)}
                 
             elif self._device_key == "api_public_charge_sessions":
@@ -185,27 +185,27 @@ class VinFastSensor(SensorEntity):
                         address = item.get("address", "")[:35]
                         kwh = item.get("kwh", 0)
                         dur = item.get("duration", 0)
-                        formatted_history.append(f"{date} | {kwh} kWh ({dur} {'phút' if vi else 'mins'}) | {address}")
-                    self._attr_extra_state_attributes = {("Lịch sử chi tiết" if vi else "Detailed History"): formatted_history if formatted_history else (["Chưa có dữ liệu"] if vi else ["No data"])}
+                        formatted_history.append(f"{date} | {kwh} kWh ({dur} {'mins' if vi else 'mins'}) | {address}")
+                    self._attr_extra_state_attributes = {("Detailed History" if vi else "Detailed History"): formatted_history if formatted_history else (["No data"] if vi else ["No data"])}
                 except Exception:
-                    self._attr_extra_state_attributes = {"Lỗi" if vi else "Error": "Không thể parse dữ liệu sạc" if vi else "Parse error"}
+                    self._attr_extra_state_attributes = {"Error" if vi else "Error": "Parse error" if vi else "Parse error"}
 
             elif self._device_key == "api_home_charge_sessions":
                 self._attr_native_value = val
                 home_kwh = self.api._last_data.get("api_home_charge_kwh", 0.0)
-                self._attr_extra_state_attributes = {("Tổng điện năng (kWh)" if vi else "Total Energy (kWh)"): round(home_kwh, 2)}
+                self._attr_extra_state_attributes = {("Total Energy (kWh)" if vi else "Total Energy (kWh)"): round(home_kwh, 2)}
 
             elif self._device_key == "api_best_efficiency_band":
                 attrs = {}
                 stats = getattr(self.api, '_eff_stats', {})
                 for k, v in stats.items():
                     if v["drops"] > 0:
-                        attrs[f"Dải {k} km/h" if vi else f"Band {k} km/h"] = f"{round(v['dist'] / v['drops'], 2)} km/1%"
-                self._attr_extra_state_attributes = attrs if attrs else {("Trạng thái" if vi else "Status"): ("Chưa đủ dữ liệu sụt pin" if vi else "Not enough data")}
+                        attrs[f"Band {k} km/h" if vi else f"Band {k} km/h"] = f"{round(v['dist'] / v['drops'], 2)} km/1%"
+                self._attr_extra_state_attributes = attrs if attrs else {("Status" if vi else "Status"): ("Not enough data" if vi else "Not enough data")}
                 self._attr_native_value = val
 
             elif self._device_key == "api_ai_advisor":
-                val_str = str(val) if val else ("Chờ AI phân tích..." if vi else "Waiting for AI...")
+                val_str = str(val) if val else ("Waiting for AI..." if vi else "Waiting for AI...")
                 self._attr_extra_state_attributes = {"full_text": val_str}
                 self._attr_native_value = val_str[:250] + "..." if len(val_str) > 250 else val_str
 
@@ -215,8 +215,8 @@ class VinFastSensor(SensorEntity):
                     home = int(float(self.api._last_data.get("api_home_charge_sessions", 0)))
                     self._attr_native_value = pub + home
                     self._attr_extra_state_attributes = {
-                        "Sạc tại trạm": pub,
-                        "Sạc tại nhà": home
+                        "Station Charging": pub,
+                        "Home Charging": home
                     }
                 except Exception:
                     self._attr_native_value = val
@@ -227,8 +227,8 @@ class VinFastSensor(SensorEntity):
                     if raw_dict:
                         self._attr_extra_state_attributes = raw_dict.copy()
                     else:
-                        self._attr_extra_state_attributes = {"Trạng thái": "Chờ bản tin MQTT..."}
-                    val_str = str(val) if val else "Đang hoạt động"
+                        self._attr_extra_state_attributes = {"Status": "Waiting for MQTT message..."}
+                    val_str = str(val) if val else "Active"
                     self._attr_native_value = val_str[:250] + "..." if len(val_str) > 250 else val_str
                 except Exception: pass
                 

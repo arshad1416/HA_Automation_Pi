@@ -91,7 +91,7 @@ def get_projected_pt(pt, pt_a, pt_b, allow_extend_start=False, allow_extend_end=
     d = haversine_distance(pt[0], pt[1], py, px)
     return [py, px], t, d
 
-# Hàm giữ nguyên nhưng không gọi tự động để tránh cắt sai
+# Function kept but not called automatically to avoid incorrect splitting
 def trim_route_to_projections(offset_route, coords):
     if len(offset_route) < 2 or len(coords) < 2: return offset_route
     raw_start = coords[0]
@@ -142,7 +142,7 @@ def trim_route_to_projections(offset_route, coords):
     return final_route
 
 def light_cleanup(coords, min_dist=0.1):
-    """Chỉ loại bỏ những điểm hoàn toàn trùng lặp để tránh lỗi toán học chia cho 0"""
+    """Remove only completely duplicate points to avoid division by zero errors"""
     if len(coords) < 2: return coords
     cleaned = [coords[0]]
     for i in range(1, len(coords)):
@@ -153,7 +153,7 @@ def light_cleanup(coords, min_dist=0.1):
     return cleaned
 
 def offset_route_right(coords, offset_meters=1.5):
-    """Dạt lề phải 1.5m để đi đúng làn đường"""
+    """Offset 1.5m to the right to stay in the correct lane"""
     if not coords or len(coords) < 2: return coords
     shifted = []
     n = len(coords)
@@ -202,7 +202,7 @@ def moving_average_smooth(coords, window=3):
     return smoothed
 
 def kinematic_filter(raw_coords):
-    """Lọc bỏ các điểm nhảy tọa độ quá xa (Glitch) do lỗi thiết bị GPS"""
+    """Filter out coordinate jump glitches caused by GPS device errors"""
     if not raw_coords or len(raw_coords) < 2: return raw_coords
     cleaned = [raw_coords[0]]
     for i in range(1, len(raw_coords)):
@@ -214,7 +214,7 @@ def kinematic_filter(raw_coords):
         dt = max(1, t_curr - t_prev) if t_curr > 0 and t_prev > 0 else 2
         v_kmh = max(curr[2] if len(curr) > 2 else 0, prev[2] if len(prev) > 2 else 0)
         v_ms = v_kmh / 3.6
-        max_phys_dist = (v_ms * dt) + 150.0 # Khoảng sai số rộng rãi để không mất điểm
+        max_phys_dist = (v_ms * dt) + 150.0 # Generous error margin to avoid losing points
         if dist > max_phys_dist and dist > 300.0:
             continue
         cleaned.append(curr)
@@ -286,15 +286,15 @@ async def recursive_hybrid_match_async(session, chunk, chunk_bearings, chunk_tim
         raw_dist = calculate_route_length(chunk)
         api_dist = calculate_route_length(matched_coords)
         
-        # Ngăn chặn việc API tự ý kéo dài lộ trình vô lý (nhảy làn cao tốc, đi lòng vòng)
+        # Prevent API from unreasonably extending the route (highway lane jumps, detours)
         if raw_dist > 0 and api_dist > raw_dist * 1.50: 
-            _LOGGER.warning(f"      [-] {engine} đi vòng ({api_dist:.1f}m > {raw_dist:.1f}m). CẮT ĐÔI...")
+            _LOGGER.warning(f"      [-] {engine} detour ({api_dist:.1f}m > {raw_dist:.1f}m). SPLITTING...")
             return await split_and_recurse_async(session, chunk, chunk_bearings, chunk_timestamps, mapbox_token, stadia_token, depth)
             
-        _LOGGER.warning(f"      [+] Khớp {engine} HOÀN HẢO! (Dài API: {api_dist:.1f}m)")
+        _LOGGER.warning(f"      [+] {engine} PERFECT match! (API length: {api_dist:.1f}m)")
         return matched_coords
     else:
-        _LOGGER.warning(f"      [!] API ({engine}) từ chối đoạn nhiễu. CẮT ĐÔI...")
+        _LOGGER.warning(f"      [!] API ({engine}) rejected noisy segment. SPLITTING...")
         return await split_and_recurse_async(session, chunk, chunk_bearings, chunk_timestamps, mapbox_token, stadia_token, depth)
 
 async def split_and_recurse_async(session, chunk, chunk_bearings, chunk_timestamps, mapbox_token, stadia_token, depth):
@@ -307,10 +307,10 @@ async def split_and_recurse_async(session, chunk, chunk_bearings, chunk_timestam
 async def async_process_route(hass, raw_coords, mapbox_token, stadia_token):
     if not raw_coords or len(raw_coords) < 5: return raw_coords
     
-    _LOGGER.warning(f"[1] TỌA ĐỘ GỐC: {len(raw_coords)} điểm. Chiều dài: {calculate_route_length(raw_coords):.1f}m")
+    _LOGGER.warning(f"[1] RAW COORDINATES: {len(raw_coords)} points. Length: {calculate_route_length(raw_coords):.1f}m")
     session = async_get_clientsession(hass)
 
-    # BƯỚC 1: LÀM SẠCH LỖI VÀ NHIỄU (Bảo toàn 100% chuyến đi kể cả tắc đường)
+    # STEP 1: CLEAN ERRORS AND NOISE (Preserve 100% of trip including traffic jams)
     cleaned_raw = kinematic_filter(raw_coords)
     cleaned_raw = light_cleanup(cleaned_raw, min_dist=0.1)
     if len(cleaned_raw) < 2: return raw_coords
@@ -345,7 +345,7 @@ async def async_process_route(hass, raw_coords, mapbox_token, stadia_token):
         chunk_t = global_timestamps[i:i+CHUNK_SIZE]
         if len(chunk) < 2: continue
         
-        _LOGGER.warning(f"--- Đang xử lý Chặng: {i} đến {i+len(chunk)} ---")
+        _LOGGER.warning(f"--- Processing Segment: {i} to {i+len(chunk)} ---")
         matched_chunk = await recursive_hybrid_match_async(session, chunk, chunk_b, chunk_t, mapbox_token, stadia_token)
 
         if i > 0 and len(final_matched_route) > 0 and len(matched_chunk) > 0:
@@ -355,13 +355,13 @@ async def async_process_route(hass, raw_coords, mapbox_token, stadia_token):
             
         await asyncio.sleep(0.1 if is_mapbox else 0.5) 
         
-    _LOGGER.warning(f"[3] BẢN ĐỒ TRẢ VỀ: {len(final_matched_route)} điểm.")
+    _LOGGER.warning(f"[3] MAP RETURNED: {len(final_matched_route)} points.")
 
     # BƯỚC 4: GÁN TỐC ĐỘ VÀ TỊNH TIẾN LUÔN SÁT LỀ PHẢI
     route_with_speed = assign_speeds(final_matched_route, cleaned_raw)
     offset_route = offset_route_right(route_with_speed, offset_meters=1.5)
 
-    # BƯỚC 5: KHÓA CHẶT ĐIỂM ĐẦU VÀ CUỐI VỚI RAW GPS (Bắt buộc điểm nối trip phải chuẩn xác)
+    # STEP 5: LOCK START AND END POINTS TO RAW GPS (Trip connection points must be accurate)
     if len(offset_route) >= 2 and len(raw_coords) >= 2:
         offset_route[0][0] = raw_coords[0][0]
         offset_route[0][1] = raw_coords[0][1]
@@ -398,10 +398,10 @@ async def async_get_or_process_trip(hass, trip_id, raw_coords, config_entry):
     cache_data = await hass.async_add_executor_job(load_cache, hass)
     
     if str(trip_id) in cache_data:
-        _LOGGER.debug(f"VinFast: Đã tìm thấy tuyến đường {trip_id} trong Cache.")
+        _LOGGER.debug(f"VinFast: Found route {trip_id} in Cache.")
         return cache_data[str(trip_id)]
         
-    _LOGGER.info(f"VinFast: Đang nắn lại tuyến đường {trip_id} bằng công nghệ Hybrid Map Matching...")
+    _LOGGER.info(f"VinFast: Re-matching route {trip_id} using Hybrid Map Matching...")
     processed_route = await async_process_route(hass, raw_coords, mapbox_token, stadia_token)
     
     cache_data[str(trip_id)] = processed_route

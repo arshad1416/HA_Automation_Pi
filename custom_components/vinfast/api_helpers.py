@@ -29,7 +29,7 @@ def get_address_from_osm(lat, lon):
     return None
 
 def get_osrm_route(lat1, lon1, lat2, lon2):
-    """Lấy tuyến đường giữa 2 điểm (Dùng cho Smart Suggestion)"""
+    """Get route between 2 points (Used for Smart Suggestion)"""
     try:
         for server in OSRM_SERVERS:
             url = f"{server}/route/v1/driving/{lon1},{lat1};{lon2},{lat2}?overview=full&geometries=geojson&continue_straight=true"
@@ -51,34 +51,34 @@ def get_weather_data(lat, lon):
             temp = current.get("temperature")
             code = current.get("weathercode", 0)
             if temp is not None:
-                condition = "Quang đãng"
-                if code in [1, 2, 3]: condition = "Có mây"
-                elif code in [45, 48]: condition = "Sương mù"
-                elif code in [51, 53, 55, 61, 63, 65, 80, 81, 82]: condition = "Trời mưa"
-                elif code in [71, 73, 75, 85, 86]: condition = "Tuyết rơi"
-                elif code in [95, 96, 99]: condition = "Sấm chớp"
+                condition = "Clear"
+                if code in [1, 2, 3]: condition = "Cloudy"
+                elif code in [45, 48]: condition = "Foggy"
+                elif code in [51, 53, 55, 61, 63, 65, 80, 81, 82]: condition = "Rainy"
+                elif code in [71, 73, 75, 85, 86]: condition = "Snowy"
+                elif code in [95, 96, 99]: condition = "Thunderstorm"
                 
-                hvac = "Bình thường"
-                if temp >= 35: hvac = "Rất cao (Làm mát tối đa)"
-                elif temp >= 30: hvac = "Cao (Làm mát nhanh)"
-                elif temp <= 15: hvac = "Cao (Sưởi ấm)"
+                hvac = "Normal"
+                if temp >= 35: hvac = "Very High (Max cooling)"
+                elif temp >= 30: hvac = "High (Fast cooling)"
+                elif temp <= 15: hvac = "High (Heating)"
                 return {"temp": temp, "condition": condition, "hvac": hvac, "code": code}
     except: pass
     return None
 
 def get_ai_advice(api_key, ai_model, mode, data_payload, context_data):
-    if not api_key or api_key.strip() == "": return "Vui lòng nhập Google Gemini API Key."
-    temp = context_data.get("temp", "Không rõ")
-    cond = context_data.get("cond", "Không rõ")
-    hvac = context_data.get("hvac", "Bình thường")
+    if not api_key or api_key.strip() == "": return "Please enter your Google Gemini API Key."
+    temp = context_data.get("temp", "Unknown")
+    cond = context_data.get("cond", "Unknown")
+    hvac = context_data.get("hvac", "Normal")
     expected_km_per_1 = context_data.get("expected_km_per_1", 2.1)
 
     if mode == "weather" and data_payload:
-        prompt = f"CẢNH BÁO THỜI TIẾT: Nhiệt độ {data_payload.get('temp', temp)}C, {data_payload.get('cond', cond)}. Hãy viết 1 câu khuyên lái xe xe điện VinFast cách đi an toàn và chỉnh điều hòa."
+        prompt = f"WEATHER WARNING: Temperature {data_payload.get('temp', temp)}C, {data_payload.get('cond', cond)}. Write 1 sentence advising VinFast EV driver on safe driving and AC adjustment."
     elif mode == "anomaly" and data_payload:
-        prompt = f"SỤT PIN: Mất {round(data_payload.get('drop', 0), 2)}% để đi {round(data_payload.get('dist', 0), 2)}km ({round(data_payload.get('speed', 0), 1)}km/h). Gấp {round(expected_km_per_1, 2)}km bình thường. Nhiệt độ: {temp}C. Hãy đưa lời khuyên (1 câu)."
+        prompt = f"BATTERY DROP: Lost {round(data_payload.get('drop', 0), 2)}% to travel {round(data_payload.get('dist', 0), 2)}km ({round(data_payload.get('speed', 0), 1)}km/h). Normally {round(expected_km_per_1, 2)}km. Temperature: {temp}C. Give advice (1 sentence)."
     else:
-        prompt = f"TỔNG KẾT CHUYẾN ĐI: {context_data.get('trip_dist', 0)}km, tốc độ {context_data.get('trip_avg_speed', 0)}km/h. Thời tiết: {temp}C, {cond}. Đánh giá hiệu suất và cho lời khuyên (1 câu)."
+        prompt = f"TRIP SUMMARY: {context_data.get('trip_dist', 0)}km, speed {context_data.get('trip_avg_speed', 0)}km/h. Weather: {temp}C, {cond}. Evaluate performance and give advice (1 sentence)."
 
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{ai_model}:generateContent"
     for attempt in range(3):
@@ -86,8 +86,8 @@ def get_ai_advice(api_key, ai_model, mode, data_payload, context_data):
             res = requests.post(url, json={"contents": [{"parts": [{"text": prompt}]}]}, headers={"Content-Type": "application/json", "x-goog-api-key": api_key.strip()}, timeout=30)
             if res.status_code == 200:
                 text = res.json().get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
-                return text.replace("*", "").strip() if text else "Lỗi phản hồi AI."
+                return text.replace("*", "").strip() if text else "AI response error."
             if attempt < 2: time.sleep(3)
         except: 
             if attempt < 2: time.sleep(3)
-    return "❌ Lỗi kết nối Google AI."
+    return "Google AI connection error."

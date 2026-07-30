@@ -40,11 +40,11 @@ class VinFastAPI:
         self._running = False
         self.callbacks = []
         
-        ai_state = ("Hệ thống AI đang chờ..." if self.lang == "vi" else "AI is waiting...") if self.gemini_api_key else "DISABLED"
+        ai_state = ("AI is waiting..." if self.lang == "vi" else "AI is waiting...") if self.gemini_api_key else "DISABLED"
         
         self._last_data = {
-            "api_vehicle_status": "Đang kết nối..." if self.lang == "vi" else "Connecting...",
-            "api_current_address": "Đang tải..." if self.lang == "vi" else "Loading...",
+            "api_vehicle_status": "Connecting..." if self.lang == "vi" else "Connecting...",
+            "api_current_address": "Loading..." if self.lang == "vi" else "Loading...",
             "api_trip_route": "[]",
             "api_nearby_stations": "[]",
             "api_trip_distance": 0.0,
@@ -64,10 +64,10 @@ class VinFastAPI:
             "api_home_charge_kwh": 0.0,
             "api_home_charge_sessions": 0,
             "api_ai_advisor": ai_state,
-            "api_security_warning": "An toàn" if self.lang == "vi" else "Safe",
+            "api_security_warning": "Safe" if self.lang == "vi" else "Safe",
             "api_calc_range_per_percent": 0.0,
             "api_est_range_degradation": 0.0,
-            "api_debug_raw": "Chờ kết nối MQTT..." if self.lang == "vi" else "Waiting for MQTT..."
+            "api_debug_raw": "Waiting for MQTT..." if self.lang == "vi" else "Waiting for MQTT..."
         }  
         
         self._is_moving = False
@@ -214,7 +214,7 @@ class VinFastAPI:
         mapbox_token = self.options.get("mapbox_token", "")
         stadia_token = self.options.get("stadia_token", "")
 
-        _LOGGER.warning(f"VinFast: [TRIP {trip_id}] Bắt đầu đẩy {len(raw_route)} tọa độ lên lưới AI Map Matching...")
+        _LOGGER.warning(f"VinFast: [TRIP {trip_id}] Starting to push {len(raw_route)} coordinates to AI Map Matching grid...")
         smoothed_route = await async_process_route(self.hass, raw_route, mapbox_token, stadia_token)
 
         trip_file = target_trip_file if target_trip_file else os.path.join(WWW_DIR, f"vinfast_trips_{self.vin.lower()}.json")
@@ -244,7 +244,7 @@ class VinFastAPI:
                     self.trigger_callbacks()
                     
         except Exception as e:
-            _LOGGER.error(f"VinFast: Lỗi khi ghi Cache nắn đường: {e}")
+            _LOGGER.error(f"VinFast: Error writing map matching cache: {e}")
 
     async def async_fix_all_historical_trips(self, force=False):
         vin_str = self.vin.lower()
@@ -286,7 +286,7 @@ class VinFastAPI:
             except Exception as e: pass
                 
         if total_fixed > 0:
-            _LOGGER.warning(f"VinFast: HOÀN TẤT NẮN {total_fixed} CHUYẾN ĐI (Bao gồm cả Archive)!")
+            _LOGGER.warning(f"VinFast: COMPLETED map matching for {total_fixed} TRIPS (including Archive)!")
 
     def _load_state(self):
         if not self.vin: return
@@ -418,4 +418,4 @@ class VinFastAPI:
                         self.hass.loop
                     )
         except Exception as e: 
-            _LOGGER.error(f"VinFast: Lỗi lưu chuyến đi: {e}")
+            _LOGGER.error(f"VinFast: Error saving trip: {e}")
