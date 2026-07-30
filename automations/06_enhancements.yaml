@@ -798,3 +798,420 @@
         {% endif %}
       target:
       - media_player.downstairs_echo_dot
+
+# =============================================================================
+# VF9-SPECIFIC AUTOMATIONS (VinFast VF9, VIN RLLV2CJA5RH000847)
+# Added 2026-07-30. These use VF9-native entities (tire pressure, doors,
+# climate buttons, security, trip efficiency, software versions, etc.) and
+# complement the cross-vehicle EV automations above.
+#
+# State-value notes (VinFast integration reports string states on sensors):
+#   - Charging status (trang_thai_sac): "Charging" when active.
+#   - Door/window/trunk/hood sensors: open-ish states treated as open when
+#     lowercased state is in ['open','on','mo'].
+#   - Tire pressure threshold 32 is PSI-equivalent (units TBD per integration).
+#   - "unknown"/"unavailable"/"none" states are filtered before numeric compare.
+# =============================================================================
+
+# V1: Tire pressure low alert. Checks all four tires and reports which are low.
+- id: vf9_tire_pressure_alert
+  alias: "VF9: Tire pressure low alert"
+  description: >-
+    When any VF9 tire pressure sensor changes, check all four tires and alert
+    if any reads below 32 PSI. Reports which tire(s) are low.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_trai
+    trigger: state
+    id: front_left
+  - entity_id: sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_phai
+    trigger: state
+    id: front_right
+  - entity_id: sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_trai
+    trigger: state
+    id: rear_left
+  - entity_id: sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_phai
+    trigger: state
+    id: rear_right
+  conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.state not in ['unknown','unavailable','none',''] }}"
+  actions:
+  - variables:
+      fl: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_trai') | default(0,true) | float(0) }}"
+      fr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_phai') | default(0,true) | float(0) }}"
+      rl: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_trai') | default(0,true) | float(0) }}"
+      rr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_phai') | default(0,true) | float(0) }}"
+      low_list: >
+        {{ (['Front-Left'] if 0 < fl < 32 else []) +
+           (['Front-Right'] if 0 < fr < 32 else []) +
+           (['Rear-Left'] if 0 < rl < 32 else []) +
+           (['Rear-Right'] if 0 < rr < 32 else []) }}
+  - condition: template
+    value_template: "{{ low_list | length > 0 }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Tire Pressure Low"
+      message: "{{ low_list | join(', ') }} {{ 'tires are' if (low_list | length) > 1 else 'tire is' }} below 32 PSI. Values: FL={{ fl }}, FR={{ fr }}, RL={{ rl }}, RR={{ rr }}."
+
+# V2: Security alarm alert. Immediate push + Alexa announce on non-normal status.
+- id: vf9_security_alarm_alert
+  alias: "VF9: Security alarm alert"
+  description: >-
+    When the VF9 security alarm status or security warning changes to a
+    non-normal state, alert immediately via push and Alexa announce.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_trang_thai_an_ninh
+    trigger: state
+    id: alarm_status
+  - entity_id: sensor.vf9_rllv2cja5rh000847_canh_bao_an_ninh
+    trigger: state
+    id: alarm_warning
+  conditions:
+  - condition: template
+    value_template: >
+      {{ trigger.to_state.state not in ['unknown','unavailable','none','','Normal','normal','Disarmed','disarmed','Off','off','None'] }}
+  actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Security Alert"
+      message: "VF9 security {{ trigger.id }} changed to: {{ trigger.to_state.state }}. Check your vehicle immediately."
+  - action: notify.alexa_media
+    data:
+      data: {type: announce}
+      message: "Security alert. The VinFast VF9 security status has changed to {{ trigger.to_state.state }}. Please check the vehicle immediately."
+      target:
+      - media_player.everywhere
+
+# V3: Door/window/trunk/hood open while parked. Alerts after 10 min if still open.
+- id: vf9_door_open_when_parked
+  alias: "VF9: Door or window open while parked"
+  description: >-
+    When any VF9 door, window, trunk, or hood opens while the vehicle is parked
+    (speed 0), wait 10 minutes and alert if still open.
+  mode: parallel
+  max: 10
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_tai_xe
+    trigger: state
+    id: driver_door
+  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_phu
+    trigger: state
+    id: passenger_door
+  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_sau_trai
+    trigger: state
+    id: rear_left_door
+  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_sau_phu
+    trigger: state
+    id: rear_right_door
+  - entity_id: sensor.vf9_rllv2cja5rh000847_cop_sau
+    trigger: state
+    id: trunk
+  - entity_id: sensor.vf9_rllv2cja5rh000847_nap_capo
+    trigger: state
+    id: hood
+  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_tai_xe
+    trigger: state
+    id: driver_window
+  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_phu
+    trigger: state
+    id: passenger_window
+  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_sau_tai_xe
+    trigger: state
+    id: rear_left_window
+  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_sau_phu
+    trigger: state
+    id: rear_right_window
+  conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.state | lower in ['open','on','mo'] }}"
+  - condition: template
+    value_template: "{{ states('sensor.vf9_rllv2cja5rh000847_toc_do_hien_tai') | default(0,true) | float(0) == 0 }}"
+  actions:
+  - delay: "00:10:00"
+  - condition: template
+    value_template: "{{ trigger.to_state.state | lower in ['open','on','mo'] }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Open While Parked"
+      message: "{{ trigger.to_state.attributes.friendly_name | default(trigger.id | replace('_',' ')) }} has been open for 10 min while parked."
+
+# V4: Auto-lock doors when Arshad departs.
+- id: vf9_auto_lock_on_departure
+  alias: "VF9: Auto-lock on departure"
+  description: >-
+    When Arshad leaves home, press the VF9 lock doors button and notify.
+  mode: single
+  triggers:
+  - entity_id: person.arshad14
+    to: not_home
+    trigger: state
+  conditions: []
+  actions:
+  - action: button.press
+    target:
+      entity_id: button.vf9_rllv2cja5rh000847_khoa_cua
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Locked"
+      message: "Arshad left home. VF9 doors lock command sent."
+
+# V5: Battery health monitor. Alerts when SOH < 80 or degradation > 20.
+- id: vf9_battery_health_monitor
+  alias: "VF9: Battery health monitor"
+  description: >-
+    Alert when VF9 SOH drops below 80% or degradation rises above 20%. Reports
+    SOH and degradation percentage.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_suc_khoe_pin_soh
+    below: 80
+    trigger: numeric_state
+    id: soh_low
+  - entity_id: sensor.vf9_rllv2cja5rh000847_do_chai_pin_theo_soh
+    above: 20
+    trigger: numeric_state
+    id: degradation_high
+  conditions: []
+  actions:
+  - variables:
+      soh: "{{ states('sensor.vf9_rllv2cja5rh000847_suc_khoe_pin_soh') | default(0,true) | float(0) }}"
+      deg: "{{ states('sensor.vf9_rllv2cja5rh000847_do_chai_pin_theo_soh') | default(0,true) | float(0) }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Battery Health"
+      message: "{{ 'SOH low' if trigger.id == 'soh_low' else 'Degradation high' }}. SOH: {{ soh }}%, degradation: {{ deg }}%. Consider battery service."
+
+# V6: Charging session summary (enhanced reconciliation).
+- id: vf9_charging_session_summary
+  alias: "VF9: Charging session summary"
+  description: >-
+    Enhanced VF9 charging reconciliation. When charging stops, report SoC at
+    plug-in and unplug, energy delivered, average power, charging efficiency,
+    and cost.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_trang_thai_sac
+    from: 'Charging'
+    for: "00:02:00"
+    trigger: state
+  conditions: []
+  actions:
+  - variables:
+      soc_plug_in: "{{ states('sensor.vf9_rllv2cja5rh000847_pin_luc_cam_sac_lan_cuoi') | default('unknown', true) }}"
+      soc_unplug: "{{ states('sensor.vf9_rllv2cja5rh000847_pin_luc_rut_sac_lan_cuoi') | default('unknown', true) }}"
+      energy_kwh: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_sac_tai_nha') | default(0,true) | float(0) }}"
+      avg_power: "{{ states('sensor.vf9_rllv2cja5rh000847_cong_suat_sac_trung_binh_lan_cuoi') | default(0,true) | float(0) }}"
+      efficiency: "{{ states('sensor.vf9_rllv2cja5rh000847_hieu_suat_sac_thuc_te_lan_cuoi') | default('unknown', true) }}"
+      trip_cost: "{{ states('sensor.vf9_rllv2cja5rh000847_chi_phi_sac_chuyen_di') | default('unknown', true) }}"
+      total_cost: "{{ states('sensor.vf9_rllv2cja5rh000847_tong_chi_phi_sac_quy_doi') | default('unknown', true) }}"
+      soc_now: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0,true) | float(0) }}"
+  - action: notify.grizzl_ev_phones
+    data:
+      title: "VF9 Charging Summary"
+      message: >
+        Session ended. SoC: {{ soc_plug_in }}% -> {{ soc_unplug }}% (now {{ soc_now }}%).
+        Energy: {{ energy_kwh | round(2) }} kWh. Avg power: {{ avg_power | round(0) }} W.
+        Efficiency: {{ efficiency }}. Trip cost: {{ trip_cost }}. Total cost: {{ total_cost }}.
+
+# V7: Low battery charger finder. Presses find-station button, then reports.
+- id: vf9_low_battery_charger_finder
+  alias: "VF9: Low battery charger finder"
+  description: >-
+    When VF9 SoC drops below 20%, press the Find Charging Station button and
+    notify with nearby stations info.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_phan_tram_pin
+    below: 20
+    trigger: numeric_state
+  conditions:
+  - condition: template
+    value_template: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0,true) | float(0) > 0 }}"
+  actions:
+  - action: button.press
+    target:
+      entity_id: button.vf9_rllv2cja5rh000847_tim_tram_sac
+  - delay: "00:00:15"
+  - variables:
+      soc: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0,true) | float(0) }}"
+      nearby: "{{ states('sensor.vf9_rllv2cja5rh000847_tram_sac_lan_can') | default('searching...', true) }}"
+      location: "{{ states('sensor.vf9_rllv2cja5rh000847_vi_tri_xe_dia_chi') | default('unknown', true) }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Low Battery"
+      message: "VF9 at {{ soc }}%. Find-station command sent. Nearby: {{ nearby }}. Location: {{ location }}."
+
+# V8: Climate preconditioning before calendar event. Complements Ioniq 6 version.
+- id: vf9_climate_precondition
+  alias: "VF9: Climate preconditioning before event"
+  description: >-
+    20 min before a calendar event, if Arshad is home and weather is extreme,
+    press the VF9 AC ON button and announce. Complements the Ioniq 6
+    preconditioning automation.
+  mode: single
+  triggers:
+  - trigger: calendar
+    entity_id: calendar.arshad14_gmail_com
+    event: start
+    offset: "-00:20:00"
+  conditions:
+  - condition: state
+    entity_id: person.arshad14
+    state: home
+  - condition: template
+    value_template: >
+      {{ state_attr('weather.forecast_home','temperature') | default(20,true) | float(20) < 5 or
+         state_attr('weather.forecast_home','temperature') | default(20,true) | float(20) > 28 }}
+  actions:
+  - action: button.press
+    target:
+      entity_id: button.vf9_rllv2cja5rh000847_bat_dieu_hoa
+  - action: notify.alexa_media
+    data:
+      data: {type: announce}
+      message: "Preconditioning the VF9 for your {{ trigger.calendar_event.summary }} in 20 minutes."
+      target:
+      - media_player.downstairs_echo_dot
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Preconditioning"
+      message: "VF9 AC turned on ahead of {{ trigger.calendar_event.summary }}. Temp: {{ state_attr('weather.forecast_home','temperature') }}C."
+
+# V9: Pet Mode temperature monitor. Alerts on unsafe interior temp.
+- id: vf9_pet_mode_temperature_monitor
+  alias: "VF9: Pet Mode temperature monitor"
+  description: >-
+    When Pet Mode is active and interior temperature exceeds 35C or drops
+    below 0C, alert about pet safety.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_nhiet_do_trong_xe
+    trigger: state
+    id: interior_temp
+  conditions:
+  - condition: template
+    value_template: "{{ states('sensor.vf9_rllv2cja5rh000847_che_do_thu_cung_pet') | default('',true) | lower in ['on','active','enabled','bat'] }}"
+  - condition: template
+    value_template: "{{ trigger.to_state.state not in ['unknown','unavailable','none',''] }}"
+  - condition: template
+    value_template: "{{ trigger.to_state.state | float(999) > 35 or trigger.to_state.state | float(999) < 0 }}"
+  actions:
+  - variables:
+      temp: "{{ trigger.to_state.state | float(0) }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Pet Safety Alert"
+      message: "Pet Mode active but interior temp is {{ temp }}C. Check on your pet immediately."
+  - action: notify.alexa_media
+    data:
+      data: {type: announce}
+      message: "Pet safety alert. The VF9 interior temperature is {{ temp }} degrees. Check your pet immediately."
+      target:
+      - media_player.everywhere
+
+# V10: Trip efficiency report. Fires when trip energy updates (new trip).
+- id: vf9_trip_efficiency_report
+  alias: "VF9: Trip efficiency report"
+  description: >-
+    When trip energy consumption changes (new trip completed), report trip
+    energy, efficiency vs lifetime average, and distance if available.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_dien_nang_tieu_thu_trip
+    trigger: state
+    id: trip_energy
+  conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.state not in ['unknown','unavailable','none','','0','0.0'] }}"
+  actions:
+  - variables:
+      trip_energy: "{{ trigger.to_state.state | default(0,true) | float(0) }}"
+      trip_eff: "{{ states('sensor.vf9_rllv2cja5rh000847_hieu_suat_tieu_thu_trip') | default('unknown', true) }}"
+      lifetime_eff: "{{ states('sensor.vf9_rllv2cja5rh000847_hieu_suat_tieu_thu_trung_binh_xe') | default('unknown', true) }}"
+      trip_dist: "{{ states('sensor.vf9_rllv2cja5rh000847_quang_duong_chuyen_di_trip') | default('unknown', true) }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Trip Report"
+      message: >
+        Trip complete. Energy: {{ trip_energy | round(2) }} kWh.
+        Efficiency: {{ trip_eff }} Wh/km (lifetime avg {{ lifetime_eff }}).
+        {{ 'Distance: ' ~ trip_dist ~ ' km.' if trip_dist not in ['unknown','none'] else '' }}
+
+# V11: Weekly charging cost summary (Sunday 20:00).
+- id: vf9_charging_cost_weekly_summary
+  alias: "VF9: Weekly charging cost summary"
+  description: >-
+    Every Sunday at 20:00, report total VF9 charging cost, home vs station
+    sessions, kWh charged, and equivalent gas savings.
+  mode: single
+  triggers:
+  - at: "20:00:00"
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: "{{ now().isoweekday() == 7 }}"
+  actions:
+  - variables:
+      total_cost: "{{ states('sensor.vf9_rllv2cja5rh000847_tong_chi_phi_sac_quy_doi') | default(0,true) | float(0) }}"
+      trip_cost: "{{ states('sensor.vf9_rllv2cja5rh000847_chi_phi_sac_chuyen_di') | default(0,true) | float(0) }}"
+      total_kwh: "{{ states('sensor.vf9_rllv2cja5rh000847_tong_dien_nang_da_sac') | default(0,true) | float(0) }}"
+      home_kwh: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_sac_tai_nha') | default(0,true) | float(0) }}"
+      gas_equiv: "{{ states('sensor.vf9_rllv2cja5rh000847_tong_chi_phi_xang_tuong_duong') | default(0,true) | float(0) }}"
+  - action: notify.grizzl_ev_phones
+    data:
+      title: "VF9 Weekly Charging Summary"
+      message: >
+        This week: {{ total_kwh | round(1) }} kWh charged ({{ home_kwh | round(1) }} at home).
+        Total charging cost: {{ total_cost }}. Trip cost: {{ trip_cost }}.
+        Equivalent gas cost: {{ gas_equiv }}. Savings: {{ (gas_equiv - total_cost) | round(2) }}.
+
+# V12: Software update alert. Fires when FRP or T-Box version changes.
+- id: vf9_software_update_alert
+  alias: "VF9: Software update alert"
+  description: >-
+    When the VF9 firmware (FRP) or T-Box version changes, notify about the new
+    software update.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_phien_ban_phan_mem_frp
+    trigger: state
+    id: frp
+  - entity_id: sensor.vf9_rllv2cja5rh000847_phien_ban_t_box
+    trigger: state
+    id: tbox
+  conditions:
+  - condition: template
+    value_template: "{{ trigger.to_state.state not in ['unknown','unavailable','none',''] and trigger.from_state.state not in ['unknown','unavailable','none',''] }}"
+  actions:
+  - variables:
+      component: "{{ 'Firmware (FRP)' if trigger.id == 'frp' else 'T-Box' }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Software Update"
+      message: "VF9 {{ component }} updated: {{ trigger.from_state.state }} -> {{ trigger.to_state.state }}."
+
+# V13: Odometer maintenance reminder. Daily check at 09:00 for 10,000 km intervals.
+- id: vf9_odometer_maintenance_reminder
+  alias: "VF9: Odometer maintenance reminder"
+  description: >-
+    Daily check at 09:00. When the VF9 odometer crosses a 10,000 km service
+    interval (within the first 100 km of a new band), alert about service.
+  mode: single
+  triggers:
+  - at: "09:00:00"
+    trigger: time
+  conditions:
+  - condition: template
+    value_template: "{{ states('sensor.vf9_rllv2cja5rh000847_tong_odo') | default(0,true) | float(0) > 0 }}"
+  - condition: template
+    value_template: "{{ (states('sensor.vf9_rllv2cja5rh000847_tong_odo') | default(0,true) | float(0) % 10000) < 100 }}"
+  actions:
+  - variables:
+      odo: "{{ states('sensor.vf9_rllv2cja5rh000847_tong_odo') | default(0,true) | float(0) }}"
+      interval: "{{ (odo // 10000) | int }}"
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "VF9 Service Reminder"
+      message: "VF9 odometer: {{ odo | round(0) }} km. Crossed into service interval {{ (interval + 1) * 10000 }} km. Schedule a service."
