@@ -33,6 +33,7 @@ class VinFastAPI:
         self.aws_region = cfg["AWS_REGION"]
         self.cognito_pool_id = cfg["COGNITO_POOL_ID"]
         self.iot_endpoint = cfg["IOT_ENDPOINT"]
+        self.audience = cfg.get("AUDIENCE", self.api_base)
         
         self.access_token = None
         self._running = False

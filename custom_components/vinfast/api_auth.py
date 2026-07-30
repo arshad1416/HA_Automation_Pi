@@ -49,7 +49,7 @@ class AuthManager:
         res = self._safe_request("POST", url, json={
             "client_id": self.core.auth0_client_id, "grant_type": "password",
             "username": self.core.email, "password": self.core.password,
-            "scope": "openid profile email offline_access", "audience": self.core.api_base
+            "scope": "openid profile email offline_access", "audience": self.core.audience
         }, timeout=15) 
         if res and res.status_code == 200:
             self.core.access_token = res.json()["access_token"]
