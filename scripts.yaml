@@ -1,0 +1,32 @@
+# Kitchen — stepped dim (simulated fade)
+# Five of the seven kitchen lights ignore `transition` (localtuya main/island
+# lights and the HomeKit cabinet strips), so a single turn_on with a transition
+# steps instantly. This script fakes a fade by walking brightness through a
+# ladder of levels with a short pause between steps. Callers pass only the
+# lights that are currently ON — turn_on would relight anything that is off.
+kitchen_lights_step_dim:
+  alias: "Kitchen — stepped dim (simulated fade)"
+  description: >-
+    Simulated fade for kitchen lights without native transition support.
+    Steps the given lights through the given brightness levels, 3 s apart.
+  mode: parallel
+  max: 5
+  fields:
+    lights:
+      description: List of light entities to dim (only lights currently on)
+      example: "['light.island_light_light']"
+    levels:
+      description: Brightness percentage steps, in order (e.g. [60, 35, 15])
+      example: "[60, 35, 15]"
+  sequence:
+    - repeat:
+        for_each: "{{ levels }}"
+        sequence:
+          - action: light.turn_on
+            target:
+              entity_id: "{{ lights }}"
+            data:
+              brightness_pct: "{{ repeat.item | int }}"
+            continue_on_error: true
+          - delay:
+              seconds: 3

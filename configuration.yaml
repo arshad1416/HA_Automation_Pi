@@ -701,7 +701,10 @@ template:
           expected_range: "0.74-0.80 kWh/% when healthy (Ioniq 6 77.4 kWh pack)"
 
 shell_command:
-  start_tuya_kitchen_bridge: "for pid in $(pgrep -f tuya_kitchen_bridge.py); do kill $pid 2>/dev/null; done; nohup python3 /config/tuya_kitchen_bridge.py > /config/tuya_bridge.log 2>&1 &"
+  # [t] bracket trick: the pattern must not match this shell_command's own
+  # process, or the kill loop terminates itself (return code -15) before
+  # nohup ever runs — which left the bridge dead after every HA restart.
+  start_tuya_kitchen_bridge: "for pid in $(pgrep -f '[t]uya_kitchen_bridge.py'); do kill $pid 2>/dev/null; done; nohup python3 /config/tuya_kitchen_bridge.py > /config/tuya_bridge.log 2>&1 &"
 
 
 # Google Assistant — control HA via Google Home speakers

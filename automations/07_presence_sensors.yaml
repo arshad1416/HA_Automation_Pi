@@ -203,19 +203,22 @@
 # pushed by tuya_kitchen_bridge.py). The kitchen mmWave radar no longer drives
 # these lights — that sensor was physically moved to the master bedroom.
 #
-#   no presence for 3 min  -> all seven dim to 15%
-#   no presence for 5 min  -> all seven off      (3 min trigger + 2 min delay)
+#   no presence for 3 min  -> lights that are ON dim to 15% (stepped fade)
+#   no presence for 5 min  -> those lights off      (3 min trigger + 2 min delay)
 #   presence returns       -> back up, level depends on time of night
 #
-# Turning the main light off at the 5 min mark re-triggers kitchen_light_sync
-# (02_kitchen_light_sync.yaml), whose light_off branch turns off the same
-# ambient lights we just turned off. Harmless duplicate, same end state.
+# Only lights that are currently ON are dimmed — the old version turned on
+# ALL seven at 15%, which switched on the main light if it was off and
+# re-triggered kitchen_light_sync (flicker feedback loop). Five of the seven
+# lights ignore `transition`, so script.kitchen_lights_step_dim simulates the
+# fade in brightness steps. Adaptive lighting is paused for the cabinet strips
+# during the fade so it doesn't re-apply its own brightness mid-dim.
 # -----------------------------------------------------------------------------
 - id: kitchen_ambient_graduated_dimming
   alias: "Kitchen — Ambient graduated dimming on no presence"
   description: >-
-    Dim every kitchen light to 15% after 3 min without Tuya presence, then
-    turn them off at the 5 min mark.
+    Dim the kitchen lights that are on to 15% after 3 min without Tuya
+    presence, then turn them off at the 5 min mark.
   mode: restart
   triggers:
   - entity_id: binary_sensor.kitchen_presence
@@ -233,36 +236,47 @@
       entity_id: light.kitchen_light_light_1
       state: "on"
   actions:
-  - action: light.turn_on
+  # Only touch lights that are actually on — the stepped fade uses
+  # light.turn_on and would relight anything that is off.
+  - variables:
+      kitchen_on: >
+        {{ ['light.cabinet_light_strip_left_nanoleaf_light_strip',
+            'light.cabinet_light_strip_center_nanoleaf_light_strip',
+            'light.cabinet_light_strip_right_nanoleaf_light_strip',
+            'light.nanoleaf_multicolor_ls',
+            'light.nanoleaf_multicolor_ls_2',
+            'light.island_light_light',
+            'light.kitchen_light_light_1']
+           | select('is_state', 'on') | list }}
+  # Pause adaptive lighting so it doesn't fight the fade.
+  - action: adaptive_lighting.set_manual_control
     data:
-      brightness_pct: 15
-      transition: 10
-    target:
-      entity_id:
-      - light.cabinet_light_strip_left_nanoleaf_light_strip
-      - light.cabinet_light_strip_center_nanoleaf_light_strip
-      - light.cabinet_light_strip_right_nanoleaf_light_strip
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-      - light.island_light_light
-      - light.kitchen_light_light_1
+      entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+      manual_control: true
+    continue_on_error: true
+  - action: script.kitchen_lights_step_dim
+    data:
+      lights: "{{ kitchen_on }}"
+      levels: [60, 35, 15]
   # 3 min trigger + 2 min delay = off at the 5 min mark.
   - delay: "00:02:00"
   - condition: state
     entity_id: binary_sensor.kitchen_presence
     state: "off"
-  - action: light.turn_off
+  - action: script.kitchen_lights_step_dim
     data:
-      transition: 5
+      lights: "{{ kitchen_on }}"
+      levels: [10, 5]
+  - action: light.turn_off
     target:
-      entity_id:
-      - light.cabinet_light_strip_left_nanoleaf_light_strip
-      - light.cabinet_light_strip_center_nanoleaf_light_strip
-      - light.cabinet_light_strip_right_nanoleaf_light_strip
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-      - light.island_light_light
-      - light.kitchen_light_light_1
+      entity_id: "{{ kitchen_on }}"
+    continue_on_error: true
+  # Fade finished — hand the strips back to adaptive lighting.
+  - action: adaptive_lighting.set_manual_control
+    data:
+      entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+      manual_control: false
+    continue_on_error: true
 
 - id: kitchen_ambient_restore_on_presence
   alias: "Kitchen — Ambient lights up on presence"
@@ -281,6 +295,13 @@
     entity_id: sun.sun
     state: below_horizon
   actions:
+  # Presence may have interrupted a dim sequence — hand the strips back to
+  # adaptive lighting before bringing the lights up.
+  - action: adaptive_lighting.set_manual_control
+    data:
+      entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+      manual_control: false
+    continue_on_error: true
   - choose:
     # ── Between bedtime and sunrise: dim, cabinet + Nanoleaf strips only ──
     # The 21:00-09:00 window matters. input_boolean.bedtime_shutdown_done stays

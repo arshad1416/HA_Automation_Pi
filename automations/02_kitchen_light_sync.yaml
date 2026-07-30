@@ -1,12 +1,12 @@
 # Kitchen Light Sync — follows the main kitchen light
 # When main light turns ON → sync ambient lights + conditional island
-# When main light turns OFF → all lights off
+# When main light turns OFF → dim-then-off (if kitchen is empty)
 - id: kitchen_light_sync
   alias: Kitchen Light Sync
   description: Syncs ambient lights with the main kitchen light. Island light turns on conditionally based on weather.
-  mode: queued
-  max: 10
-  max_exceeded: silent
+  # restart: the light_off branch now contains delays, so a main-light ON
+  # mid-sequence must cancel the pending off instead of queueing behind it.
+  mode: restart
   trigger:
     - platform: state
       entity_id: light.kitchen_light_light_1
@@ -16,7 +16,13 @@
       entity_id: light.kitchen_light_light_1
       to: "off"
       id: light_off
-  condition: []
+  condition:
+    # Only react to physical/user toggles of the main light. Automation-driven
+    # changes (kitchen_ambient_graduated_dimming turning it on at 15% or off at
+    # the 5 min mark) carry a parent context — reacting to those caused the
+    # flicker feedback loop (dim → sync snaps to 100%) and cut fades short.
+    - condition: template
+      value_template: "{{ trigger.to_state.context.parent_id is none }}"
   action:
     - choose:
         # ── Main light turned ON ─────────────────────────────────
@@ -36,6 +42,14 @@
               data:
                 brightness_pct: 100
                 transition: 1
+              continue_on_error: true
+
+            # Release adaptive lighting in case an aborted dim left the
+            # strips flagged as manually controlled.
+            - action: adaptive_lighting.set_manual_control
+              data:
+                entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+                manual_control: false
               continue_on_error: true
 
             # Island light: on if overcast/UV<4/rain/snow AND NOT quiet hours
@@ -73,24 +87,51 @@
             - condition: trigger
               id: light_off
           sequence:
-            # Island + strips: only off if kitchen is EMPTY.
+            # Island + strips: only handled if kitchen is EMPTY.
             # If someone is still present, leave them on —
             # kitchen_ambient_graduated_dimming (07_presence_sensors.yaml)
             # fades them to 15% at 3 min and off at 5 min once presence ends.
+            # Instead of an instant off, fade to 15% as a warning, wait a
+            # minute, then fade the rest of the way out.
             - if:
                 - condition: state
                   entity_id: binary_sensor.kitchen_presence
                   state: "off"
               then:
+                # Only dim lights that are actually on — the stepped fade
+                # uses light.turn_on and would relight anything that is off.
+                - variables:
+                    ambient_on: >
+                      {{ ['light.island_light_light',
+                          'light.cabinet_light_strip_right_nanoleaf_light_strip',
+                          'light.cabinet_light_strip_center_nanoleaf_light_strip',
+                          'light.cabinet_light_strip_left_nanoleaf_light_strip',
+                          'light.nanoleaf_multicolor_ls',
+                          'light.nanoleaf_multicolor_ls_2']
+                         | select('is_state', 'on') | list }}
+                - condition: template
+                  value_template: "{{ ambient_on | count > 0 }}"
+                # Pause adaptive lighting so it doesn't fight the fade.
+                - action: adaptive_lighting.set_manual_control
+                  data:
+                    entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+                    manual_control: true
+                  continue_on_error: true
+                - action: script.kitchen_lights_step_dim
+                  data:
+                    lights: "{{ ambient_on }}"
+                    levels: [60, 35, 15]
+                - delay: "00:01:00"
+                - condition: state
+                  entity_id: binary_sensor.kitchen_presence
+                  state: "off"
+                - action: script.kitchen_lights_step_dim
+                  data:
+                    lights: "{{ ambient_on }}"
+                    levels: [10, 5]
                 - action: light.turn_off
                   target:
-                    entity_id:
-                      - light.island_light_light
-                      - light.cabinet_light_strip_right_nanoleaf_light_strip
-                      - light.cabinet_light_strip_center_nanoleaf_light_strip
-                      - light.cabinet_light_strip_left_nanoleaf_light_strip
-                      - light.nanoleaf_multicolor_ls
-                      - light.nanoleaf_multicolor_ls_2
+                    entity_id: "{{ ambient_on }}"
                   continue_on_error: true
 
 # ── Presence guard: do not let the kitchen go dark while occupied ──────

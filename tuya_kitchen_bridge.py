@@ -31,6 +31,7 @@ DEVICE_IP = "192.168.0.61"
 LOCAL_KEY = "BLc9WCkI'?XaYmMB"
 PROTOCOL = 3.5
 POLL_INTERVAL = 2  # seconds between polls
+REPUSH_INTERVAL = 60  # re-push unchanged state every 60 s (stale-state failsafe)
 HA_URL = "http://localhost:8123"
 ENTITY_ID = "input_boolean.kitchen_tuya_presence"
 
@@ -101,6 +102,7 @@ def main():
     device = tinytuya.Device(DEVICE_ID, DEVICE_IP, LOCAL_KEY, version=PROTOCOL)
 
     last_state = None
+    last_push_time = 0.0
     jwt = get_ha_jwt()
     jwt_refresh_time = time.time()
     consecutive_errors = 0
@@ -132,7 +134,9 @@ def main():
                 # Determine if presence is detected
                 new_state = "on" if presence in PRESENCE_VALUES else "off"
 
-                # Only push to HA if state changed
+                # Push to HA on change, and re-push periodically so a stale
+                # input_boolean (e.g. reset to "off" by an HA restart) is
+                # corrected within REPUSH_INTERVAL even without a change.
                 if new_state != last_state:
                     log.info(
                         f"Presence changed: '{presence}' -> {new_state} "
@@ -140,6 +144,10 @@ def main():
                     )
                     set_ha_state(jwt, new_state)
                     last_state = new_state
+                    last_push_time = time.time()
+                elif time.time() - last_push_time > REPUSH_INTERVAL:
+                    set_ha_state(jwt, new_state)
+                    last_push_time = time.time()
 
                 consecutive_errors = 0
             else:
