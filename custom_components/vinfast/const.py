@@ -29,7 +29,7 @@ REGION_CONFIG = {
         "AWS_REGION": "ca-central-1",
         "COGNITO_POOL_ID": "ca-central-1:2355722b-3bf9-4ade-966b-e6590cb76909",
         "IOT_ENDPOINT": "iot.connected-car.vinfastauto.ca",
-        "AUDIENCE": "https://mobile.connected-car.vinfastauto.ca"
+        "AUDIENCE": "https://vinfast-ca.us.auth0.com/api/v2/"
     },
     "EU": {
         "AUTH0_DOMAIN": "vin3s.eu.auth0.com",

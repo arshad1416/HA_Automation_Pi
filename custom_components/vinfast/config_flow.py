@@ -157,7 +157,7 @@ class VinFastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def async_step_user(self, user_input=None):
         # BƯỚC 1: CHỌN AUTH MODE
         if user_input is not None:
-            auth_mode = user_input.get(CONF_AUTH_MODE, "device_code")
+            auth_mode = user_input.get(CONF_AUTH_MODE, "password")
             self._setup_data[CONF_AUTH_MODE] = auth_mode
             
             # Region is needed for both flows
@@ -170,9 +170,9 @@ class VinFastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 return await self.async_step_credentials()
 
         data_schema = vol.Schema({
-            vol.Required(CONF_AUTH_MODE, default="device_code"): vol.In({
-                "device_code": "Device Code Flow (Recommended - No password needed)",
-                "password": "Password Grant (Legacy)"
+            vol.Required(CONF_AUTH_MODE, default="password"): vol.In({
+                "password": "Password Grant (Recommended)",
+                "device_code": "Device Code Flow (Alternative)"
             }),
             vol.Required(CONF_REGION, default="US"): vol.In(REGIONS),
             vol.Required(CONF_LANGUAGE, default="en"): vol.In(LANGUAGES),
