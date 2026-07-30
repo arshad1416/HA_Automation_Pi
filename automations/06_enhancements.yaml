@@ -7,6 +7,7 @@
 #   person.home            -> person.arshad14
 #   person.larissa         -> binary_sensor.larissa_s_s22_presence (on=home/off=away)
 #   sensor.VEHICLE_*       -> sensor.ioniq_6_*  (Hyundai Ioniq 6, 77.4 kWh pack)
+#   sensor.VF9_*           -> sensor.vf9_rllv2cja5rh000847_* (VinFast VF9, ~123 kWh pack)
 #   switch.patio_door_light-> switch.patio_door_light_switch_1
 #   switch.foyer_light     -> switch.foyer_light_switch_1
 #   cover.family_room_blinds -> cover.family_room_blinds_curtain (LocalTuya)
@@ -342,11 +343,12 @@
 # -----------------------------------------------------------------------------
 
 # -----------------------------------------------------------------------------
-# Enhancement R: EV charging cross-validation (Grizzl-E vs Ioniq 6 telemetry).
-# Pack size: Ioniq 6 Long Range = 77.4 kWh -> ~0.774 kWh per 1% SoC.
+# Enhancement R: EV charging cross-validation.
+# Ioniq 6 Long Range = 77.4 kWh -> ~0.774 kWh per 1% SoC (Grizzl-E charger).
+# VinFast VF9 = ~123 kWh -> ~1.23 kWh per 1% SoC (VF9 native charging data).
 # -----------------------------------------------------------------------------
 
-# R1: Reconcile kWh delivered vs expected SoC gain at session end.
+# R1a: Reconcile kWh delivered vs expected SoC gain at session end (Ioniq 6 / Grizzl-E).
 - id: ev_soc_energy_reconciliation
   alias: "EV: SoC vs Grizzl-E energy reconciliation"
   description: >-
@@ -377,39 +379,83 @@
           Expected ~{{ expected_soc_gain }}% SoC gain (77.4 kWh pack).
           Current SoC: {{ soc_now }}%.
 
-# R2: Phantom drain / stale telemetry heuristic while parked at home.
+# R1b: Reconcile VF9 charging energy vs expected SoC gain at session end.
+- id: ev_vf9_soc_energy_reconciliation
+  alias: "EV: VF9 SoC vs charging energy reconciliation"
+  description: >-
+    When VF9 charging stops, compare the home charging energy (kWh) with the
+    expected SoC gain for a ~123 kWh pack and report the reconciliation.
+  mode: single
+  triggers:
+  - entity_id: sensor.vf9_rllv2cja5rh000847_trang_thai_sac
+    from: 'Charging'
+    for: "00:02:00"
+    trigger: state
+  conditions: []
+  actions:
+  - variables:
+      kwh_delivered: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_sac_tai_nha') | default(0, true) | float(0) }}"
+      soc_now: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
+      expected_soc_gain: "{{ (kwh_delivered | float(0) / 1.23) | round(1) }}"
+  - if:
+    - condition: template
+      value_template: "{{ kwh_delivered | float(0) > 2 }}"
+    then:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "VF9 Charging Reconciliation"
+        message: >
+          Session: {{ kwh_delivered | round(2) }} kWh delivered.
+          Expected ~{{ expected_soc_gain }}% SoC gain (123 kWh pack).
+          Current SoC: {{ soc_now }}%.
+
+# R2: Phantom drain / stale telemetry heuristic while parked at home (both vehicles).
 - id: ev_phantom_drain_detection
   alias: "EV: Phantom drain detection"
   description: >-
-    Every 6 h, if the car is home, not charging, and its SoC telemetry has been
-    static for >24 h at a non-full level, nudge to check for phantom drain.
+    Every 6 h, if either car is home, not charging, and its SoC telemetry has
+    been static for >24 h at a non-full level, nudge to check for phantom drain.
   mode: single
   triggers:
   - trigger: time_pattern
     hours: "/6"
-  conditions:
-  - condition: state
-    entity_id: binary_sensor.grizzl_e_charging
-    state: 'off'
-  - condition: state
-    entity_id: device_tracker.ioniq_6_location
-    state: 'home'
+  conditions: []
   actions:
   - variables:
-      current_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
-      soc_last_changed: >
+      ioniq_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+      ioniq_charging: "{{ is_state('binary_sensor.grizzl_e_charging', 'on') }}"
+      ioniq_home: "{{ is_state('device_tracker.ioniq_6_location', 'home') }}"
+      ioniq_last_changed: >
         {{ states.sensor.ioniq_6_ev_battery_level.last_changed
            if states.sensor.ioniq_6_ev_battery_level is defined else none }}
+      vf9_soc: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
+      vf9_charging: "{{ is_state('sensor.vf9_rllv2cja5rh000847_trang_thai_sac', 'Charging') }}"
+      vf9_last_changed: >
+        {{ states.sensor.vf9_rllv2cja5rh000847_phan_tram_pin.last_changed
+           if states.sensor.vf9_rllv2cja5rh000847_phan_tram_pin is defined else none }}
+      ioniq_stale: >
+        {{ ioniq_soc > 0 and ioniq_soc < 90 and ioniq_home and not ioniq_charging
+           and ioniq_last_changed is not none
+           and (as_timestamp(now()) - as_timestamp(ioniq_last_changed)) > 86400 }}
+      vf9_stale: >
+        {{ vf9_soc > 0 and vf9_soc < 90 and not vf9_charging
+           and vf9_last_changed is not none
+           and (as_timestamp(now()) - as_timestamp(vf9_last_changed)) > 86400 }}
   - if:
     - condition: template
-      value_template: >
-        {{ current_soc > 0 and current_soc < 90 and soc_last_changed is not none
-           and (as_timestamp(now()) - as_timestamp(soc_last_changed)) > 86400 }}
+      value_template: "{{ ioniq_stale or vf9_stale }}"
     then:
     - action: notify.mobile_app_cph2655
       data:
         title: "🔋 Possible Phantom Drain"
-        message: "EV at {{ current_soc }}% and telemetry unchanged >24 h while parked. If SoC keeps dropping, check 12V battery or vampire loads."
+        message: >
+          {% if ioniq_stale and vf9_stale %}
+          Both vehicles: Ioniq 6 at {{ ioniq_soc }}% and VF9 at {{ vf9_soc }}% — telemetry unchanged >24 h while parked. Check 12V battery or vampire loads.
+          {% elif ioniq_stale %}
+          Ioniq 6 at {{ ioniq_soc }}% and telemetry unchanged >24 h while parked. If SoC keeps dropping, check 12V battery or vampire loads.
+          {% else %}
+          VF9 at {{ vf9_soc }}% and telemetry unchanged >24 h while parked. If SoC keeps dropping, check 12V battery or vampire loads.
+          {% endif %}
 
 # R3: Vehicle says full but charger still drawing power -> investigate.
 - id: ev_charging_completion_verify
@@ -510,8 +556,8 @@
 - id: ev_calendar_departure_check
   alias: "EV: Calendar departure readiness check"
   description: >-
-    At 21:00 and 06:00, if the EV is below 40% and not charging, remind to plug
-    in ahead of the next calendar event.
+    At 21:00 and 06:00, if either EV is below 40% and not charging, remind to
+    plug in ahead of the next calendar event.
   mode: single
   triggers:
   - at: "21:00:00"
@@ -522,46 +568,70 @@
   actions:
   - variables:
       next_event: "{{ state_attr('calendar.arshad14_gmail_com', 'message') | default('None', true) }}"
-      soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
-      is_charging: "{{ is_state('binary_sensor.grizzl_e_charging', 'on') }}"
+      ioniq_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+      ioniq_charging: "{{ is_state('binary_sensor.grizzl_e_charging', 'on') }}"
+      vf9_soc: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
+      vf9_charging: "{{ is_state('sensor.vf9_rllv2cja5rh000847_trang_thai_sac', 'Charging') }}"
+      ioniq_low: "{{ ioniq_soc > 0 and ioniq_soc < 40 and not ioniq_charging }}"
+      vf9_low: "{{ vf9_soc > 0 and vf9_soc < 40 and not vf9_charging }}"
   - if:
     - condition: template
-      value_template: "{{ soc > 0 and soc < 40 and not is_charging }}"
+      value_template: "{{ ioniq_low or vf9_low }}"
     then:
     - action: notify.mobile_app_cph2655
       data:
         title: "🔋 EV Charge Reminder"
         message: >
-          Your EV is at {{ soc }}% and not plugged in.
+          {% if ioniq_low and vf9_low %}
+          Both vehicles low: Ioniq 6 at {{ ioniq_soc }}%, VF9 at {{ vf9_soc }}%. Neither is charging.
+          {% elif ioniq_low %}
+          Ioniq 6 is at {{ ioniq_soc }}% and not plugged in.
+          {% else %}
+          VF9 is at {{ vf9_soc }}% and not charging.
+          {% endif %}
           {% if next_event != 'None' %}Next event: {{ next_event }}.{% endif %}
           Off-peak (3.9c/kWh) {{ 'starts at 11PM' if now().hour < 23 else 'is active now' }}. Consider plugging in.
 
 - id: ev_no_event_offpeak_reminder
   alias: "EV: Off-peak charge reminder (no events)"
   description: >-
-    At 22:30, if SoC < 80% and not charging, remind that the 23:00 ULO window
-    is a cheap time to plug in.
+    At 22:30, if either EV SoC < 80% and not charging, remind that the 23:00
+    ULO window is a cheap time to plug in.
   mode: single
   triggers:
   - at: "22:30:00"
     trigger: time
-  conditions:
-  - condition: template
-    value_template: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) < 80 }}"
-  - condition: state
-    entity_id: binary_sensor.grizzl_e_charging
-    state: 'off'
+  conditions: []
   actions:
-  - action: notify.mobile_app_cph2655
-    data:
-      title: "🔋 Off-Peak Charging Window"
-      message: "EV at {{ states('sensor.ioniq_6_ev_battery_level') | default('?', true) }}%. No urgent events. Off-peak starts in 30min (3.9c/kWh). Good time to plug in."
+  - variables:
+      ioniq_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) }}"
+      ioniq_charging: "{{ is_state('binary_sensor.grizzl_e_charging', 'on') }}"
+      vf9_soc: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(100, true) | float(100) }}"
+      vf9_charging: "{{ is_state('sensor.vf9_rllv2cja5rh000847_trang_thai_sac', 'Charging') }}"
+      ioniq_needs: "{{ ioniq_soc < 80 and not ioniq_charging }}"
+      vf9_needs: "{{ vf9_soc < 80 and not vf9_charging }}"
+  - if:
+    - condition: template
+      value_template: "{{ ioniq_needs or vf9_needs }}"
+    then:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "🔋 Off-Peak Charging Window"
+        message: >
+          {% if ioniq_needs and vf9_needs %}
+          Ioniq 6 at {{ ioniq_soc }}%, VF9 at {{ vf9_soc }}%. Neither charging.
+          {% elif ioniq_needs %}
+          Ioniq 6 at {{ ioniq_soc }}%. Not charging.
+          {% else %}
+          VF9 at {{ vf9_soc }}%. Not charging.
+          {% endif %}
+          No urgent events. Off-peak starts in 30min (3.9c/kWh). Good time to plug in.
 
 - id: ev_long_trip_prep
   alias: "EV: Long trip preparation alert"
   description: >-
     12 h before a calendar event mentioning trip/travel/road trip, remind to
-    charge to 100% and consider climate preconditioning.
+    charge both vehicles to 100% and consider climate preconditioning.
   mode: single
   triggers:
   - trigger: calendar
@@ -576,13 +646,18 @@
          ('travel' in (trigger.calendar_event.summary | lower)) }}
   actions:
   - variables:
-      soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+      ioniq_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+      vf9_soc: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
   - action: notify.grizzl_ev_phones
     data:
       title: "🚗 Road Trip Prep"
       message: >
         "{{ trigger.calendar_event.summary }}" starts in ~12h.
-        EV at {{ soc }}%. {% if soc < 90 %}Charge to 100% tonight during off-peak.{% else %}Good charge level.{% endif %}
+        Ioniq 6 at {{ ioniq_soc }}%, VF9 at {{ vf9_soc }}%.
+        {% if ioniq_soc < 90 and vf9_soc < 90 %}Both need charging — top up to 100% tonight during off-peak.
+        {% elif ioniq_soc < 90 %}Ioniq 6 needs charging — top up to 100% tonight during off-peak. VF9 is good.
+        {% elif vf9_soc < 90 %}VF9 needs charging — top up to 100% tonight during off-peak. Ioniq 6 is good.
+        {% else %}Both vehicles at good charge levels.{% endif %}
         Consider climate preconditioning 20 min before departure.
 
 # -----------------------------------------------------------------------------
@@ -591,28 +666,43 @@
 - id: ev_arrival_low_charge_alert
   alias: "EV: Low charge arrival alert"
   description: >-
-    When Arshad arrives home with SoC < 30% and the charger idle, announce a
-    plug-in reminder on the downstairs Echo.
+    When Arshad arrives home and either EV has SoC < 30% with the charger idle,
+    announce a plug-in reminder on the downstairs Echo.
   mode: single
   triggers:
   - entity_id: person.arshad14
     to: home
     trigger: state
-  conditions:
-  - condition: template
-    value_template: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) < 30 }}"
-  - condition: template
-    value_template: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) < 50 }}"
+  conditions: []
   actions:
-  - delay: "00:05:00"
-  - condition: template
-    value_template: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) < 50 }}"
-  - action: notify.alexa_media
-    data:
-      data: {type: announce}
-      message: "Welcome home. Your car is at {{ states('sensor.ioniq_6_ev_battery_level') | default('unknown', true) }} percent. Consider plugging in to catch off-peak rates."
-      target:
-      - media_player.downstairs_echo_dot
+  - variables:
+      ioniq_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) }}"
+      vf9_soc: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(100, true) | float(100) }}"
+      charger_idle: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) < 50 }}"
+      ioniq_low: "{{ ioniq_soc < 30 }}"
+      vf9_low: "{{ vf9_soc < 30 }}"
+  - if:
+    - condition: template
+      value_template: "{{ (ioniq_low or vf9_low) and charger_idle }}"
+    then:
+    - delay: "00:05:00"
+    - condition: template
+      value_template: "{{ states('sensor.grizzl_e_power') | default(0, true) | float(0) < 50 }}"
+    - action: notify.alexa_media
+      data:
+        data: {type: announce}
+        message: >
+          Welcome home.
+          {% if ioniq_low and vf9_low %}
+          Ioniq 6 is at {{ ioniq_soc }} percent, VF9 at {{ vf9_soc }} percent.
+          {% elif ioniq_low %}
+          Your Ioniq 6 is at {{ ioniq_soc }} percent.
+          {% else %}
+          Your VF9 is at {{ vf9_soc }} percent.
+          {% endif %}
+          Consider plugging in to catch off-peak rates.
+        target:
+        - media_player.downstairs_echo_dot
 
 - id: away_mode_energy_optimization
   alias: "Energy: Away mode optimization"
@@ -641,8 +731,8 @@
 - id: ev_cold_weather_range_alert
   alias: "EV: Cold weather range alert"
   description: >-
-    At 20:00, if it's below -10C and SoC < 60%, warn that cold reduces range
-    and to charge overnight.
+    At 20:00, if it's below -10C and either EV SoC < 60%, warn that cold
+    reduces range and to charge overnight.
   mode: single
   triggers:
   - at: "20:00:00"
@@ -650,19 +740,36 @@
   conditions:
   - condition: template
     value_template: "{{ state_attr('weather.forecast_home', 'temperature') | default(20, true) | float(20) < -10 }}"
-  - condition: template
-    value_template: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) < 60 }}"
   actions:
-  - action: notify.grizzl_ev_phones
-    data:
-      title: "❄️ Cold Weather + Low EV"
-      message: "Forecast: {{ state_attr('weather.forecast_home', 'temperature') | default('?', true) }}°C. EV at {{ states('sensor.ioniq_6_ev_battery_level') | default('?', true) }}% — range reduced ~25% in cold. Charge tonight."
+  - variables:
+      ioniq_soc: "{{ states('sensor.ioniq_6_ev_battery_level') | default(100, true) | float(100) }}"
+      vf9_soc: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(100, true) | float(100) }}"
+      ioniq_low: "{{ ioniq_soc < 60 }}"
+      vf9_low: "{{ vf9_soc < 60 }}"
+  - if:
+    - condition: template
+      value_template: "{{ ioniq_low or vf9_low }}"
+    then:
+    - action: notify.grizzl_ev_phones
+      data:
+        title: "❄️ Cold Weather + Low EV"
+        message: >
+          Forecast: {{ state_attr('weather.forecast_home', 'temperature') | default('?', true) }}°C.
+          {% if ioniq_low and vf9_low %}
+          Ioniq 6 at {{ ioniq_soc }}%, VF9 at {{ vf9_soc }}%.
+          {% elif ioniq_low %}
+          Ioniq 6 at {{ ioniq_soc }}%.
+          {% else %}
+          VF9 at {{ vf9_soc }}%.
+          {% endif %}
+          Range reduced ~25% in cold. Charge tonight.
 
 - id: ev_climate_precondition_departure
   alias: "EV: Climate preconditioning before calendar event"
   description: >-
     20 min before a calendar event, if Arshad is home and it's very cold or hot,
-    start the Ioniq 6 remote climate and announce it.
+    start the Ioniq 6 remote climate and announce it. VF9 climate control not
+    yet available as a HA entity — mention it in the alert.
   mode: single
   triggers:
   - trigger: calendar
@@ -684,6 +791,10 @@
   - action: notify.alexa_media
     data:
       data: {type: announce}
-      message: "Your car is getting ready for your {{ trigger.calendar_event.summary }} in 20 minutes."
+      message: >
+        Your Ioniq 6 is getting ready for your {{ trigger.calendar_event.summary }} in 20 minutes.
+        {% if state_attr('weather.forecast_home', 'temperature') | default(20, true) | float(20) < 5 %}
+        Remember to precondition the VF9 manually if you plan to take it.
+        {% endif %}
       target:
       - media_player.downstairs_echo_dot
