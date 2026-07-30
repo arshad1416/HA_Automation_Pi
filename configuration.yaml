@@ -499,6 +499,10 @@ logger:
   default: warning
   logs:
     homeassistant.components.emulated_hue: error
+    # VinFast integration — debug logging to diagnose device code flow
+    custom_components.vinfast: debug
+    custom_components.vinfast.api_auth: debug
+    custom_components.vinfast.config_flow: debug
 # Rest API commands for Climate AI - Direct API calls bypassing conversation agent
 rest_command:
   climate_ai_gemini:

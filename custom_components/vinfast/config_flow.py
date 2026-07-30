@@ -150,6 +150,9 @@ class VinFastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._setup_data = {}
         self._device_flow_data = None
         self._poll_count = 0
+        self._device_token_result = None
+        self._poll_task = None
+        self._polling_active = False
 
     async def async_step_user(self, user_input=None):
         # BƯỚC 1: CHỌN AUTH MODE
@@ -191,64 +194,174 @@ class VinFastConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         })
         return self.async_show_form(step_id="credentials", data_schema=data_schema)
 
-    async def async_step_device_code(self, user_input=None):
-        """Device code flow - show URL/code and poll for token."""
-        errors = {}
-        
-        if user_input is not None:
-            # User clicked "Continue" or "I've authorized" - poll for token
-            if self._device_flow_data:
-                device_code = self._device_flow_data.get("device_code")
-                region = self._setup_data.get(CONF_REGION, "US")
-                
+    async def _auto_poll_loop(self):
+        """Background polling loop: polls every 5s until success, error, or expiry."""
+        import time as _time
+        device_code = self._device_flow_data.get("device_code")
+        region = self._setup_data.get(CONF_REGION, "US")
+        interval = self._device_flow_data.get("interval", 5)
+        expires_in = self._device_flow_data.get("expires_in", 900)
+        started_at = _time.time()
+
+        try:
+            while self._polling_active:
+                # Check expiry
+                if _time.time() - started_at >= expires_in:
+                    self._device_token_result = {"error": "expired_token"}
+                    return
+
+                # Wait before polling
+                await asyncio.sleep(interval)
+
+                if not self._polling_active:
+                    return
+
                 result = await self.hass.async_add_executor_job(
                     poll_device_token_sync, region, device_code
                 )
-                
-                if result and "access_token" in result:
-                    # Success! Store tokens and proceed
+                self._poll_count += 1
+
+                if not result:
+                    # Network error, retry
+                    continue
+
+                if result.get("access_token"):
+                    # Success!
+                    self._device_token_result = result
+                    return
+
+                error = result.get("error", "")
+                if error == "authorization_pending":
+                    # Keep polling
+                    continue
+                elif error == "slow_down":
+                    interval = min(interval + 5, 30)
+                    continue
+                elif error in ("expired_token", "access_denied", "invalid_grant"):
+                    self._device_token_result = result
+                    return
+                else:
+                    # Unknown error, keep trying
+                    _LOGGER.warning(f"VinFast device poll: unexpected error '{error}'")
+                    continue
+        except asyncio.CancelledError:
+            return
+        except Exception as e:
+            _LOGGER.error(f"VinFast auto-poll loop error: {e}")
+            self._device_token_result = {"error": "poll_error"}
+
+    async def async_step_device_code(self, user_input=None):
+        """Device code flow - show URL/code and auto-poll for token."""
+        import time as _time
+        errors = {}
+
+        if user_input is not None:
+            # User clicked Continue — check if background poll already got a token
+            if self._device_token_result and self._device_token_result.get("access_token"):
+                # Background poll succeeded
+                self._polling_active = False
+                result = self._device_token_result
+                self._device_token_result = None
+                self._setup_data[CONF_ACCESS_TOKEN] = result["access_token"]
+                self._setup_data[CONF_REFRESH_TOKEN] = result.get("refresh_token", "")
+                self._setup_data[CONF_EMAIL] = f"device_flow_{int(_time.time())}"
+                _LOGGER.info(f"VinFast: Device code authorized! (poll #{self._poll_count})")
+                return await self.async_step_model()
+
+            # Cancel any running background poll
+            if self._poll_task and not self._poll_task.done():
+                self._poll_task.cancel()
+                try:
+                    await self._poll_task
+                except asyncio.CancelledError:
+                    pass
+                self._poll_task = None
+            self._polling_active = False
+
+            # Do one immediate poll right now
+            if self._device_flow_data:
+                device_code = self._device_flow_data.get("device_code")
+                region = self._setup_data.get(CONF_REGION, "US")
+                result = await self.hass.async_add_executor_job(
+                    poll_device_token_sync, region, device_code
+                )
+                self._poll_count += 1
+
+                if result and result.get("access_token"):
+                    # Success!
+                    self._device_token_result = None
                     self._setup_data[CONF_ACCESS_TOKEN] = result["access_token"]
                     self._setup_data[CONF_REFRESH_TOKEN] = result.get("refresh_token", "")
-                    self._setup_data[CONF_EMAIL] = f"device_flow_{int(__import__('time').time())}"
+                    self._setup_data[CONF_EMAIL] = f"device_flow_{int(_time.time())}"
+                    _LOGGER.info(f"VinFast: Device code authorized on click! (poll #{self._poll_count})")
                     return await self.async_step_model()
+                elif result and result.get("error") == "expired_token":
+                    # Expired — restart flow
+                    self._device_flow_data = None
+                    self._device_token_result = None
+                    return await self.async_step_device_code()
                 elif result and result.get("error") == "authorization_pending":
                     errors["base"] = "authorization_pending"
                 elif result and result.get("error") == "slow_down":
                     errors["base"] = "slow_down"
-                    await asyncio.sleep(5)
-                elif result and result.get("error") == "expired_token":
-                    errors["base"] = "expired_token"
                 else:
                     errors["base"] = "unknown_error"
-        
+
+            # Start background auto-polling loop
+            self._polling_active = True
+            self._device_token_result = None
+            self._poll_task = asyncio.create_task(self._auto_poll_loop())
+
         # Start new device flow if not already started
         if not self._device_flow_data:
             region = self._setup_data.get(CONF_REGION, "US")
             self._device_flow_data = await self.hass.async_add_executor_job(
                 start_device_flow_sync, region
             )
-        
+            self._poll_count = 0
+            self._device_token_result = None
+
         if not self._device_flow_data:
             return self.async_abort(reason="device_flow_failed")
-        
+
         user_code = self._device_flow_data.get("user_code", "XXXX-XXXX")
-        verification_uri = self._device_flow_data.get("verification_uri", "https://vinfast-us-prod.us.auth0.com/activate")
-        
-        # Determine description based on errors
+        verification_uri = self._device_flow_data.get("verification_uri", "https://vinfast-ca.us.auth0.com/activate")
+        verification_uri_complete = self._device_flow_data.get("verification_uri_complete", "")
+
+        # Build description
         if errors.get("base") == "authorization_pending":
-            description = f"⏳ Waiting for authorization...\n\nOpen {verification_uri} in your browser and enter code: **{user_code}**\n\nClick Continue when done."
+            description = (
+                f"\u23f3 Waiting for authorization... (poll #{self._poll_count})\n\n"
+                f"Open {verification_uri} in your browser and enter code: **{user_code}**\n\n"
+                f"Auto-polling every {self._device_flow_data.get('interval', 5)}s. "
+                f"Click Continue to check now."
+            )
         elif errors.get("base") == "slow_down":
-            description = f"⏳ Please wait a moment...\n\nOpen {verification_uri} in your browser and enter code: **{user_code}**\n\nClick Continue when done."
+            description = (
+                f"\u23f3 Please wait...\n\n"
+                f"Open {verification_uri} in your browser and enter code: **{user_code}**\n\n"
+                f"Click Continue to check."
+            )
         elif errors.get("base") == "expired_token":
-            # Restart the flow
             self._device_flow_data = None
             return await self.async_step_device_code()
         else:
-            description = f"Open {verification_uri} in your browser and enter code: **{user_code}**\n\nThen click Continue below."
-        
+            if verification_uri_complete:
+                description = (
+                    f"Open this link in your browser:\n\n"
+                    f"**{verification_uri_complete}**\n\n"
+                    f"Or go to {verification_uri} and enter code: **{user_code}**\n\n"
+                    f"Then click Continue below. Auto-polling will start after first click."
+                )
+            else:
+                description = (
+                    f"Open {verification_uri} in your browser and enter code: **{user_code}**\n\n"
+                    f"Then click Continue below. Auto-polling will start after first click."
+                )
+
         data_schema = vol.Schema({})
         return self.async_show_form(
-            step_id="device_code", 
+            step_id="device_code",
             data_schema=data_schema,
             errors=errors,
             description_placeholders={"instructions": description}
