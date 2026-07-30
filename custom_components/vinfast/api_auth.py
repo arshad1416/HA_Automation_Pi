@@ -60,6 +60,58 @@ class AuthManager:
             _LOGGER.error("VinFast login failed: No response from Auth0")
         return None
 
+    def start_device_flow(self):
+        """Start Auth0 device code flow."""
+        url = f"https://{self.core.auth0_domain}/oauth/device/code"
+        payload = {
+            "client_id": self.core.auth0_client_id,
+            "scope": "offline_access openid profile email",
+        }
+        try:
+            res = requests.post(url, json=payload, timeout=10)
+            if res.status_code == 200:
+                return res.json()  # device_code, user_code, verification_uri, interval, expires_in
+            _LOGGER.error(f"VinFast device flow start failed: HTTP {res.status_code} - {res.text[:200]}")
+        except Exception as e:
+            _LOGGER.error(f"VinFast device flow start error: {e}")
+        return None
+
+    def poll_device_token(self, device_code):
+        """Poll for device code authorization result."""
+        url = f"https://{self.core.auth0_domain}/oauth/token"
+        payload = {
+            "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
+            "device_code": device_code,
+            "client_id": self.core.auth0_client_id,
+        }
+        try:
+            res = requests.post(url, json=payload, timeout=10)
+            return res  # 200=success, 403=authorization_pending, 400=slow_down/expired
+        except Exception as e:
+            _LOGGER.error(f"VinFast device poll error: {e}")
+        return None
+
+    def refresh_access_token(self):
+        """Refresh access token using stored refresh_token."""
+        if not getattr(self.core, 'refresh_token', None):
+            return None
+        url = f"https://{self.core.auth0_domain}/oauth/token"
+        res = self._safe_request("POST", url, json={
+            "grant_type": "refresh_token",
+            "client_id": self.core.auth0_client_id,
+            "refresh_token": self.core.refresh_token,
+        }, timeout=15)
+        if res is not None and res.status_code == 200:
+            data = res.json()
+            self.core.access_token = data["access_token"]
+            if "refresh_token" in data:
+                self.core.refresh_token = data["refresh_token"]
+            _LOGGER.info("VinFast: Token refreshed successfully")
+            return self.core.access_token
+        if res is not None:
+            _LOGGER.warning(f"VinFast token refresh failed: HTTP {res.status_code}")
+        return None
+
     def get_vehicles(self):
         url = f"{self.core.api_base}/ccarusermgnt/api/v1/user-vehicle"
         res = self._safe_request("GET", url, headers=self._get_base_headers(vin_override="none"), timeout=15)
@@ -126,8 +178,9 @@ class AuthManager:
                 res = requests.post(f"{self.core.api_base}/{path}", headers=headers, json=payload, timeout=15)
                 # CHÌA KHÓA: Nếu API trả về 401 hoặc 403 (Hết hạn Token), tự động Login lấy Token mới và gọi lại
                 if res.status_code in [401, 403]:
-                    _LOGGER.warning(f"VinFast: Token hết hạn (Lỗi {res.status_code}), đang xin cấp lại Token...")
-                    self.login() 
+                    _LOGGER.warning(f"VinFast: Token expired ({res.status_code}), refreshing...")
+                    if not self.refresh_access_token():
+                        self.login()
                     continue
                 return res
             except Exception as e:

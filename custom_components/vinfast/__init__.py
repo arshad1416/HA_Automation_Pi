@@ -19,16 +19,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     lang = entry.options.get(CONF_LANGUAGE, entry.data.get(CONF_LANGUAGE, "vi"))
     gemini_key = entry.options.get(CONF_GEMINI_API_KEY, entry.data.get(CONF_GEMINI_API_KEY, ""))
 
-    api = VinFastAPI(email, password, region=region, lang=lang, gemini_api_key=gemini_key, options=entry.options)
+    # Check for stored tokens from device code flow
+    access_token = entry.data.get("access_token")
+    refresh_token = entry.data.get("refresh_token")
+
+    api = VinFastAPI(
+        email, password, region=region, lang=lang,
+        gemini_api_key=gemini_key, options=entry.options,
+        access_token=access_token, refresh_token=refresh_token
+    )
     api.hass = hass
-    logged_in = await hass.async_add_executor_job(api.login)
-    if not logged_in:
-        _LOGGER.error("VinFast: Đăng nhập thất bại.")
-        return False
+
+    # If we already have an access token (device code flow), skip password login
+    if access_token:
+        _LOGGER.info("VinFast: Using stored access token from device code flow, skipping login.")
+    else:
+        logged_in = await hass.async_add_executor_job(api.login)
+        if not logged_in:
+            _LOGGER.error("VinFast: Login failed.")
+            return False
     
     vehicles = await hass.async_add_executor_job(api.get_vehicles)
     if not vehicles:
-        _LOGGER.error("VinFast: Không tìm thấy xe.")
+        _LOGGER.error("VinFast: No vehicles found.")
         return False
 
     hass.data[DOMAIN][entry.entry_id] = {"api": api}
@@ -52,5 +65,5 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return unload_ok
 
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry):
-    _LOGGER.info("VinFast: Cập nhật cấu hình, nạp lại...")
+    _LOGGER.info("VinFast: Updating configuration, reloading...")
     await hass.config_entries.async_reload(entry.entry_id)

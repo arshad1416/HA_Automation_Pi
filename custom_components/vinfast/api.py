@@ -14,7 +14,7 @@ from .map_matching import async_process_route, moving_average_smooth
 _LOGGER = logging.getLogger(__name__)
 
 class VinFastAPI:
-    def __init__(self, email, password, vin=None, vehicle_name="Xe VinFast", region="VN", lang="vi", options=None, gemini_api_key=""):
+    def __init__(self, email="", password="", vin=None, vehicle_name="Xe VinFast", region="VN", lang="vi", options=None, gemini_api_key="", access_token=None, refresh_token=None):
         self.email = email
         self.password = password
         self.region = region
@@ -35,7 +35,8 @@ class VinFastAPI:
         self.iot_endpoint = cfg["IOT_ENDPOINT"]
         self.audience = cfg.get("AUDIENCE", self.api_base)
         
-        self.access_token = None
+        self.access_token = access_token
+        self.refresh_token = refresh_token
         self._running = False
         self.callbacks = []
         

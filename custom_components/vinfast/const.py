@@ -23,13 +23,13 @@ REGION_CONFIG = {
         "AUDIENCE": "https://mobile.connected-car.vinfast.vn"
     },
     "US": {
-        "AUTH0_DOMAIN": "vinfast-us-prod.us.auth0.com",
-        "AUTH0_CLIENT_ID": "xhGY7XKDFSk1Q22rxidvwujfz0EPAbUP",
-        "API_BASE": "https://mobile.connected-car.vinfastauto.us",
-        "AWS_REGION": "us-west-2",
-        "COGNITO_POOL_ID": "us-west-2:0d056f37-bc45-45b9-a849-a871e3ca4ed5",
-        "IOT_ENDPOINT": "iot.connected-car.vinfastauto.us",
-        "AUDIENCE": "https://mobile.connected-car.vinfastauto.us"
+        "AUTH0_DOMAIN": "vinfast-ca.us.auth0.com",
+        "AUTH0_CLIENT_ID": "li5qccuVwUViQ3yjdUzI8drpnxgoIYDd",
+        "API_BASE": "https://mobile.connected-car.vinfastauto.ca",
+        "AWS_REGION": "ca-central-1",
+        "COGNITO_POOL_ID": "ca-central-1:2355722b-3bf9-4ade-966b-e6590cb76909",
+        "IOT_ENDPOINT": "iot.connected-car.vinfastauto.ca",
+        "AUDIENCE": "https://mobile.connected-car.vinfastauto.ca"
     },
     "EU": {
         "AUTH0_DOMAIN": "vin3s.eu.auth0.com",
