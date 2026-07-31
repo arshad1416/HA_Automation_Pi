@@ -272,12 +272,16 @@ input_number:
     initial: 20
 
   # === Per-Vehicle EV Charging Cost Tracking ===
+  # NOTE: none of these declare `initial:` on purpose. A configured initial value
+  # short-circuits input_number's async_added_to_hass before async_get_last_state(),
+  # so RestoreState never runs and every accumulator below would reset to 0 on each
+  # HA restart. (counter.season_switch_summer further down uses the other valid
+  # pattern: `initial:` together with `restore: true`.)
   ioniq_6_total_cost_cents:
     name: "Ioniq 6 Total Charging Cost"
     min: 0
     max: 1000000
     step: 1
-    initial: 0
     unit_of_measurement: "¢"
 
   vf9_total_cost_cents:
@@ -285,7 +289,6 @@ input_number:
     min: 0
     max: 1000000
     step: 1
-    initial: 0
     unit_of_measurement: "¢"
 
   ioniq_6_total_energy_kwh:
@@ -293,7 +296,6 @@ input_number:
     min: 0
     max: 100000
     step: 0.01
-    initial: 0
     unit_of_measurement: "kWh"
 
   vf9_total_energy_kwh:
@@ -301,7 +303,6 @@ input_number:
     min: 0
     max: 100000
     step: 0.01
-    initial: 0
     unit_of_measurement: "kWh"
 
   ev_session_soc_start_ioniq:
@@ -309,7 +310,6 @@ input_number:
     min: 0
     max: 100
     step: 0.1
-    initial: 0
     unit_of_measurement: "%"
 
   ev_session_soc_start_vf9:
@@ -317,23 +317,23 @@ input_number:
     min: 0
     max: 100
     step: 0.1
-    initial: 0
     unit_of_measurement: "%"
 
   ev_fixed_cost_accumulated_cents:
+    # max was 100000 (¢1000). At 3357 ¢/month this clamped in month 30 and
+    # input_number.set_value then fails, silently freezing the accumulator.
+    # 5000000 ¢ = $50,000 ≈ 124 years of fixed delivery charges.
     name: "EV Fixed Delivery Cost Accumulated"
     min: 0
-    max: 100000
+    max: 5000000
     step: 1
-    initial: 0
     unit_of_measurement: "¢"
 
   ev_unknown_cost_cents:
     name: "EV Unattributed Cost Accumulated"
     min: 0
-    max: 100000
+    max: 1000000
     step: 1
-    initial: 0
     unit_of_measurement: "¢"
 input_datetime:
   airbnb_check_in_time:
@@ -430,8 +430,9 @@ input_text:
     max: 32
 
   ev_session_vehicle:
+    # No `initial:` — a configured initial short-circuits RestoreState, so the
+    # last detected vehicle would be lost on every HA restart.
     name: "EV Charging Session Vehicle"
-    initial: "unknown"
     max: 10
 
 counter:
@@ -757,22 +758,43 @@ template:
         device_class: monetary
         state: >
           {{ (state_attr('sensor.grizzl_e_total_cost', 'session_cost_cents') | default(0, true) | float(0) / 100) | round(2) }}
-  # Charging efficiency (kWh delivered per 1% SoC). Ioniq 6 Long Range = 77.4 kWh pack
-  # (≈0.774 kWh/%). Availability-gated so it is not computed when charger/session idle.
+  # Charging efficiency: kWh delivered at the wall per 1 percentage point of SoC GAIN.
+  #
+  # The previous version divided session kWh by ABSOLUTE SoC (soc * 0.01 * 77.4), i.e.
+  # by the energy already sitting in the pack, so the same 20 kWh session read 1.292 at
+  # 20% SoC, 0.517 at 50% and 0.323 at 80% — never the 0.74-0.80 band it claimed. It was
+  # also hardcoded to the Ioniq, so it reported Ioniq figures during VF9 sessions.
+  #
+  # Now keyed on SoC gain for whichever vehicle sensor.ev_charging_vehicle_detected
+  # identifies. Expected healthy values: Ioniq 6 ≈0.774 kWh/% (77.4 kWh pack),
+  # VF9 ≈1.23 kWh/% (123 kWh pack); real readings run slightly higher because the
+  # meter measures at the wall and charging is ~90% efficient.
   - sensor:
       - name: "EV Charging Efficiency"
         unique_id: ev_charging_efficiency
         unit_of_measurement: "kWh/%"
         availability: >
+          {% set v = states('sensor.ev_charging_vehicle_detected') %}
+          {% set gain = state_attr('sensor.ev_charging_vehicle_detected',
+                                   'ioniq_soc_gain' if v == 'ioniq_6' else 'vf9_soc_gain')
+                        | default(0, true) | float(0) %}
           {{ (state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0)) > 1
-             and (states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0)) > 0 }}
+             and v in ['ioniq_6', 'vf9'] and gain > 0.5 }}
         state: >
+          {% set v = states('sensor.ev_charging_vehicle_detected') %}
           {% set session_kwh = state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) %}
-          {% set soc = states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) %}
-          {{ (session_kwh / (soc * 0.01 * 77.4)) | round(3) }}
+          {% set gain = state_attr('sensor.ev_charging_vehicle_detected',
+                                   'ioniq_soc_gain' if v == 'ioniq_6' else 'vf9_soc_gain')
+                        | default(0, true) | float(0) %}
+          {{ (session_kwh / gain) | round(3) }}
         attributes:
-          nominal_pack_kwh: 77.4
-          expected_range: "0.74-0.80 kWh/% when healthy (Ioniq 6 77.4 kWh pack)"
+          vehicle: "{{ states('sensor.ev_charging_vehicle_detected') }}"
+          nominal_pack_kwh: >
+            {{ 77.4 if states('sensor.ev_charging_vehicle_detected') == 'ioniq_6' else 123.0 }}
+          expected_range: >
+            {{ "0.77-0.90 kWh/% when healthy (Ioniq 6, 77.4 kWh pack, wall-side)"
+               if states('sensor.ev_charging_vehicle_detected') == 'ioniq_6'
+               else "1.23-1.40 kWh/% when healthy (VF9, 123 kWh pack, wall-side)" }}
 
       # === Per-Vehicle EV Charging Cost Tracking ===
       - name: "EV Charging Vehicle Detected"

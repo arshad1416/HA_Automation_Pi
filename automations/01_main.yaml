@@ -2528,8 +2528,10 @@
   alias: Stairs Light — PIR Motion (100%, 25% after bedtime)
   description: >-
     Motion on the Upstairs Stair Sensor (binary_sensor.pir_motion_sensor_2_motion) lights
-    light.stair_light: 100% when it is dark out before bedtime, 25% from bedtime until
-    sunrise. Off after 5 minutes with no motion.
+    light.stair_light: full brightness when it is dark out before bedtime (capped at
+    input_number.nightly_dim_brightness after the seasonal Nightly Dimming hour — 9 PM
+    winter, 10 PM shoulder, 11 PM summer — mirroring automation 1778114000000), same
+    nightly_dim_brightness from bedtime until sunrise. Off after 5 minutes with no motion.
 
     Replaces stairs_light_auto / stairs_echo_ecobee_motion / stairs_presence_timeout /
     stairs_safety_off (deleted 2026-07-29), which all keyed on switch.stairs_occupancy —
@@ -2593,7 +2595,7 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.stair_light_pir_owned
-    # Motion, light currently off, after bedtime and before sunrise -> 25%.
+    # Motion, light currently off, after bedtime and before sunrise -> nightly_dim_brightness.
     - conditions:
       - condition: trigger
         id: motion
@@ -2619,11 +2621,12 @@
         target:
           entity_id: light.stair_light
         data:
-          brightness_pct: 25
+          brightness_pct: '{{ states(''input_number.nightly_dim_brightness'') | int(10) }}'
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.stair_light_pir_owned
-    # Motion, light currently off, dark out (night before bedtime, or a genuinely dim day) -> 100%.
+    # Motion, light currently off, dark out (night before bedtime, or a genuinely dim day)
+    # -> 100% before the seasonal dim hour, nightly_dim_brightness after it.
     - conditions:
       - condition: trigger
         id: motion
@@ -2654,7 +2657,18 @@
         target:
           entity_id: light.stair_light
         data:
-          brightness_pct: 100
+          # Cap brightness at nightly_dim_brightness after the seasonal Nightly Dimming
+          # hour (9 PM winter, 10 PM shoulder, 11 PM summer), matching the outdoor lights.
+          # Before that hour the stair light runs at full 100%.
+          brightness_pct: >-
+            {% set dim_hr = 21 if now().month in [11,12,1,2]
+                        else 22 if now().month in [3,4,9,10]
+                        else 23 %}
+            {% if now().hour >= dim_hr %}
+              {{ states('input_number.nightly_dim_brightness') | int(10) }}
+            {% else %}
+              100
+            {% endif %}
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.stair_light_pir_owned

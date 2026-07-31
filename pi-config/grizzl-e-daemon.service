@@ -1,0 +1,28 @@
+# Grizzl-E Smart EV charger telemetry daemon — systemd unit.
+#
+# Captured verbatim from the Pi at /etc/systemd/system/grizzl-e-daemon.service on
+# 2026-07-30. It had never been version-controlled; committed here after
+# grizzl_e_daemon.py was accidentally deleted from /opt/homeassistant by the
+# 2026-07-29 auto-sync (commit 1e2cf44) while the process was still running.
+#
+# Install on the Pi:
+#   sudo cp pi-config/grizzl-e-daemon.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now grizzl-e-daemon
+#
+# NOTE: ExecStart carries the charger's LAN IP as argv[1]. Kept here because the
+# unit is meaningless without it and this path is host config, not documentation.
+# If the charger's reservation changes, update it here and on the Pi together.
+
+[Unit]
+Description=Grizzl-E Smart EV charger /logs telemetry + ULO cost daemon
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Environment=TZ=America/Toronto
+ExecStart=/usr/bin/python3 /opt/homeassistant/grizzl_e_daemon.py 192.168.0.115 /opt/homeassistant/grizzl_e_state.json /opt/homeassistant/grizzl_e_rates.json /opt/homeassistant/grizzl_e_history.json
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

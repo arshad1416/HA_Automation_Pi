@@ -394,7 +394,10 @@
   conditions: []
   actions:
   - variables:
-      kwh_delivered: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_sac_tai_nha') | default(0, true) | float(0) }}"
+      # Per-SESSION grid energy. NOT ..._dien_nang_sac_tai_nha ("Home Charging Energy"),
+      # which is a lifetime accumulator (vinfast api_mqtt.py:614 adds and never resets)
+      # and previously made expected_soc_gain read in the thousands of percent.
+      kwh_delivered: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_lay_tu_luoi_lan_cuoi') | default(0, true) | float(0) }}"
       soc_now: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
       expected_soc_gain: "{{ (kwh_delivered | float(0) / 1.23) | round(1) }}"
   - if:
@@ -842,17 +845,29 @@
       fr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_phai') | default(0,true) | float(0) }}"
       rl: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_trai') | default(0,true) | float(0) }}"
       rr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_phai') | default(0,true) | float(0) }}"
+      # The vinfast integration publishes these in BAR (const_vf8.py tyre block), but
+      # original_device_class is `pressure`, so an entity-registry unit override converts
+      # them to psi natively — and a registry override converts the STATE, meaning
+      # states() returns psi here too. These four sensors are pinned to psi in
+      # .storage/core.entity_registry. If that override is ever lost (registry reset,
+      # entity re-created by the integration), readings revert to bar (~2.4), every
+      # tire satisfies 0 < 2.4 < 32, and the original all-tires-always-low spam
+      # returns — loudly, not silently. Re-apply the psi override to fix. See audit A7.
+      min_psi: 32
       low_list: >
-        {{ (['Front-Left'] if 0 < fl < 32 else []) +
-           (['Front-Right'] if 0 < fr < 32 else []) +
-           (['Rear-Left'] if 0 < rl < 32 else []) +
-           (['Rear-Right'] if 0 < rr < 32 else []) }}
+        {{ (['Front-Left'] if 0 < fl < min_psi else []) +
+           (['Front-Right'] if 0 < fr < min_psi else []) +
+           (['Rear-Left'] if 0 < rl < min_psi else []) +
+           (['Rear-Right'] if 0 < rr < min_psi else []) }}
   - condition: template
     value_template: "{{ low_list | length > 0 }}"
-  - action: notify.mobile_app_cph2655
+  - action: notify.grizzl_ev_phones
     data:
       title: "VF9 Tire Pressure Low"
-      message: "{{ low_list | join(', ') }} {{ 'tires are' if (low_list | length) > 1 else 'tire is' }} below 32 PSI. Values: FL={{ fl }}, FR={{ fr }}, RL={{ rl }}, RR={{ rr }}."
+      message: >-
+        {{ low_list | join(', ') }} {{ 'tires are' if (low_list | length) > 1 else 'tire is' }}
+        below {{ min_psi }} PSI. Values: FL={{ fl | round(1) }}, FR={{ fr | round(1) }},
+        RL={{ rl | round(1) }}, RR={{ rr | round(1) }} PSI.
 
 # V2: Security alarm alert. Immediate push + Alexa announce on non-normal status.
 - id: vf9_security_alarm_alert
@@ -871,7 +886,10 @@
   conditions:
   - condition: template
     value_template: >
-      {{ trigger.to_state.state not in ['unknown','unavailable','none','','Normal','normal','Disarmed','disarmed','Off','off','None'] }}
+      {# 'Armed' is the NORMAL locked state (vinfast sensor.py: 34234_00001_00003 -> Armed/Disarmed) #}
+      {# 'Safe' is the NORMAL warning state (vinfast api_mqtt.py: api_security_warning -> 'Safe' when no warnings) #}
+      {# Omitting either made every lock and every door-close fire a house-wide Echo announcement. #}
+      {{ trigger.to_state.state not in ['unknown','unavailable','none','','Normal','normal','Disarmed','disarmed','Armed','armed','Safe','safe','Off','off','None'] }}
   actions:
   - action: notify.mobile_app_cph2655
     data:
@@ -899,7 +917,7 @@
   - entity_id: sensor.vf9_rllv2cja5rh000847_cua_phu
     trigger: state
     id: passenger_door
-  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_sau_trai
+  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_sau_tai_xe
     trigger: state
     id: rear_left_door
   - entity_id: sensor.vf9_rllv2cja5rh000847_cua_sau_phu
@@ -1012,19 +1030,22 @@
   - variables:
       soc_plug_in: "{{ states('sensor.vf9_rllv2cja5rh000847_pin_luc_cam_sac_lan_cuoi') | default('unknown', true) }}"
       soc_unplug: "{{ states('sensor.vf9_rllv2cja5rh000847_pin_luc_rut_sac_lan_cuoi') | default('unknown', true) }}"
-      energy_kwh: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_sac_tai_nha') | default(0,true) | float(0) }}"
+      # Per-SESSION grid energy — see note in ev_vf9_soc_energy_reconciliation.
+      energy_kwh: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_lay_tu_luoi_lan_cuoi') | default(0,true) | float(0) }}"
+      lifetime_kwh: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_sac_tai_nha') | default(0,true) | float(0) }}"
       avg_power: "{{ states('sensor.vf9_rllv2cja5rh000847_cong_suat_sac_trung_binh_lan_cuoi') | default(0,true) | float(0) }}"
       efficiency: "{{ states('sensor.vf9_rllv2cja5rh000847_hieu_suat_sac_thuc_te_lan_cuoi') | default('unknown', true) }}"
-      trip_cost: "{{ states('sensor.vf9_rllv2cja5rh000847_chi_phi_sac_chuyen_di') | default('unknown', true) }}"
-      total_cost: "{{ states('sensor.vf9_rllv2cja5rh000847_tong_chi_phi_sac_quy_doi') | default('unknown', true) }}"
+      # VNĐ-denominated cost sensors deliberately dropped from this message — the
+      # Grizzl-E meter is the CAD source of truth for home charging (audit T3).
       soc_now: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0,true) | float(0) }}"
   - action: notify.grizzl_ev_phones
     data:
       title: "VF9 Charging Summary"
       message: >
         Session ended. SoC: {{ soc_plug_in }}% -> {{ soc_unplug }}% (now {{ soc_now }}%).
-        Energy: {{ energy_kwh | round(2) }} kWh. Avg power: {{ avg_power | round(0) }} W.
-        Efficiency: {{ efficiency }}. Trip cost: {{ trip_cost }}. Total cost: {{ total_cost }}.
+        Energy: {{ energy_kwh | round(2) }} kWh (lifetime home: {{ lifetime_kwh | round(0) }} kWh).
+        Avg power: {{ avg_power | round(1) }} kW. Efficiency: {{ efficiency }}.
+        Cost is tracked in CAD by the Grizzl-E meter — the VF9's own VNĐ figures are not shown.
 
 # V7: Low battery charger finder. Presses find-station button, then reports.
 - id: vf9_low_battery_charger_finder

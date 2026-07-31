@@ -74,8 +74,12 @@ views:
       - type: entities
         title: 🔌 Current Session
         show_header_toggle: false
+        # `attribute:`/`suffix:` are read only by the attribute row, which requires
+        # `type: attribute`. Without it these rows fell back to the sensor entity row
+        # and all three rendered sensor.grizzl_e_total_cost's lifetime dollar value.
         entities:
-          - entity: sensor.grizzl_e_total_cost
+          - type: attribute
+            entity: sensor.grizzl_e_total_cost
             name: Session Energy
             icon: mdi:battery-charging
             attribute: session_energy_kwh
@@ -83,11 +87,13 @@ views:
           - entity: sensor.grizzl_e_session_cost
             name: Session Cost
             icon: mdi:cash
-          - entity: sensor.grizzl_e_total_cost
+          - type: attribute
+            entity: sensor.grizzl_e_total_cost
             name: Rate Period
             icon: mdi:clock-outline
             attribute: period_label
-          - entity: sensor.grizzl_e_total_cost
+          - type: attribute
+            entity: sensor.grizzl_e_total_cost
             name: Rate
             icon: mdi:currency-usd
             attribute: rate_cents_kwh
@@ -111,7 +117,8 @@ views:
           - entity: sensor.grizzl_e_diagnostics
             name: Free Heap
             icon: mdi:memory
-          - entity: sensor.grizzl_e_power
+          - type: attribute
+            entity: sensor.grizzl_e_power
             name: Wi-Fi RSSI
             icon: mdi:wifi
             attribute: rssi_dbm
@@ -215,15 +222,21 @@ views:
             name: "Detected Vehicle"
           - entity: input_text.ev_session_vehicle
             name: "Last Session Vehicle"
-          - entity: sensor.ev_charging_vehicle_detected
+          - type: attribute
+            entity: sensor.ev_charging_vehicle_detected
             name: "Ioniq SoC Gain"
             attribute: ioniq_soc_gain
-          - entity: sensor.ev_charging_vehicle_detected
+            suffix: " %"
+          - type: attribute
+            entity: sensor.ev_charging_vehicle_detected
             name: "VF9 SoC Gain"
             attribute: vf9_soc_gain
-          - entity: sensor.ev_charging_vehicle_detected
+            suffix: " %"
+          - type: attribute
+            entity: sensor.ev_charging_vehicle_detected
             name: "Session kWh"
             attribute: session_kwh
+            suffix: " kWh"
 
       # ── Per-vehicle total costs (side by side) ─────────────────────
       - type: grid
@@ -301,6 +314,7 @@ views:
               - sensor.ev_ioniq_6_total_cost
             title: "Ioniq 6 Cost Trend"
             period: month
+            days_to_show: 365
             chart_type: line
             stat_types:
               - sum
@@ -309,6 +323,7 @@ views:
               - sensor.ev_vf9_total_cost
             title: "VF9 Cost Trend"
             period: month
+            days_to_show: 365
             chart_type: line
             stat_types:
               - sum
