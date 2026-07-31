@@ -845,20 +845,32 @@
       fr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_phai') | default(0,true) | float(0) }}"
       rl: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_trai') | default(0,true) | float(0) }}"
       rr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_phai') | default(0,true) | float(0) }}"
-      # UNIT-AGNOSTIC ON PURPOSE. The vinfast integration publishes these in BAR
-      # (const_vf8.py tyre block) with original_device_class=pressure. An entity-registry
-      # unit override to psi is possible, but HA has been observed to drop that override
-      # when the integration re-registers the entities — and the two units are not
-      # interchangeable here: comparing a bar reading (~2.4) against 32 marks every tire
-      # low on every MQTT push, which was the original bug (audit A7).
+      # UNIT-AGNOSTIC, driven by each sensor's ACTUAL unit attribute.
       #
-      # So instead of depending on the registry, normalise: real tire pressures are
-      # 1.7-3.1 bar / 25-45 psi, so anything under 6 is unambiguously bar.
+      # These four are pinned to psi via an entity-registry override (set in the HA UI
+      # 2026-07-31), but the vinfast integration natively publishes BAR
+      # (const_vf8.py tyre block, original_device_class=pressure). If that override is
+      # ever lost, readings revert to ~2.4 and a bare `< 32` comparison would mark every
+      # tire low on every MQTT push — the original bug (audit A7).
+      #
+      # Do NOT infer the unit from magnitude. A "under 6 means bar" heuristic looks fine
+      # for normal pressures (2.4 bar / 36 psi) but silently suppresses the one case that
+      # matters most: a genuinely flat tire at 5 psi reads as 5 bar and converts to
+      # 72 psi, so no alert fires. Reading the unit attribute is exact and has no
+      # ambiguous band.
       min_psi: 32
-      fl_psi: "{{ (fl * 14.5038) if 0 < fl < 6 else fl }}"
-      fr_psi: "{{ (fr * 14.5038) if 0 < fr < 6 else fr }}"
-      rl_psi: "{{ (rl * 14.5038) if 0 < rl < 6 else rl }}"
-      rr_psi: "{{ (rr * 14.5038) if 0 < rr < 6 else rr }}"
+      fl_psi: >
+        {% set u = state_attr('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_trai','unit_of_measurement') | default('',true) | lower %}
+        {{ (fl * 14.5038) if u == 'bar' else fl }}
+      fr_psi: >
+        {% set u = state_attr('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_phai','unit_of_measurement') | default('',true) | lower %}
+        {{ (fr * 14.5038) if u == 'bar' else fr }}
+      rl_psi: >
+        {% set u = state_attr('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_trai','unit_of_measurement') | default('',true) | lower %}
+        {{ (rl * 14.5038) if u == 'bar' else rl }}
+      rr_psi: >
+        {% set u = state_attr('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_phai','unit_of_measurement') | default('',true) | lower %}
+        {{ (rr * 14.5038) if u == 'bar' else rr }}
       low_list: >
         {{ (['Front-Left'] if 0 < fl_psi < min_psi else []) +
            (['Front-Right'] if 0 < fr_psi < min_psi else []) +

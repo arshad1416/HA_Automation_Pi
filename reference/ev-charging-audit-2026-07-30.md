@@ -42,7 +42,23 @@ Root `automations.yaml` is legacy and not loaded — nothing here is sourced fro
 >
 > **Resolution — the automation no longer depends on the registry at all.** It normalises each reading before comparing (real tire pressures are 1.7–3.1 bar / 25–45 psi, so anything under 6 is unambiguously bar) and always reports in PSI. Render-tested in both regimes: 2.48 bar → no alert, 2.10 bar → all four flagged, 36.0 psi → no alert, 30.5 psi → flagged, `unknown`/0 → no alert.
 >
-> **Still open, 4 UI clicks:** to make the tire entities *display* psi in the UI, history and dashboards, set it per entity — Settings → Devices & Services → VF9 BLIBS → each tire sensor → ⚙ → Unit of Measurement → psi. The alerting is already correct without this; it is a display preference now, not a correctness issue.
+> **CLOSED 2026-07-31 — the user set psi through the HA UI, and it stuck.** All four sensors now carry `options.sensor.unit_of_measurement: psi`, and the registry has been rewritten by HA several times since (and survived two restarts) with the override intact. So the supported UI path persists where a hand-edit of `.storage` did not — worth remembering for any future registry change: **use the UI or the websocket API, never the file.**
+>
+> **That surfaced a real defect in the guard I had written.** The magnitude heuristic ("under 6 means bar") is fine for normal pressures but fails on the case that matters most: a genuinely flat tire reading **5 psi** was treated as 5 bar, converted to 72 psi, and **no alert fired**. Now fixed by reading each sensor's actual `unit_of_measurement` attribute instead of guessing — exact, with no ambiguous band. Verified in both regimes:
+>
+> | reading | unit | result |
+> |---|---|---|
+> | 36.0 | psi | no alert |
+> | 32.0 | psi | no alert (boundary) |
+> | 30.5 | psi | all four flagged |
+> | **5.0** | **psi** | **flagged** (previously suppressed) |
+> | 2.48 / 2.21 | bar | no alert |
+> | 2.10 / 0.35 | bar | flagged |
+> | `unknown` | — | no alert |
+>
+> The unit-agnostic handling is kept deliberately even though the override now persists: it costs nothing and means losing the override degrades to "still correct" rather than "silently wrong in the dangerous direction".
+>
+> Minor, if it bothers you: the UI kept `suggested_display_precision: 2`, so tiles read `36.00 psi`. Same dialog, Display Precision → 1.
 >
 > ### Second deploy — 2026-07-31 08:52 EDT
 >
