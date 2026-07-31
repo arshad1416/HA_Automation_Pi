@@ -27,7 +27,30 @@ Root `automations.yaml` is legacy and not loaded — nothing here is sourced fro
 >
 > **Not applied** (not in the approved set): A6, A8–A13, A15, A16, A18–A24, D2, D3, D5–D8, all of E, L and T.
 >
-> **Nothing has been deployed to the Pi, and nothing is committed.** The one outstanding Pi action is the daemon copy in A2.
+> ### DEPLOYED to the Pi — 2026-07-31 00:11 EDT
+>
+> Sequence run per `AGENTS.md`: preflight → stage → `check_config` (exit 0) → stop → registry patch → start → `check_config` → restart → smoke tests.
+> **Smoke tests: 8 pass / 3 fail, byte-identical to the pre-deploy baseline** (the 3 are pre-existing and unrelated: Ollama version pin, an unpulled `qwen2.5:7b`, and conversation-agent naming). **Zero errors** in the HA log since restart, excluding pre-existing `emulated_hue` / `wyzeapi` noise. Grizzl-E daemon PID 2374 untouched throughout; state file writing normally.
+>
+> **A2 closed the dangerous way it needed to be:** `grizzl_e_daemon.py` is back at `/opt/homeassistant/grizzl_e_daemon.py`, so `grizzl-e-daemon.service`'s `ExecStart` now resolves. The unlinked-inode process is no longer a single point of failure — a crash or reboot will now restart cleanly instead of entering a permanent failure loop.
+>
+> ### ⚠️ One thing did NOT work as intended — tire pressure units
+>
+> The plan was an entity-registry unit override pinning the four tire sensors to psi. It was applied cleanly with HA stopped (4 entities, JSON round-trip verified, 1861 entities intact) — **and HA discarded it.** The registry was rewritten at 00:02:52, ~5 minutes after startup, with `unit_of_measurement` back to `None` and precision back to `2`. A hand-written `options.sensor.unit_of_measurement` does not survive; the supported path is the UI (which goes through `async_update_entity_options`), or the websocket API with a token.
+>
+> That mattered more than cosmetics: the automation had been changed to compare against `32` on the assumption states would be psi. With the override gone, states are bar (~2.4), `0 < 2.4 < 32` is true for every tire, and **the original A7 spam bug was briefly live**. Caught in post-deploy verification and fixed.
+>
+> **Resolution — the automation no longer depends on the registry at all.** It normalises each reading before comparing (real tire pressures are 1.7–3.1 bar / 25–45 psi, so anything under 6 is unambiguously bar) and always reports in PSI. Render-tested in both regimes: 2.48 bar → no alert, 2.10 bar → all four flagged, 36.0 psi → no alert, 30.5 psi → flagged, `unknown`/0 → no alert.
+>
+> **Still open, 4 UI clicks:** to make the tire entities *display* psi in the UI, history and dashboards, set it per entity — Settings → Devices & Services → VF9 BLIBS → each tire sensor → ⚙ → Unit of Measurement → psi. The alerting is already correct without this; it is a display preference now, not a correctness issue.
+>
+> ### Also confirmed live by HA
+>
+> Audit **A18** is no longer theoretical — HA logs it on every start:
+> `Entity sensor.grizzl_e_total_cost is using state class 'total_increasing' which is impossible considering device class ('monetary'); expected None or one of 'total'`.
+> One-word fix in [configuration.yaml:675](configuration.yaml:675), not yet applied (outside the approved set).
+>
+> The Pi's sync cron will auto-commit and push all deployed files, including the recovered daemon, within 15 minutes.
 
 ## Executive summary
 

@@ -845,20 +845,25 @@
       fr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_truoc_phai') | default(0,true) | float(0) }}"
       rl: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_trai') | default(0,true) | float(0) }}"
       rr: "{{ states('sensor.vf9_rllv2cja5rh000847_ap_suat_lop_sau_phai') | default(0,true) | float(0) }}"
-      # The vinfast integration publishes these in BAR (const_vf8.py tyre block), but
-      # original_device_class is `pressure`, so an entity-registry unit override converts
-      # them to psi natively — and a registry override converts the STATE, meaning
-      # states() returns psi here too. These four sensors are pinned to psi in
-      # .storage/core.entity_registry. If that override is ever lost (registry reset,
-      # entity re-created by the integration), readings revert to bar (~2.4), every
-      # tire satisfies 0 < 2.4 < 32, and the original all-tires-always-low spam
-      # returns — loudly, not silently. Re-apply the psi override to fix. See audit A7.
+      # UNIT-AGNOSTIC ON PURPOSE. The vinfast integration publishes these in BAR
+      # (const_vf8.py tyre block) with original_device_class=pressure. An entity-registry
+      # unit override to psi is possible, but HA has been observed to drop that override
+      # when the integration re-registers the entities — and the two units are not
+      # interchangeable here: comparing a bar reading (~2.4) against 32 marks every tire
+      # low on every MQTT push, which was the original bug (audit A7).
+      #
+      # So instead of depending on the registry, normalise: real tire pressures are
+      # 1.7-3.1 bar / 25-45 psi, so anything under 6 is unambiguously bar.
       min_psi: 32
+      fl_psi: "{{ (fl * 14.5038) if 0 < fl < 6 else fl }}"
+      fr_psi: "{{ (fr * 14.5038) if 0 < fr < 6 else fr }}"
+      rl_psi: "{{ (rl * 14.5038) if 0 < rl < 6 else rl }}"
+      rr_psi: "{{ (rr * 14.5038) if 0 < rr < 6 else rr }}"
       low_list: >
-        {{ (['Front-Left'] if 0 < fl < min_psi else []) +
-           (['Front-Right'] if 0 < fr < min_psi else []) +
-           (['Rear-Left'] if 0 < rl < min_psi else []) +
-           (['Rear-Right'] if 0 < rr < min_psi else []) }}
+        {{ (['Front-Left'] if 0 < fl_psi < min_psi else []) +
+           (['Front-Right'] if 0 < fr_psi < min_psi else []) +
+           (['Rear-Left'] if 0 < rl_psi < min_psi else []) +
+           (['Rear-Right'] if 0 < rr_psi < min_psi else []) }}
   - condition: template
     value_template: "{{ low_list | length > 0 }}"
   - action: notify.grizzl_ev_phones
@@ -866,8 +871,8 @@
       title: "VF9 Tire Pressure Low"
       message: >-
         {{ low_list | join(', ') }} {{ 'tires are' if (low_list | length) > 1 else 'tire is' }}
-        below {{ min_psi }} PSI. Values: FL={{ fl | round(1) }}, FR={{ fr | round(1) }},
-        RL={{ rl | round(1) }}, RR={{ rr | round(1) }} PSI.
+        below {{ min_psi }} PSI. Values: FL={{ fl_psi | round(1) }}, FR={{ fr_psi | round(1) }},
+        RL={{ rl_psi | round(1) }}, RR={{ rr_psi | round(1) }} PSI.
 
 # V2: Security alarm alert. Immediate push + Alexa announce on non-normal status.
 - id: vf9_security_alarm_alert
