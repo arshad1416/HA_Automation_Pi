@@ -106,7 +106,6 @@
       - switch.sonoff_10001d2a24
       - switch.back_hallway_light_main_switch
       - switch.foyer_light_switch_1
-      - switch.izaan_s_lamp
       - switch.kitchen_pantry_light
       - switch.patio_door_light_switch_1
       - switch.laundry_room_light_switch
@@ -1446,7 +1445,6 @@
       - switch.back_hallway_light_main_switch
       - switch.foyer_light_switch_1
       - switch.kitchen_pantry_light
-      - switch.izaan_s_lamp
       - switch.house_address
       - switch.mina_s_lamp_switch
   - action: light.turn_on
