@@ -44,11 +44,20 @@ Root `automations.yaml` is legacy and not loaded — nothing here is sourced fro
 >
 > **Still open, 4 UI clicks:** to make the tire entities *display* psi in the UI, history and dashboards, set it per entity — Settings → Devices & Services → VF9 BLIBS → each tire sensor → ⚙ → Unit of Measurement → psi. The alerting is already correct without this; it is a display preference now, not a correctness issue.
 >
-> ### Also confirmed live by HA
+> ### Second deploy — 2026-07-31 08:52 EDT
 >
-> Audit **A18** is no longer theoretical — HA logs it on every start:
-> `Entity sensor.grizzl_e_total_cost is using state class 'total_increasing' which is impossible considering device class ('monetary'); expected None or one of 'total'`.
-> One-word fix in [configuration.yaml:675](configuration.yaml:675), not yet applied (outside the approved set).
+> **A18 — fixed and verified.** `sensor.grizzl_e_total_cost` is now `state_class: total` ([configuration.yaml:675](configuration.yaml:675)). HA had logged `state class 'total_increasing' ... is impossible considering device class ('monetary')` once per start; **0 occurrences since the restart**. `total` is also semantically correct — the daemon can revise cumulative cost downward when `grizzl_e_history.json` is re-rolled, which `total_increasing` would misread as a meter reset.
+>
+> **VF9 "left open / unlocked" alerts — now gated at a sustained hour.** The Alexa announce previously fired the instant `canh_bao_an_ninh` went non-`Safe`, i.e. on every door opening and every unlock. `vf9_security_alarm_alert` now has two paths:
+>
+> - **Security STATUS** (`trang_thai_an_ninh`) — unchanged, immediate. Verified: `Alarm` / `Triggered` fire; `Armed` / `Disarmed` / `unavailable` do not.
+> - **Security WARNING** (`canh_bao_an_ninh`) — template trigger with `for: "01:00:00"`. A *template* trigger rather than a state trigger with `for:`, because the warning **string mutates** as openings change (`Open: Driver Door` → `Open: Driver Door, Trunk`), which would restart a state-trigger timer on every change. The template stays true across those transitions, so the hour is continuous insecure time.
+>
+> The parked check sits **inside** the template rather than in `conditions:`, so the hour only accumulates while stationary. `api_mqtt.py` gates `Not locked` on gear-in-park but does **not** gate `Open: <doors/windows>` — without this, driving for an hour with a window down would have announced a security alert across the whole house. Verified: window down at 45 km/h → clock does not run; same window down at 0 km/h → it does; `unavailable` → no alert.
+>
+> **`vf9_door_open_when_parked` retired.** It watched 10 entities individually (4 doors, trunk, hood, 4 windows); `api_security_warning` already aggregates exactly those 10 — `api_mqtt.py` `door_map` includes Trunk and Hood, `window_map` the four windows — plus `Not locked`. Keeping both meant two phone pushes for one event. It was also broken independently (**A6**): after `delay: "01:00:00"` it re-checked `trigger.to_state.state`, a snapshot frozen at trigger time and therefore always still "open", so it alerted an hour later even if the door had been shut 59 minutes earlier. The replacement re-evaluates live state continuously, so closing the door genuinely cancels the alert. Recover with `git show HEAD:automations/06_enhancements.yaml`.
+>
+> Post-deploy: `check_config` exit 0, **0 errors** since restart excluding known noise, 0 unique-ID clashes, smoke tests **8/3 — unchanged from baseline**, all four deployed files hash-match the Mac, daemon PID 2374 still writing. Automation count 30 → 29.
 >
 > The Pi's sync cron will auto-commit and push all deployed files, including the recovered daemon, within 15 minutes.
 

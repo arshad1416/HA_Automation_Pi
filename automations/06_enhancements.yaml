@@ -874,91 +874,94 @@
         below {{ min_psi }} PSI. Values: FL={{ fl_psi | round(1) }}, FR={{ fr_psi | round(1) }},
         RL={{ rl_psi | round(1) }}, RR={{ rr_psi | round(1) }} PSI.
 
-# V2: Security alarm alert. Immediate push + Alexa announce on non-normal status.
+# V2: Security alerts. Two paths with deliberately different urgency.
 - id: vf9_security_alarm_alert
   alias: "VF9: Security alarm alert"
   description: >-
-    When the VF9 security alarm status or security warning changes to a
-    non-normal state, alert immediately via push and Alexa announce.
+    Two paths.
+    (1) SECURITY STATUS — anything the integration reports other than Armed/Disarmed
+        is a genuine alarm condition and announces immediately.
+    (2) SECURITY WARNING — this sensor reports "Not locked" and "Open: <doors>"
+        (vinfast api_mqtt.py builds it, "Safe" when nothing is wrong). Normal comings
+        and goings put it into a warning state constantly, so it only notifies once
+        the car has been continuously insecure for a full hour. A template trigger is
+        used rather than a state trigger with `for:` because the warning STRING mutates
+        as doors open and close ("Open: Driver Door" -> "Open: Driver Door, Trunk"),
+        which would restart a state-trigger timer each time; the template stays true
+        across those changes so the hour is continuous insecure time.
   mode: single
   triggers:
   - entity_id: sensor.vf9_rllv2cja5rh000847_trang_thai_an_ninh
     trigger: state
     id: alarm_status
-  - entity_id: sensor.vf9_rllv2cja5rh000847_canh_bao_an_ninh
-    trigger: state
+  - trigger: template
     id: alarm_warning
-  conditions:
-  - condition: template
+    # Parked check is INSIDE the template on purpose, so the hour only accumulates
+    # while the car is stationary. api_mqtt.py gates "Not locked" on gear == parked
+    # but does NOT gate "Open: <doors/windows>" — without this, driving for an hour
+    # with a window down would announce a security alert across the house.
     value_template: >
-      {# 'Armed' is the NORMAL locked state (vinfast sensor.py: 34234_00001_00003 -> Armed/Disarmed) #}
-      {# 'Safe' is the NORMAL warning state (vinfast api_mqtt.py: api_security_warning -> 'Safe' when no warnings) #}
-      {# Omitting either made every lock and every door-close fire a house-wide Echo announcement. #}
-      {{ trigger.to_state.state not in ['unknown','unavailable','none','','Normal','normal','Disarmed','disarmed','Armed','armed','Safe','safe','Off','off','None'] }}
+      {{ states('sensor.vf9_rllv2cja5rh000847_canh_bao_an_ninh')
+           not in ['Safe','safe','unknown','unavailable','none','','None']
+         and (states('sensor.vf9_rllv2cja5rh000847_toc_do_hien_tai') | float(-1)) == 0 }}
+    for: "01:00:00"
+  conditions: []
   actions:
-  - action: notify.mobile_app_cph2655
-    data:
-      title: "VF9 Security Alert"
-      message: "VF9 security {{ trigger.id }} changed to: {{ trigger.to_state.state }}. Check your vehicle immediately."
-  - action: notify.alexa_media
-    data:
-      data: {type: announce}
-      message: "Security alert. The VinFast VF9 security status has changed to {{ trigger.to_state.state }}. Please check the vehicle immediately."
-      target:
-      - media_player.everywhere
+  - choose:
+    # --- (1) Genuine alarm status change: immediate ---
+    - conditions:
+      - condition: trigger
+        id: alarm_status
+      - condition: template
+        value_template: >
+          {# Armed/Disarmed are the NORMAL states (vinfast sensor.py: 34234_00001_00003). #}
+          {{ trigger.to_state.state not in ['unknown','unavailable','none','','Normal','normal','Disarmed','disarmed','Armed','armed','Safe','safe','Off','off','None'] }}
+      sequence:
+      - action: notify.grizzl_ev_phones
+        data:
+          title: "VF9 Security Alert"
+          message: "VF9 security status changed to: {{ trigger.to_state.state }}. Check your vehicle immediately."
+      - action: notify.alexa_media
+        data:
+          data: {type: announce}
+          message: "Security alert. The VinFast VF9 security status has changed to {{ trigger.to_state.state }}. Please check the vehicle immediately."
+          target:
+          - media_player.everywhere
 
-# V3: Door/window/trunk/hood open while parked. Alerts after 60 min if still open.
-- id: vf9_door_open_when_parked
-  alias: "VF9: Door or window open while parked"
-  description: >-
-    When any VF9 door, window, trunk, or hood opens while the vehicle is parked
-    (speed 0), wait 60 minutes and alert if still open.
-  mode: parallel
-  max: 10
-  triggers:
-  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_tai_xe
-    trigger: state
-    id: driver_door
-  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_phu
-    trigger: state
-    id: passenger_door
-  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_sau_tai_xe
-    trigger: state
-    id: rear_left_door
-  - entity_id: sensor.vf9_rllv2cja5rh000847_cua_sau_phu
-    trigger: state
-    id: rear_right_door
-  - entity_id: sensor.vf9_rllv2cja5rh000847_cop_sau
-    trigger: state
-    id: trunk
-  - entity_id: sensor.vf9_rllv2cja5rh000847_nap_capo
-    trigger: state
-    id: hood
-  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_tai_xe
-    trigger: state
-    id: driver_window
-  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_phu
-    trigger: state
-    id: passenger_window
-  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_sau_tai_xe
-    trigger: state
-    id: rear_left_window
-  - entity_id: sensor.vf9_rllv2cja5rh000847_kinh_sau_phu
-    trigger: state
-    id: rear_right_window
-  conditions:
-  - condition: template
-    value_template: "{{ trigger.to_state.state | lower in ['open','on','mo'] }}"
-  - condition: template
-    value_template: "{{ states('sensor.vf9_rllv2cja5rh000847_toc_do_hien_tai') | default(0,true) | float(0) == 0 }}"
-  actions:
-  - delay: "01:00:00"
-  - condition: template
-    value_template: "{{ trigger.to_state.state | lower in ['open','on','mo'] }}"
-  - action: notify.mobile_app_cph2655
-    data:
-      title: "VF9 Open While Parked"
-      message: "{{ trigger.to_state.attributes.friendly_name | default(trigger.id | replace('_',' ')) }} has been open for 60 min while parked."
+    # --- (2) Left unlocked / something open, sustained 1 hour ---
+    - conditions:
+      - condition: trigger
+        id: alarm_warning
+      sequence:
+      - variables:
+          warning: "{{ states('sensor.vf9_rllv2cja5rh000847_canh_bao_an_ninh') }}"
+      - action: notify.grizzl_ev_phones
+        data:
+          title: "VF9 Left Open / Unlocked"
+          message: "VF9 has been {{ warning }} for the past hour while parked."
+      - action: notify.alexa_media
+        data:
+          data: {type: announce}
+          message: "The VinFast VF9 has been left {{ warning | replace('Open:', 'open at the') | replace('|', 'and') | lower }} for the past hour."
+          target:
+          - media_player.everywhere
+
+# V3: RETIRED 2026-07-31 — superseded by the 1-hour warning branch of
+# vf9_security_alarm_alert above.
+#
+# `vf9_door_open_when_parked` watched 10 entities individually (4 doors, trunk, hood,
+# 4 windows). The integration's own api_security_warning sensor already aggregates
+# exactly those 10 — see custom_components/vinfast/api_mqtt.py door_map (incl. Trunk
+# and Hood) and window_map — plus "Not locked", so keeping both meant two phone pushes
+# for the same event.
+#
+# It was also broken: after `delay: "01:00:00"` it re-checked `trigger.to_state.state`,
+# which is a snapshot frozen at trigger time and therefore always still "open". The
+# alert fired an hour later even if the door had been shut 59 minutes earlier
+# (audit A6). The replacement re-evaluates live state continuously via a template
+# trigger, so closing the door genuinely cancels the alert.
+#
+# Recover with: git show HEAD:automations/06_enhancements.yaml
 
 # V4: Auto-lock doors when Arshad or Larissa departs.
 - id: vf9_auto_lock_on_departure

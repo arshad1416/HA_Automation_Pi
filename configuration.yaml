@@ -673,7 +673,12 @@ command_line:
       command: "cat /config/grizzl_e_state.json"
       unit_of_measurement: "$"
       device_class: monetary
-      state_class: total_increasing
+      # `total`, not `total_increasing`: HA rejects total_increasing on a monetary
+      # device class and logged a warning on every start (audit A18). `total` is
+      # correct here anyway — the daemon can revise cumulative cost downward when
+      # grizzl_e_history.json is re-rolled, which total_increasing would read as a
+      # meter reset.
+      state_class: total
       scan_interval: 15
       value_template: "{{ (value_json.total_cost_cents / 100) | round(4) }}"
       json_attributes:
