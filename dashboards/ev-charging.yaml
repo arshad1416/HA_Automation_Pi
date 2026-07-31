@@ -191,3 +191,124 @@ views:
           | **Total** | **14,294** | **$1,102** | **20 months** |
 
           *Avg: 715 kWh/mo | $55/mo | 1.86 c/km*
+
+  # ══════════════════════════════════════════════════════════════════
+  # PER-VEHICLE VIEW — Per-vehicle charging cost & energy tracking
+  # ══════════════════════════════════════════════════════════════════
+  - title: "Per-Vehicle"
+    path: per-vehicle
+    icon: mdi:car-multiple
+    cards:
+      # ── Section header ─────────────────────────────────────────────
+      - type: markdown
+        content: |
+          ## Per-Vehicle Charging Cost Tracking
+          Track charging costs and energy per vehicle (Ioniq 6 & VF9).
+
+      # ── Current session detection status ───────────────────────────
+      - type: entities
+        title: "Current Session"
+        icon: mdi:ev-station
+        show_header_toggle: false
+        entities:
+          - entity: sensor.ev_charging_vehicle_detected
+            name: "Detected Vehicle"
+          - entity: input_text.ev_session_vehicle
+            name: "Last Session Vehicle"
+          - entity: sensor.ev_charging_vehicle_detected
+            name: "Ioniq SoC Gain"
+            attribute: ioniq_soc_gain
+          - entity: sensor.ev_charging_vehicle_detected
+            name: "VF9 SoC Gain"
+            attribute: vf9_soc_gain
+          - entity: sensor.ev_charging_vehicle_detected
+            name: "Session kWh"
+            attribute: session_kwh
+
+      # ── Per-vehicle total costs (side by side) ─────────────────────
+      - type: grid
+        columns: 2
+        cards:
+          - type: entities
+            title: "Ioniq 6 Total Cost"
+            icon: mdi:car-electric
+            show_header_toggle: false
+            entities:
+              - entity: sensor.ev_ioniq_6_total_cost
+                name: "Total Cost"
+              - entity: sensor.ioniq_6_cost_monthly
+                name: "This Month"
+              - entity: sensor.ioniq_6_cost_daily
+                name: "Today"
+          - type: entities
+            title: "VF9 Total Cost"
+            icon: mdi:car-electric
+            show_header_toggle: false
+            entities:
+              - entity: sensor.ev_vf9_total_cost
+                name: "Total Cost"
+              - entity: sensor.vf9_cost_monthly
+                name: "This Month"
+              - entity: sensor.vf9_cost_daily
+                name: "Today"
+
+      # ── Per-vehicle total energy (side by side) ────────────────────
+      - type: grid
+        columns: 2
+        cards:
+          - type: entities
+            title: "Ioniq 6 Total Energy"
+            icon: mdi:lightning-bolt
+            show_header_toggle: false
+            entities:
+              - entity: sensor.ev_ioniq_6_total_energy
+                name: "Total Energy"
+              - entity: sensor.ioniq_6_energy_monthly
+                name: "This Month"
+              - entity: sensor.ioniq_6_energy_daily
+                name: "Today"
+          - type: entities
+            title: "VF9 Total Energy"
+            icon: mdi:lightning-bolt
+            show_header_toggle: false
+            entities:
+              - entity: sensor.ev_vf9_total_energy
+                name: "Total Energy"
+              - entity: sensor.vf9_energy_monthly
+                name: "This Month"
+              - entity: sensor.vf9_energy_daily
+                name: "Today"
+
+      # ── Fixed and unattributed costs ────────────────────────────────
+      - type: grid
+        columns: 2
+        cards:
+          - type: entity
+            entity: sensor.ev_fixed_cost_total
+            name: "Fixed Delivery Cost Accumulated"
+            icon: mdi:receipt
+          - type: entity
+            entity: input_number.ev_unknown_cost_cents
+            name: "Unattributed Cost"
+            icon: mdi:alert-circle
+
+      # ── Monthly cost trend comparison ──────────────────────────────
+      - type: grid
+        columns: 2
+        cards:
+          - type: statistics-graph
+            entities:
+              - sensor.ev_ioniq_6_total_cost
+            title: "Ioniq 6 Cost Trend"
+            period: month
+            chart_type: line
+            stat_types:
+              - sum
+          - type: statistics-graph
+            entities:
+              - sensor.ev_vf9_total_cost
+            title: "VF9 Cost Trend"
+            period: month
+            chart_type: line
+            stat_types:
+              - sum

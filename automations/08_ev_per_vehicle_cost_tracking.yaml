@@ -1,0 +1,197 @@
+# =============================================================================
+# Per-Vehicle EV Charging Cost Tracking
+# =============================================================================
+# Detects which vehicle (Ioniq 6 or VF9) is charging at the Grizzl-E charger
+# by monitoring SoC rise, and attributes session costs to the correct vehicle.
+#
+# Detection method:
+#   1. At session start, record both vehicles' SoC baselines
+#   2. At session end, check which SoC rose (primary detection)
+#   3. If ambiguous, compare efficiency profiles (Ioniq: 0.774 kWh/%, VF9: 1.23 kWh/%)
+#   4. If still unclear, mark as "unknown" — cost logged but NOT attributed (fail-safe)
+#
+# Fixed monthly delivery ($33.57 CAD) is split proportionally at month-end
+# based on each vehicle's variable cost share.
+# =============================================================================
+
+# --- Automation 1: Record SoC baselines at session start ---
+- id: ev_session_start_record_soc
+  alias: "EV: Session start — record SoC baselines"
+  description: >-
+    When Grizzl-E charging starts, record current SoC for both Ioniq 6 and VF9
+    to enable per-vehicle detection and cost attribution at session end.
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: binary_sensor.grizzl_e_charging
+      to: "on"
+  actions:
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.ev_session_soc_start_ioniq
+      data:
+        value: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.ev_session_soc_start_vf9
+      data:
+        value: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
+    - action: input_text.set_value
+      target:
+        entity_id: input_text.ev_session_vehicle
+      data:
+        value: "detecting"
+
+# --- Automation 2: Attribute session cost to detected vehicle ---
+- id: ev_session_end_attribute_cost
+  alias: "EV: Session end — attribute cost to vehicle"
+  description: >-
+    When charging stops, determine which vehicle was charging based on SoC rise,
+    then add session cost and energy to that vehicle's accumulators.
+    If detection is ambiguous, cost is logged to unknown accumulator (fail-safe).
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: binary_sensor.grizzl_e_charging
+      to: "off"
+      for: "00:02:00"
+  actions:
+    - variables:
+        vehicle: "{{ states('sensor.ev_charging_vehicle_detected') | default('unknown', true) }}"
+        session_cost_cents: "{{ state_attr('sensor.grizzl_e_total_cost', 'session_cost_cents') | default(0, true) | float(0) | round(0) | int }}"
+        session_energy_kwh: "{{ state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) | round(2) }}"
+        ioniq_gain: "{{ state_attr('sensor.ev_charging_vehicle_detected', 'ioniq_soc_gain') | default(0, true) | float(0) | round(1) }}"
+        vf9_gain: "{{ state_attr('sensor.ev_charging_vehicle_detected', 'vf9_soc_gain') | default(0, true) | float(0) | round(1) }}"
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ vehicle == 'ioniq_6' and session_cost_cents > 0 }}"
+          sequence:
+            - action: input_number.set_value
+              target:
+                entity_id: input_number.ioniq_6_total_cost_cents
+              data:
+                value: "{{ (states('input_number.ioniq_6_total_cost_cents') | default(0, true) | float(0)) + session_cost_cents }}"
+            - action: input_number.set_value
+              target:
+                entity_id: input_number.ioniq_6_total_energy_kwh
+              data:
+                value: "{{ (states('input_number.ioniq_6_total_energy_kwh') | default(0, true) | float(0)) + session_energy_kwh }}"
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.ev_session_vehicle
+              data:
+                value: "ioniq_6"
+            - action: notify.grizzl_ev_phones
+              data:
+                title: "EV Session Complete — Ioniq 6"
+                message: "Ioniq 6 charged {{ session_energy_kwh }} kWh (ΔSoC: {{ ioniq_gain }} %). Cost: ${{ (session_cost_cents / 100) | round(2) }} CAD."
+
+        - conditions:
+            - condition: template
+              value_template: "{{ vehicle == 'vf9' and session_cost_cents > 0 }}"
+          sequence:
+            - action: input_number.set_value
+              target:
+                entity_id: input_number.vf9_total_cost_cents
+              data:
+                value: "{{ (states('input_number.vf9_total_cost_cents') | default(0, true) | float(0)) + session_cost_cents }}"
+            - action: input_number.set_value
+              target:
+                entity_id: input_number.vf9_total_energy_kwh
+              data:
+                value: "{{ (states('input_number.vf9_total_energy_kwh') | default(0, true) | float(0)) + session_energy_kwh }}"
+            - action: input_text.set_value
+              target:
+                entity_id: input_text.ev_session_vehicle
+              data:
+                value: "vf9"
+            - action: notify.grizzl_ev_phones
+              data:
+                title: "EV Session Complete — VF9"
+                message: "VF9 charged {{ session_energy_kwh }} kWh (ΔSoC: {{ vf9_gain }} %). Cost: ${{ (session_cost_cents / 100) | round(2) }} CAD."
+
+      default:
+        - action: input_number.set_value
+          target:
+            entity_id: input_number.ev_unknown_cost_cents
+          data:
+            value: "{{ (states('input_number.ev_unknown_cost_cents') | default(0, true) | float(0)) + session_cost_cents }}"
+        - action: input_text.set_value
+          target:
+            entity_id: input_text.ev_session_vehicle
+          data:
+            value: "unknown"
+        - action: notify.grizzl_ev_phones
+          data:
+            title: "EV Session — Vehicle Not Detected"
+            message: "Charging session ended but vehicle could not be identified. Energy: {{ session_energy_kwh }} kWh, Cost: ${{ (session_cost_cents / 100) | round(2) }} CAD. ΔSoC — Ioniq: {{ ioniq_gain }} %, VF9: {{ vf9_gain }} %. Cost logged to unattributed. Manual attribution needed."
+
+# --- Automation 3: Monthly reconciliation & fixed cost split ---
+- id: ev_monthly_reconciliation
+  alias: "EV: Monthly reconciliation & fixed cost split"
+  description: >-
+    On the 1st of each month at 00:01, split the fixed monthly delivery charge
+    ($33.57 CAD = 3357 cents) proportionally between vehicles based on their
+    variable cost share. Increment the fixed cost accumulator.
+  mode: single
+  triggers:
+    - trigger: time
+      at: "00:01:00"
+  conditions:
+    - condition: template
+      value_template: "{{ now().day == 1 }}"
+  actions:
+    - variables:
+        ioniq_cost: "{{ states('input_number.ioniq_6_total_cost_cents') | default(0, true) | float(0) }}"
+        vf9_cost: "{{ states('input_number.vf9_total_cost_cents') | default(0, true) | float(0) }}"
+        total_variable: "{{ ioniq_cost + vf9_cost }}"
+        fixed_monthly_cents: 3357
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ total_variable > 0 }}"
+          sequence:
+            - action: input_number.set_value
+              target:
+                entity_id: input_number.ev_fixed_cost_accumulated_cents
+              data:
+                value: "{{ (states('input_number.ev_fixed_cost_accumulated_cents') | default(0, true) | float(0)) + fixed_monthly_cents }}"
+            - action: notify.grizzl_ev_phones
+              data:
+                title: "EV Monthly Reconciliation"
+                message: >-
+                  Fixed delivery ${{ (fixed_monthly_cents / 100) | round(2) }} split:
+                  Ioniq 6 ${{ ((ioniq_cost / total_variable * fixed_monthly_cents) / 100) | round(2) }},
+                  VF9 ${{ ((vf9_cost / total_variable * fixed_monthly_cents) / 100) | round(2) }}.
+      default:
+        - action: notify.grizzl_ev_phones
+          data:
+            title: "EV Monthly Reconciliation"
+            message: "No variable costs recorded this month. Fixed charge $33.57 unattributed."
+
+# --- Automation 4: Hourly diagnostic logging during active charging ---
+- id: ev_cost_tracking_diagnostics
+  alias: "EV: Cost tracking diagnostics"
+  description: >-
+    Hourly diagnostic snapshot of per-vehicle cost tracking state during active
+    charging sessions. Logs detected vehicle, SoC gains, and session energy to
+    the HA logbook for audit/debugging.
+  mode: single
+  triggers:
+    - trigger: time_pattern
+      hours: "/1"
+  conditions:
+    - condition: state
+      entity_id: binary_sensor.grizzl_e_charging
+      state: "on"
+  actions:
+    - variables:
+        vehicle: "{{ states('sensor.ev_charging_vehicle_detected') | default('unknown', true) }}"
+        ioniq_gain: "{{ state_attr('sensor.ev_charging_vehicle_detected', 'ioniq_soc_gain') | default(0, true) | float(0) | round(1) }}"
+        vf9_gain: "{{ state_attr('sensor.ev_charging_vehicle_detected', 'vf9_soc_gain') | default(0, true) | float(0) | round(1) }}"
+        session_kwh: "{{ state_attr('sensor.ev_charging_vehicle_detected', 'session_kwh') | default(0, true) | float(0) | round(2) }}"
+    - action: logbook.log
+      data:
+        name: "EV Cost Tracking"
+        message: "Active: {{ vehicle }} | Ioniq ΔSoC: {{ ioniq_gain }} % | VF9 ΔSoC: {{ vf9_gain }} % | Session: {{ session_kwh }} kWh"

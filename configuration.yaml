@@ -270,6 +270,71 @@ input_number:
     step: 0.5
     unit_of_measurement: °C
     initial: 20
+
+  # === Per-Vehicle EV Charging Cost Tracking ===
+  ioniq_6_total_cost_cents:
+    name: "Ioniq 6 Total Charging Cost"
+    min: 0
+    max: 1000000
+    step: 1
+    initial: 0
+    unit_of_measurement: "¢"
+
+  vf9_total_cost_cents:
+    name: "VF9 Total Charging Cost"
+    min: 0
+    max: 1000000
+    step: 1
+    initial: 0
+    unit_of_measurement: "¢"
+
+  ioniq_6_total_energy_kwh:
+    name: "Ioniq 6 Total Charging Energy"
+    min: 0
+    max: 100000
+    step: 0.01
+    initial: 0
+    unit_of_measurement: "kWh"
+
+  vf9_total_energy_kwh:
+    name: "VF9 Total Charging Energy"
+    min: 0
+    max: 100000
+    step: 0.01
+    initial: 0
+    unit_of_measurement: "kWh"
+
+  ev_session_soc_start_ioniq:
+    name: "EV Session SoC Start (Ioniq 6)"
+    min: 0
+    max: 100
+    step: 0.1
+    initial: 0
+    unit_of_measurement: "%"
+
+  ev_session_soc_start_vf9:
+    name: "EV Session SoC Start (VF9)"
+    min: 0
+    max: 100
+    step: 0.1
+    initial: 0
+    unit_of_measurement: "%"
+
+  ev_fixed_cost_accumulated_cents:
+    name: "EV Fixed Delivery Cost Accumulated"
+    min: 0
+    max: 100000
+    step: 1
+    initial: 0
+    unit_of_measurement: "¢"
+
+  ev_unknown_cost_cents:
+    name: "EV Unattributed Cost Accumulated"
+    min: 0
+    max: 100000
+    step: 1
+    initial: 0
+    unit_of_measurement: "¢"
 input_datetime:
   airbnb_check_in_time:
     name: Airbnb Check-In Time
@@ -363,6 +428,11 @@ input_text:
     name: Climate AI Last HVAC Mode
     icon: mdi:thermostat
     max: 32
+
+  ev_session_vehicle:
+    name: "EV Charging Session Vehicle"
+    initial: "unknown"
+    max: 10
 
 counter:
   season_switch_summer:
@@ -499,10 +569,10 @@ logger:
   default: warning
   logs:
     homeassistant.components.emulated_hue: error
-    # VinFast integration — debug logging to diagnose device code flow
-    custom_components.vinfast: debug
-    custom_components.vinfast.api_auth: debug
-    custom_components.vinfast.config_flow: debug
+    # VinFast integration — reduced logging (debug → warning)
+    custom_components.vinfast: warning
+    custom_components.vinfast.api_auth: warning
+    custom_components.vinfast.config_flow: warning
 # Rest API commands for Climate AI - Direct API calls bypassing conversation agent
 rest_command:
   climate_ai_gemini:
@@ -704,6 +774,75 @@ template:
           nominal_pack_kwh: 77.4
           expected_range: "0.74-0.80 kWh/% when healthy (Ioniq 6 77.4 kWh pack)"
 
+      # === Per-Vehicle EV Charging Cost Tracking ===
+      - name: "EV Charging Vehicle Detected"
+        unique_id: ev_charging_vehicle_detected
+        state: >
+          {% set ioniq_soc = states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) %}
+          {% set vf9_soc = states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) %}
+          {% set ioniq_start = states('input_number.ev_session_soc_start_ioniq') | default(0, true) | float(0) %}
+          {% set vf9_start = states('input_number.ev_session_soc_start_vf9') | default(0, true) | float(0) %}
+          {% set ioniq_gain = ioniq_soc - ioniq_start %}
+          {% set vf9_gain = vf9_soc - vf9_start %}
+          {% set session_kwh = state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) %}
+          {% if ioniq_gain > 1 and vf9_gain <= 1 %}
+            ioniq_6
+          {% elif vf9_gain > 1 and ioniq_gain <= 1 %}
+            vf9
+          {% elif ioniq_gain > 1 and vf9_gain > 1 %}
+            {% set ioniq_eff = (session_kwh / ioniq_gain) if ioniq_gain > 0 else 999 %}
+            {% set vf9_eff = (session_kwh / vf9_gain) if vf9_gain > 0 else 999 %}
+            {% if (ioniq_eff - 0.774) | abs < (vf9_eff - 1.23) | abs %}
+              ioniq_6
+            {% else %}
+              vf9
+            {% endif %}
+          {% else %}
+            unknown
+          {% endif %}
+        attributes:
+          ioniq_soc_gain: "{{ (states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0)) - (states('input_number.ev_session_soc_start_ioniq') | default(0, true) | float(0)) }}"
+          vf9_soc_gain: "{{ (states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0)) - (states('input_number.ev_session_soc_start_vf9') | default(0, true) | float(0)) }}"
+          session_kwh: "{{ state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) }}"
+          ioniq_efficiency: >
+            {% set gain = (states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0)) - (states('input_number.ev_session_soc_start_ioniq') | default(0, true) | float(0)) %}
+            {% set kwh = state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) %}
+            {{ (kwh / gain) | round(3) if gain > 0.1 else 'unavailable' }}
+          vf9_efficiency: >
+            {% set gain = (states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0)) - (states('input_number.ev_session_soc_start_vf9') | default(0, true) | float(0)) %}
+            {% set kwh = state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) %}
+            {{ (kwh / gain) | round(3) if gain > 0.1 else 'unavailable' }}
+
+      - name: "EV Ioniq 6 Total Cost"
+        unique_id: ev_ioniq_6_total_cost
+        unit_of_measurement: "CAD"
+        state_class: total_increasing
+        state: "{{ (states('input_number.ioniq_6_total_cost_cents') | default(0, true) | float(0)) / 100 }}"
+
+      - name: "EV VF9 Total Cost"
+        unique_id: ev_vf9_total_cost
+        unit_of_measurement: "CAD"
+        state_class: total_increasing
+        state: "{{ (states('input_number.vf9_total_cost_cents') | default(0, true) | float(0)) / 100 }}"
+
+      - name: "EV Ioniq 6 Total Energy"
+        unique_id: ev_ioniq_6_total_energy
+        unit_of_measurement: "kWh"
+        state_class: total_increasing
+        state: "{{ states('input_number.ioniq_6_total_energy_kwh') | default(0, true) | float(0) }}"
+
+      - name: "EV VF9 Total Energy"
+        unique_id: ev_vf9_total_energy
+        unit_of_measurement: "kWh"
+        state_class: total_increasing
+        state: "{{ states('input_number.vf9_total_energy_kwh') | default(0, true) | float(0) }}"
+
+      - name: "EV Fixed Cost Total"
+        unique_id: ev_fixed_cost_total
+        unit_of_measurement: "CAD"
+        state_class: total_increasing
+        state: "{{ (states('input_number.ev_fixed_cost_accumulated_cents') | default(0, true) | float(0)) / 100 }}"
+
 shell_command:
   # [t] bracket trick: the pattern must not match this shell_command's own
   # process, or the kill loop terminates itself (return code -15) before
@@ -772,6 +911,32 @@ utility_meter:
     name: "Grizzl-E Cost Yearly"
     unique_id: grizzl_e_cost_yearly
     cycle: yearly
+
+  # === Per-Vehicle EV Charging Cost Tracking ===
+  ioniq_6_cost_daily:
+    source: sensor.ev_ioniq_6_total_cost
+    cycle: daily
+  ioniq_6_cost_monthly:
+    source: sensor.ev_ioniq_6_total_cost
+    cycle: monthly
+  vf9_cost_daily:
+    source: sensor.ev_vf9_total_cost
+    cycle: daily
+  vf9_cost_monthly:
+    source: sensor.ev_vf9_total_cost
+    cycle: monthly
+  ioniq_6_energy_daily:
+    source: sensor.ev_ioniq_6_total_energy
+    cycle: daily
+  ioniq_6_energy_monthly:
+    source: sensor.ev_ioniq_6_total_energy
+    cycle: monthly
+  vf9_energy_daily:
+    source: sensor.ev_vf9_total_energy
+    cycle: daily
+  vf9_energy_monthly:
+    source: sensor.ev_vf9_total_energy
+    cycle: monthly
 # ── Grizzl-E notification group (Samsung S23 + OnePlus 13) ──────
 notify:
   - name: grizzl_ev_phones
