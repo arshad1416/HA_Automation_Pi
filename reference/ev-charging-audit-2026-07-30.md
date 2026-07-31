@@ -58,7 +58,19 @@ Root `automations.yaml` is legacy and not loaded — nothing here is sourced fro
 >
 > The unit-agnostic handling is kept deliberately even though the override now persists: it costs nothing and means losing the override degrades to "still correct" rather than "silently wrong in the dangerous direction".
 >
-> Minor, if it bothers you: the UI kept `suggested_display_precision: 2`, so tiles read `36.00 psi`. Same dialog, Display Precision → 1.
+> **Display precision — closed 2026-07-31 11:03.** Tiles read `36.00 psi`; now `36.0`.
+>
+> This took two attempts and the failure is the useful part. Writing `suggested_display_precision: 1` into the registry did **not** hold — HA reverted it to `2` within 70 seconds of startup, while leaving the UI-set `unit_of_measurement: psi` alone. That contrast is the diagnosis: the two keys have different owners.
+>
+> | registry key | owned by | hand-editable |
+> |---|---|---|
+> | `suggested_display_precision` | the **integration** — HA recomputes it from the entity's property on every load | no, silently reverted |
+> | `display_precision` | the **user** — what the UI's "Display Precision" control writes; wins over the suggestion | yes, persists |
+> | `unit_of_measurement` | the **user** | yes, once set through the UI |
+>
+> Setting `display_precision: 1` (leaving `suggested_display_precision` untouched) held through HA's rewrite at 11:03:07 and a restart.
+>
+> **Rule for this repo, learned the hard way across three attempts:** a `.storage` hand-edit persists only for keys Home Assistant treats as *user overrides*. Anything the integration owns is recomputed on load and your edit vanishes with no error and no log line. Before hand-editing the registry, identify which side of that line the key falls on — and always verify by waiting for HA to rewrite the file (~70–300 s after start), not just by re-reading it immediately.
 >
 > ### Second deploy — 2026-07-31 08:52 EDT
 >
