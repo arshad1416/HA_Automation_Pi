@@ -3,11 +3,11 @@
 # -----------------------------------------------------------------------------
 # Family Room LD2420   -> binary_sensor.family_room_mmwave_presence
 #                         (node family-room-mmwave @ 192.168.0.121, timeout 120s)
-# Master Bedroom LD2420-> binary_sensor.master_bedroom_mmwave_presence
-#                         (node master-bedroom-mmwave @ 192.168.0.108, timeout 120s)
+# Master Bedroom combined-> binary_sensor.master_bedroom_occupancy_combined
+#   OR of LD2420 mmWave (node @ 192.168.0.108, timeout 120s) + Ecobee 332D.
 #
 # Ceiling fan speeds are NOT controlled here — the Climate AI owns all fan/HVAC
-# decisions and already receives both sensors via RoomPresence in its prompt.
+# decisions and receives the combined master-bedroom signal in its prompt.
 # =============================================================================
 
 - id: family_room_auto_off_empty
@@ -77,7 +77,7 @@
   mode: single
   max_exceeded: silent
   triggers:
-  - entity_id: binary_sensor.master_bedroom_mmwave_presence
+  - entity_id: binary_sensor.master_bedroom_occupancy_combined
     to: 'on'
     for: 00:05:00
     trigger: state
@@ -97,10 +97,10 @@
       entity_id: automation.proactive_nightly_lock_check
 - id: master_bedroom_supernova_auto_off
   alias: Master Bedroom — Fan light off after 30 min no presence
-  description: Turn off the master bedroom fan light after 30 minutes with no mmWave presence.
+  description: Turn off the master bedroom fan light after 30 minutes with no combined mmWave/Ecobee presence.
   mode: restart
   triggers:
-  - entity_id: binary_sensor.master_bedroom_mmwave_presence
+  - entity_id: binary_sensor.master_bedroom_occupancy_combined
     to: 'off'
     for: 00:30:00
     trigger: state
@@ -169,11 +169,11 @@
       entity_id: media_player.lg_webos_tv_un8500auj
 - id: master_bedroom_presence_light_auto_on
   alias: Master Bedroom — Fan light on when someone enters (evening)
-  description: Turn on the master bedroom fan light when mmWave detects presence between sunset and 23:00, and the light is
+  description: Turn on the master bedroom fan light when combined mmWave/Ecobee occupancy detects presence between sunset and 23:00, and the light is
     currently off.
   mode: restart
   triggers:
-  - entity_id: binary_sensor.master_bedroom_mmwave_presence
+  - entity_id: binary_sensor.master_bedroom_occupancy_combined
     to: 'on'
     trigger: state
   conditions:

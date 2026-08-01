@@ -704,6 +704,21 @@ template:
         device_class: occupancy
         state: >
           {{ is_state('input_boolean.kitchen_tuya_presence', 'on') }}
+      # One authoritative master-bedroom occupancy signal. ON when either the
+      # LD2420 mmWave sensor or the Ecobee SmartSensor (serial 332D) detects
+      # occupancy; unavailable only when both source entities are unavailable.
+      - name: Master Bedroom Occupancy Combined
+        unique_id: master_bedroom_occupancy_combined
+        device_class: occupancy
+        availability: >
+          {{ states('binary_sensor.master_bedroom_mmwave_presence') not in ['unknown', 'unavailable']
+             or states('binary_sensor.332d_occupancy') not in ['unknown', 'unavailable'] }}
+        state: >
+          {{ is_state('binary_sensor.master_bedroom_mmwave_presence', 'on')
+             or is_state('binary_sensor.332d_occupancy', 'on') }}
+        attributes:
+          mmwave: "{{ states('binary_sensor.master_bedroom_mmwave_presence') }}"
+          ecobee_332d: "{{ states('binary_sensor.332d_occupancy') }}"
   # Aggregate of every indoor MOTION sensor (Ecobee + Echo presence switches included).
   # ON if anything is currently moving. Only device_class=motion sources + the two Echo
   # presence switches — occupancy/presence (mmWave) is deliberately EXCLUDED because it
