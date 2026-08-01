@@ -786,7 +786,7 @@
     trigger: time
 - id: climate_ai_advisor
   alias: climate_ai_advisor
-  description: 'Hourly Climate AI via Gemini. Recommends setpoint, HVAC mode, fan speed, blinds. Hardened 2026-07-13 (was firing every 15 min and flapping the HVAC): hourly trigger; stability guards (no mode change unless different AND last mode change >60 min ago; setpoint 23.0-25.5C applied only when >=0.5C from current target); prompt carries LastDecision + hysteresis rules; reason logged to input_text.climate_ai_recommendation; phone push only when something actually changed.'
+  description: 'Hourly Climate AI via Gemini. Recommends setpoint, HVAC mode, fan speed, blinds. Stability guards: two-hour mode/setpoint hold, >=0.5C setpoint hysteresis, and urgent high-temperature/high-humidity correction. A 25.5C cooling target is allowed for energy savings, but occupied-room fans are forced to at least medium speed. Uses the live Grizzl-E tariff attributes; reason logged to input_text.climate_ai_recommendation; phone push only when HVAC actually changed.'
   triggers:
   - minutes: 0
     trigger: time_pattern
@@ -803,11 +803,14 @@
   actions:
   - variables:
       prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 23.0-25.5C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.arshad14\") }} Larissa={{ \"home\" if is_state(\"binary_sensor.larissa_s_s22_presence\",\"on\") else \"away\" }} WFHWorkday={{ \"yes\" if is_state(\"calendar.workday_sensor_calendar\",\"on\") else \"no\" }} (Arshad works from home on workdays)\n                RoomPresence: Izaan={{ states(\"binary_sensor.izaans_room_presence\") }} Mina={{ states(\"binary_sensor.minas_room_presence\") }} FamilyRoom={{ states(\"binary_sensor.family_room_mmwave_presence\") }} MasterBedroom={{ states(\"binary_sensor.master_bedroom_mmwave_presence\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed.
+                ENERGY/COMFORT FAN RULE: You MAY select a 25.5C cooling setpoint to save energy. Whenever the target is 25.5C, every occupied room must use its ceiling fan at speed 2 or 3; prefer fans over additional AC when indoor humidity is <=55%. Fans improve perceived comfort but do not remove moisture. When indoor humidity is >60%, do not raise the target to 25.5C; prioritize cooling/dehumidification.
                 VentBoosters: Iz={{ states(\"fan.izaan_s_room_20a970\") }}@{{ state_attr(\"fan.izaan_s_room_20a970\", \"percentage\") }}% Mi={{ states(\"fan.mina_s_room_f851f4\") }}@{{ state_attr(\"fan.mina_s_room_f851f4\", \"percentage\") }}%
                 Sw: KFn={{ states(\"switch.kitchen_fan_switch_1\") }} MFn={{ states(\"switch.master_bedroom_fan_light_switch_1\") }}
                 Doors: Front={{ \"open\" if is_state(\"binary_sensor.front_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.front_door\", \"unlocked\") else \"\" }} GE={{ \"open\" if is_state(\"binary_sensor.garages_entry_door_door\", \"on\") else \"closed\" }}{{ \"/unlocked\" if is_state(\"lock.garages_entry_door\", \"unlocked\") else \"\" }}
                 Blinds: DR={{ state_attr(\"cover.dining_room_blinds_curtain\",\"current_position\") }}%open FR={{ state_attr(\"cover.family_room_blinds_curtain\",\"current_position\") }}%open MR={{ state_attr(\"cover.mina_s_blinds_curtain\",\"current_position\") }}%open
                 TV: FR_LG={{ states(\"media_player.lg_webos_tv_un8500auj\") }}
+                LiveTariff: Period={{ state_attr(\"sensor.grizzl_e_total_cost\", \"period_label\") }} Rate={{ state_attr(\"sensor.grizzl_e_total_cost\", \"rate_cents_kwh\") }}c/kWh. This HA value is authoritative for the current decision; use the schedule below only to plan future pre-cooling.
+                LastSetpointChange={{ ((as_timestamp(now()) - as_timestamp(states(\"input_datetime.climate_ai_last_setpoint_change\"), 0)) / 60) | round(0) if states(\"input_datetime.climate_ai_last_setpoint_change\") not in [\"unknown\",\"unavailable\",\"none\",\"\"] else \"unknown\" }}min ago.
                 Weather: {{ states(\"weather.forecast_home\") }} UV={{ state_attr(\"weather.forecast_home\", \"uv_index\") }} Clouds={{ state_attr(\"\
         weather.forecast_home\", \"cloud_coverage\") }}%\n                Sun={{ states(\"sun.sun\") }} Azimuth={{ state_attr(\"sun.sun\", \"azimuth\") }} deg Elevation={{ state_attr(\"sun.sun\", \"elevation\") }} deg\n                Window facings: dining={{ states(\"input_number.window_dining_room_facing\") }} deg living={{ states(\"input_number.window_living_room_facing\") }} deg family={{ states(\"input_number.window_family_room_facing\") }} deg mina={{ states(\"input_number.window_minas_room_facing\") }} deg master={{ states(\"input_number.window_master_bedroom_facing\") }} deg izaan={{ states(\"input_number.window_izaans_room_facing\") }} deg\n                Layout: main floor (elev {{ states(\"input_number.house_elevation\") }}m): kitchen, family, living, dining. Second floor (elev {{ states(\"input_number.house_elevation_second_floor\") }}m): master, mina, izaan, guest. Family is directly below Mina, Living is directly below Izaan, and Kitchen is directly below Master (heat rises between stacked rooms). Kitchen and Family face the same direction as Mina and Master; Izaan is on the exactly opposite side of the house from Mina; Guest is next to Izaan and faces the same direction as Izaan. Ceiling height {{ states(\"input_number.ceiling_height\") }}m.\n                LastDecision: current hvac={{ states(\"climate.ecobee\") }} target={{ state_attr(\"climate.ecobee\",\"temperature\") }}C, mode last changed {{ ((now() - (states.climate.ecobee.last_changed if states.climate.ecobee else now())).total_seconds() / 60) | round(0) }} min ago.\n                HVAC stability rules: Prefer no change — return null for hvac_mode and setpoint unless a change is clearly warranted. Respect +/-0.5C hysteresis: never move the setpoint by less than 0.5C, and if perceived temps are within 0.5C of the current target, return setpoint null. Do NOT change hvac_mode if the mode changed less than 120 min ago (see LastDecision) — never reverse a recent mode change. For small corrections adjust the setpoint (23.0-25.5C only), do not toggle the mode off/on. Frequent compressor starts damage the AC.\n                Rules: Only recommend blind changes when sun ABOVE horizon (elevation > 0). If cloudy >40% or UV<2 or elevation<15°, keep blinds open. If UV>5, close blinds on sunny side (azimuth within 45 deg).\n                All HVAC, fan, and temperature decisions are now handled by this AI. Do not wait for other automations.\n                Summer: close blinds on sunny side (azimuth within 45 deg), OPEN blinds on rooms NOT facing sun.\n                Winter: keep all blinds open for passive solar. If hvac_action=heating: keep all blinds open.\n                Output JSON: {\"setpoint\":N, \"hvac_mode\":\"...\", \"fans\":{\"kitchen\":\"off|1|2|3\",\"master\":\"...\",\"mina\":\"...\",\"guest\":\"...\",\"izaan\":\"...\"}, \"blinds\":{\"dining\":N,\"family\":N,\"living\":N,\"mina\":N}, \"vent_boosters\":{\"izaan\":N,\"mina\":N}, \"reason\":\"...\"}\n                blinds values: 0-100 or \"no_change\". Use partial values (25,50,75) to block some sun. Blinds covered: dining, family, living, mina. Prefer PARTIAL positions to balance sun/glare/heat. Only move blinds when sun is up; at night a separate automation closes them.\nFront door: FrontOpenDuration={{ (as_timestamp(now()) | int(0) - as_timestamp(states.binary_sensor.front_door_door.last_changed | default(now(), true)) | int(as_timestamp(now()))) // 60 if is_state('binary_sensor.front_door_door','on') else 0 }}min. If FrontOpenDuration > 10 (front door left open >10 min): factor this in — HVAC is being wasted, so ease off cooling/heating (do not run aggressively), recommend closing the door, and note reduced efficiency.\nVent booster fans: izaan_s_room_20a970 and mina_s_room_f851f4. If a room is too hot/cold and the ceiling fan is already on, boost the vent. Values: 0-100 (percentage), or null to leave as-is. HARD LIMIT: Between 9PM-7AM, max 30%. Only boost vents for rooms shown occupied in RoomPresence; never boost a vent in an empty room, and deprioritize comfort adjustments for unoccupied rooms.\nELECTRICITY RATES (Alectra ULO - Ultra-Low Overnight Time-of-Use):\n WEEKDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST - PREFER to run HVAC\n  7AM-4PM: Mid-Peak (15.7¢/kWh) - Moderate\n  4PM-9PM: On-Peak (39.1¢/kWh) - VERY EXPENSIVE - AVOID running HVAC\n  9PM-11PM: Mid-Peak (15.7¢/kWh) - Moderate\n WEEKENDS & HOLIDAYS:\n  11PM-7AM: Ultra-Low Overnight (3.9¢/kWh) - CHEAPEST\n  7AM-11PM: Weekend Off-Peak (9.8¢/kWh) - Moderate (all day)\nRULES:\n  Weekdays: Pre-cool during Ultra-Low Overnight (11PM-7AM) to shift load from expensive 4PM-9PM peak.\n  Weekdays 4PM-9PM: Avoid AC if possible. Use fans instead if outdoor < indoor.\n  Weekends: Full day off-peak at 9.8¢. Standard HVAC operation.\n  Summer: overcool by 1-2C during Ultra-Low Overnight so house drifts through 4-9PM peak.\nCurrent Ontario Time: {{ now().strftime('%A %H:%M') }}"
   - action: rest_command.climate_ai_gemini
@@ -820,15 +823,37 @@
       hvac_mode: '{{ ai_json.hvac_mode | default(none, true) }}'
       setpoint: '{{ ai_json.setpoint | default(none) }}'
       reason: '{{ ai_json.reason | default(''No recommendation'', true) }}'
+      humidity_pct: '{{ states(''sensor.ecobee_current_humidity'') | float(45) }}'
+      perceived_high_c: >-
+        {% set humidity_adjustment = (humidity_pct | float(45) - 45) * 0.1 %}
+        {% set downstairs = states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.ecobee_current_temperature') | float(24)) %}
+        {% set upstairs = states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.ecobee_current_temperature') | float(24)) %}
+        {% set high = [downstairs, upstairs] | max %}
+        {{ (high + humidity_adjustment) | round(1) }}
+      current_target: '{{ state_attr(''climate.ecobee'', ''temperature'') | float(24) }}'
+      last_setpoint_change_ts: '{{ as_timestamp(states(''input_datetime.climate_ai_last_setpoint_change''), 0) | float(0) }}'
+      setpoint_cooldown_ok: >-
+        {{ last_setpoint_change_ts | float(0) == 0
+           or as_timestamp(now()) - last_setpoint_change_ts | float(0) >= 7200 }}
+      comfort_correction: >-
+        {{ setpoint is not none and setpoint | float(99) < current_target | float(24)
+           and (humidity_pct | float(45) > 60 or perceived_high_c | float(24) > 26) }}
       hvac_mode_n: '{{ none if hvac_mode is none else (''heat_cool'' if hvac_mode | string | lower == ''auto'' else hvac_mode | string | lower) }}'
       mode_apply: >-
         {{ hvac_mode_n is not none and hvac_mode_n in ['off', 'heat', 'cool', 'heat_cool']
            and hvac_mode_n != states('climate.ecobee')
-           and (now() - (states.climate.ecobee.last_changed if states.climate.ecobee else now())).total_seconds() > 3600 }}
+           and (now() - (states.climate.ecobee.last_changed if states.climate.ecobee else now())).total_seconds() > 7200 }}
       setp_apply: >-
         {{ setpoint is not none and setpoint | float(-99) >= 23.0 and setpoint | float(-99) <= 25.5
+           and not (setpoint | float(-99) >= 25.5 and humidity_pct | float(45) > 60)
+           and (setpoint_cooldown_ok or comfort_correction)
            and (state_attr('climate.ecobee', 'temperature') is none
                 or (setpoint | float(0) - state_attr('climate.ecobee', 'temperature') | float(0)) | abs >= 0.5) }}
+      effective_target: '{{ setpoint | float(current_target) if setp_apply else current_target | float(24) }}'
+      fan_support_25_5: >-
+        {{ is_state('input_boolean.climate_summer_mode', 'on')
+           and effective_target | float(0) >= 25.5
+           and (states('climate.ecobee') == 'cool' or hvac_mode_n == 'cool') }}
   - action: input_text.set_value
     target:
       entity_id: input_text.climate_ai_recommendation
@@ -865,7 +890,13 @@
         - { room: izaan, fan: fan.izaan_s_ceiling_fan, sw: switch.izaan_s_bedroom_light_switch_1, occ: binary_sensor.izaans_room_occupancy }
       sequence:
         - variables:
-            spd: "{{ ai_json.get('fans', {}).get(repeat.item.room, 'no_change') if ai_json is mapping else 'no_change' }}"
+            ai_spd: "{{ ai_json.get('fans', {}).get(repeat.item.room, 'no_change') if ai_json is mapping else 'no_change' }}"
+            spd: >-
+              {% if fan_support_25_5 and is_state(repeat.item.occ, 'on') %}
+                {% if humidity_pct | float(45) > 55 or perceived_high_c | float(24) >= 26 or ai_spd | string == '3' %}3{% else %}2{% endif %}
+              {% else %}
+                {{ ai_spd }}
+              {% endif %}
             pct: "{{ {'1':33,'2':66,'3':100}.get(spd | string, 0) }}"
         - choose:
             - conditions: "{{ spd not in [none, 'no_change'] and (spd | string) != 'off' }}"
@@ -958,6 +989,11 @@
     - condition: template
       value_template: '{{ setp_apply }}'
     then:
+    - action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.climate_ai_last_setpoint_change
+      data:
+        datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
     - action: climate.set_temperature
       data:
         temperature: '{{ setpoint }}'

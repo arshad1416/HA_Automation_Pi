@@ -359,6 +359,14 @@ input_datetime:
     has_date: true
     has_time: true
     icon: mdi:sprinkler-variant
+  # Written only when Climate AI actually changes the Ecobee setpoint. This
+  # supports a two-hour hold between ordinary changes; urgent comfort and
+  # dehumidification corrections may bypass the hold.
+  climate_ai_last_setpoint_change:
+    name: Climate AI Last Setpoint Change
+    has_date: true
+    has_time: true
+    icon: mdi:thermostat-clock
 
 input_boolean:
   kitchen_auto_lights_disable:
