@@ -837,6 +837,34 @@
           {% set changed = states.climate.ecobee.last_changed %}
         {% endif %}
         {{ ((as_timestamp(now()) - as_timestamp(changed, as_timestamp(now()))) / 60) | round(0) }}
+      ecobee_equipment_running: >-
+        {{ state_attr(native_climate_entity, 'equipment_running') | default('', true) | string }}
+      ecobee_compressor_running: >-
+        {% set equipment = state_attr(native_climate_entity, 'equipment_running') | default('', true) | string %}
+        {{ 'compCool' in equipment or 'compHeat' in equipment or 'auxHeat' in equipment }}
+      ecobee_comfort_profile: >-
+        {{ state_attr(native_climate_entity, 'climate_mode') | default('unknown', true) }}
+      ecobee_preset_mode: >-
+        {{ state_attr(native_climate_entity, 'preset_mode') | default('unknown', true) }}
+      ecobee_hvac_fan_running: >-
+        {{ state_attr(native_climate_entity, 'fan') | default('unknown', true) }}
+      ecobee_fan_min_on_time: >-
+        {{ states('number.ecobee_fan_minimum_on_time') | default('unknown', true) }}
+      ecobee_humidifier_mode: >-
+        {{ state_attr('humidifier.ecobee', 'mode') | default('unknown', true) }}
+      ecobee_humidifier_action: >-
+        {{ state_attr('humidifier.ecobee', 'action') | default('unknown', true) }}
+      ecobee_humidity_target: >-
+        {{ state_attr('humidifier.ecobee', 'humidity') | default('unknown', true) }}
+      indoor_humidity_adjustment_c: >-
+        {% set rh = states('sensor.climate_ai_ecobee_humidity') | float(45) %}
+        {% if rh >= 65 %} 1.0
+        {% elif rh >= 60 %} 0.6
+        {% elif rh > 55 %} 0.3
+        {% elif rh < 30 %} -0.4
+        {% elif rh < 35 %} -0.2
+        {% else %} 0.0
+        {% endif %}
   - variables:
       prompt: "You are a home climate AI. Analyze the sensor data and recommend HVAC adjustments.\n                Respond ONLY with valid JSON, no markdown, no thinking, no commentary.\n                Top-level keys: setpoint (null or 23.0-25.5C), hvac_mode (heat/cool/off/auto/null),\n                fans (object: each of kitchen/master/mina/guest/izaan = off|1|2|3), blinds (object: dining/family/living/mina = 0-100 or no_change), vent_boosters (object: izaan/mina = 0-100 percentage or null),\n                reason (string). Rooms: kitchen, master, mina, guest, izaan. Speed: 1-3 or off (1=slow, 2=medium, 3=high).\n                Perceived temps (pre-calculated): Dn={{ ((states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.izaans_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C Up={{ ((states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.minas_room_temperature') | float(21)) + (states('sensor.ecobee_current_humidity') | float(45) - 45) * 0.1) | round(1)) }}C. Humidity >55% feels warmer, <35% feels cooler.\n                Summer=prefer Cool, fans on. When switching between heat and cool, set the desired mode directly..\n                Winter=prefer Heat, fans off/low.\n                Outdoor: {{ state_attr(\"weather.forecast_home\", \"temperature\") }}C\n                Humidity: E={{ states(\"sensor.ecobee_current_humidity\") }}% S={{ state_attr(\"weather.forecast_home\", \"humidity\") }}%\n                Echo: Dn={{ states(\"sensor.downstairs_echo_dot_temperature\") }}C Up={{ states(\"sensor.upstairs_echo_dot_temperature\") }}C\n                Indoor: Iz={{ states(\"sensor.izaans_room_temperature\") }}C Mi={{ states(\"sensor.minas_room_temperature\") }}C Bsmt={{ states(\"sensor.basement_temperature\") }}C\n                Ecobee: {{ states(\"climate.ecobee\") }}\n                LeakSensorTemperatures: BB={{ states(\"sensor.basement_bathroom_leak_sensor_device_temperature\") }}C Ensuite={{ states(\"sensor.ensuite_leak_sensor_device_temperature\") }}C GuestB={{ states(\"sensor.guest_bathroom_leak_sensor_device_temperature\") }}C Powder={{ states(\"sensor.powder_room_leak_sensor_device_temperature\") }}C Laundry={{ states(\"sensor.laundry_room_leak_sensor_device_temperature\") }}C  hvac={{ state_attr(\"climate.ecobee\", \"hvac_action\") }} target={{ state_attr(\"climate.ecobee\", \"temperature\") }}C\\n                Occ:\\  Arshad={{ states(\"person.arshad14\") }} Larissa={{ \"home\" if is_state(\"binary_sensor.larissa_s_s22_presence\",\"on\") else \"away\" }} WFHWorkday={{ \"yes\" if is_state(\"calendar.workday_sensor_calendar\",\"on\") else \"no\" }} (Arshad works from home on workdays)\n                RoomPresence: Izaan={{ states(\"binary_sensor.izaans_room_presence\") }} Mina={{ states(\"binary_sensor.minas_room_presence\") }} FamilyRoom={{ states(\"binary_sensor.family_room_mmwave_presence\") }} MasterBedroom={{ states(\"binary_sensor.master_bedroom_mmwave_presence\") }}\n                Szn={{ \"Summer\" if is_state(\"input_boolean.climate_summer_mode\", \"on\") else \"Winter\" }}\n                Fans: K={{ states(\"fan.kitchen_ceiling_fan\") }} M={{ states(\"fan.master_bedroom_ceiling_fan\") }} Mi={{ states(\"fan.mina_s_ceiling_fan\") }} G={{ states(\"fan.guest_room_ceiling_fan\") }} Iz={{ states(\"fan.izaan_s_ceiling_fan\") }}\n                Ceiling fans (kitchen/master/mina/guest/izaan): set each off|1|2|3 (1=33%,2=66%,3=100%). The automation powers each fan switch on before setting speed; switch state (not fan state) is truth. Turn fans on when cooling helps; off when not needed.
                 ENERGY/COMFORT FAN RULE: You MAY select a 25.5C cooling setpoint to save energy. Whenever the target is 25.5C, every occupied room must use its ceiling fan at speed 2 or 3; prefer fans over additional AC when indoor humidity is <=55%. Fans improve perceived comfort but do not remove moisture. When indoor humidity is >60%, do not raise the target to 25.5C; prioritize cooling/dehumidification.
@@ -861,6 +889,10 @@
            ~ '\nCOMFORT TARGET: Aim for about 24.0C perceived temperature in occupied rooms, with 23.5-24.5C as the normal comfort band. 22.5C is available for deliberate ULO pre-cooling or a sustained warm/high-humidity comfort correction; do not select it for routine hourly variation. 25.5C remains an energy-saving coast target only when humidity is acceptable and occupied-room fans provide air movement.'
            ~ '\nCHEAP-RATE WARM-ROOM PREFERENCE: Use the authoritative LiveTariff period above. If its period label contains Ultra-Low or Off-Peak and Mina, Izaan, or the upstairs reference is at least 26.0C, prefer a 23.0C cooling setpoint. This is a preference, not a hard override: your returned setpoint is authoritative, and if you return 24.5C the automation will apply 24.5C unchanged. During Mid-Peak or On-Peak, do not select 23.0C solely for this preference.'
            ~ '\nAUTHORITATIVE ECOBEE DATA: Ignore the earlier Ecobee, Indoor, humidity, target, and HVAC values in this prompt. Use these Native-Ecobee-primary normalized values instead: source=' ~ climate_read_entity ~ ', mode=' ~ states(climate_read_entity) ~ ', hvac_action=' ~ (state_attr(climate_read_entity, 'hvac_action') | default('unknown', true)) ~ ', target=' ~ (state_attr(climate_read_entity, 'temperature') | default('unknown', true)) ~ 'C, thermostat=' ~ states('sensor.climate_ai_ecobee_temperature') ~ 'C, humidity=' ~ states('sensor.climate_ai_ecobee_humidity') ~ '%, basement=' ~ states('sensor.climate_ai_basement_temperature') ~ 'C, guest=' ~ states('sensor.climate_ai_guest_room_temperature') ~ 'C, izaan=' ~ states('sensor.climate_ai_izaans_room_temperature') ~ 'C, master=' ~ states('sensor.climate_ai_master_bedroom_temperature') ~ 'C, mina=' ~ states('sensor.climate_ai_minas_room_temperature') ~ 'C, mode_age=' ~ climate_mode_age_minutes ~ ' minutes.'
+           ~ '\nNATIVE EQUIPMENT CONTEXT: equipment_running=' ~ ecobee_equipment_running ~ ', compressor_running=' ~ ecobee_compressor_running ~ ', thermostat_fan=' ~ ecobee_hvac_fan_running ~ ', fan_min_on_time=' ~ ecobee_fan_min_on_time ~ ' min/hour, comfort_profile=' ~ ecobee_comfort_profile ~ ', preset=' ~ ecobee_preset_mode ~ ', humidifier_mode=' ~ ecobee_humidifier_mode ~ ', humidifier_action=' ~ ecobee_humidifier_action ~ ', humidity_target=' ~ ecobee_humidity_target ~ '%. If compressor_running is true, return hvac_mode null: never reverse or stop the operating mode from this hourly AI run. Setpoint adjustments remain allowed when justified. Respect Sleep/Evening profiles by prioritizing occupied bedrooms; for Away/away_indefinitely return no HVAC change except urgent freeze/overheat protection. The humidifier adds moisture and does not dehumidify.'
+           ~ '\nSETPOINT RESOLUTION: Return only null or one of 22.5, 23.0, 23.5, 24.0, 24.5, 25.0, 25.5 C. The automation normalizes any other numeric value to the nearest 0.5C before applying hysteresis.'
+           ~ '\nHUMIDITY COMFORT: Use a perceived-temperature adjustment of ' ~ indoor_humidity_adjustment_c ~ 'C for current indoor RH. Ignore the earlier linear humidity calculation. RH 35-55% is the neutral band with no temperature penalty; only sustained RH above 55% or below 35% materially shifts perceived comfort.'
+           ~ '\nOUTDOOR CROSS-CHECK: Ecobee weather reports ' ~ (state_attr('weather.ecobee', 'temperature') | default('unknown', true)) ~ 'C and ' ~ (state_attr('weather.ecobee', 'humidity') | default('unknown', true)) ~ '% RH; Forecast Home reports ' ~ outdoor_temp_c ~ 'C and ' ~ outdoor_humidity_pct ~ '% RH with dew point ' ~ outdoor_dew_point_c ~ 'C. Use agreement as confidence. If temperature differs by more than 2C or humidity by more than 15 percentage points, treat outdoor conditions as uncertain and do not change HVAC solely because of weather.'
            ~ '\nOUTDOOR ADAPTATION: Current outdoor conditions are ' ~ outdoor_temp_c ~ 'C, ' ~ outdoor_humidity_pct ~ '% RH, dew point ' ~ outdoor_dew_point_c ~ 'C. Use dew point, not outdoor relative humidity alone, to judge outdoor moisture. Weather may shift the normal perceived-temperature target by at most 0.5C; do not change the HVAC merely because a single hourly weather reading changed, and keep the existing two-hour hold. If outdoors is at least 1.5C cooler than the warmest occupied indoor perceived temperature and dew point is below 16C, favor fans, reduced AC, and a null setpoint change; outside air is favorable for optional natural ventilation. If outdoor temperature is 30C or higher while dew point is below 18C and indoor RH is at most 55%, an adaptive 24.5-25.5C cooling target with occupied-room fans is acceptable. If outdoor dew point is 18C or higher, treat the air as moisture-laden: keep the house closed, do not rely on outdoor air for comfort, and when indoor RH exceeds 55% aim near 23.5-24.0C for cooling/dehumidification rather than 25.5C. When outdoors is below 18C and indoor perceived temperature is already comfortable, avoid mechanical cooling and return a null setpoint. Exceptions to the 0.5C weather adaptation are deliberate ULO pre-cooling and sustained urgent indoor heat/humidity correction.' }}
   - action: rest_command.climate_ai_gemini
     data:
@@ -882,10 +914,15 @@
             states('sensor.climate_ai_guest_room_temperature') | float(0),
             states('sensor.climate_ai_master_bedroom_temperature') | float(0),
             states('sensor.upstairs_echo_dot_temperature') | float(0)] | max }}
-      setpoint: '{{ ai_setpoint }}'
+      setpoint: >-
+        {% if ai_setpoint is not none and ai_setpoint | string | lower not in ['null', 'none', 'unknown', 'unavailable', ''] %}
+          {{ (((((ai_setpoint | float) * 2) | round(0, 'common')) / 2)) | round(1) }}
+        {% else %}
+          {{ none }}
+        {% endif %}
       reason: '{{ ai_reason }}'
       perceived_high_c: >-
-        {% set humidity_adjustment = (humidity_pct | float(45) - 45) * 0.1 %}
+        {% set humidity_adjustment = indoor_humidity_adjustment_c | float(0) %}
         {% set downstairs = states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.climate_ai_ecobee_temperature') | float(24)) %}
         {% set upstairs = states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.climate_ai_ecobee_temperature') | float(24)) %}
         {% set high = [downstairs, upstairs, warmest_upstairs_room_c | float(0)] | max %}
@@ -906,6 +943,7 @@
         {{ hvac_mode_n is not none and hvac_mode_n in ['off', 'heat', 'cool', 'heat_cool']
            and climate_control_entity | length > 0
            and hvac_mode_n != states(climate_read_entity)
+           and not (ecobee_compressor_running | bool)
            and climate_mode_age_minutes | float(0) > 120 }}
       setp_apply: >-
         {{ setpoint is not none and setpoint | float(-99) >= 22.5 and setpoint | float(-99) <= 25.5
@@ -923,7 +961,7 @@
     target:
       entity_id: input_text.climate_ai_recommendation
     data:
-      value: '{{ (now().strftime(''%H:%M'') ~ '' mode='' ~ (hvac_mode_n if hvac_mode_n is not none else ''keep'') ~ (''*'' if mode_apply else '''') ~ '' set='' ~ (setpoint if setpoint is not none else ''keep'') ~ (''*'' if setp_apply else '''') ~ '' | '' ~ reason)[:250] }}'
+      value: '{{ (now().strftime(''%H:%M'') ~ '' mode='' ~ (hvac_mode_n if hvac_mode_n is not none else ''keep'') ~ (''*'' if mode_apply else '''') ~ (''[compressor-blocked]'' if hvac_mode_n is not none and hvac_mode_n != states(climate_read_entity) and ecobee_compressor_running | bool else '''') ~ '' set='' ~ (setpoint if setpoint is not none else ''keep'') ~ (''*'' if setp_apply else '''') ~ '' | '' ~ reason)[:250] }}'
   - if:
     - condition: template
       value_template: '{{ mode_apply }}'
