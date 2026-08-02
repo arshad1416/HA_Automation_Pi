@@ -786,10 +786,19 @@
     trigger: time
 - id: climate_ai_advisor
   alias: climate_ai_advisor
-  description: 'Hourly Climate AI via Gemini. Recommends a 22.5-25.5C setpoint, HVAC mode, fan speed, and blinds around a 24C perceived-comfort target. Outdoor temperature, relative humidity, and dew point modestly adapt that target without chasing weather changes. Stability guards: two-hour mode/setpoint hold, >=0.5C setpoint hysteresis, and urgent high-temperature/high-humidity correction. A 25.5C cooling target is allowed for energy savings, but occupied-room fans are forced to at least medium speed. Uses the live Grizzl-E tariff attributes; reason logged to input_text.climate_ai_recommendation; phone push only when HVAC actually changed.'
+  description: 'Hourly Climate AI via Gemini, plus an immediate evaluation when Mina, Izaan, or the upstairs reference remains above 26C for 10 minutes. Recommends a 22.5-25.5C setpoint, HVAC mode, fan speed, and blinds around a 24C perceived-comfort target; a sustained >26C warm-room correction deterministically applies 23.0C. Outdoor temperature, relative humidity, and dew point modestly adapt the normal target without chasing weather changes. Stability guards: two-hour mode/setpoint hold, >=0.5C setpoint hysteresis, and urgent high-temperature/high-humidity correction. A 25.5C cooling target is allowed for energy savings, but occupied-room fans are forced to at least medium speed. Ecobee writes are verified and retried through the SmartThings thermostat entity if HomeKit does not retain them. Uses the live Grizzl-E tariff attributes; reason logged to input_text.climate_ai_recommendation; phone push only when HVAC actually changed.'
   triggers:
   - minutes: 0
     trigger: time_pattern
+  - trigger: numeric_state
+    entity_id:
+    - sensor.minas_room_temperature
+    - sensor.mina_s_echo_dot_temperature
+    - sensor.izaans_room_temperature
+    - sensor.izaan_s_echo_dot_temperature
+    - sensor.upstairs_echo_dot_temperature
+    above: 26
+    for: '00:10:00'
   conditions:
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
@@ -823,6 +832,7 @@
       prompt: >-
         {{ (prompt | replace('23.0-25.5C', '22.5-25.5C'))
            ~ '\nCOMFORT TARGET: Aim for about 24.0C perceived temperature in occupied rooms, with 23.5-24.5C as the normal comfort band. 22.5C is available for deliberate ULO pre-cooling or a sustained warm/high-humidity comfort correction; do not select it for routine hourly variation. 25.5C remains an energy-saving coast target only when humidity is acceptable and occupied-room fans provide air movement.'
+           ~ '\nMANDATORY WARM-ROOM CORRECTION: If Mina, Izaan, or the upstairs reference is above 26.0C, request a 23.0C cooling setpoint rather than 24.0C or 24.5C. This deterministic automation rule overrides your setpoint response, so align the reason and fan recommendations with it.'
            ~ '\nOUTDOOR ADAPTATION: Current outdoor conditions are ' ~ outdoor_temp_c ~ 'C, ' ~ outdoor_humidity_pct ~ '% RH, dew point ' ~ outdoor_dew_point_c ~ 'C. Use dew point, not outdoor relative humidity alone, to judge outdoor moisture. Weather may shift the normal perceived-temperature target by at most 0.5C; do not change the HVAC merely because a single hourly weather reading changed, and keep the existing two-hour hold. If outdoors is at least 1.5C cooler than the warmest occupied indoor perceived temperature and dew point is below 16C, favor fans, reduced AC, and a null setpoint change; outside air is favorable for optional natural ventilation. If outdoor temperature is 30C or higher while dew point is below 18C and indoor RH is at most 55%, an adaptive 24.5-25.5C cooling target with occupied-room fans is acceptable. If outdoor dew point is 18C or higher, treat the air as moisture-laden: keep the house closed, do not rely on outdoor air for comfort, and when indoor RH exceeds 55% aim near 23.5-24.0C for cooling/dehumidification rather than 25.5C. When outdoors is below 18C and indoor perceived temperature is already comfortable, avoid mechanical cooling and return a null setpoint. Exceptions to the 0.5C weather adaptation are deliberate ULO pre-cooling and sustained urgent indoor heat/humidity correction.' }}
   - action: rest_command.climate_ai_gemini
     data:
@@ -830,17 +840,31 @@
     response_variable: ai_response
   - variables:
       ai_raw: '{{ ai_response.content.candidates[0].content.parts[0].text if ai_response.content.candidates is defined and ai_response.content.candidates and ai_response.content.candidates[0].content is defined and ai_response.content.candidates[0].content.parts is defined and ai_response.content.candidates[0].content.parts else '''' }}'
-      ai_json: '{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace(''(?i)```json\s*'', '''') | regex_replace(''(?i)```\s*'', '''') | trim | from_json if ai_raw is string and ai_raw | trim != '''' and (ai_raw | trim | regex_search(''[\{\[]'')) else {}) }}'
+      ai_json: '{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace(''(?i)```json\s*'', '''') | regex_replace(''(?i)```\s*'', '''') | trim | from_json({}) if ai_raw is string and ai_raw | trim != '''' and (ai_raw | trim | regex_search(''[\{\[]'')) else {}) }}'
       hvac_mode: '{{ ai_json.hvac_mode | default(none, true) }}'
-      setpoint: '{{ ai_json.setpoint | default(none) }}'
-      reason: '{{ ai_json.reason | default(''No recommendation'', true) }}'
+      ai_setpoint: '{{ ai_json.setpoint | default(none) }}'
+      ai_reason: '{{ ai_json.reason | default(''Gemini response unavailable; deterministic safeguards only'', true) }}'
       humidity_pct: '{{ states(''sensor.ecobee_current_humidity'') | float(45) }}'
       outdoor_dew_point_c: '{{ state_attr(''weather.forecast_home'', ''dew_point'') | float(10) }}'
+      warmest_upstairs_room_c: >-
+        {{ [states('sensor.minas_room_temperature') | float(0),
+            states('sensor.mina_s_echo_dot_temperature') | float(0),
+            states('sensor.izaans_room_temperature') | float(0),
+            states('sensor.izaan_s_echo_dot_temperature') | float(0),
+            states('sensor.upstairs_echo_dot_temperature') | float(0)] | max }}
+      warm_room_correction: >-
+        {{ is_state('input_boolean.climate_summer_mode', 'on')
+           and warmest_upstairs_room_c | float(0) > 26 }}
+      setpoint: '{{ 23.0 if warm_room_correction else ai_setpoint }}'
+      reason: >-
+        {{ ('Warm-room correction: forcing 23.0C because an upstairs bedroom/reference is '
+            ~ warmest_upstairs_room_c ~ 'C. ' ~ ai_reason)
+           if warm_room_correction else ai_reason }}
       perceived_high_c: >-
         {% set humidity_adjustment = (humidity_pct | float(45) - 45) * 0.1 %}
         {% set downstairs = states('sensor.downstairs_echo_dot_temperature') | float(states('sensor.ecobee_current_temperature') | float(24)) %}
         {% set upstairs = states('sensor.upstairs_echo_dot_temperature') | float(states('sensor.ecobee_current_temperature') | float(24)) %}
-        {% set high = [downstairs, upstairs] | max %}
+        {% set high = [downstairs, upstairs, warmest_upstairs_room_c | float(0)] | max %}
         {{ (high + humidity_adjustment) | round(1) }}
       current_target: '{{ state_attr(''climate.ecobee'', ''temperature'') | float(24) }}'
       last_setpoint_change_ts: '{{ as_timestamp(states(''input_datetime.climate_ai_last_setpoint_change''), 0) | float(0) }}'
@@ -892,6 +916,7 @@
       value_template: '{{ is_state(''binary_sensor.front_door_door'', ''on'') }}'
     then:
     - action: notify.mobile_app_cph2655
+      continue_on_error: true
       data:
         message: Front door is open while HVAC is running. Close it to save energy.
         title: Front Door Open
@@ -1003,16 +1028,54 @@
     - condition: template
       value_template: '{{ setp_apply }}'
     then:
-    - action: input_datetime.set_datetime
-      target:
-        entity_id: input_datetime.climate_ai_last_setpoint_change
-      data:
-        datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
     - action: climate.set_temperature
       data:
         temperature: '{{ setpoint }}'
       target:
         entity_id: climate.ecobee
+    - delay: '00:00:10'
+    - if:
+      - condition: template
+        value_template: >-
+          {{ state_attr('climate.ecobee', 'temperature') is none
+             or (state_attr('climate.ecobee', 'temperature') | float(99)
+                 - setpoint | float(0)) | abs > 0.5 }}
+      - condition: template
+        value_template: '{{ states(''climate.ecobee_2'') not in [''unknown'', ''unavailable''] }}'
+      then:
+      - action: climate.set_temperature
+        continue_on_error: true
+        data:
+          temperature: '{{ setpoint }}'
+        target:
+          entity_id: climate.ecobee_2
+      - delay: '00:00:20'
+    - variables:
+        setpoint_persisted: >-
+          {{ (state_attr('climate.ecobee', 'temperature') is not none
+              and (state_attr('climate.ecobee', 'temperature') | float(99)
+                   - setpoint | float(0)) | abs <= 0.5)
+             or (states('climate.ecobee') in ['unknown', 'unavailable']
+                 and state_attr('climate.ecobee_2', 'temperature') is not none
+                 and (state_attr('climate.ecobee_2', 'temperature') | float(99)
+                      - setpoint | float(0)) | abs <= 0.5) }}
+    - if:
+      - condition: template
+        value_template: '{{ setpoint_persisted }}'
+      then:
+      - action: input_datetime.set_datetime
+        target:
+          entity_id: input_datetime.climate_ai_last_setpoint_change
+        data:
+          datetime: '{{ now().strftime(''%Y-%m-%d %H:%M:%S'') }}'
+      else:
+      - action: notify.persistent_notification
+        data:
+          title: Climate AI setpoint did not persist
+          message: >-
+            Requested {{ setpoint }}C, but HomeKit reports
+            {{ state_attr('climate.ecobee', 'temperature') }}C and SmartThings
+            reports {{ state_attr('climate.ecobee_2', 'temperature') }}C after retry.
   - if:
     - condition: template
       value_template: '{{ mode_apply or setp_apply }}'
@@ -1026,6 +1089,7 @@
       value_template: '{{ mode_apply or setp_apply }}'
     then:
     - action: notify.mobile_app_cph2655
+      continue_on_error: true
       data:
         message: 'Climate AI: {{ ''No change'' if setpoint == ''no_change'' else ''Set '' ~ setpoint ~ ''C '' ~ hvac_mode }}{% set ns2 = namespace(p=[]) %}{% for k, v in (ai_json.fans | default({})).items() %}{% if v != ''no_change'' %}{% set ns2.p = ns2.p + [k ~ ''='' ~ v] %}{% endif %}{% endfor %}{{ '' Fans: '' ~ ns2.p | join('', '') if ns2.p | length > 0 else '''' }} - {{ reason }}'
         title: Climate AI
