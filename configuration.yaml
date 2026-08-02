@@ -719,6 +719,177 @@ template:
         attributes:
           mmwave: "{{ states('binary_sensor.master_bedroom_mmwave_presence') }}"
           ecobee_332d: "{{ states('binary_sensor.332d_occupancy') }}"
+  # Canonical Climate AI temperature/humidity inputs. Native Ecobee is the
+  # preferred source; HomeKit remains the first read-only fallback because it
+  # is local and exposes the same physical sensors. SmartThings is the final
+  # fallback and may report Fahrenheit, so those values are normalized to C.
+  - sensor:
+      - name: Climate AI Ecobee Temperature
+        unique_id: climate_ai_ecobee_temperature
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+        availability: >
+          {{ states('sensor.ecobee_temperature_2') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.ecobee_current_temperature') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.ecobee_temperature') not in ['unknown', 'unavailable', 'none', ''] }}
+        state: >
+          {% if states('sensor.ecobee_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.ecobee_temperature_2') | float | round(1) }}
+          {% elif states('sensor.ecobee_current_temperature') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.ecobee_current_temperature') | float | round(1) }}
+          {% else %}
+            {% set value = states('sensor.ecobee_temperature') | float %}
+            {{ (((value - 32) * 5 / 9) if state_attr('sensor.ecobee_temperature', 'unit_of_measurement') == '°F' else value) | round(1) }}
+          {% endif %}
+        attributes:
+          source: >
+            {% if states('sensor.ecobee_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
+            {% elif states('sensor.ecobee_current_temperature') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% else %}smartthings{% endif %}
+
+      - name: Climate AI Ecobee Humidity
+        unique_id: climate_ai_ecobee_humidity
+        device_class: humidity
+        state_class: measurement
+        unit_of_measurement: "%"
+        availability: >
+          {{ states('sensor.ecobee_humidity_2') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.ecobee_current_humidity') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.ecobee_humidity') not in ['unknown', 'unavailable', 'none', ''] }}
+        state: >
+          {% if states('sensor.ecobee_humidity_2') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.ecobee_humidity_2') | float | round(0) }}
+          {% elif states('sensor.ecobee_current_humidity') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.ecobee_current_humidity') | float | round(0) }}
+          {% else %}
+            {{ states('sensor.ecobee_humidity') | float | round(0) }}
+          {% endif %}
+        attributes:
+          source: >
+            {% if states('sensor.ecobee_humidity_2') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
+            {% elif states('sensor.ecobee_current_humidity') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% else %}smartthings{% endif %}
+
+      - name: Climate AI Basement Temperature
+        unique_id: climate_ai_basement_temperature
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+        availability: >
+          {{ states('sensor.basement_temperature_3') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.basement_temperature') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.basement_temperature_2') not in ['unknown', 'unavailable', 'none', ''] }}
+        state: >
+          {% if states('sensor.basement_temperature_3') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.basement_temperature_3') | float | round(1) }}
+          {% elif states('sensor.basement_temperature') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.basement_temperature') | float | round(1) }}
+          {% else %}
+            {% set value = states('sensor.basement_temperature_2') | float %}
+            {{ (((value - 32) * 5 / 9) if state_attr('sensor.basement_temperature_2', 'unit_of_measurement') == '°F' else value) | round(1) }}
+          {% endif %}
+        attributes:
+          source: >
+            {% if states('sensor.basement_temperature_3') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
+            {% elif states('sensor.basement_temperature') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% else %}smartthings{% endif %}
+
+      - name: Climate AI Guest Room Temperature
+        unique_id: climate_ai_guest_room_temperature
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+        availability: >
+          {{ states('sensor.guest_room_temperature_2') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.bbwg_temperature') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.guest_room_temperature') not in ['unknown', 'unavailable', 'none', ''] }}
+        state: >
+          {% if states('sensor.guest_room_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.guest_room_temperature_2') | float | round(1) }}
+          {% elif states('sensor.bbwg_temperature') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.bbwg_temperature') | float | round(1) }}
+          {% else %}
+            {% set value = states('sensor.guest_room_temperature') | float %}
+            {{ (((value - 32) * 5 / 9) if state_attr('sensor.guest_room_temperature', 'unit_of_measurement') == '°F' else value) | round(1) }}
+          {% endif %}
+        attributes:
+          source: >
+            {% if states('sensor.guest_room_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
+            {% elif states('sensor.bbwg_temperature') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% else %}smartthings{% endif %}
+
+      - name: Climate AI Izaans Room Temperature
+        unique_id: climate_ai_izaans_room_temperature
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+        availability: >
+          {{ states('sensor.izaans_room_temperature_3') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.izaans_room_temperature') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.izaans_room_temperature_2') not in ['unknown', 'unavailable', 'none', ''] }}
+        state: >
+          {% if states('sensor.izaans_room_temperature_3') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.izaans_room_temperature_3') | float | round(1) }}
+          {% elif states('sensor.izaans_room_temperature') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.izaans_room_temperature') | float | round(1) }}
+          {% else %}
+            {% set value = states('sensor.izaans_room_temperature_2') | float %}
+            {{ (((value - 32) * 5 / 9) if state_attr('sensor.izaans_room_temperature_2', 'unit_of_measurement') == '°F' else value) | round(1) }}
+          {% endif %}
+        attributes:
+          source: >
+            {% if states('sensor.izaans_room_temperature_3') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
+            {% elif states('sensor.izaans_room_temperature') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% else %}smartthings{% endif %}
+
+      - name: Climate AI Master Bedroom Temperature
+        unique_id: climate_ai_master_bedroom_temperature
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+        availability: >
+          {{ states('sensor.master_bedroom_temperature_2') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.332d_temperature') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.master_bedroom_temperature') not in ['unknown', 'unavailable', 'none', ''] }}
+        state: >
+          {% if states('sensor.master_bedroom_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.master_bedroom_temperature_2') | float | round(1) }}
+          {% elif states('sensor.332d_temperature') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.332d_temperature') | float | round(1) }}
+          {% else %}
+            {% set value = states('sensor.master_bedroom_temperature') | float %}
+            {{ (((value - 32) * 5 / 9) if state_attr('sensor.master_bedroom_temperature', 'unit_of_measurement') == '°F' else value) | round(1) }}
+          {% endif %}
+        attributes:
+          source: >
+            {% if states('sensor.master_bedroom_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
+            {% elif states('sensor.332d_temperature') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% else %}smartthings{% endif %}
+
+      - name: Climate AI Minas Room Temperature
+        unique_id: climate_ai_minas_room_temperature
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+        availability: >
+          {{ states('sensor.minas_room_temperature_3') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.minas_room_temperature') not in ['unknown', 'unavailable', 'none', '']
+             or states('sensor.minas_room_temperature_2') not in ['unknown', 'unavailable', 'none', ''] }}
+        state: >
+          {% if states('sensor.minas_room_temperature_3') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.minas_room_temperature_3') | float | round(1) }}
+          {% elif states('sensor.minas_room_temperature') not in ['unknown', 'unavailable', 'none', ''] %}
+            {{ states('sensor.minas_room_temperature') | float | round(1) }}
+          {% else %}
+            {% set value = states('sensor.minas_room_temperature_2') | float %}
+            {{ (((value - 32) * 5 / 9) if state_attr('sensor.minas_room_temperature_2', 'unit_of_measurement') == '°F' else value) | round(1) }}
+          {% endif %}
+        attributes:
+          source: >
+            {% if states('sensor.minas_room_temperature_3') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
+            {% elif states('sensor.minas_room_temperature') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% else %}smartthings{% endif %}
   # Aggregate of every indoor MOTION sensor (Ecobee + Echo presence switches included).
   # ON if anything is currently moving. Only device_class=motion sources + the two Echo
   # presence switches — occupancy/presence (mmWave) is deliberately EXCLUDED because it

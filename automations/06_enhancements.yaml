@@ -21,9 +21,10 @@
   alias: "HVAC Pause: Door open too long"
   description: >-
     Pause HVAC when front door or garage entry door stays open >2 min while the
-    ecobee is actively heating/cooling. Captures the active mode into
-    input_text.climate_ai_last_mode before pausing and restores it when the door
-    closes (Enhancement C).
+    ecobee is actively heating/cooling. Native Ecobee is controlled first, with
+    SmartThings used only if Native Ecobee is unavailable. Captures the active
+    mode into input_text.climate_ai_last_mode before pausing and restores it
+    when the door closes (Enhancement C).
   mode: single
   triggers:
   - entity_id: binary_sensor.front_door_door
@@ -36,11 +37,17 @@
     trigger: state
   conditions:
   - condition: template
-    value_template: "{{ state_attr('climate.ecobee', 'hvac_action') in ['heating', 'cooling'] }}"
+    value_template: >-
+      {% set entity = 'climate.ecobee_3' if states('climate.ecobee_3') not in ['unknown', 'unavailable'] else 'climate.ecobee_2' %}
+      {{ state_attr(entity, 'hvac_action') in ['heating', 'cooling'] }}
   - condition: state
     entity_id: input_boolean.hvac_paused_door_open
     state: 'off'
   actions:
+  - variables:
+      ecobee_control_entity: >-
+        {{ 'climate.ecobee_3' if states('climate.ecobee_3') not in ['unknown', 'unavailable']
+           else 'climate.ecobee_2' }}
   - action: input_boolean.turn_on
     target:
       entity_id: input_boolean.hvac_paused_door_open
@@ -48,12 +55,12 @@
     target:
       entity_id: input_text.climate_ai_last_mode
     data:
-      value: '{{ states(''climate.ecobee'') }}'
+      value: '{{ states(ecobee_control_entity) }}'
   - action: climate.set_hvac_mode
     data:
       hvac_mode: 'off'
     target:
-      entity_id: climate.ecobee
+      entity_id: '{{ ecobee_control_entity }}'
   - action: notify.mobile_app_cph2655
     data:
       title: "HVAC Paused"
@@ -66,7 +73,7 @@
         {% set m = states('input_text.climate_ai_last_mode') | default('', true) | trim | lower %}
         {{ m if m in ['off', 'heat', 'cool', 'heat_cool'] else 'heat_cool' }}
     target:
-      entity_id: climate.ecobee
+      entity_id: '{{ ecobee_control_entity }}'
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.hvac_paused_door_open
