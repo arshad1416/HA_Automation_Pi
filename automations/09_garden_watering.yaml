@@ -1,0 +1,284 @@
+# =============================================================================
+# Veggie garden watering (Smart Irrigation -> switch.pool_heater)
+# Added 2026-08-04. Bed contents: 1 watermelon, chilli peppers, 3 tomato plants,
+# basil as a companion, plus pollinator flowers.
+#
+# ⚠️  ENTITY NAME IS A TRAP — READ THIS BEFORE TOUCHING ANYTHING BELOW.
+#     switch.pool_heater does NOT control the pool heater any more. The user
+#     repurposed that outlet on 2026-08-04 to feed the vegetable-garden drip
+#     line; the pool heater and pool pump moved to a different switch. The HA
+#     entity_id, the SmartThings device name ("Pool Heater") and the hardware
+#     model (TP-LINK KP400(US), an outdoor plug) are all still named for the old
+#     job. Nothing else in this config references switch.pool_heater — verified
+#     2026-08-04 by grep across configuration.yaml, automations/ and scripts.
+#     RECOMMENDED: rename the device in SmartThings and let HA pick up the new
+#     entity_id, then update the three references in this file. Until that
+#     happens, anyone reading "pool_heater" will assume this file is wrong.
+#
+# WHY 07:00: Smart Irrigation calculates at 04:00. The front lawn starts at
+#     05:00 and can legitimately run 5400 s (90 min), so worst case it is still
+#     open until ~06:30, with its own 100-min failsafe reaching ~06:40. 07:00
+#     clears that AND sits inside the correct horticultural window for this
+#     site (43.34, -79.89 — first light 05:40, sunrise 06:12 in early August).
+#     Watering must FINISH by ~09:00: foliage has to dry before the day heats
+#     up. Wet leaves overnight or into midday are what drive late blight on the
+#     tomatoes and powdery/downy mildew on the watermelon.
+#
+# WHY NO MULTI-DAY GATE (deliberately unlike the lawn): the lawn uses a 47 h
+#     gate for deep-and-infrequent watering. Vegetables want the opposite.
+#     Tomatoes and peppers need EVEN soil moisture — swinging between dry and
+#     soaked is what causes blossom-end rot and split skins during fruit set.
+#     So this zone is eligible EVERY day and Smart Irrigation's bucket decides
+#     whether there is any deficit worth delivering. On a wet day the computed
+#     duration is 0 and the numeric_state condition below simply does not fire.
+#     SI is also configured to skip on >=2.0 mm precipitation (global setting).
+#
+# HAMILTON BYLAW: intentionally NOT enforced here, per user instruction
+#     2026-08-04. Consistent with the lawn, where the odd/even parity check was
+#     removed from lawn_watering_start on 2026-07-11 and lawn_watering_veto is
+#     pinned initial_state: false.
+# =============================================================================
+
+# --- Garden watering START (Smart Irrigation -> valve) ---
+# Smart Irrigation only computes a duration; it does not switch anything.
+# This automation bridges the duration sensor to the physical valve.
+- alias: "Garden watering: start cycle"
+  description: >-
+    Waters the veggie garden at 07:00 for the Smart Irrigation computed
+    duration, then turns off and calls smart_irrigation.reset_bucket so the
+    deficit resets. Runs every day it has a positive duration — no multi-day
+    gate, because fruiting vegetables need even moisture (see header).
+    run_seconds is capped at 2700 s (45 min) to match the zone's
+    maximum_duration; the separate max-runtime failsafe below is the
+    independent hard backstop at 50 min.
+
+    ⚠️ UNVERIFIED ASSUMPTION — CONFIRM ON THE FIRST SUPERVISED RUN.
+    The lawn valve is Tuya Cloud, where switch state was PROVEN to be a real
+    device round trip (measured 25 s to confirm on, 10 s off) and is therefore
+    trustworthy. This valve is a different platform: SmartThings -> TP-Link
+    KP400. Whether SmartThings reports true device state or an optimistic echo
+    has NOT been measured here. This matters enormously: the lawn suffered a
+    two-day silent dry-out in July 2026 because the ZHA switch entity flipped
+    to 'on' from a LocalDataCluster BEFORE the radio send, so every log looked
+    perfect while no water moved. RULE OF THUMB FROM THAT INCIDENT: an INSTANT
+    state flip is a cache; a multi-second one is a genuine device report.
+    On the first supervised run, watch how long the confirm takes AND look at
+    the drip line. If confirmation is instant, the verification below is
+    decorative and you need an independent check (a flow/moisture sensor, or
+    the KP400's own power reporting if SmartThings exposes it).
+  id: "garden_watering_start"
+  mode: single
+  triggers:
+    - trigger: time
+      at: "07:00:00"
+  conditions:
+    # Only water if Smart Irrigation computed a positive run time
+    # (calc runs 04:00; read here at 07:00).
+    - condition: numeric_state
+      entity_id: sensor.smart_irrigation_veggie_garden
+      above: 0
+    - condition: state
+      entity_id: input_boolean.garden_watering_master_enable
+      state: "on"
+  actions:
+    - variables:
+        run_seconds: >-
+          {{ [ states('sensor.smart_irrigation_veggie_garden') | float(0) | round(0) | int, 2700 ] | min }}
+    # ---- SHARED-TAP INTERLOCK.
+    #      The lawn valve and this garden line hang off the same outdoor supply.
+    #      Running both at once splits the pressure and invalidates BOTH
+    #      calibrations — the lawn's 13.4 L/min was meter-measured with only that
+    #      valve open. Wait rather than skip: a lawn run that overruns should
+    #      delay the garden, not silently cancel it for the day.
+    - wait_template: "{{ is_state('switch.dual_outlet_irrigation_timer_switch_2', 'off') }}"
+      timeout: "00:25:00"
+      continue_on_timeout: true
+    - if:
+        - condition: template
+          value_template: "{{ not is_state('switch.dual_outlet_irrigation_timer_switch_2', 'off') }}"
+      then:
+        - action: notify.mobile_app_cph2655
+          data:
+            title: "⏸️ Garden watering deferred"
+            message: >-
+              The front lawn valve was still open 25 min after the garden run was
+              due, so the garden did NOT water (shared tap — running both splits
+              pressure and breaks both calibrations). Bucket NOT reset, so the
+              deficit carries to tomorrow. If the lawn valve is stuck on, check
+              the tap: its 100-min failsafe should have closed it.
+        - stop: "lawn valve still open - garden run deferred, deficit preserved"
+    # ---- OPEN, then verify. Retry up to 3x.
+    #      Fails closed: no confirmation => abort, alert, and preserve the deficit
+    #      by NOT calling reset_bucket.
+    - repeat:
+        sequence:
+          - action: switch.turn_on
+            target:
+              entity_id: switch.pool_heater
+            continue_on_error: true
+          - delay: "00:00:15"
+          - action: homeassistant.update_entity
+            target:
+              entity_id: switch.pool_heater
+          - wait_template: "{{ is_state('switch.pool_heater', 'on') }}"
+            timeout: "00:01:30"
+            continue_on_timeout: true
+        until: "{{ is_state('switch.pool_heater', 'on') or repeat.index >= 3 }}"
+    - if:
+        - condition: template
+          value_template: "{{ not is_state('switch.pool_heater', 'on') }}"
+      then:
+        - action: notify.mobile_app_cph2655
+          data:
+            title: "🚨 Garden watering FAILED to start"
+            message: >-
+              Garden valve (switch.pool_heater — repurposed outlet, NOT the pool
+              heater) never confirmed ON after 3 attempts; it reports
+              '{{ states('switch.pool_heater') }}'. Check, in order: (1) is the
+              internet up — this is a SmartThings cloud path; (2) does the plug
+              respond in the SmartThings app; (3) is the plug still powered at the
+              outdoor outlet. Bucket NOT reset — the
+              {{ (run_seconds / 60) | round(1) }} min deficit carries to the next
+              run. The garden was NOT watered.
+        - stop: "garden valve never confirmed on - deficit preserved for next run"
+    - delay:
+        seconds: "{{ run_seconds }}"
+    # ---- CLOSE, verified the same way. Retry up to 4x — closing matters more
+    #      than opening. A stuck-open valve floods a raised bed and waterlogs
+    #      roots far faster than it would damage a lawn, and waterlogged tomato
+    #      roots invite root rot on top of the water waste.
+    - repeat:
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.pool_heater
+            continue_on_error: true
+          - wait_template: "{{ is_state('switch.pool_heater', 'off') }}"
+            timeout: "00:01:30"
+            continue_on_timeout: true
+        until: "{{ is_state('switch.pool_heater', 'off') or repeat.index >= 4 }}"
+    - if:
+        - condition: template
+          value_template: "{{ not is_state('switch.pool_heater', 'off') }}"
+      then:
+        - action: notify.mobile_app_cph2655
+          data:
+            title: "🚨 Garden valve did NOT close"
+            message: >-
+              switch.pool_heater still reports
+              '{{ states('switch.pool_heater') }}' after 4 close attempts. The
+              drip line may still be running. The 50-min failsafe is the backstop
+              — go check the tap.
+    # ---- Water WAS delivered (device confirmed a run), so reset the bucket even
+    #      if the close needed retries — the close alert above is separate.
+    - action: smart_irrigation.reset_bucket
+      target:
+        entity_id: sensor.smart_irrigation_veggie_garden
+    - action: input_datetime.set_datetime
+      target:
+        entity_id: input_datetime.garden_last_watered
+      data:
+        datetime: "{{ now().strftime('%Y-%m-%d %H:%M:%S') }}"
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "✅ Veggie garden watered"
+        message: >-
+          Ran {{ run_seconds }} s ({{ (run_seconds / 60) | round(1) }} min),
+          Smart Irrigation calc. Bucket reset.
+
+# --- Garden valve max-runtime failsafe ---
+- alias: "Garden watering: valve max-runtime failsafe"
+  description: >-
+    Independent hard safety cap for the garden valve, mirroring the front-lawn
+    valve failsafe. If switch.pool_heater stays on for 50 minutes for ANY reason
+    (automation bug, HA restart mid-run, manual, device glitch), force it off and
+    notify. 50 min is deliberately just above the zone's 2700 s (45 min)
+    maximum_duration, so a legitimate maximum-length run never trips it but a
+    genuine stuck-open does. Always enabled — this is the backstop that stops a
+    raised bed being flooded all day.
+  id: "garden_valve_max_runtime_failsafe"
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: switch.pool_heater
+      to: "on"
+      for: "00:50:00"
+  actions:
+    - repeat:
+        sequence:
+          - action: switch.turn_off
+            target:
+              entity_id: switch.pool_heater
+            continue_on_error: true
+          - wait_template: "{{ is_state('switch.pool_heater', 'off') }}"
+            timeout: "00:01:30"
+            continue_on_timeout: true
+        until: "{{ is_state('switch.pool_heater', 'off') or repeat.index >= 4 }}"
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "🚨 Garden valve FAILSAFE fired"
+        message: >-
+          switch.pool_heater had been on for 50 min — past the 45 min maximum a
+          legitimate run can take. Forced it off; it now reports
+          '{{ states('switch.pool_heater') }}'. Something ran the valve outside
+          the normal cycle. Check the bed for waterlogging and check the logbook
+          for what turned it on.
+
+# --- Garden watering morning report ---
+- alias: "Garden watering: morning report"
+  description: >-
+    Daily 08:30 report on the Smart Irrigation calculation and whether the garden
+    valve actually ran this morning. Catches a silent calc/mapping failure — the
+    same class of fault that dried out the lawn for two days in July 2026 while
+    every log looked healthy.
+
+    WHY 08:30 AND NOT 07:50: the shared-tap interlock can wait up to 25 min for
+    the lawn valve to close, after which a full-length 2700 s run pushes the
+    finish out to roughly 08:10. A 07:50 report would fire mid-run — valve still
+    open, garden_last_watered still holding yesterday's stamp, bucket not yet
+    reset — and would send "did NOT run" while water was actively flowing. This
+    is the one channel meant to catch silent failure, so a recurring false alarm
+    on it is worse than it looks. 08:30 clears the worst case with margin.
+  id: "garden_watering_morning_report"
+  mode: single
+  triggers:
+    - trigger: time
+      at: "08:30:00"
+  actions:
+    - variables:
+        # NOTE: on a SUCCESSFUL run this reads 0, because the start-cycle called
+        # smart_irrigation.reset_bucket at the end. It is only diagnostic in the
+        # FAILURE branch, where reset_bucket was deliberately not reached and the
+        # deficit is still standing. The actual run length is in the start-cycle
+        # success notification, not here.
+        si_duration: >-
+          {{ states('sensor.smart_irrigation_veggie_garden') | float(0) | round(0) | int }}
+        master_on: "{{ is_state('input_boolean.garden_watering_master_enable', 'on') }}"
+        last_ts: "{{ state_attr('input_datetime.garden_last_watered', 'timestamp') }}"
+        # 10800 s = 3 h back from 08:30 => 05:30 today. Covers every legitimate
+        # finish time (07:00 earliest, ~08:10 worst case) without reaching back
+        # into yesterday's run.
+        ran_today: >-
+          {{ last_ts is not none
+             and (now().timestamp() - last_ts) < 10800 }}
+    - action: notify.mobile_app_cph2655
+      data:
+        title: >-
+          {{ '🌱 Garden watered this morning' if ran_today
+             else ('💤 Garden: nothing to water' if si_duration == 0
+                   else '⚠️ Garden did NOT run') }}
+        message: >-
+          Master switch: {{ 'ON' if master_on else 'OFF' }}.
+          {% if ran_today %}
+          Valve ran at
+          {{ last_ts | timestamp_custom('%H:%M', true) }} and the bucket was
+          reset. Run length is in the start-cycle notification.
+          {% elif si_duration == 0 %}
+          No deficit — SI computed 0 s (recent rain, or the bucket is full).
+          Nothing was needed.
+          {% else %}
+          SI still shows a standing deficit of
+          {{ (si_duration / 60) | round(1) }} min and no successful run was
+          recorded, so reset_bucket was never reached. Check the start-cycle
+          alerts and the SmartThings path.
+          {% endif %}

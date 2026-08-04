@@ -359,6 +359,17 @@ input_datetime:
     has_date: true
     has_time: true
     icon: mdi:sprinkler-variant
+  # Set by garden_watering_start_cycle after a SUCCESSFUL run. Unlike the lawn's
+  # 2-day gate this does NOT block the next run: the veggie bed is watered on a
+  # daily-eligible schedule because tomatoes and peppers need EVEN moisture
+  # (swings cause blossom-end rot and split skins). Smart Irrigation's bucket
+  # decides whether there is anything to deliver; this stamp is for the morning
+  # report and for spotting a silently stalled chain.
+  garden_last_watered:
+    name: Garden Last Watered
+    has_date: true
+    has_time: true
+    icon: mdi:sprout
   # Written only when Climate AI actually changes the Ecobee setpoint. This
   # supports a two-hour hold between ordinary changes; urgent comfort and
   # dehumidification corrections may bypass the hold.
@@ -394,6 +405,10 @@ input_boolean:
     initial: false
   lawn_watering_master_enable:
     name: "Lawn Watering Master Enable"
+    icon: mdi:water-off
+    initial: true
+  garden_watering_master_enable:
+    name: "Garden Watering Master Enable"
     icon: mdi:water-off
     initial: true
   house_away:
