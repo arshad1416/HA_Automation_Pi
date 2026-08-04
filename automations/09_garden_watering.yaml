@@ -50,7 +50,14 @@
     gate, because fruiting vegetables need even moisture (see header).
     run_seconds is capped at 2700 s (45 min) to match the zone's
     maximum_duration; the separate max-runtime failsafe below is the
-    independent hard backstop at 50 min.
+    independent hard backstop at 60 min.
+
+    NOTE ON 'unavailable': this device drops to 'unavailable' on the nightly
+    SmartThings reconnect (03:00:00, back by 03:00:16) and occasionally in the
+    day. The open-verification below handles that correctly BY ACCIDENT OF
+    BEING WRITTEN POSITIVELY — it waits for the state to equal 'on', so
+    'unavailable' fails the check, exhausts the retries and aborts fail-closed
+    with the deficit preserved. Do NOT "fix" it into a `!= 'off'` test.
 
     ⚠️ UNVERIFIED ASSUMPTION — CONFIRM ON THE FIRST SUPERVISED RUN.
     The lawn valve is Tuya Cloud, where switch state was PROVEN to be a real
@@ -167,7 +174,7 @@
             message: >-
               switch.pool_heater still reports
               '{{ states('switch.pool_heater') }}' after 4 close attempts. The
-              drip line may still be running. The 50-min failsafe is the backstop
+              drip line may still be running. The 60-min failsafe is the backstop
               — go check the tap.
     # ---- Water WAS delivered (device confirmed a run), so reset the bucket even
     #      if the close needed retries — the close alert above is separate.
@@ -190,20 +197,43 @@
 - alias: "Garden watering: valve max-runtime failsafe"
   description: >-
     Independent hard safety cap for the garden valve, mirroring the front-lawn
-    valve failsafe. If switch.pool_heater stays on for 50 minutes for ANY reason
-    (automation bug, HA restart mid-run, manual, device glitch), force it off and
-    notify. 50 min is deliberately just above the zone's 2700 s (45 min)
-    maximum_duration, so a legitimate maximum-length run never trips it but a
-    genuine stuck-open does. Always enabled — this is the backstop that stops a
+    valve failsafe. If the valve is anything other than 'off' for 60 minutes for
+    ANY reason (automation bug, HA restart mid-run, manual run, device glitch),
+    force it off and notify. Always enabled — this is the backstop that stops a
     raised bed being flooded all day.
+
+    WHY "NOT off" AND NOT `to: "on"` — this is the important bit. A plain
+    `to: "on" for: 60min` trigger requires SIXTY UNBROKEN MINUTES of the state
+    literally being "on". This device does not cooperate: recorder history for
+    2026-08-04 shows switch.pool_heater going 'unavailable' at 09:45, and it
+    drops to 'unavailable' EVERY night at 03:00:00 (back at 03:00:16) on the
+    SmartThings reconnect. Any such blip mid-run resets the `for:` timer and the
+    failsafe silently never fires — precisely when a valve is stuck open and
+    unreachable, which is the worst possible moment to lose the backstop.
+    A template trigger on "not off" keeps counting across on -> unavailable ->
+    on, because the condition stays true the whole way through.
+
+    WHY 60 min AND NOT 50: the zone's maximum_duration is 2700 s (45 min), but
+    MANUAL watering also has to fit under this cap or the user gets ambushed by a
+    force-off mid-water. The observed manual run on 2026-08-04 was 09:55 -> 10:37
+    (~42 min), which a 50 min cap would have cleared by only 8 minutes. 60 min
+    leaves real headroom for both while still bounding a flood.
+
+    TRADE-OFF ACCEPTED: a genuine SmartThings cloud outage lasting >60 min while
+    the valve is legitimately OFF will also trip this. That is why the message
+    below distinguishes the two cases instead of always crying "stuck open" — a
+    device unreachable for an hour is worth knowing about in its own right.
   id: "garden_valve_max_runtime_failsafe"
   mode: single
   triggers:
-    - trigger: state
-      entity_id: switch.pool_heater
-      to: "on"
-      for: "00:50:00"
+    - trigger: template
+      value_template: "{{ not is_state('switch.pool_heater', 'off') }}"
+      for: "01:00:00"
   actions:
+    # Capture the state BEFORE we start commanding it off, so the message can
+    # tell "stuck on" apart from "unreachable".
+    - variables:
+        state_at_trip: "{{ states('switch.pool_heater') }}"
     - repeat:
         sequence:
           - action: switch.turn_off
@@ -216,13 +246,24 @@
         until: "{{ is_state('switch.pool_heater', 'off') or repeat.index >= 4 }}"
     - action: notify.mobile_app_cph2655
       data:
-        title: "🚨 Garden valve FAILSAFE fired"
+        title: >-
+          {{ '🚨 Garden valve FAILSAFE fired'
+             if state_at_trip == 'on'
+             else '📡 Garden valve UNREACHABLE 60 min' }}
         message: >-
-          switch.pool_heater had been on for 50 min — past the 45 min maximum a
-          legitimate run can take. Forced it off; it now reports
-          '{{ states('switch.pool_heater') }}'. Something ran the valve outside
-          the normal cycle. Check the bed for waterlogging and check the logbook
-          for what turned it on.
+          {% if state_at_trip == 'on' %}
+          switch.pool_heater (the repurposed outlet feeding the garden drip line,
+          NOT the pool heater) had been ON for 60 min — past the 45 min maximum a
+          scheduled run can take. Forced it off; it now reports
+          '{{ states('switch.pool_heater') }}'. Check the bed for waterlogging and
+          check the logbook for what turned it on.
+          {% else %}
+          switch.pool_heater has reported '{{ state_at_trip }}' for 60 min, so HA
+          cannot tell whether the garden valve is open or closed. Sent an off
+          command anyway; it now reports '{{ states('switch.pool_heater') }}'.
+          If SmartThings is down, GO LOOK AT THE TAP — a valve that was open when
+          the connection dropped stays open.
+          {% endif %}
 
 # --- Garden watering morning report ---
 - alias: "Garden watering: morning report"
