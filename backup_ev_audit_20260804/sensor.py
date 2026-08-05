@@ -10,29 +10,6 @@ from .const_common import VIRTUAL_SENSORS
 
 _LOGGER = logging.getLogger(__name__)
 
-# ── VF9 firmware code aliases (added 2026-08-04) ────────────────────────────
-# This VF9's firmware broadcasts Platform-A-style codes, but the VF9 model map
-# (PLATFORM_B_BASE) registers entities against Platform-B keys the car never
-# sends -> battery/range/temp/charging entities stayed "unknown" since install.
-# Verified from system_debug_raw history: mid-charge payload (Aug 1) carried
-# SOC=34183_00001_00009=96, range=34183_00001_00011=428 km, charging status
-# 34193_00001_00005=1 (charging) / 4 (connected, not charging).
-# Aliasing keeps entity unique_id/entity_id stable -> no registry surgery,
-# no "_2" ghosts. The value-formatting branches below still key on
-# self._device_key (the entity's registered key), which is what we want.
-CODE_ALIASES = {
-    "34180_00001_00011": "34183_00001_00009",  # Battery Level      <- SOC
-    "34180_00001_00007": "34183_00001_00011",  # Estimated Range
-    "34189_00000_00000": "34183_00001_00007",  # Outside Temperature
-    "34187_00000_00000": "34183_00001_00001",  # Gear Position
-    "34188_00000_00000": "34183_00001_00002",  # Current Speed
-    "34199_00000_00000": "34183_00001_00003",  # Odometer
-    "34181_00000_00000": "34183_00001_00005",  # Pin 12V
-    "34180_00001_00010": "34183_00001_00010",  # Drive Status (Ready)
-    "34183_00000_00001": "34193_00001_00005",  # Charging Status
-    "34183_00000_00009": "34193_00001_00007",  # Charging Time Remaining
-}
-
 async def async_setup_entry(hass, config_entry, async_add_entities):
     api = hass.data[DOMAIN][config_entry.entry_id]["api"]
     sensors = []
@@ -80,9 +57,8 @@ class VinFastSensor(SensorEntity):
 
     @callback
     def _process_update(self, data):
-        key = CODE_ALIASES.get(self._device_key, self._device_key)
-        if key in data:
-            val = data[key]
+        if self._device_key in data:
+            val = data[self._device_key]
             val_clean = str(int(float(val))) if isinstance(val, (int, float)) else str(val).strip().upper()
             vi = getattr(self.api, "lang", "vi") == "vi"
 

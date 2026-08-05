@@ -23,7 +23,7 @@ views:
         name: Live Charging Power
         unit: W
         min: 0
-        max: 9600
+        max: 8000
         severity:
           green: 0
           yellow: 3000
@@ -199,10 +199,6 @@ views:
 
           *Avg: 715 kWh/mo | $55/mo | 1.86 c/km*
 
-          *Modeled series ends Jun 2026. Jul 2026 onward: live metered (see
-          Lifetime Totals cards above). Per-vehicle split (Ioniq 6 / VF9) is
-          tracked from Jul 30, 2026 — see the Per-Vehicle view.*
-
   # ══════════════════════════════════════════════════════════════════
   # PER-VEHICLE VIEW — Per-vehicle charging cost & energy tracking
   # ══════════════════════════════════════════════════════════════════
@@ -305,7 +301,7 @@ views:
             name: "Fixed Delivery Cost Accumulated"
             icon: mdi:receipt
           - type: entity
-            entity: sensor.ev_unknown_cost_total
+            entity: input_number.ev_unknown_cost_cents
             name: "Unattributed Cost"
             icon: mdi:alert-circle
 

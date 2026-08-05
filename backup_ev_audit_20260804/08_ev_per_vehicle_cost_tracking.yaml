@@ -26,28 +26,16 @@
       entity_id: binary_sensor.grizzl_e_charging
       to: "on"
   actions:
-    # Only record a baseline when the vehicle's SOC is a live, sane value.
-    # unknown/unavailable/0 baselines poisoned gain math (observed: VF9
-    # baseline permanently 0 -> vf9_soc_gain forever 0 -> VF9 sessions never
-    # detected, dumped to the unattributed bucket instead).
-    - if:
-        - condition: template
-          value_template: "{{ states('sensor.ioniq_6_ev_battery_level') | float(0) >= 1 }}"
-      then:
-        - action: input_number.set_value
-          target:
-            entity_id: input_number.ev_session_soc_start_ioniq
-          data:
-            value: "{{ states('sensor.ioniq_6_ev_battery_level') | float(0) | round(1) }}"
-    - if:
-        - condition: template
-          value_template: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | float(0) >= 1 }}"
-      then:
-        - action: input_number.set_value
-          target:
-            entity_id: input_number.ev_session_soc_start_vf9
-          data:
-            value: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | float(0) | round(1) }}"
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.ev_session_soc_start_ioniq
+      data:
+        value: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
+    - action: input_number.set_value
+      target:
+        entity_id: input_number.ev_session_soc_start_vf9
+      data:
+        value: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
     - action: input_text.set_value
       target:
         entity_id: input_text.ev_session_vehicle

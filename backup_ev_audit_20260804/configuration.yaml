@@ -1079,12 +1079,6 @@ template:
         state_class: total_increasing
         state: "{{ (states('input_number.ev_fixed_cost_accumulated_cents') | default(0, true) | float(0)) / 100 }}"
 
-      - name: "EV Unknown Cost Total"
-        unique_id: ev_unknown_cost_total
-        unit_of_measurement: "CAD"
-        state_class: total_increasing
-        state: "{{ (states('input_number.ev_unknown_cost_cents') | default(0, true) | float(0)) / 100 }}"
-
 shell_command:
   # [t] bracket trick: the pattern must not match this shell_command's own
   # process, or the kill loop terminates itself (return code -15) before
