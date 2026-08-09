@@ -12,6 +12,7 @@ Both automations key off the same sensor and both had the same dead-trigger bug.
 Run from anywhere:  python3 verification/test_stairs_pir_automations.py
 """
 import glob
+import json
 import os
 import re
 import sys
@@ -39,7 +40,7 @@ RESTORE_AFTER = {"minutes": 5}
 REVERT_PCT = 10
 REVERT_EFFECT = "night light"
 # motion brightness per period, dimmest when the house is asleep
-PERIOD_PCT = {"after_bedtime": 10, "after_sunset": 50, "dark_day": 75}
+PERIOD_PCT = {"after_bedtime": 10, "after_sunset": 50, "dark_day": 100}
 # The stair light has two legs: a dim one sourced from a tunable helper, and a literal
 # bright one. Both are asserted — the bright leg previously had no value assertion at all,
 # so swapping its 100 for any other number went undetected.
@@ -169,6 +170,43 @@ def check_no_overnight_full_brightness(by_id):
     assert STAIR_DIM_SOURCE in tpl, (
         f"the dim leg must read {STAIR_DIM_SOURCE}, not a hardcoded value: {tpl!r}"
     )
+
+
+def check_pir_watchdog(by_id):
+    """The stuck-sensor watchdog must actually be able to clear the latch.
+
+    The PIR never reports its own clear, so both stair automations are dead until something
+    resets it. Two things here are load-bearing and easy to break by "tidying":
+      - the reload must pass entry_id in data. target: entity_id returns HTTP 400 despite
+        the service schema advertising target support (tested 2026-08-09).
+      - the alert must be conditional on the reload having FAILED. Alerting on every
+        successful self-heal is how a watchdog gets muted.
+    """
+    auto = by_id.get("stair_pir_stuck_watchdog")
+    assert auto is not None, "the PIR stuck-sensor watchdog is missing"
+    assert auto["mode"] == "single", "watchdog must be mode: single or reloads can overlap"
+    ids = {t.get("id") for t in auto["triggers"]}
+    assert ids == {"stuck_on", "offline"}, f"unexpected watchdog triggers: {ids}"
+
+    stuck = next(t for t in auto["triggers"] if t["id"] == "stuck_on")
+    assert stuck["entity_id"] == PIR and stuck.get("to") == "on"
+    assert stuck.get("for", {}).get("minutes", 0) >= 10, (
+        "too twitchy: a short window would reload Tuya on ordinary lingering"
+    )
+
+    acts = auto["actions"]
+    reload_step = next((a for a in acts if a.get("action") == "homeassistant.reload_config_entry"), None)
+    assert reload_step is not None, "the watchdog must reload the Tuya entry to clear the latch"
+    assert "entry_id" in (reload_step.get("data") or {}), (
+        "reload must pass data.entry_id — target: entity_id is rejected with HTTP 400"
+    )
+    assert "target" not in reload_step, "target form does not work for this service"
+
+    assert any("delay" in a for a in acts), "must wait for the entry to come back before judging"
+    tail = next((a for a in acts if "if" in a), None)
+    assert tail is not None, "the alert must be conditional, not unconditional"
+    notif = json.dumps(tail.get("then", []))
+    assert "notify." in notif, "the conditional branch must notify"
 
 
 def check_bedtime_latch_does_not_survive_restart():
@@ -504,6 +542,7 @@ def main():
     check_stair_light_covers_dead_panels(by_id)
     check_no_overnight_full_brightness(by_id)
     check_bedtime_latch_does_not_survive_restart()
+    check_pir_watchdog(by_id)
 
     print("stairs PIR automations (both): all invariants OK")
     return 0

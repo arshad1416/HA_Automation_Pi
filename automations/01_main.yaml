@@ -2915,8 +2915,76 @@
   - action: light.turn_off
     target:
       entity_id: light.stair_light
+- id: stair_pir_stuck_watchdog
+  alias: Stair PIR — Stuck-Sensor Watchdog
+  description: >-
+    binary_sensor.pir_motion_sensor_2_motion is a battery Tuya PIR that reports motion and
+    then NEVER reports the clear. It latches 'on' and HA's cached copy goes stale, so the
+    to:'on' triggers that drive stairs_pir_motion_light and hallway_panels_stairs_pir can
+    only fire once per latch. Measured 2026-08-08/09: the sensor sat 'on' for 46 minutes
+    while someone walked past it and nothing happened, and it re-latched within ~4 minutes
+    of being cleared. Both stair automations are dead in the water until something resets it.
+
+    Reloading the Tuya config entry re-fetches the true state from the cloud, which clears
+    the latch and re-arms both automations. Verified by hand on 2026-08-09: a reload took
+    the entity from a stuck 'on' to 'off' with a fresh timestamp.
+
+    HEAVY BY DESIGN, and the trade-off is deliberate: a reload cycles all ~98 Tuya entities
+    for a few seconds. The lighter fix — writing the entity's state straight back to 'off' —
+    needs the python_script integration enabled, and adding that requires a full HA restart.
+    The reload needs neither, and only runs a few times a day (once per real stair trip that
+    leaves the sensor latched). If Tuya churn ever becomes a problem, switch to python_script.
+
+    entry_id is hardcoded because homeassistant.reload_config_entry rejects entity targeting
+    — target: entity_id returns HTTP 400 despite the service schema advertising target
+    support (tested 2026-08-09). To find the id again if the Tuya integration is re-added:
+      grep -o '"entry_id": "[^"]*"' .storage/core.config_entries near the tuya domain entry.
+
+    Only alerts if the reload FAILED to clear it. A watchdog that pings on every successful
+    self-heal trains you to ignore it.
+  mode: single
+  max_exceeded: silent
+  triggers:
+  # Nobody stands on a staircase for 20 minutes — continuous 'on' this long means latched.
+  - trigger: state
+    entity_id: binary_sensor.pir_motion_sensor_2_motion
+    to: 'on'
+    for:
+      minutes: 20
+    id: stuck_on
+  # The sibling PIR has sat 'unavailable' for hours at a time; catch that here too.
+  - trigger: state
+    entity_id: binary_sensor.pir_motion_sensor_2_motion
+    to: 'unavailable'
+    for:
+      hours: 3
+    id: offline
+  conditions: []
+  actions:
+  - action: homeassistant.reload_config_entry
+    data:
+      entry_id: 01KSC806BJV15G6FY4MQ3PCBM2
+  # The entry drops its entities and re-adds them; give the cloud fetch time to land.
+  - delay:
+      seconds: 90
+  - if:
+    - condition: not
+      conditions:
+      - condition: state
+        entity_id: binary_sensor.pir_motion_sensor_2_motion
+        state: 'off'
+    then:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: Stair PIR not recovering
+        message: >-
+          {{ 'Stuck reporting motion for 20 min' if trigger.id == 'stuck_on'
+             else 'Offline for 3 hours' }}, and a Tuya reload did not clear it — still
+          '{{ states('binary_sensor.pir_motion_sensor_2_motion') }}'. The stair light and
+          hallway panels will not respond to motion until this is fixed. Check the sensor
+          in the Smart Life app; it may need a battery or re-pair.
 - id: hallway_panels_stairs_pir
-  alias: Hallway Panels — Stairs PIR (75/50/10% by period, Adaptive Lighting colour)
+  alias: Hallway Panels — Stairs PIR (100/50/10% by period, Adaptive Lighting colour)
   description: >-
     Motion on binary_sensor.pir_motion_sensor_2_motion (the Upstairs Stair Sensor) lights
     the two hallway Nanoleaf panels at the top of the stairs, with the Hallway Panels
@@ -2925,9 +2993,14 @@
     choosing the colour temperature. Five minutes after the LAST motion pulse they return
     to that period's resting state.
 
-    Three periods, brightest when the house is most awake:
+    Three periods, brightest when the house is most awake. The levels were calibrated on
+    2026-08-09 with a phone lux sensor placed on the stairs: ambient there is ~21 lux, the
+    panels add roughly 0.8 lux per percent through the low range (10% ~ +8 lux, 50% ~ +41),
+    and 100% measured ~178 lux above ambient — far more than a straight line predicts, so
+    the top of the range is where the useful light actually is. Hence dark-day sits at 100%:
+    that is the period competing with daylight.
 
-      dark day (sun up, overcast) -> motion 75%  -> rest: OFF
+      dark day (sun up, overcast) -> motion 100% -> rest: OFF
       after sunset (sun down)     -> motion 50%  -> rest: 10% "night light"
       after bedtime               -> motion 10%  -> rest: 10% "night light"
 
@@ -3098,7 +3171,7 @@
                   or now().hour >= dim_hr
                   or (is_state('sun.sun', 'below_horizon') and now().hour < 12) %}10
             {% elif is_state('sun.sun', 'below_horizon') %}50
-            {% else %}75{% endif %}
+            {% else %}100{% endif %}
           color_temp_kelvin: >-
             {{ state_attr('switch.hallway_panels_adaptive_lighting_hallway_panels',
                           'color_temp_kelvin') | int(2200) }}
