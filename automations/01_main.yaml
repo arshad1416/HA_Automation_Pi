@@ -2745,7 +2745,8 @@
     light.stair_light: full brightness when it is dark out before bedtime (capped at
     input_number.nightly_dim_brightness after the seasonal Nightly Dimming hour — 9 PM
     winter, 10 PM shoulder, 11 PM summer — mirroring automation 1778114000000), same
-    nightly_dim_brightness from bedtime until sunrise. Off after 5 minutes with no motion.
+    nightly_dim_brightness from bedtime until sunrise. Off 5 minutes after the last motion
+    pulse — a timer, not a no-motion signal; see the shared timer tail below for why.
 
     Replaces stairs_light_auto / stairs_echo_ecobee_motion / stairs_presence_timeout /
     stairs_safety_off (deleted 2026-07-29), which all keyed on switch.stairs_occupancy —
@@ -2767,23 +2768,24 @@
     input_boolean.stair_light_pir_owned tracks whether this automation is the one holding
     the light on. It is claimed only when the light was found OFF and released whenever
     the light goes off by any path, so a manually lit staircase is never auto-killed.
-  mode: queued
-  max: 10
+  mode: restart
   triggers:
   - trigger: state
     entity_id: binary_sensor.pir_motion_sensor_2_motion
     to: 'on'
     id: motion
   - trigger: state
-    entity_id: binary_sensor.pir_motion_sensor_2_motion
-    to: 'off'
-    for:
-      minutes: 5
-    id: no_motion
-  - trigger: state
     entity_id: light.stair_light
     to: 'off'
     id: light_went_off
+  # Backstop: the claim should never be held this long — the timer tail releases it after
+  # ~5 minutes. Only reachable if a run was cancelled before its tail finished.
+  - trigger: state
+    entity_id: input_boolean.stair_light_pir_owned
+    to: 'on'
+    for:
+      minutes: 20
+    id: stuck_guard
   conditions: []
   actions:
   - choose:
@@ -2795,20 +2797,18 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.stair_light_pir_owned
-    # 5 minutes with no motion, and we are the ones holding it on — turn off.
+    # Backstop, not the normal path: the timer tail below is what normally turns the
+    # light off. Claim released first so light.turn_off cannot race light_went_off.
     - conditions:
       - condition: trigger
-        id: no_motion
-      - condition: state
-        entity_id: input_boolean.stair_light_pir_owned
-        state: 'on'
+        id: stuck_guard
       sequence:
-      - action: light.turn_off
-        target:
-          entity_id: light.stair_light
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.stair_light_pir_owned
+      - action: light.turn_off
+        target:
+          entity_id: light.stair_light
     # Motion, light currently off, after bedtime and before sunrise -> nightly_dim_brightness.
     - conditions:
       - condition: trigger
@@ -2886,6 +2886,36 @@
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.stair_light_pir_owned
+  # --- shared timer tail (runs after whichever branch above matched) ------------------
+  # This replaces the old no_motion trigger, which could never fire: binary_sensor.
+  # pir_motion_sensor_2_motion is a battery Tuya PIR that only ever pulses 'on' and sleeps
+  # to 'unavailable' — over 8h on 2026-08-08 it produced 17 state changes and not one was
+  # 'off'. So "5 minutes of no motion" never arrived and the stair light was only ever
+  # switched off by the bedtime routine tripping light_went_off.
+  #
+  # Being outside the choose is deliberate. On a re-trigger while the light is already on,
+  # neither motion branch matches (both require light.stair_light to be 'off'), but this
+  # tail still runs and mode: restart re-arms the delay — so continued motion extends the
+  # window without re-sending brightness.
+  - condition: trigger
+    id: motion
+  # Only ever turn off a light this automation actually lit. A staircase lit by hand, a
+  # scene, or another automation has the claim off, so the sequence stops here.
+  - condition: state
+    entity_id: input_boolean.stair_light_pir_owned
+    state: 'on'
+  - delay:
+      minutes: 5
+  # Re-check after waking: something may have released the claim while we slept.
+  - condition: state
+    entity_id: input_boolean.stair_light_pir_owned
+    state: 'on'
+  - action: input_boolean.turn_off
+    target:
+      entity_id: input_boolean.stair_light_pir_owned
+  - action: light.turn_off
+    target:
+      entity_id: light.stair_light
 - id: hallway_panels_stairs_pir
   alias: Hallway Panels — Stairs PIR (50%, Adaptive Lighting colour)
   description: >-

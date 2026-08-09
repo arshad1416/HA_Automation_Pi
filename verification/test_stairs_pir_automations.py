@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Invariant check for the hallway_panels_stairs_pir automation.
+"""Invariant checks for the two stair-PIR automations.
 
 These failure modes stay silent in HA — a wrong mode or a missing guard does not
 raise, it just leaves the hallway panels burning at full brightness all night.
@@ -8,7 +8,8 @@ binary_sensor.pir_motion_sensor_2_motion to report 'off', which that sensor neve
 does (battery Tuya PIR: it pulses 'on' and sleeps to 'unavailable'). The panels
 stayed lit until someone noticed. Several assertions below exist to pin that.
 
-Run from anywhere:  python3 verification/test_hallway_panels_stairs_pir.py
+Both automations key off the same sensor and both had the same dead-trigger bug.
+Run from anywhere:  python3 verification/test_stairs_pir_automations.py
 """
 import glob
 import os
@@ -37,6 +38,8 @@ RESTORE_AFTER = {"minutes": 5}
 # The AL instance scoped to these panels (configuration.yaml, 1800-6500 K). Deliberately
 # NOT the Whole House instance, whose 2500 K floor suits outdoor downlights.
 AL_SWITCH = "switch.hallway_panels_adaptive_lighting_hallway_panels"
+STAIR_LIGHT = "light.stair_light"
+CLAIM_STAIRS = "input_boolean.stair_light_pir_owned"
 
 
 def load_automations():
@@ -61,25 +64,100 @@ def steps_of(seq):
     return [s.get("action") for s in seq]
 
 
+def assert_no_dead_pir_trigger(auto):
+    """The PIR never reports 'off' — any trigger waiting for that is dead code.
+
+    Measured 2026-08-08: 17 state changes in 8 hours, every one on <-> unavailable,
+    never once 'off'. It is a battery Tuya PIR that pulses on motion and sleeps to
+    'unavailable'. Both stair automations shipped with a `to: 'off'` trigger as their
+    only turn-off path, so neither ever turned its light back off.
+    """
+    for trig in auto["triggers"]:
+        ents = trig.get("entity_id")
+        ents = [ents] if isinstance(ents, str) else (ents or [])
+        if PIR in ents:
+            assert trig.get("to") != "off", (
+                f"{auto['id']}: trigger {trig.get('id')!r} waits for {PIR} to report "
+                "'off'. That sensor never does — this trigger can never fire, which is "
+                "the exact bug that left the light stuck on."
+            )
+
+
+def check_stairs_light(by_id):
+    """stairs_pir_motion_light: same sensor, same fix — timer tail instead of no_motion."""
+    auto = by_id.get("stairs_pir_motion_light")
+    assert auto is not None, "automation stairs_pir_motion_light is missing"
+
+    assert_no_dead_pir_trigger(auto)
+    assert auto["mode"] == "restart", (
+        f"mode must be 'restart' so motion pulses extend the window, got {auto['mode']!r}"
+    )
+    assert {t.get("id") for t in auto["triggers"]} == {
+        "motion", "light_went_off", "stuck_guard"
+    }, "unexpected trigger ids"
+
+    # light_went_off must only drop the claim, never act on the light.
+    went_off = branch_for(auto, "light_went_off")
+    assert steps_of(went_off["sequence"]) == ["input_boolean.turn_off"]
+
+    # Backstop releases the claim before switching off, so light.turn_off cannot race
+    # light_went_off back into an inconsistent claim.
+    stuck = branch_for(auto, "stuck_guard")
+    n = steps_of(stuck["sequence"])
+    assert n.index("input_boolean.turn_off") < n.index("light.turn_off")
+
+    # Both motion branches must still refuse to touch an already-lit staircase.
+    motion_branches = [
+        o for o in auto["actions"][0]["choose"]
+        if any(c.get("condition") == "trigger" and c.get("id") == "motion"
+               for c in o["conditions"])
+    ]
+    assert len(motion_branches) == 2, (
+        f"expected the bedtime and dark branches, got {len(motion_branches)}"
+    )
+    for b in motion_branches:
+        assert any(
+            c.get("entity_id") == STAIR_LIGHT and c.get("state") == "off"
+            for c in b["conditions"]
+        ), "motion branch must require the light to be off before claiming it"
+        assert steps_of(b["sequence"])[-1] == "input_boolean.turn_on", (
+            "each motion branch must claim the light last"
+        )
+
+    # --- the shared timer tail, which is what actually turns the light off ---
+    tail = auto["actions"][1:]
+    assert tail, "the timer tail after the choose block is missing — nothing turns the light off"
+    assert tail[0].get("condition") == "trigger" and tail[0].get("id") == "motion", (
+        "the tail must be gated on the motion trigger, or light_went_off/stuck_guard runs "
+        "would fall through into it"
+    )
+    # Must confirm ownership BEFORE sleeping, so a manually lit staircase is never armed.
+    pre = [s for s in tail[:3] if s.get("entity_id") == CLAIM_STAIRS and s.get("state") == "on"]
+    assert pre, "the tail must verify the claim before starting the delay"
+
+    delay_i = next(i for i, s in enumerate(tail) if "delay" in s)
+    assert tail[delay_i]["delay"] == RESTORE_AFTER, (
+        f"expected a {RESTORE_AFTER} delay, got {tail[delay_i]['delay']}"
+    )
+    after = tail[delay_i + 1:]
+    assert any(
+        s.get("condition") == "state" and s.get("entity_id") == CLAIM_STAIRS
+        and s.get("state") == "on" for s in after
+    ), "must re-check the claim after the delay before switching off"
+    acts = [s.get("action") for s in after if s.get("action")]
+    assert acts.index("input_boolean.turn_off") < acts.index("light.turn_off"), (
+        "claim must be released before light.turn_off, otherwise the resulting "
+        "light_went_off restart races the claim"
+    )
+
+
 def main():
     autos = load_automations()
     by_id = {a.get("id"): a for a in autos}
     auto = by_id.get("hallway_panels_stairs_pir")
     assert auto is not None, "automation hallway_panels_stairs_pir is missing"
 
-    # --- THE regression guard -------------------------------------------
-    # The sensor never reports 'off'. Any trigger waiting for it to do so is dead
-    # code, and if it is the only restore path the panels never come back down.
-    for trig in auto["triggers"]:
-        ents = trig.get("entity_id")
-        ents = [ents] if isinstance(ents, str) else (ents or [])
-        if PIR in ents:
-            assert trig.get("to") != "off", (
-                f"trigger {trig.get('id')!r} waits for {PIR} to report 'off'. That sensor "
-                "is a battery Tuya PIR that only ever pulses 'on' and sleeps to "
-                "'unavailable' — this trigger can never fire, which is the exact bug "
-                "that left the panels stuck at full brightness."
-            )
+    assert_no_dead_pir_trigger(auto)
 
     # --- mode: restart is load-bearing -----------------------------------
     # It is what makes a new motion pulse cancel the pending restore and re-arm it.
@@ -209,7 +287,9 @@ def main():
             f"{os.path.basename(path)} still references light.elements_b3cd_2"
         )
 
-    print("hallway_panels_stairs_pir: all invariants OK")
+    check_stairs_light(by_id)
+
+    print("stairs PIR automations (both): all invariants OK")
     return 0
 
 
