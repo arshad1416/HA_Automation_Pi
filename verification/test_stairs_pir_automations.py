@@ -35,6 +35,11 @@ PIR = "binary_sensor.pir_motion_sensor_2_motion"
 # the automation's alias, which advertises the value to the user.
 BRIGHTNESS_PCT = 50
 RESTORE_AFTER = {"minutes": 5}
+# The owner's after-sunset resting state for this hallway, set from the Nanoleaf app
+# and read back from HA: white (hs 0,0) at 10%. The revert is this FIXED target, not a
+# snapshot — deterministic and self-healing if the panels drift.
+REVERT_PCT = 10
+REVERT_HS = [0, 0]
 # The AL instance scoped to these panels (configuration.yaml, 1800-6500 K). Deliberately
 # NOT the Whole House instance, whose 2500 K floor suits outdoor downlights.
 AL_SWITCH = "switch.hallway_panels_adaptive_lighting_hallway_panels"
@@ -83,6 +88,24 @@ def assert_no_dead_pir_trigger(auto):
                 "'off'. That sensor never does — this trigger can never fire, which is "
                 "the exact bug that left the light stuck on."
             )
+
+
+def assert_is_revert(step):
+    """The revert must put the panels back to the owner's after-sunset resting state."""
+    assert step.get("action") == "light.turn_on", f"expected a revert turn_on, got {step}"
+    d = step.get("data", {})
+    assert d.get("brightness_pct") == REVERT_PCT, (
+        f"revert brightness must be {REVERT_PCT}%, got {d.get('brightness_pct')}"
+    )
+    assert list(d.get("hs_color") or []) == REVERT_HS, (
+        f"revert must be white hs {REVERT_HS} — the panels are left in colour-temp mode by "
+        f"the motion step, so the revert has to put them back to hs, got {d.get('hs_color')}"
+    )
+    assert "color_temp_kelvin" not in d, (
+        "the revert must not set colour temp; that would leave the panels in colour_temp "
+        "mode instead of the hs white they rest in"
+    )
+    assert sorted(step["target"]["entity_id"]) == sorted(PANELS)
 
 
 def check_boundary_is_complementary(by_id):
@@ -233,7 +256,10 @@ def main():
     # --- backstop restores, claim released first -------------------------
     stuck = branch_for(auto, "stuck_guard")
     names = steps_of(stuck["sequence"])
-    assert names.index("input_boolean.turn_off") < names.index("scene.turn_on")
+    assert names.index("input_boolean.turn_off") < names.index("light.turn_on"), (
+        "claim must be released before the revert turn_on"
+    )
+    assert_is_revert(stuck["sequence"][-1])
 
     # --- motion branch ----------------------------------------------------
     motion = branch_for(auto, "motion")
@@ -247,19 +273,16 @@ def main():
     # Snapshot happens only when unclaimed, so repeat pulses cannot overwrite it
     # with our own 50% state (which would make "previous state" mean "50%").
     guard_if = seq[0]
-    assert "if" in guard_if, "first step must be the claim guard around the snapshot"
+    assert "if" in guard_if, "first step must be the claim guard"
     assert any(
         c.get("entity_id") == CLAIM and c.get("state") == "off" for c in guard_if["if"]
-    ), "snapshot must be guarded by the claim being unheld"
-    then = guard_if["then"]
-    assert steps_of(then) == ["scene.create", "input_boolean.turn_on"], (
-        f"guarded block must snapshot then claim, got {steps_of(then)}"
-    )
-    assert sorted(then[0]["data"]["snapshot_entities"]) == sorted(PANELS), (
-        "snapshot must cover both panels or the restore silently drops one"
+    ), "the claim must only be taken when not already held"
+    assert steps_of(guard_if["then"]) == ["input_boolean.turn_on"], (
+        f"guarded block must only claim, got {steps_of(guard_if['then'])}"
     )
 
-    turn_on = next(s for s in seq if s.get("action") == "light.turn_on")
+    delay_at = next(i for i, s in enumerate(seq) if "delay" in s)
+    turn_on = next(s for s in seq[:delay_at] if s.get("action") == "light.turn_on")
     assert turn_on["data"]["brightness_pct"] == BRIGHTNESS_PCT, (
         f"expected {BRIGHTNESS_PCT}%, got {turn_on['data']['brightness_pct']}%"
     )
@@ -276,8 +299,10 @@ def main():
         "(AL 1.30.1) — read AL's colour off its switch attribute in the same light.turn_on "
         "instead, so brightness and colour are atomic"
     )
-    assert len([s for s in seq if s.get("action") == "light.turn_on"]) == 1, (
-        "exactly one light.turn_on: a second call can land between and override"
+    # Exactly one turn_on BEFORE the delay. A second call there could land between
+    # brightness and colour and override one of them (which adaptive_lighting.apply did).
+    assert len([s for s in seq[:delay_at] if s.get("action") == "light.turn_on"]) == 1, (
+        "exactly one light.turn_on before the delay: a second can override the first"
     )
     assert "color_temp_kelvin" in turn_on["data"], (
         "the turn_on must carry the colour too, or Adaptive Lighting never sets it"
@@ -308,9 +333,15 @@ def main():
         and s.get("state") == "on" for s in tail
     ), "must re-check the claim after the delay before restoring"
     tail_actions = [s.get("action") for s in tail if s.get("action")]
-    assert tail_actions.index("input_boolean.turn_off") < tail_actions.index("scene.turn_on"), (
-        "claim must be released before scene.turn_on, otherwise the scene switching a "
-        "panel off re-enters panels_went_off and races the claim"
+    assert tail_actions.index("input_boolean.turn_off") < tail_actions.index("light.turn_on"), (
+        "claim must be released before the revert, otherwise the revert re-enters "
+        "panels_went_off and races the claim"
+    )
+    assert_is_revert(tail[-1])
+    # Nothing may depend on a scene: scene.create scenes do not survive an HA restart, and
+    # a fixed revert has no such failure mode.
+    assert not any("scene." in str(s.get("action", "")) for s in seq), (
+        "the revert must be a fixed light.turn_on, not a scene replay"
     )
     assert seq.index(turn_on) < delay_i, "lights must be driven before the delay, not after"
 

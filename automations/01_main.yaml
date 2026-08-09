@@ -2930,9 +2930,16 @@
     Adaptive Lighting cannot set a colour on it at all; only these NL22 panels support
     color_temp/hs.
 
-    "Previous state" is a scene.create snapshot taken at the moment of the claim and
-    replayed by scene.turn_on, so panels that were off go back off and panels that were on
-    return to their prior brightness and colour.
+    The revert target is a FIXED state — white (hs 0,0) at 10% — not a snapshot of whatever
+    was there. That is the owner's stated after-sunset resting state for this hallway, set
+    from the Nanoleaf app and read back from HA on 2026-08-08 as hs_color [0,0],
+    brightness 25/255, no effect. A fixed target is deterministic and self-healing: if the
+    panels are left in an odd state, the next motion cycle normalises them.
+
+    Known trade-off: because it is fixed rather than snapshotted, a deliberate non-default
+    look (one of the 17 Nanoleaf effects, say) set BEFORE motion is not preserved across a
+    motion cycle — it reverts to white 10%. A turn-off during the window IS still honoured,
+    via the panels_went_off release below.
 
     input_boolean.hallway_panels_pir_owned marks that this automation is the one holding
     the panels. It is claimed only when not already held, and released the moment either
@@ -2982,9 +2989,15 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.hallway_panels_pir_owned
-      - action: scene.turn_on
+      - action: light.turn_on
         target:
-          entity_id: scene.hallway_panels_pre_pir
+          entity_id:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+        data:
+          brightness_pct: 10
+          hs_color: [0, 0]
+          transition: 2
     # Motion after sunset. Snapshot only on the first pulse of a run of motion; later
     # pulses just re-arm the delay via mode: restart.
     - conditions:
@@ -3005,12 +3018,6 @@
           entity_id: input_boolean.hallway_panels_pir_owned
           state: 'off'
         then:
-        - action: scene.create
-          data:
-            scene_id: hallway_panels_pre_pir
-            snapshot_entities:
-            - light.hallway_nanoleaf_light_panels_left
-            - light.hallway_nanoleaf_hallway_lights_right
         - action: input_boolean.turn_on
           target:
             entity_id: input_boolean.hallway_panels_pir_owned
@@ -3052,9 +3059,15 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.hallway_panels_pir_owned
-      - action: scene.turn_on
+      - action: light.turn_on
         target:
-          entity_id: scene.hallway_panels_pre_pir
+          entity_id:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+        data:
+          brightness_pct: 10
+          hs_color: [0, 0]
+          transition: 2
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
