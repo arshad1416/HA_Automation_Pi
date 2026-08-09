@@ -789,6 +789,37 @@ template:
         attributes:
           mmwave: "{{ states('binary_sensor.master_bedroom_mmwave_presence') }}"
           ecobee_332d: "{{ states('binary_sensor.332d_occupancy') }}"
+      # Single boundary between the two stair-PIR automations. Motion on the Upstairs
+      # Stair Sensor lights the stair light while this is OFF, and the hallway Nanoleaf
+      # panels while it is ON — never both, never neither.
+      #
+      # It exists as one sensor rather than duplicated conditions precisely because the
+      # two automations must be exact complements. If the copies ever drifted apart you
+      # would get either both lights firing, or — far worse — a dark staircase at night
+      # with neither firing.
+      #
+      # Three clauses, each load-bearing:
+      #   bedtime_shutdown_done : the actual "we have gone to bed" latch, set by
+      #                           bedtime_routine_auto on real sleep detection.
+      #   hour >= 20 or < 12    : that latch is only RESET at 20:00, so between sunset and
+      #                           20:00 it still reads last night's ON. This pins it to the
+      #                           current night.
+      #   sun below_horizon     : without this, a dark stormy morning at 09:00 (latch still
+      #                           reading ON until the 20:00 reset) would leave the panels
+      #                           blocked by their own sun check AND the stair light blocked
+      #                           by this sensor — nothing would light. Including it here
+      #                           means ON always implies dark, so the panels can always act.
+      - name: After Bedtime
+        unique_id: after_bedtime
+        icon: mdi:sleep
+        state: >-
+          {{ is_state('input_boolean.bedtime_shutdown_done', 'on')
+             and (now().hour >= 20 or now().hour < 12)
+             and is_state('sun.sun', 'below_horizon') }}
+        attributes:
+          latch: "{{ states('input_boolean.bedtime_shutdown_done') }}"
+          in_night_window: "{{ now().hour >= 20 or now().hour < 12 }}"
+          sun: "{{ states('sun.sun') }}"
   # Canonical Climate AI temperature/humidity inputs. Native Ecobee is the
   # preferred source; HomeKit remains the first read-only fallback because it
   # is local and exposes the same physical sensors. SmartThings is the final

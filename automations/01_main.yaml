@@ -2739,7 +2739,7 @@
       - switch.side_rain_barrel_switch
       - switch.side_rain_barrel_switch
 - id: stairs_pir_motion_light
-  alias: Stairs Light — PIR Motion (100%, 25% after bedtime)
+  alias: Stairs Light — PIR Motion (before bedtime)
   description: >-
     Motion on the Upstairs Stair Sensor (binary_sensor.pir_motion_sensor_2_motion) lights
     light.stair_light: full brightness when it is dark out before bedtime (capped at
@@ -2809,36 +2809,10 @@
       - action: light.turn_off
         target:
           entity_id: light.stair_light
-    # Motion, light currently off, after bedtime and before sunrise -> nightly_dim_brightness.
-    - conditions:
-      - condition: trigger
-        id: motion
-      - condition: state
-        entity_id: light.stair_light
-        state: 'off'
-      - condition: state
-        entity_id: sun.sun
-        state: below_horizon
-      - condition: state
-        entity_id: input_boolean.bedtime_shutdown_done
-        state: 'on'
-      # bedtime_shutdown_done is only cleared at 20:00, so between sunset and 20:00 it is
-      # still last night's ON. Restrict the dim branch to the actual overnight window.
-      - condition: or
-        conditions:
-        - condition: time
-          after: '20:00:00'
-        - condition: time
-          before: '12:00:00'
-      sequence:
-      - action: light.turn_on
-        target:
-          entity_id: light.stair_light
-        data:
-          brightness_pct: '{{ states(''input_number.nightly_dim_brightness'') | int(10) }}'
-      - action: input_boolean.turn_on
-        target:
-          entity_id: input_boolean.stair_light_pir_owned
+    # The after-bedtime window now belongs to hallway_panels_stairs_pir, which lights the
+    # Nanoleaf panels at 50% on the Adaptive Lighting warm curve instead. The dedicated
+    # bedtime branch that used to live here was removed with that handover — the guard on
+    # binary_sensor.after_bedtime below is what keeps this automation out of that window.
     # Motion, light currently off, dark out (night before bedtime, or a genuinely dim day)
     # -> 100% before the seasonal dim hour, nightly_dim_brightness after it.
     - conditions:
@@ -2847,6 +2821,17 @@
       - condition: state
         entity_id: light.stair_light
         state: 'off'
+      # Before bedtime only. After bedtime the hallway panels take over — see
+      # binary_sensor.after_bedtime in configuration.yaml for why the boundary lives in
+      # one place rather than being duplicated into both automations.
+      #
+      # "not on" rather than "== off" deliberately: a state condition on 'off' would also
+      # fail while that sensor is unknown/unavailable (briefly true at startup before the
+      # template renders), and the panels' condition on 'on' would fail too — leaving a
+      # dark staircase with neither light responding. Written this way the stair light is
+      # the safe default in every state the sensor can hold.
+      - condition: template
+        value_template: "{{ not is_state('binary_sensor.after_bedtime', 'on') }}"
       - condition: or
         conditions:
         - condition: state
@@ -3008,6 +2993,12 @@
       - condition: state
         entity_id: sun.sun
         state: below_horizon
+      # After bedtime only; before bedtime stairs_pir_motion_light handles the stairway.
+      # after_bedtime already implies sun below_horizon, so the check above is redundant
+      # but kept as a visible guard against the panels ever firing in daylight.
+      - condition: state
+        entity_id: binary_sensor.after_bedtime
+        state: 'on'
       sequence:
       - if:
         - condition: state

@@ -40,6 +40,8 @@ RESTORE_AFTER = {"minutes": 5}
 AL_SWITCH = "switch.hallway_panels_adaptive_lighting_hallway_panels"
 STAIR_LIGHT = "light.stair_light"
 CLAIM_STAIRS = "input_boolean.stair_light_pir_owned"
+# The single boundary between the two automations (configuration.yaml template sensor).
+BOUNDARY = "binary_sensor.after_bedtime"
 
 
 def load_automations():
@@ -83,6 +85,45 @@ def assert_no_dead_pir_trigger(auto):
             )
 
 
+def check_boundary_is_complementary(by_id):
+    """Exactly one of the two automations may respond to a given motion pulse.
+
+    They must not both fire (the user asked for one light per trip) and — far more
+    importantly — there must be no state of the boundary sensor where NEITHER fires,
+    which would mean a dark staircase at night.
+
+    The panels require it to be definitively 'on'. The stair light must therefore be
+    written as "not on" rather than "== off": a state condition on 'off' also fails while
+    the sensor is unknown/unavailable, and then neither automation would act.
+    """
+    stairs = by_id["stairs_pir_motion_light"]
+    panels = by_id["hallway_panels_stairs_pir"]
+
+    def motion_conditions(auto):
+        for o in auto["actions"][0]["choose"]:
+            if any(c.get("condition") == "trigger" and c.get("id") == "motion"
+                   for c in o["conditions"]):
+                return o["conditions"]
+        raise AssertionError(f"{auto['id']}: no motion branch")
+
+    p_guard = [c for c in motion_conditions(panels) if c.get("entity_id") == BOUNDARY]
+    assert p_guard, f"hallway panels must be gated on {BOUNDARY}"
+    assert p_guard[0].get("state") == "on", (
+        f"hallway panels must require {BOUNDARY} == 'on' (after bedtime)"
+    )
+
+    s_guard = [c for c in motion_conditions(stairs)
+               if BOUNDARY in str(c.get("value_template", "")) or c.get("entity_id") == BOUNDARY]
+    assert s_guard, f"stair light must be gated on {BOUNDARY}"
+    g = s_guard[0]
+    assert g.get("condition") == "template" and "not is_state" in g.get("value_template", ""), (
+        "the stair light guard must be a template 'not is_state(..., \'on\')' so it still "
+        "fires when the boundary sensor is unknown/unavailable. A plain state condition on "
+        "'off' leaves a window where NEITHER light responds — a dark staircase at night."
+    )
+    assert f"'{BOUNDARY}'" in g["value_template"] or f'"{BOUNDARY}"' in g["value_template"]
+
+
 def check_stairs_light(by_id):
     """stairs_pir_motion_light: same sensor, same fix — timer tail instead of no_motion."""
     auto = by_id.get("stairs_pir_motion_light")
@@ -112,8 +153,9 @@ def check_stairs_light(by_id):
         if any(c.get("condition") == "trigger" and c.get("id") == "motion"
                for c in o["conditions"])
     ]
-    assert len(motion_branches) == 2, (
-        f"expected the bedtime and dark branches, got {len(motion_branches)}"
+    assert len(motion_branches) == 1, (
+        f"expected only the dark branch (the bedtime branch handed over to the hallway "
+        f"panels), got {len(motion_branches)}"
     )
     for b in motion_branches:
         assert any(
@@ -288,6 +330,7 @@ def main():
         )
 
     check_stairs_light(by_id)
+    check_boundary_is_complementary(by_id)
 
     print("stairs PIR automations (both): all invariants OK")
     return 0
