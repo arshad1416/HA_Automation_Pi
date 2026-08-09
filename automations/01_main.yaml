@@ -2860,13 +2860,17 @@
           entity_id: light.stair_light
         data:
           # Cap brightness at nightly_dim_brightness after the seasonal Nightly Dimming
-          # hour (9 PM winter, 10 PM shoulder, 11 PM summer), matching the outdoor lights.
-          # Before that hour the stair light runs at full 100%.
+          # hour (9 PM winter, 10 PM shoulder, 11 PM summer), matching the outdoor lights,
+          # AND through the small hours until 06:00. The hour < 6 half matters: `hour >=
+          # dim_hr` alone is false for every hour from midnight to dim_hr, so before this
+          # the dim leg was unreachable overnight and a 02:00 trip took the full 100% in
+          # the face. Not theoretical — the latch sat OFF continuously from 2026-08-02
+          # 20:00 to 2026-08-04 00:41, a whole night with HA up and recording.
           brightness_pct: >-
             {% set dim_hr = 21 if now().month in [11,12,1,2]
                         else 22 if now().month in [3,4,9,10]
                         else 23 %}
-            {% if now().hour >= dim_hr %}
+            {% if now().hour >= dim_hr or now().hour < 6 %}
               {{ states('input_number.nightly_dim_brightness') | int(10) }}
             {% else %}
               100
@@ -3065,8 +3069,14 @@
           # Dimmest after bedtime, brightest on a dark day. Ordered most-specific first:
           # after_bedtime already implies sun below horizon, so it must be tested before
           # the plain sunset case or it could never win.
+          #
+          # `or now().hour < 6` covers the small hours independently of the bedtime latch.
+          # Without it, a night where the bedtime routine never fires (nobody detected
+          # asleep, or HA restarted) leaves after_bedtime OFF and a 02:00 trip takes the
+          # 50% evening level. Midnight-to-06:00 is treated as night regardless. This
+          # mirrors the identical fix on the stair light's dim leg.
           brightness_pct: >-
-            {% if is_state('binary_sensor.after_bedtime', 'on') %}10
+            {% if is_state('binary_sensor.after_bedtime', 'on') or now().hour < 6 %}10
             {% elif is_state('sun.sun', 'below_horizon') %}50
             {% else %}75{% endif %}
           color_temp_kelvin: >-

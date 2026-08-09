@@ -131,6 +131,47 @@ def assert_is_revert(step):
     assert sorted(night[0]["target"]["entity_id"]) == sorted(PANELS)
 
 
+def check_no_overnight_full_brightness(by_id):
+    """The stair light's dim leg must be reachable between midnight and the dim hour.
+
+    `{% if now().hour >= dim_hr %}` alone is False for every hour from 00:00 to dim_hr
+    (21/22/23), so the dim leg was unreachable overnight and every small-hours trip took
+    100%. Proven reachable in practice: the bedtime latch sat OFF continuously from
+    2026-08-02 20:00 to 2026-08-04 00:41 — a whole night, HA up and recording.
+    """
+    stairs = by_id["stairs_pir_motion_light"]
+    branch = next(
+        o for o in stairs["actions"][0]["choose"]
+        if any(c.get("condition") == "trigger" and c.get("id") == "motion" for c in o["conditions"])
+    )
+    turn_on = next(x for x in branch["sequence"] if x.get("action") == "light.turn_on")
+    tpl = str(turn_on["data"]["brightness_pct"])
+    assert "dim_hr" in tpl, "the seasonal dim-hour logic disappeared"
+    assert "now().hour < 6" in tpl, (
+        "the dim leg must also trigger between midnight and 06:00 — `now().hour >= dim_hr` "
+        f"alone is false all night and the stairs fire at 100% at 2am: {tpl!r}"
+    )
+
+
+def check_bedtime_latch_does_not_survive_restart():
+    """input_boolean.bedtime_shutdown_done must be initial: false.
+
+    Its 20:00 reset has no startup catch-up, so a restored ON latch after an outage across
+    20:00 persists until 20:00 the NEXT day, making after_bedtime read ON all evening and
+    handing the staircase to the panels while the household is still up.
+    """
+    import re
+    path = os.path.join(REPO, "configuration.yaml")
+    with open(path) as fh:
+        cfg = fh.read()
+    m = re.search(r"^  bedtime_shutdown_done:\n((?:    .*\n)+)", cfg, re.M)
+    assert m, "bedtime_shutdown_done not found in configuration.yaml"
+    assert re.search(r"^    initial:\s*false\s*$", m.group(1), re.M), (
+        "bedtime_shutdown_done must be 'initial: false' so a restart cannot strand the "
+        f"latch ON until 20:00 the next day. Got:\n{m.group(1)}"
+    )
+
+
 def check_stair_light_covers_dead_panels(by_id):
     """After bedtime the stair light stands down — unless the panels cannot answer.
 
@@ -316,6 +357,13 @@ def main():
         assert str(pct) in bri, f"motion brightness for {period} ({pct}%) missing from {bri!r}"
     # after_bedtime implies sun below horizon, so it MUST be tested first or the 50%
     # sunset leg would always win and the after-bedtime 10% would be unreachable.
+    # The small hours must dim independently of the bedtime latch. On a night where the
+    # bedtime routine never fires (nobody detected asleep, or HA restarted) after_bedtime
+    # stays OFF, and without this a 02:00 trip takes the 50% evening level.
+    assert "now().hour < 6" in bri, (
+        "the 10% leg must also cover midnight-06:00 via now().hour < 6, or a no-bedtime "
+        f"night lights the hallway at 50% at 2am: {bri!r}"
+    )
     assert bri.index("after_bedtime") < bri.index("below_horizon"), (
         "after_bedtime must be tested before the plain sunset case, otherwise the "
         "after-bedtime 10% leg is dead code"
@@ -424,6 +472,8 @@ def main():
 
     check_stairs_light(by_id)
     check_stair_light_covers_dead_panels(by_id)
+    check_no_overnight_full_brightness(by_id)
+    check_bedtime_latch_does_not_survive_restart()
 
     print("stairs PIR automations (both): all invariants OK")
     return 0
