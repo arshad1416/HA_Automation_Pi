@@ -2861,16 +2861,21 @@
         data:
           # Cap brightness at nightly_dim_brightness after the seasonal Nightly Dimming
           # hour (9 PM winter, 10 PM shoulder, 11 PM summer), matching the outdoor lights,
-          # AND through the small hours until 06:00. The hour < 6 half matters: `hour >=
-          # dim_hr` alone is false for every hour from midnight to dim_hr, so before this
-          # the dim leg was unreachable overnight and a 02:00 trip took the full 100% in
-          # the face. Not theoretical — the latch sat OFF continuously from 2026-08-02
-          # 20:00 to 2026-08-04 00:41, a whole night with HA up and recording.
+          # AND onward until sunrise. The second half matters: `hour >= dim_hr` alone is
+          # false for every hour from midnight to dim_hr, so before this the dim leg was
+          # unreachable overnight and a 02:00 trip took the full 100% in the face. Not
+          # theoretical — the latch sat OFF continuously from 2026-08-02 20:00 to
+          # 2026-08-04 00:41, a whole night with HA up and recording.
+          # `sun below AND hour < 12` is midnight-to-sunrise specifically; sun.sun alone
+          # would also match the evening, and a bare hour cutoff would still be lit at
+          # 100% during a dark 07:00 in December. A dark overcast DAY keeps 100%, because
+          # the sun is above the horizon then.
           brightness_pct: >-
             {% set dim_hr = 21 if now().month in [11,12,1,2]
                         else 22 if now().month in [3,4,9,10]
                         else 23 %}
-            {% if now().hour >= dim_hr or now().hour < 6 %}
+            {% if now().hour >= dim_hr
+                  or (is_state('sun.sun', 'below_horizon') and now().hour < 12) %}
               {{ states('input_number.nightly_dim_brightness') | int(10) }}
             {% else %}
               100
@@ -3070,13 +3075,25 @@
           # after_bedtime already implies sun below horizon, so it must be tested before
           # the plain sunset case or it could never win.
           #
-          # `or now().hour < 6` covers the small hours independently of the bedtime latch.
-          # Without it, a night where the bedtime routine never fires (nobody detected
-          # asleep, or HA restarted) leaves after_bedtime OFF and a 02:00 trip takes the
-          # 50% evening level. Midnight-to-06:00 is treated as night regardless. This
-          # mirrors the identical fix on the stair light's dim leg.
+          # The 10% window runs from the seasonal dim hour through to sunrise, matching
+          # the stair light and the outdoor lights. It is expressed in two halves because
+          # sun.sun alone cannot tell 21:00 from 03:00 — both are below_horizon:
+          #   now().hour >= dim_hr            -> the dim hour up to midnight
+          #   sun below AND now().hour < 12   -> midnight up to sunrise
+          # The hour < 12 bound is what keeps the second half from also matching the
+          # evening; it is the same idiom binary_sensor.after_bedtime uses.
+          #
+          # It is deliberately independent of the bedtime latch: on a night where the
+          # bedtime routine never fires (nobody detected asleep, or HA restarted)
+          # after_bedtime stays OFF, and without this a 02:00 trip took the 50% evening
+          # level. Between sunset and the dim hour the house is still up, so 50% stands.
           brightness_pct: >-
-            {% if is_state('binary_sensor.after_bedtime', 'on') or now().hour < 6 %}10
+            {% set dim_hr = 21 if now().month in [11,12,1,2]
+                        else 22 if now().month in [3,4,9,10]
+                        else 23 %}
+            {% if is_state('binary_sensor.after_bedtime', 'on')
+                  or now().hour >= dim_hr
+                  or (is_state('sun.sun', 'below_horizon') and now().hour < 12) %}10
             {% elif is_state('sun.sun', 'below_horizon') %}50
             {% else %}75{% endif %}
           color_temp_kelvin: >-

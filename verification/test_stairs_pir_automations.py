@@ -147,9 +147,9 @@ def check_no_overnight_full_brightness(by_id):
     turn_on = next(x for x in branch["sequence"] if x.get("action") == "light.turn_on")
     tpl = str(turn_on["data"]["brightness_pct"])
     assert "dim_hr" in tpl, "the seasonal dim-hour logic disappeared"
-    assert "now().hour < 6" in tpl, (
-        "the dim leg must also trigger between midnight and 06:00 — `now().hour >= dim_hr` "
-        f"alone is false all night and the stairs fire at 100% at 2am: {tpl!r}"
+    assert "now().hour < 12" in tpl and "below_horizon" in tpl, (
+        "the dim leg must run from the dim hour to sunrise — `now().hour >= dim_hr` alone "
+        f"is false all night and the stairs fire at 100% at 2am: {tpl!r}"
     )
 
 
@@ -360,9 +360,16 @@ def main():
     # The small hours must dim independently of the bedtime latch. On a night where the
     # bedtime routine never fires (nobody detected asleep, or HA restarted) after_bedtime
     # stays OFF, and without this a 02:00 trip takes the 50% evening level.
-    assert "now().hour < 6" in bri, (
-        "the 10% leg must also cover midnight-06:00 via now().hour < 6, or a no-bedtime "
-        f"night lights the hallway at 50% at 2am: {bri!r}"
+    # The 10% window is the dim hour through to sunrise, independent of the bedtime
+    # latch. Both halves are required: sun.sun alone cannot tell 21:00 from 03:00.
+    assert "dim_hr" in bri, "the dim-hour half of the 10% window is missing"
+    assert "now().hour < 12" in bri, (
+        "the midnight-to-sunrise half is missing — without it, a night where the bedtime "
+        f"routine never fires lights the hallway at 50% at 2am: {bri!r}"
+    )
+    assert "below_horizon" in bri.split("%}10")[0], (
+        "the midnight-to-sunrise half must be gated on sun below_horizon, or it would "
+        "also dim a bright morning"
     )
     assert bri.index("after_bedtime") < bri.index("below_horizon"), (
         "after_bedtime must be tested before the plain sunset case, otherwise the "
