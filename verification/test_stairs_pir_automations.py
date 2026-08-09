@@ -40,6 +40,11 @@ REVERT_PCT = 10
 REVERT_EFFECT = "night light"
 # motion brightness per period, dimmest when the house is asleep
 PERIOD_PCT = {"after_bedtime": 10, "after_sunset": 50, "dark_day": 75}
+# The stair light has two legs: a dim one sourced from a tunable helper, and a literal
+# bright one. Both are asserted — the bright leg previously had no value assertion at all,
+# so swapping its 100 for any other number went undetected.
+STAIR_BRIGHT_PCT = 100
+STAIR_DIM_SOURCE = "input_number.nightly_dim_brightness"
 # The AL instance scoped to these panels (configuration.yaml, 1800-6500 K). Deliberately
 # NOT the Whole House instance, whose 2500 K floor suits outdoor downlights.
 AL_SWITCH = "switch.hallway_panels_adaptive_lighting_hallway_panels"
@@ -130,7 +135,7 @@ def assert_is_revert(step):
 
 
 def check_no_overnight_full_brightness(by_id):
-    """The stair light's dim leg must be reachable between midnight and the dim hour.
+    """The stair light's two brightness legs: reachable, and emitting the right values.
 
     `{% if now().hour >= dim_hr %}` alone is False for every hour from 00:00 to dim_hr
     (21/22/23), so the dim leg was unreachable overnight and every small-hours trip took
@@ -148,6 +153,21 @@ def check_no_overnight_full_brightness(by_id):
     assert "now().hour < 12" in tpl and "below_horizon" in tpl, (
         "the dim leg must run from the dim hour to sunrise — `now().hour >= dim_hr` alone "
         f"is false all night and the stairs fire at 100% at 2am: {tpl!r}"
+    )
+
+    # --- both legs must still emit what they claim ------------------------------
+    # Same emitted-legs technique as the panels: match a number only where it is emitted
+    # straight after a %} tag, so the {% set dim_hr %} prelude's [3,4,9,10] month list
+    # cannot satisfy it. The bright leg is the only literal the template emits; the dim
+    # leg is an expression, so it contributes no literal here.
+    legs = [int(x) for x in re.findall(r"%\}\s*(\d+)", tpl)]
+    assert legs == [STAIR_BRIGHT_PCT], (
+        f"stair light bright leg drifted: emits {legs}, expected [{STAIR_BRIGHT_PCT}]"
+    )
+    # The dim leg must stay tunable rather than being frozen to a literal — the helper is
+    # how the seasonal night level is adjusted without editing this file.
+    assert STAIR_DIM_SOURCE in tpl, (
+        f"the dim leg must read {STAIR_DIM_SOURCE}, not a hardcoded value: {tpl!r}"
     )
 
 
