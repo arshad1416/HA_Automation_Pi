@@ -39,7 +39,7 @@ RESTORE_AFTER = {"minutes": 5}
 # and read back from HA: white (hs 0,0) at 10%. The revert is this FIXED target, not a
 # snapshot — deterministic and self-healing if the panels drift.
 REVERT_PCT = 10
-REVERT_HS = [0, 0]
+REVERT_EFFECT = "night light"
 # motion brightness per period, dimmest when the house is asleep
 PERIOD_PCT = {"after_bedtime": 10, "after_sunset": 50, "dark_day": 75}
 # The AL instance scoped to these panels (configuration.yaml, 1800-6500 K). Deliberately
@@ -120,18 +120,13 @@ def assert_is_revert(step):
     assert d.get("brightness_pct") == REVERT_PCT, (
         f"night resting brightness must be {REVERT_PCT}%, got {d.get('brightness_pct')}"
     )
-    # NOT effect: "night light" — that scene exists only on the LEFT panel. Asking the
-    # right one for it returns HTTP 500, and the call fails having already changed the
-    # left, leaving the pair mismatched. White is what both units accept.
-    assert list(d.get("hs_color") or []) == REVERT_HS, (
-        f"night resting look must be white hs {REVERT_HS}, got {d.get('hs_color')}"
+    # The scene lives on the devices, not in HA. Both panels carry it as of 2026-08-09;
+    # if one is reset or replaced it will 500 on that panel and the pair will mismatch.
+    assert d.get("effect") == REVERT_EFFECT, (
+        f"night resting look must be the {REVERT_EFFECT!r} scene, got {d.get('effect')!r}"
     )
-    assert "effect" not in d, (
-        "no effect here: the panels carry different custom scenes, so any effect name "
-        "errors on one of them"
-    )
-    assert "color_temp_kelvin" not in d, (
-        "colour temp would leave the panels in colour_temp mode, not the hs white they rest in"
+    assert "color_temp_kelvin" not in d and "hs_color" not in d, (
+        "setting a colour alongside the scene fights it — the scene defines the look"
     )
     assert sorted(night[0]["target"]["entity_id"]) == sorted(PANELS)
 

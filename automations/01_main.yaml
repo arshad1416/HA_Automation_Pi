@@ -2927,14 +2927,18 @@
     "After bedtime" is binary_sensor.after_bedtime (configuration.yaml), which is the
     bedtime latch AND the overnight hour window AND sun below horizon.
 
-    The resting state after sunset is white at 10%. The intent was the Nanoleaf "night
-    light" effect, but that scene exists ONLY on the left panel: the two units carry
-    different custom scenes (left has "night light", right has "Bright Hallway"; they share
-    the other 16). Asking the right panel for "night light" returns HTTP 500 and the
-    service call fails after having already changed the left one, so the pair would end up
-    mismatched every night. White at 10% is the matched equivalent both units accept. If
-    "night light" is ever duplicated onto the right panel in the Nanoleaf app, this becomes
-    a one-line change back to effect: night light.
+    The resting state after sunset is the Nanoleaf "night light" scene at 10%.
+
+    That scene is stored ON each device, not in HA, and it originally existed only on the
+    left panel — asking the right one for it returned HTTP 500 mid-call, changing the left
+    and erroring on the right. The owner shared the scene to the right panel from the
+    Nanoleaf app on 2026-08-09 and it now applies to both. Note HA caches effect_list per
+    config entry, so a scene added in the app is invisible until that entry is reloaded.
+
+    If a panel is ever factory reset or replaced, that scene goes with it and this revert
+    will start failing on the panel that lost it. The symptom is an HTTP 500 from
+    light.turn_on and a mismatched pair; the fix is to re-share the scene, then reload the
+    Nanoleaf config entry.
 
     During a dark day the resting state is OFF instead, because the panels are not meant to
     sit lit in daylight.
@@ -3010,7 +3014,7 @@
             - light.hallway_nanoleaf_hallway_lights_right
           data:
             brightness_pct: 10
-            hs_color: [0, 0]
+            effect: night light
     # Motion, in any of the three periods. Daylight that is NOT dark enough falls through
     # here and does nothing, which is the point — no branch matches, no lights.
     - conditions:
@@ -3100,7 +3104,7 @@
             - light.hallway_nanoleaf_hallway_lights_right
           data:
             brightness_pct: 10
-            hs_color: [0, 0]
+            effect: night light
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
