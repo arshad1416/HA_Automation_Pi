@@ -38,19 +38,19 @@
             - condition: trigger
               id: winter
             - condition: template
-              value_template: " now().month in [11, 12, 1, 2] "
+              value_template: "{{ now().month in [11, 12, 1, 2] }}"
         - condition: and
           conditions:
             - condition: trigger
               id: shoulder
             - condition: template
-              value_template: " now().month in [3, 4, 9, 10] "
+              value_template: "{{ now().month in [3, 4, 9, 10] }}"
         - condition: and
           conditions:
             - condition: trigger
               id: summer
             - condition: template
-              value_template: " now().month in [5, 6, 7, 8] "
+              value_template: "{{ now().month in [5, 6, 7, 8] }}"
   triggers:
   - trigger: time
     at: '21:00:00'
