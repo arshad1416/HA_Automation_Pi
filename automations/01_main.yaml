@@ -2831,7 +2831,10 @@
       # dark staircase with neither light responding. Written this way the stair light is
       # the safe default in every state the sensor can hold.
       - condition: template
-        value_template: "{{ not is_state('binary_sensor.after_bedtime', 'on') }}"
+        value_template: >-
+          {{ not is_state('binary_sensor.after_bedtime', 'on')
+             or states('light.hallway_nanoleaf_light_panels_left') in ['unavailable', 'unknown']
+             or states('light.hallway_nanoleaf_hallway_lights_right') in ['unavailable', 'unknown'] }}
       - condition: or
         conditions:
         - condition: state
@@ -2902,51 +2905,46 @@
     target:
       entity_id: light.stair_light
 - id: hallway_panels_stairs_pir
-  alias: Hallway Panels — Stairs PIR (50%, Adaptive Lighting colour)
+  alias: Hallway Panels — Stairs PIR (75/50/10% by period, Adaptive Lighting colour)
   description: >-
-    Walking up the stairs after sunset lights the two hallway Nanoleaf panels at the top
-    (light.hallway_nanoleaf_light_panels_left / _hallway_lights_right) to 50% brightness,
-    with the Hallway Panels Adaptive Lighting instance (1800-6500 K, matching what the
-    NL22 hardware reports) choosing the colour temperature. Five minutes after the LAST
-    motion pulse the panels are returned to whatever state they were in before.
+    Motion on binary_sensor.pir_motion_sensor_2_motion (the Upstairs Stair Sensor) lights
+    the two hallway Nanoleaf panels at the top of the stairs, with the Hallway Panels
+    Adaptive Lighting instance (1800-6500 K, matching what the NL22 hardware reports)
+    choosing the colour temperature. Five minutes after the LAST motion pulse they return
+    to that period's resting state.
 
-    TIMER, NOT A CLEAR SIGNAL — this is the important bit. The first version waited for
-    binary_sensor.pir_motion_sensor_2_motion to go 'off' for 5 minutes. It never does:
-    over 8 hours on 2026-08-08 that sensor produced 17 state changes and every one was
-    on <-> unavailable, never once 'off'. It is a battery Tuya PIR with no gateway — it
-    wakes on motion, reports motion=true, then sleeps back to unavailable. So it emits a
-    motion PULSE and never a cleared event, and the old no-motion trigger could not fire
-    at all. The result was panels stuck at full brightness indefinitely.
+    Three periods, brightest when the house is most awake:
 
-    Hence mode: restart plus an inline delay. Each motion pulse cancels the pending
-    restore and re-arms it, so the window is "5 minutes after the last pulse" rather than
-    "5 minutes of continuous off". If that sensor is ever replaced with one that reports
-    cleared (an mmWave presence sensor like the family-room/master ESPHome ones would),
-    this still behaves correctly — it simply stops depending on a signal that never comes.
+      dark day (sun up, overcast) -> motion 75%  -> rest: OFF
+      after sunset (sun down)     -> motion 50%  -> rest: 10% "night light"
+      after bedtime               -> motion 10%  -> rest: 10% "night light"
 
-    Runs alongside stairs_pir_motion_light on the same PIR without conflicting — that one
-    drives light.stair_light, this one drives the panels. They were kept separate because
-    light.stair_light is a LocalTuya dimmer (supported_color_modes: ['brightness']), so
-    Adaptive Lighting cannot set a colour on it at all; only these NL22 panels support
-    color_temp/hs.
+    "Dark day" reuses the same inputs as stairs_pir_motion_light: sensor.illuminance
+    against input_number.stairs_dark_lux, falling back to cloud cover plus sun elevation
+    when that sensor is missing. The threshold helper is shared rather than duplicated —
+    it is the same staircase, and two thresholds would drift apart.
 
-    The revert target is a FIXED state — white (hs 0,0) at 10% — not a snapshot of whatever
-    was there. That is the owner's stated after-sunset resting state for this hallway, set
-    from the Nanoleaf app and read back from HA on 2026-08-08 as hs_color [0,0],
-    brightness 25/255, no effect. A fixed target is deterministic and self-healing: if the
-    panels are left in an odd state, the next motion cycle normalises them.
+    "After bedtime" is binary_sensor.after_bedtime (configuration.yaml), which is the
+    bedtime latch AND the overnight hour window AND sun below horizon.
 
-    Known trade-off: because it is fixed rather than snapshotted, a deliberate non-default
-    look (one of the 17 Nanoleaf effects, say) set BEFORE motion is not preserved across a
-    motion cycle — it reverts to white 10%. A turn-off during the window IS still honoured,
-    via the panels_went_off release below.
+    The resting state after sunset is the Nanoleaf "night light" effect at 10%, the
+    owner's chosen night look for this hallway. During a dark day the resting state is OFF
+    instead, because the panels are not meant to sit lit in daylight.
 
-    input_boolean.hallway_panels_pir_owned marks that this automation is the one holding
-    the panels. It is claimed only when not already held, and released the moment either
-    panel goes off by ANY path, so a manual turn-off is never fought or resurrected. The
-    stuck_guard trigger is a backstop for the one case the inline delay cannot cover: if
-    the automation is reloaded or the run is cancelled mid-delay, the claim would other-
-    wise stay set with no pending restore, leaving the panels up until the next motion.
+    TIMER, NOT A CLEAR SIGNAL: the PIR is a battery Tuya device that only ever pulses 'on'
+    and sleeps to 'unavailable' — over 8h on 2026-08-08 it produced 17 state changes and
+    not one was 'off'. So mode: restart plus an inline delay, giving "5 minutes after the
+    last pulse" rather than "5 minutes of continuous off", which could never have fired.
+
+    Runs alongside stairs_pir_motion_light, which drives light.stair_light before bedtime.
+    They deliberately overlap outside the after-bedtime window; after bedtime the stair
+    light stands down and only these panels respond.
+
+    input_boolean.hallway_panels_pir_owned marks that this automation is holding the
+    panels: claimed only when not already held, and released the moment either panel goes
+    off by ANY path, so a deliberate turn-off is never resurrected 5 minutes later. The
+    stuck_guard trigger covers a run cancelled mid-delay (a reload), which would otherwise
+    leave the claim set with no pending revert.
   mode: restart
   triggers:
   - trigger: state
@@ -2959,8 +2957,6 @@
     - light.hallway_nanoleaf_hallway_lights_right
     to: 'off'
     id: panels_went_off
-  # Backstop: the claim should never be held this long — the normal path releases it
-  # after ~5 minutes. Only reachable if a run was cancelled before its restore ran.
   - trigger: state
     entity_id: input_boolean.hallway_panels_pir_owned
     to: 'on'
@@ -2970,9 +2966,8 @@
   conditions: []
   actions:
   - choose:
-    # Either panel went off by any path (us restoring, manual, a scene) — drop the claim.
-    # mode: restart means this run has already cancelled any pending restore, which is
-    # exactly right: a deliberate turn-off must not be undone 5 minutes later.
+    # Either panel went off by any path — drop the claim. mode: restart has already
+    # cancelled any pending revert, which is exactly right for a deliberate turn-off.
     - conditions:
       - condition: trigger
         id: panels_went_off
@@ -2980,8 +2975,8 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.hallway_panels_pir_owned
-    # Backstop restore. Claim released first so the scene switching a panel off cannot
-    # race the panels_went_off branch back into an inconsistent claim.
+    # Backstop for a run cancelled before its revert ran. Claim released first so the
+    # revert cannot race panels_went_off back into an inconsistent claim.
     - conditions:
       - condition: trigger
         id: stuck_guard
@@ -2989,29 +2984,53 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.hallway_panels_pir_owned
-      - action: light.turn_on
-        target:
-          entity_id:
-          - light.hallway_nanoleaf_light_panels_left
-          - light.hallway_nanoleaf_hallway_lights_right
-        data:
-          brightness_pct: 10
-          hs_color: [0, 0]
-          transition: 2
-    # Motion after sunset. Snapshot only on the first pulse of a run of motion; later
-    # pulses just re-arm the delay via mode: restart.
+      - if:
+        - condition: state
+          entity_id: sun.sun
+          state: above_horizon
+        then:
+        - action: light.turn_off
+          target:
+            entity_id:
+            - light.hallway_nanoleaf_light_panels_left
+            - light.hallway_nanoleaf_hallway_lights_right
+        else:
+        - action: light.turn_on
+          target:
+            entity_id:
+            - light.hallway_nanoleaf_light_panels_left
+            - light.hallway_nanoleaf_hallway_lights_right
+          data:
+            brightness_pct: 10
+            effect: night light
+    # Motion, in any of the three periods. Daylight that is NOT dark enough falls through
+    # here and does nothing, which is the point — no branch matches, no lights.
     - conditions:
       - condition: trigger
         id: motion
-      - condition: state
-        entity_id: sun.sun
-        state: below_horizon
-      # After bedtime only; before bedtime stairs_pir_motion_light handles the stairway.
-      # after_bedtime already implies sun below_horizon, so the check above is redundant
-      # but kept as a visible guard against the panels ever firing in daylight.
-      - condition: state
-        entity_id: binary_sensor.after_bedtime
-        state: 'on'
+      - condition: or
+        conditions:
+        # after bedtime (already implies sun below horizon)
+        - condition: state
+          entity_id: binary_sensor.after_bedtime
+          state: 'on'
+        # after sunset
+        - condition: state
+          entity_id: sun.sun
+          state: below_horizon
+        # dark day: preferred estimated-lux reading below the shared threshold
+        - condition: template
+          value_template: >-
+            {{ states('sensor.illuminance') | float(-1) >= 0
+               and states('sensor.illuminance') | float(-1)
+                   < states('input_number.stairs_dark_lux') | float(1000) }}
+        # dark day fallback, only while sensor.illuminance is absent/unavailable
+        - condition: template
+          value_template: >-
+            {{ states('sensor.illuminance') | float(-1) < 0
+               and ( state_attr('sun.sun', 'elevation') | float(90) < 5
+                     or ( state_attr('weather.forecast_home', 'cloud_coverage') | float(0) > 70
+                          and state_attr('sun.sun', 'elevation') | float(90) < 25 ) ) }}
       sequence:
       - if:
         - condition: state
@@ -3021,36 +3040,29 @@
         - action: input_boolean.turn_on
           target:
             entity_id: input_boolean.hallway_panels_pir_owned
-      # ONE call, not two. adaptive_lighting.apply was overriding brightness to full
-      # even with adapt_brightness: false — measured 2026-08-08: light.turn_on at
-      # brightness_pct 50 landed 127, then apply() pushed it to 254. A plain turn_on
-      # carrying only color_temp_kelvin left brightness at 127, so the panels are not the
-      # culprit; apply() emits brightness regardless of the flag in AL 1.30.1.
-      # Reading AL's computed colour straight off its switch attribute keeps Adaptive
-      # Lighting as the source of the colour, and makes brightness+colour atomic so
-      # nothing can land between them.
-      # Colour comes from the Hallway Panels AL instance (configuration.yaml), which is
-      # scoped to these NL22 panels: 1800-6500 K. It replaced the Whole House curve, whose
-      # 2500 K warm floor is set for outdoor downlights and could never reach the warm end
-      # these panels support. That instance has an empty lights list on purpose — it is a
-      # settings source only, so AL never drives these panels directly and cannot override
-      # brightness the way apply() did.
-      # ponytail: colour is sampled once per motion pulse rather than tracked continuously.
-      # Good enough for a 5-minute hallway visit; put the panels in that instance's lights
-      # list (and disable its adapt_brightness switch) if continuous tracking matters.
+      # ONE call carrying brightness AND colour. They must ship together: a separate
+      # adaptive_lighting.apply used to override brightness to full even with
+      # adapt_brightness: false (measured on AL 1.30.1), which is why the colour is read
+      # off the AL switch attribute and passed here instead of calling that service.
       - action: light.turn_on
         target:
           entity_id:
           - light.hallway_nanoleaf_light_panels_left
           - light.hallway_nanoleaf_hallway_lights_right
         data:
-          brightness_pct: 50
+          # Dimmest after bedtime, brightest on a dark day. Ordered most-specific first:
+          # after_bedtime already implies sun below horizon, so it must be tested before
+          # the plain sunset case or it could never win.
+          brightness_pct: >-
+            {% if is_state('binary_sensor.after_bedtime', 'on') %}10
+            {% elif is_state('sun.sun', 'below_horizon') %}50
+            {% else %}75{% endif %}
           color_temp_kelvin: >-
             {{ state_attr('switch.hallway_panels_adaptive_lighting_hallway_panels',
                           'color_temp_kelvin') | int(2200) }}
           transition: 2
-      # The restore. A new motion pulse restarts this automation and cancels the delay,
-      # so the panels stay up until 5 minutes after the last pulse.
+      # A new motion pulse restarts this automation and cancels the delay, so the panels
+      # stay up until 5 minutes after the last pulse.
       - delay:
           minutes: 5
       - condition: state
@@ -3059,15 +3071,28 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.hallway_panels_pir_owned
-      - action: light.turn_on
-        target:
-          entity_id:
-          - light.hallway_nanoleaf_light_panels_left
-          - light.hallway_nanoleaf_hallway_lights_right
-        data:
-          brightness_pct: 10
-          hs_color: [0, 0]
-          transition: 2
+      # Resting state. Sun up means this was the dark-day case, where the panels should
+      # not stay lit; otherwise back to the 10% night look. Evaluated now rather than at
+      # motion time so a cycle spanning sunset settles into the correct end state.
+      - if:
+        - condition: state
+          entity_id: sun.sun
+          state: above_horizon
+        then:
+        - action: light.turn_off
+          target:
+            entity_id:
+            - light.hallway_nanoleaf_light_panels_left
+            - light.hallway_nanoleaf_hallway_lights_right
+        else:
+        - action: light.turn_on
+          target:
+            entity_id:
+            - light.hallway_nanoleaf_light_panels_left
+            - light.hallway_nanoleaf_hallway_lights_right
+          data:
+            brightness_pct: 10
+            effect: night light
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.

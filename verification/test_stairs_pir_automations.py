@@ -39,7 +39,9 @@ RESTORE_AFTER = {"minutes": 5}
 # and read back from HA: white (hs 0,0) at 10%. The revert is this FIXED target, not a
 # snapshot — deterministic and self-healing if the panels drift.
 REVERT_PCT = 10
-REVERT_HS = [0, 0]
+REVERT_EFFECT = "night light"
+# motion brightness per period, dimmest when the house is asleep
+PERIOD_PCT = {"after_bedtime": 10, "after_sunset": 50, "dark_day": 75}
 # The AL instance scoped to these panels (configuration.yaml, 1800-6500 K). Deliberately
 # NOT the Whole House instance, whose 2500 K floor suits outdoor downlights.
 AL_SWITCH = "switch.hallway_panels_adaptive_lighting_hallway_panels"
@@ -91,60 +93,70 @@ def assert_no_dead_pir_trigger(auto):
 
 
 def assert_is_revert(step):
-    """The revert must put the panels back to the owner's after-sunset resting state."""
-    assert step.get("action") == "light.turn_on", f"expected a revert turn_on, got {step}"
-    d = step.get("data", {})
+    """The resting state, which differs by period.
+
+    Sun up means this cycle was the dark-day case and the panels must go OFF — they are
+    not meant to sit lit in daylight. Otherwise they return to the 10% "night light"
+    look. Evaluated at revert time, not motion time, so a cycle spanning sunset settles
+    into the correct end state.
+    """
+    assert "if" in step, f"the revert must branch on sun position, got {step}"
+    assert any(
+        c.get("entity_id") == "sun.sun" and c.get("state") == "above_horizon"
+        for c in step["if"]
+    ), "the revert must test sun.sun above_horizon to detect the dark-day case"
+
+    day = step["then"]
+    assert [x.get("action") for x in day] == ["light.turn_off"], (
+        f"dark-day revert must turn the panels OFF, got {[x.get('action') for x in day]}"
+    )
+    assert sorted(day[0]["target"]["entity_id"]) == sorted(PANELS)
+
+    night = step["else"]
+    assert [x.get("action") for x in night] == ["light.turn_on"], (
+        f"night revert must turn the panels on, got {[x.get('action') for x in night]}"
+    )
+    d = night[0]["data"]
     assert d.get("brightness_pct") == REVERT_PCT, (
-        f"revert brightness must be {REVERT_PCT}%, got {d.get('brightness_pct')}"
+        f"night resting brightness must be {REVERT_PCT}%, got {d.get('brightness_pct')}"
     )
-    assert list(d.get("hs_color") or []) == REVERT_HS, (
-        f"revert must be white hs {REVERT_HS} — the panels are left in colour-temp mode by "
-        f"the motion step, so the revert has to put them back to hs, got {d.get('hs_color')}"
+    assert d.get("effect") == REVERT_EFFECT, (
+        f"night resting look must be the {REVERT_EFFECT!r} effect, got {d.get('effect')!r}"
     )
-    assert "color_temp_kelvin" not in d, (
-        "the revert must not set colour temp; that would leave the panels in colour_temp "
-        "mode instead of the hs white they rest in"
+    assert "color_temp_kelvin" not in d and "hs_color" not in d, (
+        "setting a colour alongside the effect fights it — the effect defines the look"
     )
-    assert sorted(step["target"]["entity_id"]) == sorted(PANELS)
+    assert sorted(night[0]["target"]["entity_id"]) == sorted(PANELS)
 
 
-def check_boundary_is_complementary(by_id):
-    """Exactly one of the two automations may respond to a given motion pulse.
+def check_stair_light_covers_dead_panels(by_id):
+    """After bedtime the stair light stands down — unless the panels cannot answer.
 
-    They must not both fire (the user asked for one light per trip) and — far more
-    importantly — there must be no state of the boundary sensor where NEITHER fires,
-    which would mean a dark staircase at night.
-
-    The panels require it to be definitively 'on'. The stair light must therefore be
-    written as "not on" rather than "== off": a state condition on 'off' also fails while
-    the sensor is unknown/unavailable, and then neither automation would act.
+    The panels are on the top landing; light.stair_light is the only fixture on the treads
+    themselves. Gating the stair light off after bedtime means an unavailable Nanoleaf
+    leaves the staircase completely dark at 02:00. The guard must therefore also fire when
+    either panel is unavailable/unknown.
     """
     stairs = by_id["stairs_pir_motion_light"]
-    panels = by_id["hallway_panels_stairs_pir"]
-
-    def motion_conditions(auto):
-        for o in auto["actions"][0]["choose"]:
-            if any(c.get("condition") == "trigger" and c.get("id") == "motion"
-                   for c in o["conditions"]):
-                return o["conditions"]
-        raise AssertionError(f"{auto['id']}: no motion branch")
-
-    p_guard = [c for c in motion_conditions(panels) if c.get("entity_id") == BOUNDARY]
-    assert p_guard, f"hallway panels must be gated on {BOUNDARY}"
-    assert p_guard[0].get("state") == "on", (
-        f"hallway panels must require {BOUNDARY} == 'on' (after bedtime)"
+    branch = next(
+        o for o in stairs["actions"][0]["choose"]
+        if any(c.get("condition") == "trigger" and c.get("id") == "motion" for c in o["conditions"])
     )
-
-    s_guard = [c for c in motion_conditions(stairs)
-               if BOUNDARY in str(c.get("value_template", "")) or c.get("entity_id") == BOUNDARY]
-    assert s_guard, f"stair light must be gated on {BOUNDARY}"
-    g = s_guard[0]
-    assert g.get("condition") == "template" and "not is_state" in g.get("value_template", ""), (
-        "the stair light guard must be a template 'not is_state(..., \'on\')' so it still "
-        "fires when the boundary sensor is unknown/unavailable. A plain state condition on "
-        "'off' leaves a window where NEITHER light responds — a dark staircase at night."
+    guard = next(
+        (c for c in branch["conditions"] if BOUNDARY in str(c.get("value_template", ""))), None
     )
-    assert f"'{BOUNDARY}'" in g["value_template"] or f'"{BOUNDARY}"' in g["value_template"]
+    assert guard is not None, f"stair light must be gated on {BOUNDARY}"
+    tpl = guard["value_template"]
+    assert "not is_state" in tpl, (
+        "guard must be 'not is_state(..., on)' so it still fires when the boundary sensor "
+        "is unknown/unavailable"
+    )
+    for panel in PANELS:
+        assert panel in tpl, (
+            f"the stair-light guard must fall back to firing when {panel} is unavailable, "
+            "otherwise a dead panel after bedtime leaves the treads unlit"
+        )
+    assert "unavailable" in tpl and "unknown" in tpl
 
 
 def check_stairs_light(by_id):
@@ -256,17 +268,31 @@ def main():
     # --- backstop restores, claim released first -------------------------
     stuck = branch_for(auto, "stuck_guard")
     names = steps_of(stuck["sequence"])
-    assert names.index("input_boolean.turn_off") < names.index("light.turn_on"), (
-        "claim must be released before the revert turn_on"
+    # Claim released first, then the revert (an if/else, so it has no "action" key).
+    assert names[0] == "input_boolean.turn_off", (
+        f"stuck_guard must release the claim first, got {names}"
     )
     assert_is_revert(stuck["sequence"][-1])
 
     # --- motion branch ----------------------------------------------------
     motion = branch_for(auto, "motion")
+    # The panels now act in three periods, so the gate is an OR, not a bare sunset check.
+    # Plain daylight that is not dark enough must match nothing and leave the panels alone.
+    period_or = next(
+        (c for c in motion["conditions"] if c.get("condition") == "or"), None
+    )
+    assert period_or is not None, "motion branch must gate on an OR of the three periods"
+    inner = period_or["conditions"]
+    assert any(c.get("entity_id") == BOUNDARY and c.get("state") == "on" for c in inner), (
+        "after-bedtime period missing from the gate"
+    )
     assert any(
-        c.get("entity_id") == "sun.sun" and c.get("state") == "below_horizon"
-        for c in motion["conditions"]
-    ), "motion branch must be gated on sunset"
+        c.get("entity_id") == "sun.sun" and c.get("state") == "below_horizon" for c in inner
+    ), "after-sunset period missing from the gate"
+    assert any(
+        "illuminance" in str(c.get("value_template", "")) and "stairs_dark_lux" in str(c.get("value_template", ""))
+        for c in inner
+    ), "dark-day period must key off sensor.illuminance vs input_number.stairs_dark_lux"
 
     seq = motion["sequence"]
 
@@ -283,13 +309,16 @@ def main():
 
     delay_at = next(i for i, s in enumerate(seq) if "delay" in s)
     turn_on = next(s for s in seq[:delay_at] if s.get("action") == "light.turn_on")
-    assert turn_on["data"]["brightness_pct"] == BRIGHTNESS_PCT, (
-        f"expected {BRIGHTNESS_PCT}%, got {turn_on['data']['brightness_pct']}%"
+    bri = str(turn_on["data"]["brightness_pct"])
+    for period, pct in PERIOD_PCT.items():
+        assert str(pct) in bri, f"motion brightness for {period} ({pct}%) missing from {bri!r}"
+    # after_bedtime implies sun below horizon, so it MUST be tested first or the 50%
+    # sunset leg would always win and the after-bedtime 10% would be unreachable.
+    assert bri.index("after_bedtime") < bri.index("below_horizon"), (
+        "after_bedtime must be tested before the plain sunset case, otherwise the "
+        "after-bedtime 10% leg is dead code"
     )
     assert sorted(turn_on["target"]["entity_id"]) == sorted(PANELS)
-    assert f"({BRIGHTNESS_PCT}%" in auto["alias"], (
-        f"alias still advertises a different brightness: {auto['alias']!r}"
-    )
 
     # Brightness and colour must ship in ONE call. Measured 2026-08-08: a separate
     # adaptive_lighting.apply overrode brightness to 254 even with adapt_brightness
@@ -333,11 +362,14 @@ def main():
         and s.get("state") == "on" for s in tail
     ), "must re-check the claim after the delay before restoring"
     tail_actions = [s.get("action") for s in tail if s.get("action")]
-    assert tail_actions.index("input_boolean.turn_off") < tail_actions.index("light.turn_on"), (
-        "claim must be released before the revert, otherwise the revert re-enters "
-        "panels_went_off and races the claim"
+    assert "input_boolean.turn_off" in tail_actions, "the tail must release the claim"
+    release_at = next(i for i, x in enumerate(tail) if x.get("action") == "input_boolean.turn_off")
+    revert_at = len(tail) - 1
+    assert release_at < revert_at, (
+        "claim must be released before the revert, otherwise the revert switching a panel "
+        "off re-enters panels_went_off and races the claim"
     )
-    assert_is_revert(tail[-1])
+    assert_is_revert(tail[revert_at])
     # Nothing may depend on a scene: scene.create scenes do not survive an HA restart, and
     # a fixed revert has no such failure mode.
     assert not any("scene." in str(s.get("action", "")) for s in seq), (
@@ -345,12 +377,40 @@ def main():
     )
     assert seq.index(turn_on) < delay_i, "lights must be driven before the delay, not after"
 
-    # --- the stair-light automation must stay independent ------------------
+    # --- the two automations must drive disjoint lights ---------------------
+    # They share a sensor and deliberately overlap in time, but neither may operate the
+    # other's fixture. Checked against real service targets, not raw text: the stairs
+    # automation legitimately *references* the panels in its availability fallback.
     stairs = by_id.get("stairs_pir_motion_light")
     assert stairs is not None, "stairs_pir_motion_light disappeared"
-    dumped = yaml.dump(stairs)
+
+    def light_targets(node, out):
+        if isinstance(node, dict):
+            act = node.get("action")
+            if isinstance(act, str) and act.startswith("light."):
+                ent = (node.get("target") or {}).get("entity_id")
+                out.update([ent] if isinstance(ent, str) else (ent or []))
+            for v in node.values():
+                light_targets(v, out)
+        elif isinstance(node, list):
+            for v in node:
+                light_targets(v, out)
+
+    stairs_drives = set()
+    light_targets(stairs.get("actions"), stairs_drives)
+    panels_drives = set()
+    light_targets(auto.get("actions"), panels_drives)
+
     for panel in PANELS:
-        assert panel not in dumped, f"{panel} leaked into stairs_pir_motion_light"
+        assert panel not in stairs_drives, (
+            f"stairs_pir_motion_light drives {panel} — the two automations must not both "
+            "operate the panels"
+        )
+    assert STAIR_LIGHT not in panels_drives, (
+        f"hallway_panels_stairs_pir drives {STAIR_LIGHT} — it must only drive the panels"
+    )
+    assert panels_drives == set(PANELS), f"panels automation drives {panels_drives}"
+    assert stairs_drives == {STAIR_LIGHT}, f"stairs automation drives {stairs_drives}"
 
     # --- no dangling Nanoleaf Elements entity ------------------------------
     for path in sorted(glob.glob(os.path.join(REPO, "automations", "*.yaml"))):
@@ -361,7 +421,7 @@ def main():
         )
 
     check_stairs_light(by_id)
-    check_boundary_is_complementary(by_id)
+    check_stair_light_covers_dead_panels(by_id)
 
     print("stairs PIR automations (both): all invariants OK")
     return 0
