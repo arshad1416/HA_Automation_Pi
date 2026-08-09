@@ -145,12 +145,25 @@ def main():
         f"alias still advertises a different brightness: {auto['alias']!r}"
     )
 
-    al = next(s for s in seq if s.get("action") == "adaptive_lighting.apply")
-    assert al["data"]["adapt_color"] is True, "AL must set the colour — that is the point"
-    assert al["data"]["adapt_brightness"] is False, (
-        "adapt_brightness must be False or AL walks back the brightness above"
+    # Brightness and colour must ship in ONE call. Measured 2026-08-08: a separate
+    # adaptive_lighting.apply overrode brightness to 254 even with adapt_brightness
+    # false, which is why the panels came up at full instead of 50%.
+    assert not any(s.get("action") == "adaptive_lighting.apply" for s in seq), (
+        "adaptive_lighting.apply overrides brightness even with adapt_brightness: false "
+        "(AL 1.30.1) — read AL's colour off its switch attribute in the same light.turn_on "
+        "instead, so brightness and colour are atomic"
     )
-    assert sorted(al["data"]["lights"]) == sorted(PANELS)
+    assert len([s for s in seq if s.get("action") == "light.turn_on"]) == 1, (
+        "exactly one light.turn_on: a second call can land between and override"
+    )
+    assert "color_temp_kelvin" in turn_on["data"], (
+        "the turn_on must carry the colour too, or Adaptive Lighting never sets it"
+    )
+    # The colour must still come FROM Adaptive Lighting, not be hardcoded.
+    assert "adaptive_lighting" in str(turn_on["data"]["color_temp_kelvin"]), (
+        "color_temp_kelvin must be templated off the Adaptive Lighting switch, got "
+        f"{turn_on['data']['color_temp_kelvin']!r}"
+    )
 
     # --- the restore tail -------------------------------------------------
     delay_i = next(i for i, s in enumerate(seq) if "delay" in s)
@@ -168,9 +181,7 @@ def main():
         "claim must be released before scene.turn_on, otherwise the scene switching a "
         "panel off re-enters panels_went_off and races the claim"
     )
-    assert al is not None and seq.index(turn_on) < delay_i, (
-        "lights must be driven before the delay, not after"
-    )
+    assert seq.index(turn_on) < delay_i, "lights must be driven before the delay, not after"
 
     # --- the stair-light automation must stay independent ------------------
     stairs = by_id.get("stairs_pir_motion_light")

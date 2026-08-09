@@ -2992,6 +2992,18 @@
         - action: input_boolean.turn_on
           target:
             entity_id: input_boolean.hallway_panels_pir_owned
+      # ONE call, not two. adaptive_lighting.apply was overriding brightness to full
+      # even with adapt_brightness: false — measured 2026-08-08: light.turn_on at
+      # brightness_pct 50 landed 127, then apply() pushed it to 254. A plain turn_on
+      # carrying only color_temp_kelvin left brightness at 127, so the panels are not the
+      # culprit; apply() emits brightness regardless of the flag in AL 1.30.1.
+      # Reading AL's computed colour straight off its switch attribute keeps Adaptive
+      # Lighting as the source of the colour, and makes brightness+colour atomic so
+      # nothing can land between them.
+      # ponytail: borrows the Whole House instance as a settings source only — no new AL
+      # instance, no config-entry change. Ceiling: colour is sampled once per motion pulse
+      # rather than tracked continuously; give the panels their own AL instance if that
+      # ever matters.
       - action: light.turn_on
         target:
           entity_id:
@@ -2999,20 +3011,9 @@
           - light.hallway_nanoleaf_hallway_lights_right
         data:
           brightness_pct: 50
-      # ponytail: borrows the Whole House instance purely as a settings source — apply()
-      # takes an explicit `lights` list and does not require membership, so this needs no
-      # new AL instance and no config-entry change. adapt_brightness is false so AL cannot
-      # walk back the 50% above. Ceiling: colour is set per pulse, not tracked continuously;
-      # give the panels their own AL instance if that ever matters.
-      - action: adaptive_lighting.apply
-        data:
-          entity_id: switch.whole_house_adaptive_lighting_whole_house
-          lights:
-          - light.hallway_nanoleaf_light_panels_left
-          - light.hallway_nanoleaf_hallway_lights_right
-          adapt_color: true
-          adapt_brightness: false
-          turn_on_lights: false
+          color_temp_kelvin: >-
+            {{ state_attr('switch.whole_house_adaptive_lighting_whole_house',
+                          'color_temp_kelvin') | int(2700) }}
           transition: 2
       # The restore. A new motion pulse restarts this automation and cancels the delay,
       # so the panels stay up until 5 minutes after the last pulse.
