@@ -613,6 +613,32 @@ emulated_hue:
     scene.good_morning: {hidden: false}
     scene.good_night: {hidden: false}
 
+# Adaptive Lighting — colour curve for the hallway Nanoleaf Light Panels (NL22).
+#
+# The other three AL instances (Whole House, Cabinet Strips, Cabinet Kick Plate) were
+# created in the UI, so they live only in .storage/core.config_entries — which is
+# gitignored and therefore NOT in the disaster-recovery backup. This one is YAML so a
+# rebuild reproduces it. AL imports YAML at startup only, so changes here need a full
+# HA restart, not a reload.
+#
+# Why a dedicated instance: hallway_panels_stairs_pir was borrowing the Whole House
+# curve, whose warmest setting is 2500 K because it is tuned for outdoor downlights and
+# lampposts. These NL22 panels report a 1200-6500 K range, so on the Whole House curve
+# they could never go warmer than 2500 K on a 2 a.m. landing. 1800 K here is roughly
+# candlelight — well inside what the hardware supports, without the deep amber cast of
+# its 1200 K floor.
+#
+# lights is deliberately EMPTY. This instance exists only as a settings source: the
+# automation reads color_temp_kelvin off its switch and passes it in the same
+# light.turn_on that sets brightness. Listing the panels here would let AL adapt them
+# directly, and AL's own adaptation overrides brightness even when asked not to
+# (measured on 1.30.1) — which is the bug that left the panels at full brightness.
+adaptive_lighting:
+  - name: Hallway Panels
+    lights: []
+    min_color_temp: 1800
+    max_color_temp: 6500
+
 # Limit history to 7 days to keep DB manageable
 recorder:
   purge_keep_days: 7

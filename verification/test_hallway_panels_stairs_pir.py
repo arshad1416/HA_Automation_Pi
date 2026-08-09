@@ -34,6 +34,9 @@ PIR = "binary_sensor.pir_motion_sensor_2_motion"
 # the automation's alias, which advertises the value to the user.
 BRIGHTNESS_PCT = 50
 RESTORE_AFTER = {"minutes": 5}
+# The AL instance scoped to these panels (configuration.yaml, 1800-6500 K). Deliberately
+# NOT the Whole House instance, whose 2500 K floor suits outdoor downlights.
+AL_SWITCH = "switch.hallway_panels_adaptive_lighting_hallway_panels"
 
 
 def load_automations():
@@ -159,10 +162,18 @@ def main():
     assert "color_temp_kelvin" in turn_on["data"], (
         "the turn_on must carry the colour too, or Adaptive Lighting never sets it"
     )
-    # The colour must still come FROM Adaptive Lighting, not be hardcoded.
-    assert "adaptive_lighting" in str(turn_on["data"]["color_temp_kelvin"]), (
-        "color_temp_kelvin must be templated off the Adaptive Lighting switch, got "
-        f"{turn_on['data']['color_temp_kelvin']!r}"
+    # The colour must still come FROM Adaptive Lighting, not be hardcoded...
+    ct_src = str(turn_on["data"]["color_temp_kelvin"])
+    assert "adaptive_lighting" in ct_src, (
+        "color_temp_kelvin must be templated off an Adaptive Lighting switch, got "
+        f"{ct_src!r}"
+    )
+    # ...and specifically from the instance scoped to these panels. The Whole House
+    # instance bottoms out at 2500 K because it is tuned for outdoor downlights, so it
+    # can never reach the warm end these NL22 panels (1200-6500 K) actually support.
+    assert AL_SWITCH in ct_src, (
+        f"colour must come from {AL_SWITCH} (1800-6500 K, scoped to these panels), not "
+        f"another instance: {ct_src!r}"
     )
 
     # --- the restore tail -------------------------------------------------
