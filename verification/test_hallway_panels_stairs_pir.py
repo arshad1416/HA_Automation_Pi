@@ -23,6 +23,9 @@ PANELS = [
     "light.hallway_nanoleaf_light_panels_left",
     "light.hallway_nanoleaf_hallway_lights_right",
 ]
+# Brightness the PIR branch drives the panels to. Changing this must also change
+# the automation's alias, which advertises the value to the user.
+BRIGHTNESS_PCT = 50
 
 
 def load_automations():
@@ -118,7 +121,13 @@ def main():
     )
 
     turn_on = next(s for s in seq if s.get("action") == "light.turn_on")
-    assert turn_on["data"]["brightness_pct"] == 100
+    assert turn_on["data"]["brightness_pct"] == BRIGHTNESS_PCT, (
+        f"expected {BRIGHTNESS_PCT}% brightness, got {turn_on['data']['brightness_pct']}%"
+    )
+    # The alias is user-visible and goes stale silently when the value changes.
+    assert f"({BRIGHTNESS_PCT}%" in auto["alias"], (
+        f"alias still advertises a different brightness: {auto['alias']!r}"
+    )
     assert sorted(turn_on["target"]["entity_id"]) == sorted(PANELS)
 
     al = next(s for s in seq if s.get("action") == "adaptive_lighting.apply")

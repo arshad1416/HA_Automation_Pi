@@ -2887,10 +2887,10 @@
         target:
           entity_id: input_boolean.stair_light_pir_owned
 - id: hallway_panels_stairs_pir
-  alias: Hallway Panels — Stairs PIR (100%, Adaptive Lighting colour)
+  alias: Hallway Panels — Stairs PIR (50%, Adaptive Lighting colour)
   description: >-
     Walking up the stairs after sunset lights the two hallway Nanoleaf panels at the top
-    (light.hallway_nanoleaf_light_panels_left / _hallway_lights_right) to 100% brightness,
+    (light.hallway_nanoleaf_light_panels_left / _hallway_lights_right) to 50% brightness,
     with Adaptive Lighting choosing the colour temperature. After 5 minutes with no motion
     on binary_sensor.pir_motion_sensor_2_motion the panels are returned to whatever state
     they were in before the motion.
@@ -2986,7 +2986,7 @@
           - light.hallway_nanoleaf_light_panels_left
           - light.hallway_nanoleaf_hallway_lights_right
         data:
-          brightness_pct: 100
+          brightness_pct: 50
       # ponytail: borrows the Whole House instance purely as a settings source — apply()
       # takes an explicit `lights` list and does not require membership, so this needs no
       # new AL instance and no config-entry change. adapt_brightness is false so AL cannot
