@@ -1,9 +1,14 @@
 #!/usr/bin/env python3
 """Invariant check for the hallway_panels_stairs_pir automation.
 
-These are the failure modes that stay silent in HA — a wrong branch order or a
-missing release branch does not raise, it just restores lights over someone's
-deliberate turn-off at 2am. Run from anywhere:  python3 verification/test_hallway_panels_stairs_pir.py
+These failure modes stay silent in HA — a wrong mode or a missing guard does not
+raise, it just leaves the hallway panels burning at full brightness all night.
+That is not hypothetical: the first version of this automation waited for
+binary_sensor.pir_motion_sensor_2_motion to report 'off', which that sensor never
+does (battery Tuya PIR: it pulses 'on' and sleeps to 'unavailable'). The panels
+stayed lit until someone noticed. Several assertions below exist to pin that.
+
+Run from anywhere:  python3 verification/test_hallway_panels_stairs_pir.py
 """
 import glob
 import os
@@ -23,9 +28,12 @@ PANELS = [
     "light.hallway_nanoleaf_light_panels_left",
     "light.hallway_nanoleaf_hallway_lights_right",
 ]
+CLAIM = "input_boolean.hallway_panels_pir_owned"
+PIR = "binary_sensor.pir_motion_sensor_2_motion"
 # Brightness the PIR branch drives the panels to. Changing this must also change
 # the automation's alias, which advertises the value to the user.
 BRIGHTNESS_PCT = 50
+RESTORE_AFTER = {"minutes": 5}
 
 
 def load_automations():
@@ -39,7 +47,6 @@ def load_automations():
 
 
 def branch_for(auto, trigger_id):
-    """The choose branch keyed on a given trigger id."""
     for option in auto["actions"][0]["choose"]:
         for cond in option["conditions"]:
             if cond.get("condition") == "trigger" and cond.get("id") == trigger_id:
@@ -47,115 +54,137 @@ def branch_for(auto, trigger_id):
     raise AssertionError(f"no choose branch for trigger id {trigger_id!r}")
 
 
-def action_names(seq):
-    return [step.get("action") for step in seq]
+def steps_of(seq):
+    return [s.get("action") for s in seq]
 
 
 def main():
     autos = load_automations()
     by_id = {a.get("id"): a for a in autos}
-
     auto = by_id.get("hallway_panels_stairs_pir")
     assert auto is not None, "automation hallway_panels_stairs_pir is missing"
 
-    # --- triggers -------------------------------------------------------
+    # --- THE regression guard -------------------------------------------
+    # The sensor never reports 'off'. Any trigger waiting for it to do so is dead
+    # code, and if it is the only restore path the panels never come back down.
+    for trig in auto["triggers"]:
+        ents = trig.get("entity_id")
+        ents = [ents] if isinstance(ents, str) else (ents or [])
+        if PIR in ents:
+            assert trig.get("to") != "off", (
+                f"trigger {trig.get('id')!r} waits for {PIR} to report 'off'. That sensor "
+                "is a battery Tuya PIR that only ever pulses 'on' and sleeps to "
+                "'unavailable' — this trigger can never fire, which is the exact bug "
+                "that left the panels stuck at full brightness."
+            )
+
+    # --- mode: restart is load-bearing -----------------------------------
+    # It is what makes a new motion pulse cancel the pending restore and re-arm it.
+    # Under 'queued' every pulse would queue its own restore and the panels would
+    # drop 5 minutes after the FIRST pulse while someone was still on the stairs.
+    assert auto["mode"] == "restart", (
+        f"mode must be 'restart' so motion pulses extend the window, got {auto['mode']!r}"
+    )
+
     trigger_ids = {t.get("id") for t in auto["triggers"]}
-    assert trigger_ids == {"motion", "no_motion", "panels_went_off"}, (
+    assert trigger_ids == {"motion", "panels_went_off", "stuck_guard"}, (
         f"unexpected trigger ids: {trigger_ids}"
     )
 
-    # The release trigger must watch BOTH panels, else a manual turn-off of the
-    # unwatched one leaves the claim set and the timer restores over it.
     release = next(t for t in auto["triggers"] if t.get("id") == "panels_went_off")
-    assert sorted(release["entity_id"]) == sorted(PANELS), (
-        f"panels_went_off must watch both panels, got {release['entity_id']}"
+    assert sorted(release["entity_id"]) == sorted(PANELS) and release.get("to") == "off"
+
+    guard = next(t for t in auto["triggers"] if t.get("id") == "stuck_guard")
+    assert guard["entity_id"] == CLAIM and guard.get("to") == "on"
+    assert guard.get("for", {}).get("minutes", 0) > RESTORE_AFTER["minutes"], (
+        "the stuck_guard must be longer than the normal restore delay, or it will "
+        "fire during healthy runs"
     )
-    assert release.get("to") == "off"
 
-    no_motion = next(t for t in auto["triggers"] if t.get("id") == "no_motion")
-    assert no_motion["entity_id"] == "binary_sensor.pir_motion_sensor_2_motion"
-    assert no_motion["for"] == {"minutes": 5}, f"expected 5 min, got {no_motion['for']}"
-
-    # --- restore branch: claim released BEFORE the scene replay ---------
-    restore = branch_for(auto, "no_motion")
-    names = action_names(restore["sequence"])
-    assert "input_boolean.turn_off" in names and "scene.turn_on" in names
-    assert names.index("input_boolean.turn_off") < names.index("scene.turn_on"), (
-        "claim must be released before scene.turn_on, otherwise the scene switching a "
-        "panel off re-enters panels_went_off and races the claim"
-    )
-    # Restore only runs while we actually hold the panels.
-    assert any(
-        c.get("entity_id") == "input_boolean.hallway_panels_pir_owned"
-        and c.get("state") == "on"
-        for c in restore["conditions"]
-    ), "restore branch must require the claim to be held"
-
-    # --- release branch exists and only drops the claim ------------------
+    # --- release branch only drops the claim -----------------------------
     went_off = branch_for(auto, "panels_went_off")
-    assert action_names(went_off["sequence"]) == ["input_boolean.turn_off"], (
+    assert steps_of(went_off["sequence"]) == ["input_boolean.turn_off"], (
         "the release branch must only drop the claim — anything else fights manual control"
     )
 
-    # --- motion branch ---------------------------------------------------
+    # --- backstop restores, claim released first -------------------------
+    stuck = branch_for(auto, "stuck_guard")
+    names = steps_of(stuck["sequence"])
+    assert names.index("input_boolean.turn_off") < names.index("scene.turn_on")
+
+    # --- motion branch ----------------------------------------------------
     motion = branch_for(auto, "motion")
-    conds = motion["conditions"]
     assert any(
         c.get("entity_id") == "sun.sun" and c.get("state") == "below_horizon"
-        for c in conds
+        for c in motion["conditions"]
     ), "motion branch must be gated on sunset"
-    # Guard against re-triggering mid-window overwriting the snapshot with our own state.
-    assert any(
-        c.get("entity_id") == "input_boolean.hallway_panels_pir_owned"
-        and c.get("state") == "off"
-        for c in conds
-    ), "motion branch must skip when the claim is already held, or the snapshot is lost"
 
     seq = motion["sequence"]
-    names = action_names(seq)
-    assert names.index("scene.create") == 0, "snapshot must be taken before anything changes"
 
-    snap = seq[0]["data"]
-    assert sorted(snap["snapshot_entities"]) == sorted(PANELS), (
+    # Snapshot happens only when unclaimed, so repeat pulses cannot overwrite it
+    # with our own 50% state (which would make "previous state" mean "50%").
+    guard_if = seq[0]
+    assert "if" in guard_if, "first step must be the claim guard around the snapshot"
+    assert any(
+        c.get("entity_id") == CLAIM and c.get("state") == "off" for c in guard_if["if"]
+    ), "snapshot must be guarded by the claim being unheld"
+    then = guard_if["then"]
+    assert steps_of(then) == ["scene.create", "input_boolean.turn_on"], (
+        f"guarded block must snapshot then claim, got {steps_of(then)}"
+    )
+    assert sorted(then[0]["data"]["snapshot_entities"]) == sorted(PANELS), (
         "snapshot must cover both panels or the restore silently drops one"
     )
 
     turn_on = next(s for s in seq if s.get("action") == "light.turn_on")
     assert turn_on["data"]["brightness_pct"] == BRIGHTNESS_PCT, (
-        f"expected {BRIGHTNESS_PCT}% brightness, got {turn_on['data']['brightness_pct']}%"
+        f"expected {BRIGHTNESS_PCT}%, got {turn_on['data']['brightness_pct']}%"
     )
-    # The alias is user-visible and goes stale silently when the value changes.
+    assert sorted(turn_on["target"]["entity_id"]) == sorted(PANELS)
     assert f"({BRIGHTNESS_PCT}%" in auto["alias"], (
         f"alias still advertises a different brightness: {auto['alias']!r}"
     )
-    assert sorted(turn_on["target"]["entity_id"]) == sorted(PANELS)
 
     al = next(s for s in seq if s.get("action") == "adaptive_lighting.apply")
     assert al["data"]["adapt_color"] is True, "AL must set the colour — that is the point"
     assert al["data"]["adapt_brightness"] is False, (
-        "adapt_brightness must be False or AL walks back the 100% brightness"
+        "adapt_brightness must be False or AL walks back the brightness above"
     )
     assert sorted(al["data"]["lights"]) == sorted(PANELS)
-    # apply() only reads settings off this switch; membership is not required.
-    assert al["data"]["entity_id"].startswith("switch.")
 
-    # --- the stair-light automation must stay independent ----------------
+    # --- the restore tail -------------------------------------------------
+    delay_i = next(i for i, s in enumerate(seq) if "delay" in s)
+    assert seq[delay_i]["delay"] == RESTORE_AFTER, (
+        f"expected a {RESTORE_AFTER} delay, got {seq[delay_i]['delay']}"
+    )
+    tail = seq[delay_i + 1:]
+    # Must re-check the claim after waking: something may have released it while we slept.
+    assert any(
+        s.get("condition") == "state" and s.get("entity_id") == CLAIM
+        and s.get("state") == "on" for s in tail
+    ), "must re-check the claim after the delay before restoring"
+    tail_actions = [s.get("action") for s in tail if s.get("action")]
+    assert tail_actions.index("input_boolean.turn_off") < tail_actions.index("scene.turn_on"), (
+        "claim must be released before scene.turn_on, otherwise the scene switching a "
+        "panel off re-enters panels_went_off and races the claim"
+    )
+    assert al is not None and seq.index(turn_on) < delay_i, (
+        "lights must be driven before the delay, not after"
+    )
+
+    # --- the stair-light automation must stay independent ------------------
     stairs = by_id.get("stairs_pir_motion_light")
     assert stairs is not None, "stairs_pir_motion_light disappeared"
-    stairs_lights = yaml.dump(stairs)
+    dumped = yaml.dump(stairs)
     for panel in PANELS:
-        assert panel not in stairs_lights, (
-            f"{panel} leaked into stairs_pir_motion_light — the two automations must not "
-            "both drive the panels"
-        )
+        assert panel not in dumped, f"{panel} leaked into stairs_pir_motion_light"
 
-    # --- no dangling Nanoleaf Elements entity ----------------------------
+    # --- no dangling Nanoleaf Elements entity ------------------------------
     for path in sorted(glob.glob(os.path.join(REPO, "automations", "*.yaml"))):
         with open(path) as fh:
             body = fh.read()
         assert "light.elements_b3cd_2" not in body, (
-            f"{os.path.basename(path)} still references light.elements_b3cd_2, "
-            "which is not in the entity registry"
+            f"{os.path.basename(path)} still references light.elements_b3cd_2"
         )
 
     print("hallway_panels_stairs_pir: all invariants OK")

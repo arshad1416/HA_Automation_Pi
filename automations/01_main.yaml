@@ -2891,9 +2891,22 @@
   description: >-
     Walking up the stairs after sunset lights the two hallway Nanoleaf panels at the top
     (light.hallway_nanoleaf_light_panels_left / _hallway_lights_right) to 50% brightness,
-    with Adaptive Lighting choosing the colour temperature. After 5 minutes with no motion
-    on binary_sensor.pir_motion_sensor_2_motion the panels are returned to whatever state
-    they were in before the motion.
+    with Adaptive Lighting choosing the colour temperature. Five minutes after the LAST
+    motion pulse the panels are returned to whatever state they were in before.
+
+    TIMER, NOT A CLEAR SIGNAL — this is the important bit. The first version waited for
+    binary_sensor.pir_motion_sensor_2_motion to go 'off' for 5 minutes. It never does:
+    over 8 hours on 2026-08-08 that sensor produced 17 state changes and every one was
+    on <-> unavailable, never once 'off'. It is a battery Tuya PIR with no gateway — it
+    wakes on motion, reports motion=true, then sleeps back to unavailable. So it emits a
+    motion PULSE and never a cleared event, and the old no-motion trigger could not fire
+    at all. The result was panels stuck at full brightness indefinitely.
+
+    Hence mode: restart plus an inline delay. Each motion pulse cancels the pending
+    restore and re-arms it, so the window is "5 minutes after the last pulse" rather than
+    "5 minutes of continuous off". If that sensor is ever replaced with one that reports
+    cleared (an mmWave presence sensor like the family-room/master ESPHome ones would),
+    this still behaves correctly — it simply stops depending on a signal that never comes.
 
     Runs alongside stairs_pir_motion_light on the same PIR without conflicting — that one
     drives light.stair_light, this one drives the panels. They were kept separate because
@@ -2905,36 +2918,38 @@
     replayed by scene.turn_on, so panels that were off go back off and panels that were on
     return to their prior brightness and colour.
 
-    input_boolean.hallway_panels_pir_owned mirrors stair_light_pir_owned: claimed only when
-    this automation is not already holding the panels, and released the moment either panel
-    goes off by ANY path. Without that release the no-motion timer would replay the snapshot
-    over panels somebody had just switched off by hand. The helper is initial: false, so a
-    restart clears the claim — which also covers the fact that scene.create scenes do not
-    survive a restart, leaving no branch that could call scene.turn_on on a missing scene.
-  mode: queued
-  max: 10
+    input_boolean.hallway_panels_pir_owned marks that this automation is the one holding
+    the panels. It is claimed only when not already held, and released the moment either
+    panel goes off by ANY path, so a manual turn-off is never fought or resurrected. The
+    stuck_guard trigger is a backstop for the one case the inline delay cannot cover: if
+    the automation is reloaded or the run is cancelled mid-delay, the claim would other-
+    wise stay set with no pending restore, leaving the panels up until the next motion.
+  mode: restart
   triggers:
   - trigger: state
     entity_id: binary_sensor.pir_motion_sensor_2_motion
     to: 'on'
     id: motion
   - trigger: state
-    entity_id: binary_sensor.pir_motion_sensor_2_motion
-    to: 'off'
-    for:
-      minutes: 5
-    id: no_motion
-  - trigger: state
     entity_id:
     - light.hallway_nanoleaf_light_panels_left
     - light.hallway_nanoleaf_hallway_lights_right
     to: 'off'
     id: panels_went_off
+  # Backstop: the claim should never be held this long — the normal path releases it
+  # after ~5 minutes. Only reachable if a run was cancelled before its restore ran.
+  - trigger: state
+    entity_id: input_boolean.hallway_panels_pir_owned
+    to: 'on'
+    for:
+      minutes: 20
+    id: stuck_guard
   conditions: []
   actions:
   - choose:
-    # Either panel went off by any path (us restoring, manual, scene) — drop the claim so
-    # the no-motion timer can never restore over a deliberate turn-off.
+    # Either panel went off by any path (us restoring, manual, a scene) — drop the claim.
+    # mode: restart means this run has already cancelled any pending restore, which is
+    # exactly right: a deliberate turn-off must not be undone 5 minutes later.
     - conditions:
       - condition: trigger
         id: panels_went_off
@@ -2942,15 +2957,11 @@
       - action: input_boolean.turn_off
         target:
           entity_id: input_boolean.hallway_panels_pir_owned
-    # 5 minutes clear and we are the ones holding them — put back what was there before.
-    # The claim is released FIRST so the scene.turn_on below (which may switch a panel off)
-    # cannot race the panels_went_off branch into an inconsistent claim.
+    # Backstop restore. Claim released first so the scene switching a panel off cannot
+    # race the panels_went_off branch back into an inconsistent claim.
     - conditions:
       - condition: trigger
-        id: no_motion
-      - condition: state
-        entity_id: input_boolean.hallway_panels_pir_owned
-        state: 'on'
+        id: stuck_guard
       sequence:
       - action: input_boolean.turn_off
         target:
@@ -2958,28 +2969,29 @@
       - action: scene.turn_on
         target:
           entity_id: scene.hallway_panels_pre_pir
-    # Motion after sunset and we are not already holding the panels — snapshot, then 100%
-    # with Adaptive Lighting picking the colour. The not-already-claimed guard is what stops
-    # a re-trigger mid-window from overwriting the snapshot with our own 100% state.
+    # Motion after sunset. Snapshot only on the first pulse of a run of motion; later
+    # pulses just re-arm the delay via mode: restart.
     - conditions:
       - condition: trigger
         id: motion
       - condition: state
         entity_id: sun.sun
         state: below_horizon
-      - condition: state
-        entity_id: input_boolean.hallway_panels_pir_owned
-        state: 'off'
       sequence:
-      - action: scene.create
-        data:
-          scene_id: hallway_panels_pre_pir
-          snapshot_entities:
-          - light.hallway_nanoleaf_light_panels_left
-          - light.hallway_nanoleaf_hallway_lights_right
-      - action: input_boolean.turn_on
-        target:
+      - if:
+        - condition: state
           entity_id: input_boolean.hallway_panels_pir_owned
+          state: 'off'
+        then:
+        - action: scene.create
+          data:
+            scene_id: hallway_panels_pre_pir
+            snapshot_entities:
+            - light.hallway_nanoleaf_light_panels_left
+            - light.hallway_nanoleaf_hallway_lights_right
+        - action: input_boolean.turn_on
+          target:
+            entity_id: input_boolean.hallway_panels_pir_owned
       - action: light.turn_on
         target:
           entity_id:
@@ -2990,8 +3002,8 @@
       # ponytail: borrows the Whole House instance purely as a settings source — apply()
       # takes an explicit `lights` list and does not require membership, so this needs no
       # new AL instance and no config-entry change. adapt_brightness is false so AL cannot
-      # walk back the 100% above. Ceiling: the colour is set once per claim, not tracked for
-      # the 5 minutes; give the panels their own AL instance if that ever matters.
+      # walk back the 50% above. Ceiling: colour is set per pulse, not tracked continuously;
+      # give the panels their own AL instance if that ever matters.
       - action: adaptive_lighting.apply
         data:
           entity_id: switch.whole_house_adaptive_lighting_whole_house
@@ -3002,6 +3014,19 @@
           adapt_brightness: false
           turn_on_lights: false
           transition: 2
+      # The restore. A new motion pulse restarts this automation and cancels the delay,
+      # so the panels stay up until 5 minutes after the last pulse.
+      - delay:
+          minutes: 5
+      - condition: state
+        entity_id: input_boolean.hallway_panels_pir_owned
+        state: 'on'
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hallway_panels_pir_owned
+      - action: scene.turn_on
+        target:
+          entity_id: scene.hallway_panels_pre_pir
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
