@@ -116,6 +116,13 @@
             "should_expose": false
           }
         }
+      },
+      "scene.hallway_panels_pre_pir": {
+        "assistants": {
+          "conversation": {
+            "should_expose": true
+          }
+        }
       }
     }
   }
