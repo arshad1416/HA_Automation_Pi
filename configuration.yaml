@@ -449,7 +449,8 @@ input_boolean:
   # Ownership marker for hallway_panels_stairs_pir, mirroring stair_light_pir_owned above.
   # ON only while that automation is the one holding the hallway Nanoleaf panels lit.
   # initial: false for the same restart reason as stair_light_pir_owned — a stale claim
-  # would let the no-motion timer restore a snapshot over panels somebody else had set.
+  # would let the no-motion timer push the panels back to their resting state (off in
+  # daylight, else 10% night light) over panels somebody else had set.
   hallway_panels_pir_owned:
     name: "Hallway Panels Held by PIR Automation"
     icon: mdi:motion-sensor
@@ -799,14 +800,14 @@ template:
         attributes:
           mmwave: "{{ states('binary_sensor.master_bedroom_mmwave_presence') }}"
           ecobee_332d: "{{ states('binary_sensor.332d_occupancy') }}"
-      # Single boundary between the two stair-PIR automations. Motion on the Upstairs
-      # Stair Sensor lights the stair light while this is OFF, and the hallway Nanoleaf
-      # panels while it is ON — never both, never neither.
+      # Single stand-down point for the stair light: motion on the Upstairs Stair Sensor
+      # lights light.stair_light only while this is OFF. After bedtime the stair light
+      # stands down and the hallway Nanoleaf panels take that window — but the panels ALSO
+      # run before bedtime (after sunset, and on a dark day), so the two deliberately
+      # overlap outside the after-bedtime window. See hallway_panels_stairs_pir.
       #
-      # It exists as one sensor rather than duplicated conditions precisely because the
-      # two automations must be exact complements. If the copies ever drifted apart you
-      # would get either both lights firing, or — far worse — a dark staircase at night
-      # with neither firing.
+      # It exists as one sensor rather than duplicated conditions so the stand-down point
+      # is defined in exactly one place: drift would leave a dark staircase at night.
       #
       # Three clauses, each load-bearing:
       #   bedtime_shutdown_done : the actual "we have gone to bed" latch, set by
@@ -814,11 +815,11 @@ template:
       #   hour >= 20 or < 12    : that latch is only RESET at 20:00, so between sunset and
       #                           20:00 it still reads last night's ON. This pins it to the
       #                           current night.
-      #   sun below_horizon     : without this, a dark stormy morning at 09:00 (latch still
-      #                           reading ON until the 20:00 reset) would leave the panels
-      #                           blocked by their own sun check AND the stair light blocked
-      #                           by this sensor — nothing would light. Including it here
-      #                           means ON always implies dark, so the panels can always act.
+      #   sun below_horizon     : keeps ON implying dark, so a stale-ON latch on a dark
+      #                           stormy 09:00 cannot put the stair light into stand-down
+      #                           while daylight is still poor. It is also what lets the
+      #                           panels test after_bedtime BEFORE the plain sunset case —
+      #                           do not remove this clause.
       - name: After Bedtime
         unique_id: after_bedtime
         icon: mdi:sleep

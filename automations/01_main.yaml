@@ -2745,7 +2745,9 @@
     light.stair_light: full brightness when it is dark out before bedtime (capped at
     input_number.nightly_dim_brightness after the seasonal Nightly Dimming hour — 9 PM
     winter, 10 PM shoulder, 11 PM summer — mirroring automation 1778114000000), same
-    nightly_dim_brightness from bedtime until sunrise. Off 5 minutes after the last motion
+    nightly_dim_brightness from the dim hour through to sunrise on any night the bedtime
+    latch never sets. After bedtime this automation stands down entirely (the hallway
+    panels take over) unless a panel is unavailable. Off 5 minutes after the last motion
     pulse — a timer, not a no-motion signal; see the shared timer tail below for why.
 
     Replaces stairs_light_auto / stairs_echo_ecobee_motion / stairs_presence_timeout /
@@ -2810,7 +2812,7 @@
         target:
           entity_id: light.stair_light
     # The after-bedtime window now belongs to hallway_panels_stairs_pir, which lights the
-    # Nanoleaf panels at 50% on the Adaptive Lighting warm curve instead. The dedicated
+    # Nanoleaf panels at 10% on the Adaptive Lighting warm curve instead. The dedicated
     # bedtime branch that used to live here was removed with that handover — the guard on
     # binary_sensor.after_bedtime below is what keeps this automation out of that window.
     # Motion, light currently off, dark out (night before bedtime, or a genuinely dim day)
@@ -2918,7 +2920,8 @@
   description: >-
     Motion on binary_sensor.pir_motion_sensor_2_motion (the Upstairs Stair Sensor) lights
     the two hallway Nanoleaf panels at the top of the stairs, with the Hallway Panels
-    Adaptive Lighting instance (1800-6500 K, matching what the NL22 hardware reports)
+    Adaptive Lighting instance (1800-6500 K; the NL22 floor is actually 1200 K — 1800 is a
+    deliberate choice, see the adaptive_lighting: block in configuration.yaml)
     choosing the colour temperature. Five minutes after the LAST motion pulse they return
     to that period's resting state.
 

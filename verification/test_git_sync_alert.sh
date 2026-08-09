@@ -42,7 +42,6 @@ git branch -M main 2>/dev/null; git push -q -u origin main 2>/dev/null
 
 export SENT="$T/sent.txt"; : > "$SENT"
 export LOG_FILE="$T/log.txt"; : > "$LOG_FILE"
-export ALERT_FLAG_OVERRIDE="$T/alerted"
 
 run() {  # run the block inside the test repo
   ( cd "$T/repo" && LOG_FILE="$LOG_FILE" SENT="$SENT" \

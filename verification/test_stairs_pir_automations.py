@@ -13,6 +13,7 @@ Run from anywhere:  python3 verification/test_stairs_pir_automations.py
 """
 import glob
 import os
+import re
 import sys
 
 import yaml
@@ -31,13 +32,10 @@ PANELS = [
 ]
 CLAIM = "input_boolean.hallway_panels_pir_owned"
 PIR = "binary_sensor.pir_motion_sensor_2_motion"
-# Brightness the PIR branch drives the panels to. Changing this must also change
-# the automation's alias, which advertises the value to the user.
-BRIGHTNESS_PCT = 50
 RESTORE_AFTER = {"minutes": 5}
-# The owner's after-sunset resting state for this hallway, set from the Nanoleaf app
-# and read back from HA: white (hs 0,0) at 10%. The revert is this FIXED target, not a
-# snapshot — deterministic and self-healing if the panels drift.
+# The owner's after-sunset resting state for this hallway: the panels' own stored
+# "night light" scene at 10%. The revert is this FIXED target, not a snapshot —
+# deterministic and self-healing if the panels drift.
 REVERT_PCT = 10
 REVERT_EFFECT = "night light"
 # motion brightness per period, dimmest when the house is asleep
@@ -146,7 +144,7 @@ def check_no_overnight_full_brightness(by_id):
     )
     turn_on = next(x for x in branch["sequence"] if x.get("action") == "light.turn_on")
     tpl = str(turn_on["data"]["brightness_pct"])
-    assert "dim_hr" in tpl, "the seasonal dim-hour logic disappeared"
+    assert "now().hour >= dim_hr" in tpl, "the seasonal dim-hour logic disappeared"
     assert "now().hour < 12" in tpl and "below_horizon" in tpl, (
         "the dim leg must run from the dim hour to sunrise — `now().hour >= dim_hr` alone "
         f"is false all night and the stairs fire at 100% at 2am: {tpl!r}"
@@ -225,7 +223,7 @@ def check_stairs_light(by_id):
     n = steps_of(stuck["sequence"])
     assert n.index("input_boolean.turn_off") < n.index("light.turn_off")
 
-    # Both motion branches must still refuse to touch an already-lit staircase.
+    # The motion branch must still refuse to touch an already-lit staircase.
     motion_branches = [
         o for o in auto["actions"][0]["choose"]
         if any(c.get("condition") == "trigger" and c.get("id") == "motion"
@@ -339,8 +337,8 @@ def main():
 
     seq = motion["sequence"]
 
-    # Snapshot happens only when unclaimed, so repeat pulses cannot overwrite it
-    # with our own 50% state (which would make "previous state" mean "50%").
+    # The claim is taken only when not already held, so a repeat pulse cannot re-take a
+    # claim that something else released while the panels were up.
     guard_if = seq[0]
     assert "if" in guard_if, "first step must be the claim guard"
     assert any(
@@ -353,8 +351,14 @@ def main():
     delay_at = next(i for i, s in enumerate(seq) if "delay" in s)
     turn_on = next(s for s in seq[:delay_at] if s.get("action") == "light.turn_on")
     bri = str(turn_on["data"]["brightness_pct"])
-    for period, pct in PERIOD_PCT.items():
-        assert str(pct) in bri, f"motion brightness for {period} ({pct}%) missing from {bri!r}"
+    # Read the EMITTED legs only. A plain `str(pct) in bri` was vacuous: "10" is also in
+    # the {% set dim_hr %} prelude's [3,4,9,10] month list, so mutating the after-bedtime
+    # tier to 100% still passed. This regex matches a number only where it is emitted
+    # immediately after a %} tag.
+    legs = sorted(int(x) for x in re.findall(r"%\}\s*(\d+)", bri))
+    assert legs == sorted(PERIOD_PCT.values()), (
+        f"motion brightness tiers drifted: {legs} != {sorted(PERIOD_PCT.values())}"
+    )
     # after_bedtime implies sun below horizon, so it MUST be tested first or the 50%
     # sunset leg would always win and the after-bedtime 10% would be unreachable.
     # The small hours must dim independently of the bedtime latch. On a night where the
@@ -362,7 +366,7 @@ def main():
     # stays OFF, and without this a 02:00 trip takes the 50% evening level.
     # The 10% window is the dim hour through to sunrise, independent of the bedtime
     # latch. Both halves are required: sun.sun alone cannot tell 21:00 from 03:00.
-    assert "dim_hr" in bri, "the dim-hour half of the 10% window is missing"
+    assert "now().hour >= dim_hr" in bri, "the dim-hour half of the 10% window is missing"
     assert "now().hour < 12" in bri, (
         "the midnight-to-sunrise half is missing — without it, a night where the bedtime "
         f"routine never fires lights the hallway at 50% at 2am: {bri!r}"
@@ -432,7 +436,6 @@ def main():
     assert not any("scene." in str(s.get("action", "")) for s in seq), (
         "the revert must be a fixed light.turn_on, not a scene replay"
     )
-    assert seq.index(turn_on) < delay_i, "lights must be driven before the delay, not after"
 
     # --- the two automations must drive disjoint lights ---------------------
     # They share a sensor and deliberately overlap in time, but neither may operate the
