@@ -83,3 +83,9 @@ esphome/secrets.yaml
 esphome/.esphome/
 esphome/**/.pioenvs/
 *.pioenvs/
+
+# Pre-change backup copies of .storage registries. These carry live integration
+# credentials (config_entries) and were never meant to be tracked — GitHub push
+# protection blocked 134 commits on them (2026-08-07 .. 2026-08-08).
+# CLAUDE.md: do not create *.bak copies — git history is the backup.
+.storage_bak/

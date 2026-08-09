@@ -53,6 +53,18 @@
     "48": "switch.guest_room_light",
     "49": "switch.stairs_occupancy",
     "50": "switch.halloween_lights",
-    "51": "switch.basement_stair_light"
+    "51": "switch.basement_stair_light",
+    "52": "switch.kitchen_fan_switch_1",
+    "53": "switch.living_room_floor_lamp_switch",
+    "54": "switch.master_bedroom_fan_light_switch_1",
+    "55": "switch.izaan_s_bedroom_light_switch_1",
+    "56": "switch.mina_s_light_switch_1",
+    "57": "switch.mina_s_lamp_switch",
+    "58": "switch.guest_room_light_switch_1",
+    "59": "switch.bathroom_light_switch_1",
+    "60": "switch.powder_room_light_switch_1",
+    "61": "switch.powder_room_mirror_switch",
+    "62": "switch.laundry_room_light_switch",
+    "63": "switch.garage_light_switch_switch_1"
   }
 }

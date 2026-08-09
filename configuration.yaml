@@ -436,6 +436,14 @@ input_boolean:
     name: HVAC Paused (Door Open)
     icon: mdi:door-open
     initial: false
+  # Ownership marker for hallway_panels_stairs_pir, mirroring stair_light_pir_owned above.
+  # ON only while that automation is the one holding the hallway Nanoleaf panels lit.
+  # initial: false for the same restart reason as stair_light_pir_owned — a stale claim
+  # would let the no-motion timer restore a snapshot over panels somebody else had set.
+  hallway_panels_pir_owned:
+    name: "Hallway Panels Held by PIR Automation"
+    icon: mdi:motion-sensor
+    initial: false
 input_text:
   climate_ai_recommendation:
     name: Climate AI Recommendation
@@ -521,48 +529,69 @@ emulated_hue:
     light.kitchen_light: {hidden: false}
     light.kitchen_ceiling_fan: {hidden: false}
     light.island_light_light: {hidden: false}
-    switch.kitchen_fan: {hidden: false}
+    switch.kitchen_fan_switch_1:
+      name: Kitchen Fan
+      hidden: false
     light.cabinet_light_strip_left_nanoleaf_light_strip: {hidden: false}
     light.cabinet_light_strip_center_nanoleaf_light_strip: {hidden: false}
     light.cabinet_light_strip_right_nanoleaf_light_strip: {hidden: false}
     light.nanoleaf_multicolor_ls_2: {hidden: false}
     # Family / living
     light.family_room_light: {hidden: false}
-    switch.living_room_floor_lamp: {hidden: false}
+    switch.living_room_floor_lamp_switch:
+      name: Living Room Floor Lamp
+      hidden: false
     light.curtain_lights_v2: {hidden: false}
     # Halls / stairs / foyer
     switch.foyer_light: {hidden: false}
     switch.back_hallway_light_main_switch: {hidden: false}
     light.stair_light: {hidden: false}
-    light.stair_light_2:
-      name: Upper Stair Light
-      hidden: false
     switch.basement_stair_light: {hidden: false}
     # Basement
     switch.basement_lights: {hidden: false}
     light.basement_tv: {hidden: false}
     # Master bed / bath
     light.master_bedroom_ceiling_fan: {hidden: false}
-    switch.master_bedroom_fan_light: {hidden: false}
+    switch.master_bedroom_fan_light_switch_1:
+      name: Master Bedroom Fan Light
+      hidden: false
     light.master_bathroom_light: {hidden: false}
     # Izaan's room
     light.izaan_s_ceiling_fan: {hidden: false}
     light.izaan_s_lamp: {hidden: false}
-    switch.izaan_s_bedroom_light: {hidden: false}
+    switch.izaan_s_bedroom_light_switch_1:
+      name: Izaan's Bedroom light
+      hidden: false
     # Mina's room
     light.mina_s_ceiling_fan: {hidden: false}
-    switch.mina_s_light: {hidden: false}
-    switch.mina_s_lamp: {hidden: false}
+    switch.mina_s_light_switch_1:
+      name: Mina's Bedroom Fan Light Switch
+      hidden: false
+    switch.mina_s_lamp_switch:
+      name: Mina's Lamp
+      hidden: false
     # Guest room
     light.guest_room_ceiling_fan: {hidden: false}
-    switch.guest_room_light: {hidden: false}
+    switch.guest_room_light_switch_1:
+      name: Guest Room Light
+      hidden: false
     # Baths / laundry
-    switch.bathroom_light: {hidden: false}
-    switch.powder_room_light: {hidden: false}
-    switch.powder_room_mirror: {hidden: false}
-    switch.laundry_room_light: {hidden: false}
+    switch.bathroom_light_switch_1:
+      name: Bathroom Light
+      hidden: false
+    switch.powder_room_light_switch_1:
+      name: Powder Room Light
+      hidden: false
+    switch.powder_room_mirror_switch:
+      name: Powder Room Mirror
+      hidden: false
+    switch.laundry_room_light_switch:
+      name: Laundry Room Light
+      hidden: false
     # Garage
-    switch.garage_light_switch: {hidden: false}
+    switch.garage_light_switch_switch_1:
+      name: Garage Light Switch
+      hidden: false
     light.garage_left_downlight: {hidden: false}
     light.garage_right_downlight: {hidden: false}
     # Outdoor

@@ -1,19 +1,15 @@
 # =============================================================================
-# Veggie garden watering (Smart Irrigation -> switch.pool_heater)
+# Veggie garden watering (Smart Irrigation -> switch.garden_drip_valve, local TP-Link)
 # Added 2026-08-04. Bed contents: 1 watermelon, chilli peppers, 3 tomato plants,
 # basil as a companion, plus pollinator flowers.
 #
-# ⚠️  ENTITY NAME IS A TRAP — READ THIS BEFORE TOUCHING ANYTHING BELOW.
-#     switch.pool_heater does NOT control the pool heater any more. The user
-#     repurposed that outlet on 2026-08-04 to feed the vegetable-garden drip
-#     line; the pool heater and pool pump moved to a different switch. The HA
-#     entity_id, the SmartThings device name ("Pool Heater") and the hardware
-#     model (TP-LINK KP400(US), an outdoor plug) are all still named for the old
-#     job. Nothing else in this config references switch.pool_heater — verified
-#     2026-08-04 by grep across configuration.yaml, automations/ and scripts.
-#     RECOMMENDED: rename the device in SmartThings and let HA pick up the new
-#     entity_id, then update the three references in this file. Until that
-#     happens, anyone reading "pool_heater" will assume this file is wrong.
+# ENTITY: switch.garden_drip_valve is the vegetable-garden drip line, on a
+#     TP-LINK KP400(US) outdoor plug (child socket 0 of plug 56D7,
+#     192.168.0.140). The outlet was repurposed from the pool heater on
+#     2026-08-04, and the entity was renamed off pool_heater on 2026-08-07
+#     when the plug moved from the SmartThings cloud to the local TP-Link
+#     integration. The SmartThings device is still titled 'Pool Heater'
+#     upstream; that name is cosmetic and no longer drives this file.
 #
 # WHY 07:00: Smart Irrigation calculates at 04:00. The front lawn starts at
 #     05:00 and can legitimately run 5400 s (90 min), so worst case it is still
@@ -50,7 +46,8 @@
     gate, because fruiting vegetables need even moisture (see header).
     run_seconds is capped at 2700 s (45 min) to match the zone's
     maximum_duration; the separate max-runtime failsafe below is the
-    independent hard backstop at 60 min.
+    independent hard backstop at 60 min. A live weather check at 07:00
+    blocks the run if it is raining at that moment (rain gate).
 
     NOTE ON 'unavailable': this device drops to 'unavailable' on the nightly
     SmartThings reconnect (03:00:00, back by 03:00:16) and occasionally in the
@@ -79,6 +76,12 @@
     - trigger: time
       at: "07:00:00"
   conditions:
+    # Live rain gate: SI calculates at 04:00 but the valve opens at 07:00;
+    # rain starting in that window must block the run. Wet states: rainy,
+    # pouring, lightning-rainy, snowy, snowy-rainy, hail.
+    - condition: template
+      value_template: >-
+        {{ states('weather.forecast_home') not in ['rainy','pouring','lightning-rainy','snowy','snowy-rainy','hail'] }}
     # Only water if Smart Irrigation computed a positive run time
     # (calc runs 04:00; read here at 07:00).
     - condition: numeric_state
@@ -121,30 +124,29 @@
         sequence:
           - action: switch.turn_on
             target:
-              entity_id: switch.pool_heater
+              entity_id: switch.garden_drip_valve
             continue_on_error: true
           - delay: "00:00:15"
           - action: homeassistant.update_entity
             target:
-              entity_id: switch.pool_heater
-          - wait_template: "{{ is_state('switch.pool_heater', 'on') }}"
+              entity_id: switch.garden_drip_valve
+          - wait_template: "{{ is_state('switch.garden_drip_valve', 'on') }}"
             timeout: "00:01:30"
             continue_on_timeout: true
-        until: "{{ is_state('switch.pool_heater', 'on') or repeat.index >= 3 }}"
+        until: "{{ is_state('switch.garden_drip_valve', 'on') or repeat.index >= 3 }}"
     - if:
         - condition: template
-          value_template: "{{ not is_state('switch.pool_heater', 'on') }}"
+          value_template: "{{ not is_state('switch.garden_drip_valve', 'on') }}"
       then:
         - action: notify.mobile_app_cph2655
           data:
             title: "🚨 Garden watering FAILED to start"
             message: >-
-              Garden valve (switch.pool_heater — repurposed outlet, NOT the pool
-              heater) never confirmed ON after 3 attempts; it reports
-              '{{ states('switch.pool_heater') }}'. Check, in order: (1) is the
-              internet up — this is a SmartThings cloud path; (2) does the plug
-              respond in the SmartThings app; (3) is the plug still powered at the
-              outdoor outlet. Bucket NOT reset — the
+              Garden valve never confirmed ON after 3 attempts; it reports
+              '{{ states('switch.garden_drip_valve') }}'. This is a LOCAL LAN path
+              (TP-Link KP400 at 192.168.0.140) — check, in order: (1) can the Pi
+              reach 192.168.0.140; (2) is the plug still powered at the outdoor
+              outlet; (3) has its DHCP reservation changed. Bucket NOT reset — the
               {{ (run_seconds / 60) | round(1) }} min deficit carries to the next
               run. The garden was NOT watered.
         - stop: "garden valve never confirmed on - deficit preserved for next run"
@@ -158,22 +160,22 @@
         sequence:
           - action: switch.turn_off
             target:
-              entity_id: switch.pool_heater
+              entity_id: switch.garden_drip_valve
             continue_on_error: true
-          - wait_template: "{{ is_state('switch.pool_heater', 'off') }}"
+          - wait_template: "{{ is_state('switch.garden_drip_valve', 'off') }}"
             timeout: "00:01:30"
             continue_on_timeout: true
-        until: "{{ is_state('switch.pool_heater', 'off') or repeat.index >= 4 }}"
+        until: "{{ is_state('switch.garden_drip_valve', 'off') or repeat.index >= 4 }}"
     - if:
         - condition: template
-          value_template: "{{ not is_state('switch.pool_heater', 'off') }}"
+          value_template: "{{ not is_state('switch.garden_drip_valve', 'off') }}"
       then:
         - action: notify.mobile_app_cph2655
           data:
             title: "🚨 Garden valve did NOT close"
             message: >-
-              switch.pool_heater still reports
-              '{{ states('switch.pool_heater') }}' after 4 close attempts. The
+              switch.garden_drip_valve still reports
+              '{{ states('switch.garden_drip_valve') }}' after 4 close attempts. The
               drip line may still be running. The 60-min failsafe is the backstop
               — go check the tap.
     # ---- Water WAS delivered (device confirmed a run), so reset the bucket even
@@ -193,6 +195,48 @@
           Ran {{ run_seconds }} s ({{ (run_seconds / 60) | round(1) }} min),
           Smart Irrigation calc. Bucket reset.
 
+# --- Garden watering RAIN VETO ---
+# Added 2026-08-08. Independent of the start-cycle's live rain gate: that gate
+# only stops the SCHEDULED run. This veto kills the valve if it comes ON while
+# weather is wet, whatever the source — physical button on the KP400 plug, a
+# device-state resync from the local TP-Link integration, a manual toggle, or a
+# future automation. On 2026-08-08 the valve reported ON at 15:39 ET during rain
+# with NO HA service call behind it (events table had zero call_service /
+# automation_triggered for it) — this veto is the fix for that class of event.
+# Does NOT check input_boolean.garden_watering_master_enable: rain safety wins
+# over the master switch.
+- alias: "Garden watering: rain veto"
+  description: >-
+    Kills switch.garden_drip_valve the moment it turns ON while the live weather
+    is wet (rainy/pouring/lightning-rainy/snowy/snowy-rainy/hail), no matter who
+    or what commanded it. Backstop for device-side ghosts (KP400 physical button
+    or state resync from the local tplink integration). Rain safety wins over
+    the master enable — manual watering during rain is never wanted on a drip line.
+  id: "garden_watering_rain_veto"
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: switch.garden_drip_valve
+      from: "off"
+      to: "on"
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ states('weather.forecast_home') in ['rainy','pouring',
+           'lightning-rainy','snowy','snowy-rainy','hail'] }}
+  actions:
+    - action: switch.turn_off
+      target:
+        entity_id: switch.garden_drip_valve
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "🚫 Garden valve vetoed (raining)"
+        message: >-
+          switch.garden_drip_valve came ON while the weather is
+          {{ states('weather.forecast_home') }} — forced it back off.
+          This was NOT the scheduled run (that has its own rain gate);
+          check the KP400 plug at 192.168.0.140 for a physical button press.
+
 # --- Garden valve max-runtime failsafe ---
 - alias: "Garden watering: valve max-runtime failsafe"
   description: >-
@@ -205,7 +249,7 @@
     WHY "NOT off" AND NOT `to: "on"` — this is the important bit. A plain
     `to: "on" for: 60min` trigger requires SIXTY UNBROKEN MINUTES of the state
     literally being "on". This device does not cooperate: recorder history for
-    2026-08-04 shows switch.pool_heater going 'unavailable' at 09:45, and it
+    2026-08-04 shows switch.garden_drip_valve going 'unavailable' at 09:45, and it
     drops to 'unavailable' EVERY night at 03:00:00 (back at 03:00:16) on the
     SmartThings reconnect. Any such blip mid-run resets the `for:` timer and the
     failsafe silently never fires — precisely when a valve is stuck open and
@@ -227,23 +271,23 @@
   mode: single
   triggers:
     - trigger: template
-      value_template: "{{ not is_state('switch.pool_heater', 'off') }}"
+      value_template: "{{ not is_state('switch.garden_drip_valve', 'off') }}"
       for: "01:00:00"
   actions:
     # Capture the state BEFORE we start commanding it off, so the message can
     # tell "stuck on" apart from "unreachable".
     - variables:
-        state_at_trip: "{{ states('switch.pool_heater') }}"
+        state_at_trip: "{{ states('switch.garden_drip_valve') }}"
     - repeat:
         sequence:
           - action: switch.turn_off
             target:
-              entity_id: switch.pool_heater
+              entity_id: switch.garden_drip_valve
             continue_on_error: true
-          - wait_template: "{{ is_state('switch.pool_heater', 'off') }}"
+          - wait_template: "{{ is_state('switch.garden_drip_valve', 'off') }}"
             timeout: "00:01:30"
             continue_on_timeout: true
-        until: "{{ is_state('switch.pool_heater', 'off') or repeat.index >= 4 }}"
+        until: "{{ is_state('switch.garden_drip_valve', 'off') or repeat.index >= 4 }}"
     - action: notify.mobile_app_cph2655
       data:
         title: >-
@@ -252,15 +296,15 @@
              else '📡 Garden valve UNREACHABLE 60 min' }}
         message: >-
           {% if state_at_trip == 'on' %}
-          switch.pool_heater (the repurposed outlet feeding the garden drip line,
+          switch.garden_drip_valve (the repurposed outlet feeding the garden drip line,
           NOT the pool heater) had been ON for 60 min — past the 45 min maximum a
           scheduled run can take. Forced it off; it now reports
-          '{{ states('switch.pool_heater') }}'. Check the bed for waterlogging and
+          '{{ states('switch.garden_drip_valve') }}'. Check the bed for waterlogging and
           check the logbook for what turned it on.
           {% else %}
-          switch.pool_heater has reported '{{ state_at_trip }}' for 60 min, so HA
+          switch.garden_drip_valve has reported '{{ state_at_trip }}' for 60 min, so HA
           cannot tell whether the garden valve is open or closed. Sent an off
-          command anyway; it now reports '{{ states('switch.pool_heater') }}'.
+          command anyway; it now reports '{{ states('switch.garden_drip_valve') }}'.
           If SmartThings is down, GO LOOK AT THE TAP — a valve that was open when
           the connection dropped stays open.
           {% endif %}
@@ -271,7 +315,8 @@
     Daily 08:30 report on the Smart Irrigation calculation and whether the garden
     valve actually ran this morning. Catches a silent calc/mapping failure — the
     same class of fault that dried out the lawn for two days in July 2026 while
-    every log looked healthy.
+    every log looked healthy. Rain-aware: if the weather is wet, reports a
+    rain-skip instead of an alarm.
 
     WHY 08:30 AND NOT 07:50: the shared-tap interlock can wait up to 25 min for
     the lawn valve to close, after which a full-length 2700 s run pushes the
@@ -302,12 +347,16 @@
         ran_today: >-
           {{ last_ts is not none
              and (now().timestamp() - last_ts) < 10800 }}
+        wet_weather: >-
+          {{ states('weather.forecast_home') in ['rainy','pouring',
+             'lightning-rainy','snowy','snowy-rainy','hail'] }}
     - action: notify.mobile_app_cph2655
       data:
         title: >-
           {{ '🌱 Garden watered this morning' if ran_today
              else ('💤 Garden: nothing to water' if si_duration == 0
-                   else '⚠️ Garden did NOT run') }}
+                   else ('💤 Raining — garden skipped' if wet_weather
+                         else '⚠️ Garden did NOT run')) }}
         message: >-
           Master switch: {{ 'ON' if master_on else 'OFF' }}.
           {% if ran_today %}
@@ -317,6 +366,11 @@
           {% elif si_duration == 0 %}
           No deficit — SI computed 0 s (recent rain, or the bucket is full).
           Nothing was needed.
+          {% elif wet_weather %}
+          SI computed {{ (si_duration / 60) | round(1) }} min, but the live rain
+          gate or rain veto blocked the run — weather is
+          {{ states('weather.forecast_home') }}. No action needed; the deficit is
+          preserved (bucket not reset) and SI will recalculate tomorrow.
           {% else %}
           SI still shows a standing deficit of
           {{ (si_duration / 60) | round(1) }} min and no successful run was

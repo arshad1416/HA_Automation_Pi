@@ -117,7 +117,7 @@
     target:
       entity_id:
       - light.stair_light
-      - light.elements_b3cd_2
+      - light.elements_b3cd
       - light.lamppost_bulb_1
       - light.lamppost_bulb_2
       - light.lamppost_bulb_3
@@ -608,7 +608,7 @@
     metadata: {}
     target:
       entity_id:
-      - light.elements_b3cd_2
+      - light.elements_b3cd
       - light.izaan_s_lamp
   - action: light.turn_on
     data:
@@ -1233,7 +1233,7 @@
     target:
       entity_id:
       - light.izaan_s_lamp
-      - light.elements_b3cd_2
+      - light.elements_b3cd
       - light.stair_light
   - if:
     - condition: template
@@ -1510,7 +1510,7 @@
         data:
           brightness_pct: 100
         target:
-          entity_id: light.elements_b3cd_2
+          entity_id: light.elements_b3cd
       - action: switch.turn_on
         target:
           entity_id: switch.sonoff_10001d2a24
@@ -1525,20 +1525,20 @@
         data:
           brightness_pct: 10
         target:
-          entity_id: light.elements_b3cd_2
+          entity_id: light.elements_b3cd
       - delay:
           seconds: 1
       - action: adaptive_lighting.set_manual_control
         data:
           entity_id: switch.whole_house_adaptive_lighting_whole_house
           lights:
-          - light.elements_b3cd_2
+          - light.elements_b3cd
           manual_control: false
       - action: adaptive_lighting.apply
         data:
           entity_id: switch.whole_house_adaptive_lighting_whole_house
           lights:
-          - light.elements_b3cd_2
+          - light.elements_b3cd
   alias: 'Master Bedroom: Supernova + Elements Override'
   conditions: []
   description: 'ON: sets Elements to 100% + Supernova ON. OFF: Supernova OFF, Elements 10% + re-enable adaptive lighting.'
@@ -1666,7 +1666,7 @@
       brightness_pct: 90
     target:
       entity_id:
-      - light.elements_b3cd_2
+      - light.elements_b3cd
       - light.izaan_s_lamp
   - action: light.turn_on
     data: {}
@@ -2886,6 +2886,122 @@
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.stair_light_pir_owned
+- id: hallway_panels_stairs_pir
+  alias: Hallway Panels — Stairs PIR (100%, Adaptive Lighting colour)
+  description: >-
+    Walking up the stairs after sunset lights the two hallway Nanoleaf panels at the top
+    (light.hallway_nanoleaf_light_panels_left / _hallway_lights_right) to 100% brightness,
+    with Adaptive Lighting choosing the colour temperature. After 5 minutes with no motion
+    on binary_sensor.pir_motion_sensor_2_motion the panels are returned to whatever state
+    they were in before the motion.
+
+    Runs alongside stairs_pir_motion_light on the same PIR without conflicting — that one
+    drives light.stair_light, this one drives the panels. They were kept separate because
+    light.stair_light is a LocalTuya dimmer (supported_color_modes: ['brightness']), so
+    Adaptive Lighting cannot set a colour on it at all; only these NL22 panels support
+    color_temp/hs.
+
+    "Previous state" is a scene.create snapshot taken at the moment of the claim and
+    replayed by scene.turn_on, so panels that were off go back off and panels that were on
+    return to their prior brightness and colour.
+
+    input_boolean.hallway_panels_pir_owned mirrors stair_light_pir_owned: claimed only when
+    this automation is not already holding the panels, and released the moment either panel
+    goes off by ANY path. Without that release the no-motion timer would replay the snapshot
+    over panels somebody had just switched off by hand. The helper is initial: false, so a
+    restart clears the claim — which also covers the fact that scene.create scenes do not
+    survive a restart, leaving no branch that could call scene.turn_on on a missing scene.
+  mode: queued
+  max: 10
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.pir_motion_sensor_2_motion
+    to: 'on'
+    id: motion
+  - trigger: state
+    entity_id: binary_sensor.pir_motion_sensor_2_motion
+    to: 'off'
+    for:
+      minutes: 5
+    id: no_motion
+  - trigger: state
+    entity_id:
+    - light.hallway_nanoleaf_light_panels_left
+    - light.hallway_nanoleaf_hallway_lights_right
+    to: 'off'
+    id: panels_went_off
+  conditions: []
+  actions:
+  - choose:
+    # Either panel went off by any path (us restoring, manual, scene) — drop the claim so
+    # the no-motion timer can never restore over a deliberate turn-off.
+    - conditions:
+      - condition: trigger
+        id: panels_went_off
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hallway_panels_pir_owned
+    # 5 minutes clear and we are the ones holding them — put back what was there before.
+    # The claim is released FIRST so the scene.turn_on below (which may switch a panel off)
+    # cannot race the panels_went_off branch into an inconsistent claim.
+    - conditions:
+      - condition: trigger
+        id: no_motion
+      - condition: state
+        entity_id: input_boolean.hallway_panels_pir_owned
+        state: 'on'
+      sequence:
+      - action: input_boolean.turn_off
+        target:
+          entity_id: input_boolean.hallway_panels_pir_owned
+      - action: scene.turn_on
+        target:
+          entity_id: scene.hallway_panels_pre_pir
+    # Motion after sunset and we are not already holding the panels — snapshot, then 100%
+    # with Adaptive Lighting picking the colour. The not-already-claimed guard is what stops
+    # a re-trigger mid-window from overwriting the snapshot with our own 100% state.
+    - conditions:
+      - condition: trigger
+        id: motion
+      - condition: state
+        entity_id: sun.sun
+        state: below_horizon
+      - condition: state
+        entity_id: input_boolean.hallway_panels_pir_owned
+        state: 'off'
+      sequence:
+      - action: scene.create
+        data:
+          scene_id: hallway_panels_pre_pir
+          snapshot_entities:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.hallway_panels_pir_owned
+      - action: light.turn_on
+        target:
+          entity_id:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+        data:
+          brightness_pct: 100
+      # ponytail: borrows the Whole House instance purely as a settings source — apply()
+      # takes an explicit `lights` list and does not require membership, so this needs no
+      # new AL instance and no config-entry change. adapt_brightness is false so AL cannot
+      # walk back the 100% above. Ceiling: the colour is set once per claim, not tracked for
+      # the 5 minutes; give the panels their own AL instance if that ever matters.
+      - action: adaptive_lighting.apply
+        data:
+          entity_id: switch.whole_house_adaptive_lighting_whole_house
+          lights:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+          adapt_color: true
+          adapt_brightness: false
+          turn_on_lights: false
+          transition: 2
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
