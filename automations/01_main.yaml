@@ -3020,8 +3020,11 @@
     leaves AL free to apply its current brightness and colour. Any call here that
     carried brightness_pct or color_temp would override AL, so do not add one.
 
-    The resting state after sunset is the Nanoleaf "night-light" scene at 10%. The
-    scene is a device-side preset; AL keeps colour/brightness in step while the panels
+    The resting state after sunset is whatever Adaptive Lighting is holding - AL owns
+    brightness (linear ramp to the 10 percent floor by bedtime) and colour, and motion
+    only boosts on top of it. The Nanoleaf night-light scene is NO LONGER the resting
+    look, because an effect cannot survive AL writing brightness and colour every tick.
+    The older note below is kept for the device-side scene history: the panels
     are on, but the resting preset is reapplied so a motion-triggered cycle always
     settles back to the same known look.
 
@@ -3103,14 +3106,28 @@
             - light.hallway_nanoleaf_light_panels_left
             - light.hallway_nanoleaf_hallway_lights_right
         else:
-        - action: light.turn_on
-          target:
-            entity_id:
+        # Hand the panels back to Adaptive Lighting. Clearing manual_control undoes the
+        # take-over caused by the boost above; apply() then snaps them to AL's current
+        # curve instead of waiting for its next tick. Deliberately NO brightness/effect
+        # here - setting either would re-take control and defeat "AL owns brightness".
+        # This is why the night-light scene is no longer the resting look: an effect
+        # cannot survive AL writing brightness and colour on every tick.
+        - action: adaptive_lighting.set_manual_control
+          data:
+            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+            lights:
             - light.hallway_nanoleaf_light_panels_left
             - light.hallway_nanoleaf_hallway_lights_right
+            manual_control: false
+        - action: adaptive_lighting.apply
           data:
-            brightness_pct: '{{ states(''input_number.nightly_dim_brightness'') | int(10) }}'
-            effect: night light
+            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+            lights:
+            - light.hallway_nanoleaf_light_panels_left
+            - light.hallway_nanoleaf_hallway_lights_right
+            adapt_brightness: true
+            adapt_color: true
+            turn_on_lights: false
     # Motion, in any of the three periods. Daylight that is NOT dark enough falls through
     # here and does nothing, which is the point — no branch matches, no lights.
     - conditions:
@@ -3148,15 +3165,29 @@
         - action: input_boolean.turn_on
           target:
             entity_id: input_boolean.hallway_panels_pir_owned
-      # BARE turn-on: no brightness, no colour. AL owns both now (Hallway Panels
-      # instance, brightness_mode linear). A bare call leaves AL's next adaptation tick
-      # free to set its current curve values; any level passed here would override AL
-      # and put the panels in AL's manual_control list.
+      # BOOST above whatever level AL is currently holding. AL owns the resting level;
+      # this is a deliberate temporary lift for someone actually on the stairs. A bare
+      # turn-on would come up at AL's ambient level, which by bedtime is the 10 percent
+      # floor - not a boost at all.
+      #
+      # Passing brightness here DOES put the panels into AL's manual_control list, and
+      # that is wanted for the duration: AL stands off so the boost holds steady instead
+      # of being dragged back down mid-window. The revert hands control back explicitly
+      # via set_manual_control.
+      #
+      # +30 percentage points is the one tunable number. Calibrated 2026-08-09 with a
+      # phone lux meter on the stairs: the panels give about 0.8 lux per percent in the
+      # low range, so +30pp is roughly +24 lux - a clear lift without being a shock at
+      # 2am. Capped at 100.
       - action: light.turn_on
         target:
           entity_id:
           - light.hallway_nanoleaf_light_panels_left
           - light.hallway_nanoleaf_hallway_lights_right
+        data:
+          brightness_pct: >-
+            {{ [ ((state_attr('switch.hallway_panels_adaptive_lighting_hallway_panels', 'brightness_pct') | float(10)) + 30)
+                 | round(0) | int, 100 ] | min }}
       # A new motion pulse restarts this automation and cancels the delay, so the panels
       # stay up until 5 minutes after the last pulse.
       - delay:
@@ -3183,14 +3214,28 @@
         else:
         # Resting preset, not AL values: this is the deliberate "settled for the night"
         # look. AL re-syncs colour/brightness while the panels stay on.
-        - action: light.turn_on
-          target:
-            entity_id:
+        # Hand the panels back to Adaptive Lighting. Clearing manual_control undoes the
+        # take-over caused by the boost above; apply() then snaps them to AL's current
+        # curve instead of waiting for its next tick. Deliberately NO brightness/effect
+        # here - setting either would re-take control and defeat "AL owns brightness".
+        # This is why the night-light scene is no longer the resting look: an effect
+        # cannot survive AL writing brightness and colour on every tick.
+        - action: adaptive_lighting.set_manual_control
+          data:
+            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+            lights:
             - light.hallway_nanoleaf_light_panels_left
             - light.hallway_nanoleaf_hallway_lights_right
+            manual_control: false
+        - action: adaptive_lighting.apply
           data:
-            brightness_pct: '{{ states(''input_number.nightly_dim_brightness'') | int(10) }}'
-            effect: night light
+            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+            lights:
+            - light.hallway_nanoleaf_light_panels_left
+            - light.hallway_nanoleaf_hallway_lights_right
+            adapt_brightness: true
+            adapt_color: true
+            turn_on_lights: false
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.

@@ -37,10 +37,9 @@ RESTORE_AFTER = {"minutes": 5}
 # The owner's after-sunset resting state for this hallway: the panels' own stored
 # "night light" scene at 10%. The revert is this FIXED target, not a snapshot —
 # deterministic and self-healing if the panels drift.
-REVERT_PCT = 10
-REVERT_EFFECT = "night light"
 # motion brightness per period, dimmest when the house is asleep
-PERIOD_PCT = {"after_bedtime": 10, "after_sunset": 50, "dark_day": 100}
+# Motion boosts by this many percentage points over whatever AL currently holds.
+BOOST_PP = 30
 # The stair light has two legs: a dim one sourced from a tunable helper, and a literal
 # bright one. Both are asserted — the bright leg previously had no value assertion at all,
 # so swapping its 100 for any other number went undetected.
@@ -117,22 +116,29 @@ def assert_is_revert(step):
     assert sorted(day[0]["target"]["entity_id"]) == sorted(PANELS)
 
     night = step["else"]
-    assert [x.get("action") for x in night] == ["light.turn_on"], (
-        f"night revert must turn the panels on, got {[x.get('action') for x in night]}"
+    acts = [x.get("action") for x in night]
+    # AL owns brightness now, so the resting state is "give it back", not a fixed level.
+    assert acts == ["adaptive_lighting.set_manual_control", "adaptive_lighting.apply"], (
+        f"night revert must hand control back to Adaptive Lighting, got {acts}"
     )
-    d = night[0]["data"]
-    assert d.get("brightness_pct") == REVERT_PCT, (
-        f"night resting brightness must be {REVERT_PCT}%, got {d.get('brightness_pct')}"
+    smc = night[0].get("data", {})
+    assert smc.get("manual_control") is False, (
+        "must CLEAR manual_control — the boost puts the panels into AL's manual_control "
+        "list, and without clearing it AL never resumes adapting them"
     )
-    # The scene lives on the devices, not in HA. Both panels carry it as of 2026-08-09;
-    # if one is reset or replaced it will 500 on that panel and the pair will mismatch.
-    assert d.get("effect") == REVERT_EFFECT, (
-        f"night resting look must be the {REVERT_EFFECT!r} scene, got {d.get('effect')!r}"
+    assert smc.get("entity_id") == AL_SWITCH and sorted(smc["lights"]) == sorted(PANELS)
+    ap = night[1].get("data", {})
+    assert ap.get("adapt_brightness") is True and ap.get("adapt_color") is True, (
+        "apply must re-adapt both, otherwise the panels sit at the boost level forever"
     )
-    assert "color_temp_kelvin" not in d and "hs_color" not in d, (
-        "setting a colour alongside the scene fights it — the scene defines the look"
-    )
-    assert sorted(night[0]["target"]["entity_id"]) == sorted(PANELS)
+    assert sorted(ap["lights"]) == sorted(PANELS)
+    for st_ in night:
+        d = st_.get("data", {})
+        for forbidden in ("brightness_pct", "brightness", "effect", "color_temp_kelvin", "hs_color"):
+            assert forbidden not in d, (
+                f"{forbidden} in the resting state re-takes control from AL — that is the "
+                "whole point of 'AL owns brightness, motion only boosts'"
+            )
 
 
 def check_no_overnight_full_brightness(by_id):
@@ -408,34 +414,23 @@ def main():
 
     delay_at = next(i for i, s in enumerate(seq) if "delay" in s)
     turn_on = next(s for s in seq[:delay_at] if s.get("action") == "light.turn_on")
+    assert "data" in turn_on and "brightness_pct" in turn_on["data"], (
+        "the motion step must pass a brightness — a bare turn_on comes up at AL's ambient "
+        "level (the 10 percent floor by bedtime), which is not a boost at all"
+    )
     bri = str(turn_on["data"]["brightness_pct"])
-    # Read the EMITTED legs only. A plain `str(pct) in bri` was vacuous: "10" is also in
-    # the {% set dim_hr %} prelude's [3,4,9,10] month list, so mutating the after-bedtime
-    # tier to 100% still passed. This regex matches a number only where it is emitted
-    # immediately after a %} tag.
-    legs = sorted(int(x) for x in re.findall(r"%\}\s*(\d+)", bri))
-    assert legs == sorted(PERIOD_PCT.values()), (
-        f"motion brightness tiers drifted: {legs} != {sorted(PERIOD_PCT.values())}"
+    # Motion BOOSTS relative to AL's current level. A fixed tier would fight AL's ramp.
+    assert AL_SWITCH in bri and "brightness_pct" in bri, (
+        f"motion brightness must derive from {AL_SWITCH}'s brightness_pct so it is a boost "
+        f"over AL's current level, got {bri!r}"
     )
-    # after_bedtime implies sun below horizon, so it MUST be tested first or the 50%
-    # sunset leg would always win and the after-bedtime 10% would be unreachable.
-    # The small hours must dim independently of the bedtime latch. On a night where the
-    # bedtime routine never fires (nobody detected asleep, or HA restarted) after_bedtime
-    # stays OFF, and without this a 02:00 trip takes the 50% evening level.
-    # The 10% window is the dim hour through to sunrise, independent of the bedtime
-    # latch. Both halves are required: sun.sun alone cannot tell 21:00 from 03:00.
-    assert "now().hour >= dim_hr" in bri, "the dim-hour half of the 10% window is missing"
-    assert "now().hour < 12" in bri, (
-        "the midnight-to-sunrise half is missing — without it, a night where the bedtime "
-        f"routine never fires lights the hallway at 50% at 2am: {bri!r}"
+    assert "100" in bri and "| min" in bri, "the boost must be capped at 100 via min()"
+    # Colour is deliberately absent: AL owns it and re-applies on its own tick.
+    assert "color_temp_kelvin" not in turn_on["data"], (
+        "the boost must not set colour — AL owns it; passing one just fights the curve"
     )
-    assert "below_horizon" in bri.split("%}10")[0], (
-        "the midnight-to-sunrise half must be gated on sun below_horizon, or it would "
-        "also dim a bright morning"
-    )
-    assert bri.index("after_bedtime") < bri.index("below_horizon"), (
-        "after_bedtime must be tested before the plain sunset case, otherwise the "
-        "after-bedtime 10% leg is dead code"
+    assert "effect" not in turn_on["data"], (
+        "an effect here would be wiped by AL's next brightness/colour write"
     )
     assert sorted(turn_on["target"]["entity_id"]) == sorted(PANELS)
 
@@ -452,23 +447,6 @@ def main():
     assert len([s for s in seq[:delay_at] if s.get("action") == "light.turn_on"]) == 1, (
         "exactly one light.turn_on before the delay: a second can override the first"
     )
-    assert "color_temp_kelvin" in turn_on["data"], (
-        "the turn_on must carry the colour too, or Adaptive Lighting never sets it"
-    )
-    # The colour must still come FROM Adaptive Lighting, not be hardcoded...
-    ct_src = str(turn_on["data"]["color_temp_kelvin"])
-    assert "adaptive_lighting" in ct_src, (
-        "color_temp_kelvin must be templated off an Adaptive Lighting switch, got "
-        f"{ct_src!r}"
-    )
-    # ...and specifically from the instance scoped to these panels. The Whole House
-    # instance bottoms out at 2500 K because it is tuned for outdoor downlights, so it
-    # can never reach the warm end these NL22 panels (1200-6500 K) actually support.
-    assert AL_SWITCH in ct_src, (
-        f"colour must come from {AL_SWITCH} (1800-6500 K, scoped to these panels), not "
-        f"another instance: {ct_src!r}"
-    )
-
     # --- the restore tail -------------------------------------------------
     delay_i = next(i for i, s in enumerate(seq) if "delay" in s)
     assert seq[delay_i]["delay"] == RESTORE_AFTER, (
