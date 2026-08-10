@@ -639,16 +639,34 @@ emulated_hue:
 # candlelight — well inside what the hardware supports, without the deep amber cast of
 # its 1200 K floor.
 #
-# lights is deliberately EMPTY. This instance exists only as a settings source: the
-# automation reads color_temp_kelvin off its switch and passes it in the same
-# light.turn_on that sets brightness. Listing the panels here would let AL adapt them
-# directly, and AL's own adaptation overrides brightness even when asked not to
-# (measured on 1.30.1) — which is the bug that left the panels at full brightness.
+# AL is the direct owner of brightness and colour for the panels (owner instruction
+# 2026-08-10: "Have AL manage the colour temperature and the brightness level based
+# on time of day"). brightness_mode is LINEAR so the curve descends from full at solar
+# noon to min_brightness at solar midnight — i.e. it gradually dims into the evening and
+# is back at 10% by bedtime. min_brightness_pct is bound to the Nightly Dim Brightness
+# helper (the 10% floor) so a UI change to the floor flows through on the next restart.
+#
+# The historical bug that drove the old colour-only design was AL 1.30.1's
+# adaptive_lighting.apply overriding brightness despite adapt_brightness: false. AL's
+# *periodic* adaptation of directly-listed lights honours adapt_brightness, so that bug
+# does not apply here; the panels are listed and both adapt switches stay on. The
+# automation no longer sets colour or brightness at all — it only turns the panels on
+# and off (motion → on, 5 minutes after the last pulse → resting state), so there is no
+# HA call left that could race AL's adaptation.
+#
+# If the panels are ever seen fighting AL (jumping to full brightness), the panel is in
+# AL's manual_control list: clear it with adaptive_lighting.set_manual_control
+# manual_control: false, exactly like the cabinet strips do at sunrise.
 adaptive_lighting:
   - name: Hallway Panels
-    lights: []
+    lights:
+      - light.hallway_nanoleaf_light_panels_left
+      - light.hallway_nanoleaf_hallway_lights_right
     min_color_temp: 1800
     max_color_temp: 6500
+    adapt_brightness: true
+    brightness_mode: linear
+    min_brightness: "{{ states('input_number.nightly_dim_brightness') | float(10) }}"
 
 # Limit history to 7 days to keep DB manageable
 recorder:

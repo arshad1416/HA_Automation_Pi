@@ -3000,9 +3000,9 @@
     the top of the range is where the useful light actually is. Hence dark-day sits at 100%:
     that is the period competing with daylight.
 
-      dark day (sun up, overcast) -> motion 100% -> rest: OFF
-      after sunset (sun down)     -> motion 50%  -> rest: 10% "night light"
-      after bedtime               -> motion 10%  -> rest: 10% "night light"
+      dark day (sun up, overcast) -> motion: on (AL at 100%) -> rest: OFF
+      after sunset (sun down)     -> motion: on (AL ramps 50->10%) -> rest: 10% "night light"
+      after bedtime               -> motion: on (AL at 10%)  -> rest: 10% "night light"
 
     "Dark day" reuses the same inputs as stairs_pir_motion_light: sensor.illuminance
     against input_number.stairs_dark_lux, falling back to cloud cover plus sun elevation
@@ -3012,7 +3012,18 @@
     "After bedtime" is binary_sensor.after_bedtime (configuration.yaml), which is the
     bedtime latch AND the overnight hour window AND sun below horizon.
 
-    The resting state after sunset is the Nanoleaf "night light" scene at 10%.
+    BRIGHTNESS AND COLOUR ARE OWNED BY ADAPTIVE LIGHTING (owner instruction
+    2026-08-10). The panels are listed in the "Hallway Panels" AL instance in
+    configuration.yaml with brightness_mode: linear, so AL gradually dims them through
+    the evening down to the Nightly Dim Brightness floor (10%) by bedtime, and warms
+    them towards 1800 K. This automation ONLY turns them on and off: a bare turn_on
+    leaves AL free to apply its current brightness and colour. Any call here that
+    carried brightness_pct or color_temp would override AL, so do not add one.
+
+    The resting state after sunset is the Nanoleaf "night-light" scene at 10%. The
+    scene is a device-side preset; AL keeps colour/brightness in step while the panels
+    are on, but the resting preset is reapplied so a motion-triggered cycle always
+    settles back to the same known look.
 
     That scene is stored ON each device, not in HA, and it originally existed only on the
     left panel — asking the right one for it returned HTTP 500 mid-call, changing the left
@@ -3098,7 +3109,7 @@
             - light.hallway_nanoleaf_light_panels_left
             - light.hallway_nanoleaf_hallway_lights_right
           data:
-            brightness_pct: 10
+            brightness_pct: '{{ states(''input_number.nightly_dim_brightness'') | int(10) }}'
             effect: night light
     # Motion, in any of the three periods. Daylight that is NOT dark enough falls through
     # here and does nothing, which is the point — no branch matches, no lights.
@@ -3137,45 +3148,15 @@
         - action: input_boolean.turn_on
           target:
             entity_id: input_boolean.hallway_panels_pir_owned
-      # ONE call carrying brightness AND colour. They must ship together: a separate
-      # adaptive_lighting.apply used to override brightness to full even with
-      # adapt_brightness: false (measured on AL 1.30.1), which is why the colour is read
-      # off the AL switch attribute and passed here instead of calling that service.
+      # BARE turn-on: no brightness, no colour. AL owns both now (Hallway Panels
+      # instance, brightness_mode linear). A bare call leaves AL's next adaptation tick
+      # free to set its current curve values; any level passed here would override AL
+      # and put the panels in AL's manual_control list.
       - action: light.turn_on
         target:
           entity_id:
           - light.hallway_nanoleaf_light_panels_left
           - light.hallway_nanoleaf_hallway_lights_right
-        data:
-          # Dimmest after bedtime, brightest on a dark day. Ordered most-specific first:
-          # after_bedtime already implies sun below horizon, so it must be tested before
-          # the plain sunset case or it could never win.
-          #
-          # The 10% window runs from the seasonal dim hour through to sunrise, matching
-          # the stair light and the outdoor lights. It is expressed in two halves because
-          # sun.sun alone cannot tell 21:00 from 03:00 — both are below_horizon:
-          #   now().hour >= dim_hr            -> the dim hour up to midnight
-          #   sun below AND now().hour < 12   -> midnight up to sunrise
-          # The hour < 12 bound is what keeps the second half from also matching the
-          # evening; it is the same idiom binary_sensor.after_bedtime uses.
-          #
-          # It is deliberately independent of the bedtime latch: on a night where the
-          # bedtime routine never fires (nobody detected asleep, or HA restarted)
-          # after_bedtime stays OFF, and without this a 02:00 trip took the 50% evening
-          # level. Between sunset and the dim hour the house is still up, so 50% stands.
-          brightness_pct: >-
-            {% set dim_hr = 21 if now().month in [11,12,1,2]
-                        else 22 if now().month in [3,4,9,10]
-                        else 23 %}
-            {% if is_state('binary_sensor.after_bedtime', 'on')
-                  or now().hour >= dim_hr
-                  or (is_state('sun.sun', 'below_horizon') and now().hour < 12) %}10
-            {% elif is_state('sun.sun', 'below_horizon') %}50
-            {% else %}100{% endif %}
-          color_temp_kelvin: >-
-            {{ state_attr('switch.hallway_panels_adaptive_lighting_hallway_panels',
-                          'color_temp_kelvin') | int(2200) }}
-          transition: 2
       # A new motion pulse restarts this automation and cancels the delay, so the panels
       # stay up until 5 minutes after the last pulse.
       - delay:
@@ -3200,13 +3181,15 @@
             - light.hallway_nanoleaf_light_panels_left
             - light.hallway_nanoleaf_hallway_lights_right
         else:
+        # Resting preset, not AL values: this is the deliberate "settled for the night"
+        # look. AL re-syncs colour/brightness while the panels stay on.
         - action: light.turn_on
           target:
             entity_id:
             - light.hallway_nanoleaf_light_panels_left
             - light.hallway_nanoleaf_hallway_lights_right
           data:
-            brightness_pct: 10
+            brightness_pct: '{{ states(''input_number.nightly_dim_brightness'') | int(10) }}'
             effect: night light
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
