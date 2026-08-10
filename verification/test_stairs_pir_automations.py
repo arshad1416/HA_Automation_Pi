@@ -40,6 +40,9 @@ RESTORE_AFTER = {"minutes": 5}
 # motion brightness per period, dimmest when the house is asleep
 # Motion boosts by this many percentage points over whatever AL currently holds.
 BOOST_PP = 30
+# The device-side scene the panels rest on after bedtime, and its level.
+NIGHT_SCENE = "night light"
+NIGHT_PCT = 10
 # The stair light has two legs: a dim one sourced from a tunable helper, and a literal
 # bright one. Both are asserted — the bright leg previously had no value assertion at all,
 # so swapping its 100 for any other number went undetected.
@@ -115,30 +118,77 @@ def assert_is_revert(step):
     )
     assert sorted(day[0]["target"]["entity_id"]) == sorted(PANELS)
 
+    # The night side is a 3-way now: after bedtime the night-light scene is the resting
+    # look; before bedtime AL owns it and control is handed back.
     night = step["else"]
-    acts = [x.get("action") for x in night]
-    # AL owns brightness now, so the resting state is "give it back", not a fixed level.
-    assert acts == ["adaptive_lighting.set_manual_control", "adaptive_lighting.apply"], (
-        f"night revert must hand control back to Adaptive Lighting, got {acts}"
+    assert len(night) == 1 and "if" in night[0], (
+        f"night revert must branch on {BOUNDARY}, got {[x.get('action') for x in night]}"
     )
-    smc = night[0].get("data", {})
-    assert smc.get("manual_control") is False, (
-        "must CLEAR manual_control — the boost puts the panels into AL's manual_control "
-        "list, and without clearing it AL never resumes adapting them"
+    inner = night[0]
+    assert any(c.get("entity_id") == BOUNDARY and c.get("state") == "on"
+               for c in inner["if"]), "the night branch must test after_bedtime"
+
+    bed = inner["then"]
+    assert [x.get("action") for x in bed] == [
+        "adaptive_lighting.set_manual_control", "light.turn_on"], (
+        f"bedtime resting state must park AL then set the scene, got "
+        f"{[x.get('action') for x in bed]}"
     )
-    assert smc.get("entity_id") == AL_SWITCH and sorted(smc["lights"]) == sorted(PANELS)
-    ap = night[1].get("data", {})
-    assert ap.get("adapt_brightness") is True and ap.get("adapt_color") is True, (
-        "apply must re-adapt both, otherwise the panels sit at the boost level forever"
+    assert bed[0]["data"].get("manual_control") is True, (
+        "AL must be PARKED (manual_control: true) before the scene is set — it writes "
+        "brightness and colour every tick and would wipe the effect within a minute"
     )
-    assert sorted(ap["lights"]) == sorted(PANELS)
-    for st_ in night:
-        d = st_.get("data", {})
-        for forbidden in ("brightness_pct", "brightness", "effect", "color_temp_kelvin", "hs_color"):
-            assert forbidden not in d, (
-                f"{forbidden} in the resting state re-takes control from AL — that is the "
-                "whole point of 'AL owns brightness, motion only boosts'"
-            )
+    assert bed[1]["data"].get("effect") == NIGHT_SCENE
+    assert bed[1]["data"].get("brightness_pct") == NIGHT_PCT
+    assert sorted(bed[1]["target"]["entity_id"]) == sorted(PANELS)
+
+    pre = inner["else"]
+    assert [x.get("action") for x in pre] == [
+        "adaptive_lighting.set_manual_control", "adaptive_lighting.apply"], (
+        f"pre-bedtime resting state must hand control back to AL, got "
+        f"{[x.get('action') for x in pre]}"
+    )
+    assert pre[0]["data"].get("manual_control") is False, (
+        "must CLEAR manual_control — the boost parks AL, and without clearing it AL "
+        "never resumes adapting"
+    )
+    assert pre[1]["data"].get("adapt_brightness") is True
+    assert pre[1]["data"].get("adapt_color") is True
+    for st_ in pre:
+        dd = st_.get("data", {})
+        for forbidden in ("brightness_pct", "effect", "color_temp_kelvin", "hs_color"):
+            assert forbidden not in dd, f"{forbidden} here re-takes control from AL"
+
+
+def check_bedtime_scene(by_id):
+    """At the bedtime boundary the panels switch to the night-light scene.
+
+    The scene lives on the devices and cannot survive AL adaptation, so the bedtime branch
+    parks AL first and the morning branch un-parks it. Forgetting the morning un-park is
+    the quiet failure: AL stays stood off all day and never follows the curve again.
+    """
+    auto = by_id.get("hallway_panels_bedtime_scene")
+    assert auto is not None, "hallway_panels_bedtime_scene is missing"
+    ids = {t.get("id") for t in auto["triggers"]}
+    assert ids == {"bedtime", "morning"}, f"unexpected triggers: {ids}"
+    for t in auto["triggers"]:
+        assert t["entity_id"] == BOUNDARY, f"must key off {BOUNDARY}"
+
+    bed = branch_for(auto, "bedtime")["sequence"]
+    assert [x.get("action") for x in bed] == [
+        "adaptive_lighting.set_manual_control", "light.turn_on"]
+    assert bed[0]["data"].get("manual_control") is True, "must park AL before the scene"
+    assert bed[1]["data"].get("effect") == NIGHT_SCENE
+    assert bed[1]["data"].get("brightness_pct") == NIGHT_PCT
+
+    morn = branch_for(auto, "morning")["sequence"]
+    assert [x.get("action") for x in morn] == [
+        "adaptive_lighting.set_manual_control", "adaptive_lighting.apply"], (
+        "the morning branch must un-park AL and re-apply, or AL stays stood off all day"
+    )
+    assert morn[0]["data"].get("manual_control") is False, (
+        "morning must CLEAR manual_control — otherwise AL never adapts these panels again"
+    )
 
 
 def check_no_overnight_full_brightness(by_id):
@@ -521,6 +571,7 @@ def main():
     check_no_overnight_full_brightness(by_id)
     check_bedtime_latch_does_not_survive_restart()
     check_pir_watchdog(by_id)
+    check_bedtime_scene(by_id)
 
     print("stairs PIR automations (both): all invariants OK")
     return 0

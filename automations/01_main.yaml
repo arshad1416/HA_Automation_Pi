@@ -2983,6 +2983,82 @@
           '{{ states('binary_sensor.pir_motion_sensor_2_motion') }}'. The stair light and
           hallway panels will not respond to motion until this is fixed. Check the sensor
           in the Smart Life app; it may need a battery or re-pair.
+- id: hallway_panels_bedtime_scene
+  alias: Hallway Panels — Night-Light Scene at Bedtime
+  description: >-
+    At the bedtime boundary (binary_sensor.after_bedtime turning on) the hallway Nanoleaf
+    panels switch to their device-side "night light" scene at 10 percent, and stay there
+    until morning. Adaptive Lighting owns brightness and colour for these panels the rest
+    of the time, ramping down to its 10 percent floor through the evening; this is the
+    handover point where a fixed scene takes over from the curve.
+
+    AL MUST BE PARKED FIRST. It writes brightness and colour on every adaptation tick, and
+    any Nanoleaf effect is wiped by such a write - the scene would survive under a minute.
+    set_manual_control with manual_control: true is AL's documented way to stand off a
+    light without disabling the whole instance, so the other AL-managed lights are
+    unaffected. The morning branch clears it again and calls apply so AL resumes its curve
+    immediately rather than waiting for its next tick.
+
+    The scene is stored ON the devices, not in HA, and originally existed only on the left
+    panel - the right returned HTTP 500 until it was shared across from the Nanoleaf app on
+    2026-08-09. If a panel is ever reset or replaced the scene goes with it and this will
+    start failing on that panel; re-share it, then reload the Nanoleaf config entry (HA
+    caches effect_list per entry, so a newly shared scene is invisible until it reloads).
+
+    Deliberately unconditional on the panels' current state: after bedtime "on at 10 percent
+    night light" is the defined resting state, so this turns them on if they were off.
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.after_bedtime
+    to: 'on'
+    id: bedtime
+  - trigger: state
+    entity_id: binary_sensor.after_bedtime
+    to: 'off'
+    id: morning
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id: bedtime
+      sequence:
+      - action: adaptive_lighting.set_manual_control
+        data:
+          entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+          lights:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+          manual_control: true
+      - action: light.turn_on
+        target:
+          entity_id:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+        data:
+          brightness_pct: 10
+          effect: night light
+    - conditions:
+      - condition: trigger
+        id: morning
+      sequence:
+      - action: adaptive_lighting.set_manual_control
+        data:
+          entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+          lights:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+          manual_control: false
+      - action: adaptive_lighting.apply
+        data:
+          entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+          lights:
+          - light.hallway_nanoleaf_light_panels_left
+          - light.hallway_nanoleaf_hallway_lights_right
+          adapt_brightness: true
+          adapt_color: true
+          turn_on_lights: false
 - id: hallway_panels_stairs_pir
   alias: Hallway Panels — Stairs PIR (100/50/10% by period, Adaptive Lighting colour)
   description: >-
@@ -3112,22 +3188,48 @@
         # here - setting either would re-take control and defeat "AL owns brightness".
         # This is why the night-light scene is no longer the resting look: an effect
         # cannot survive AL writing brightness and colour on every tick.
-        - action: adaptive_lighting.set_manual_control
-          data:
-            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
-            lights:
-            - light.hallway_nanoleaf_light_panels_left
-            - light.hallway_nanoleaf_hallway_lights_right
-            manual_control: false
-        - action: adaptive_lighting.apply
-          data:
-            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
-            lights:
-            - light.hallway_nanoleaf_light_panels_left
-            - light.hallway_nanoleaf_hallway_lights_right
-            adapt_brightness: true
-            adapt_color: true
-            turn_on_lights: false
+        - if:
+          - condition: state
+            entity_id: binary_sensor.after_bedtime
+            state: 'on'
+          then:
+          # After bedtime the night-light scene IS the resting look, not AL's curve.
+          # AL has to be parked first: it writes brightness and colour every tick and
+          # would wipe the effect within a minute otherwise. hallway_panels_bedtime_scene
+          # parks it at the bedtime transition; this re-parks it after a motion boost.
+          - action: adaptive_lighting.set_manual_control
+            data:
+              entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+              lights:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+              manual_control: true
+          - action: light.turn_on
+            target:
+              entity_id:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+            data:
+              brightness_pct: 10
+              effect: night light
+          else:
+          # Before bedtime AL owns the resting level, so hand control back to it.
+          - action: adaptive_lighting.set_manual_control
+            data:
+              entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+              lights:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+              manual_control: false
+          - action: adaptive_lighting.apply
+            data:
+              entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+              lights:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+              adapt_brightness: true
+              adapt_color: true
+              turn_on_lights: false
     # Motion, in any of the three periods. Daylight that is NOT dark enough falls through
     # here and does nothing, which is the point — no branch matches, no lights.
     - conditions:
@@ -3220,22 +3322,48 @@
         # here - setting either would re-take control and defeat "AL owns brightness".
         # This is why the night-light scene is no longer the resting look: an effect
         # cannot survive AL writing brightness and colour on every tick.
-        - action: adaptive_lighting.set_manual_control
-          data:
-            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
-            lights:
-            - light.hallway_nanoleaf_light_panels_left
-            - light.hallway_nanoleaf_hallway_lights_right
-            manual_control: false
-        - action: adaptive_lighting.apply
-          data:
-            entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
-            lights:
-            - light.hallway_nanoleaf_light_panels_left
-            - light.hallway_nanoleaf_hallway_lights_right
-            adapt_brightness: true
-            adapt_color: true
-            turn_on_lights: false
+        - if:
+          - condition: state
+            entity_id: binary_sensor.after_bedtime
+            state: 'on'
+          then:
+          # After bedtime the night-light scene IS the resting look, not AL's curve.
+          # AL has to be parked first: it writes brightness and colour every tick and
+          # would wipe the effect within a minute otherwise. hallway_panels_bedtime_scene
+          # parks it at the bedtime transition; this re-parks it after a motion boost.
+          - action: adaptive_lighting.set_manual_control
+            data:
+              entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+              lights:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+              manual_control: true
+          - action: light.turn_on
+            target:
+              entity_id:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+            data:
+              brightness_pct: 10
+              effect: night light
+          else:
+          # Before bedtime AL owns the resting level, so hand control back to it.
+          - action: adaptive_lighting.set_manual_control
+            data:
+              entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+              lights:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+              manual_control: false
+          - action: adaptive_lighting.apply
+            data:
+              entity_id: switch.hallway_panels_adaptive_lighting_hallway_panels
+              lights:
+              - light.hallway_nanoleaf_light_panels_left
+              - light.hallway_nanoleaf_hallway_lights_right
+              adapt_brightness: true
+              adapt_color: true
+              turn_on_lights: false
 - id: blinds_night_close
   alias: Blinds — Night Close (consolidated)
   description: Close all 4 motorized blinds at sunset for privacy. AI controls blinds only in daylight.
