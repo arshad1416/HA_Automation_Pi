@@ -48,6 +48,9 @@
       ecobee_control_entity: >-
         {{ 'climate.ecobee_3' if states('climate.ecobee_3') not in ['unknown', 'unavailable']
            else 'climate.ecobee_2' }}
+      # ponytail: captured here because set_hvac_mode:off drops the setpoint; restored below.
+      paused_setpoint: >-
+        {{ state_attr(ecobee_control_entity, 'temperature') | float(0) }}
   - action: input_boolean.turn_on
     target:
       entity_id: input_boolean.hvac_paused_door_open
@@ -71,9 +74,24 @@
     data:
       hvac_mode: >
         {% set m = states('input_text.climate_ai_last_mode') | default('', true) | trim | lower %}
-        {{ m if m in ['off', 'heat', 'cool', 'heat_cool'] else 'heat_cool' }}
+        {{ m if m in ['off', 'heat', 'cool', 'heat_cool']
+           else 'cool' if is_state('input_boolean.climate_summer_mode', 'on')
+           else 'heat' if is_state('input_boolean.climate_winter_mode', 'on')
+           else 'heat_cool' }}
     target:
       entity_id: '{{ ecobee_control_entity }}'
+  # set_hvac_mode alone leaves the thermostat on whatever setpoint it reverted to,
+  # so put the pre-pause target back. Skipped if the capture was unavailable/out of range.
+  - if:
+    - condition: template
+      value_template: >-
+        {{ paused_setpoint | float(0) >= 7 and paused_setpoint | float(0) <= 35 }}
+    then:
+    - action: climate.set_temperature
+      data:
+        temperature: '{{ paused_setpoint | float(0) }}'
+      target:
+        entity_id: '{{ ecobee_control_entity }}'
   - action: input_boolean.turn_off
     target:
       entity_id: input_boolean.hvac_paused_door_open

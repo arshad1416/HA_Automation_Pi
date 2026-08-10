@@ -21,7 +21,7 @@ Home Assistant configuration for the Raspberry Pi 5. The **live copy is `/opt/ho
 
 1. Edit curated files.
 2. Run `verification/preflight.sh` — syntax-checks Python daemons and curated YAML before anything ships.
-3. Deploy to the Pi (`ssh pi-lan` on LAN, `ssh pi` via Tailscale). Any SSH or deploy action against the Pi requires explicit user approval.
+3. Deploy to the Pi (`ssh pi-lan` on LAN, `ssh pi` via Tailscale). Read-only SSH — querying state, reading logs, `docker inspect` — is pre-approved. **Deploying files or restarting/reloading anything (HA container, systemd units) requires explicit user approval.**
 4. Validate on the Pi **before** restarting:
    `docker exec homeassistant python -m homeassistant --script check_config --config /config`
 5. Only after check_config passes: reload/restart HA, then run `verification/smoke-tests.sh`.

@@ -42,7 +42,7 @@ RESTORE_AFTER = {"minutes": 5}
 BOOST_PP = 30
 # The device-side scene the panels rest on after bedtime, and its level.
 NIGHT_SCENE = "night light"
-NIGHT_PCT = 10
+NIGHT_PCT = 5
 # The stair light has two legs: a dim one sourced from a tunable helper, and a literal
 # bright one. Both are asserted — the bright leg previously had no value assertion at all,
 # so swapping its 100 for any other number went undetected.

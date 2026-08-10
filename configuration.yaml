@@ -688,7 +688,7 @@ adaptive_lighting:
     brightness_mode: linear
     brightness_mode_time_light: 3600
     brightness_mode_time_dark: 9000
-    min_brightness: 10
+    min_brightness: 5
 
 # Limit history to 7 days to keep DB manageable
 recorder:
