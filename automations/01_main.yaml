@@ -2987,9 +2987,9 @@
   alias: Hallway Panels — Night-Light Scene at Bedtime
   description: >-
     At the bedtime boundary (binary_sensor.after_bedtime turning on) the hallway Nanoleaf
-    panels switch to their device-side "night light" scene at 10 percent, and stay there
+    panels switch to their device-side "night light" scene at 5 percent, and stay there
     until morning. Adaptive Lighting owns brightness and colour for these panels the rest
-    of the time, ramping down to its 10 percent floor through the evening; this is the
+    of the time, ramping down to its 5 percent floor through the evening; this is the
     handover point where a fixed scene takes over from the curve.
 
     AL MUST BE PARKED FIRST. It writes brightness and colour on every adaptation tick, and
@@ -3037,7 +3037,7 @@
           - light.hallway_nanoleaf_light_panels_left
           - light.hallway_nanoleaf_hallway_lights_right
         data:
-          brightness_pct: 10
+          brightness_pct: 5
           effect: night light
     - conditions:
       - condition: trigger
@@ -3097,7 +3097,7 @@
     carried brightness_pct or color_temp would override AL, so do not add one.
 
     The resting state after sunset is whatever Adaptive Lighting is holding - AL owns
-    brightness (linear ramp to the 10 percent floor by bedtime) and colour, and motion
+    brightness (linear ramp to the 5 percent floor by bedtime) and colour, and motion
     only boosts on top of it. The Nanoleaf night-light scene is NO LONGER the resting
     look, because an effect cannot survive AL writing brightness and colour every tick.
     The older note below is kept for the device-side scene history: the panels
@@ -3210,7 +3210,7 @@
               - light.hallway_nanoleaf_light_panels_left
               - light.hallway_nanoleaf_hallway_lights_right
             data:
-              brightness_pct: 10
+              brightness_pct: 5
               effect: night light
           else:
           # Before bedtime AL owns the resting level, so hand control back to it.
@@ -3269,7 +3269,7 @@
             entity_id: input_boolean.hallway_panels_pir_owned
       # BOOST above whatever level AL is currently holding. AL owns the resting level;
       # this is a deliberate temporary lift for someone actually on the stairs. A bare
-      # turn-on would come up at AL's ambient level, which by bedtime is the 10 percent
+      # turn-on would come up at AL's ambient level, which by bedtime is the 5 percent
       # floor - not a boost at all.
       #
       # Passing brightness here DOES put the panels into AL's manual_control list, and
@@ -3344,7 +3344,7 @@
               - light.hallway_nanoleaf_light_panels_left
               - light.hallway_nanoleaf_hallway_lights_right
             data:
-              brightness_pct: 10
+              brightness_pct: 5
               effect: night light
           else:
           # Before bedtime AL owns the resting level, so hand control back to it.
