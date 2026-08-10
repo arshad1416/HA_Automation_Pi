@@ -475,6 +475,19 @@ def main():
         f"over AL's current level, got {bri!r}"
     )
     assert "100" in bri and "| min" in bri, "the boost must be capped at 100 via min()"
+    # The fallback (used only if the AL switch disappears) must match AL's configured
+    # floor, or a missing switch silently degrades to a different brightness than the
+    # curve would ever produce. These two live in different files and drifted once.
+    import re as _re
+    fb = _re.search(r"brightness_pct'\)\s*\|\s*float\((\d+)\)", bri)
+    assert fb, f"could not find the boost fallback in {bri!r}"
+    cfg = open(os.path.join(REPO, "configuration.yaml")).read()
+    floor = _re.search(r"^    min_brightness:\s*(\d+)", cfg, _re.M)
+    assert floor, "min_brightness not found in configuration.yaml"
+    assert fb.group(1) == floor.group(1), (
+        f"boost fallback float({fb.group(1)}) does not match AL min_brightness "
+        f"{floor.group(1)} in configuration.yaml — they must stay in step"
+    )
     # Colour is deliberately absent: AL owns it and re-applies on its own tick.
     assert "color_temp_kelvin" not in turn_on["data"], (
         "the boost must not set colour — AL owns it; passing one just fights the curve"

@@ -3286,7 +3286,9 @@
       # of being dragged back down mid-window. The revert hands control back explicitly
       # via set_manual_control.
       #
-      # +30 percentage points is the one tunable number. Calibrated 2026-08-09 with a
+      # +30 percentage points is the one tunable number. The float(5) fallback matches
+      # AL's min_brightness in configuration.yaml, so a missing AL switch degrades to
+      # the same floor rather than a stale higher one. Calibrated 2026-08-09 with a
       # phone lux meter on the stairs: the panels give about 0.8 lux per percent in the
       # low range, so +30pp is roughly +24 lux - a clear lift without being a shock at
       # 2am. Capped at 100.
@@ -3297,7 +3299,7 @@
           - light.hallway_nanoleaf_hallway_lights_right
         data:
           brightness_pct: >-
-            {{ [ ((state_attr('switch.hallway_panels_adaptive_lighting_hallway_panels', 'brightness_pct') | float(10)) + 30)
+            {{ [ ((state_attr('switch.hallway_panels_adaptive_lighting_hallway_panels', 'brightness_pct') | float(5)) + 30)
                  | round(0) | int, 100 ] | min }}
       # A new motion pulse restarts this automation and cancels the delay, so the panels
       # stay up until 5 minutes after the last pulse.
