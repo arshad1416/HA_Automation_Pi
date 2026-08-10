@@ -1,19 +1,20 @@
 #!/usr/bin/env python3
-"""Test the Airbnb delay templates via the HA template API."""
-import json
-import urllib.request
-import urllib.parse
+"""Test the Airbnb delay templates via the HA template API.
 
-# Get token
-token_req = urllib.request.Request(
-    'http://localhost:8123/auth/token',
-    data=urllib.parse.urlencode({
-        'grant_type': 'refresh_token',
-        'refresh_token': 'db5adb443f6675591d50e04bc8d21b514cc24bc5fc1db980fba9868ecf0ed942e347143a6dfbc19bc32138847854be2ba916e40690aeb0fc8501169949841999'
-    }).encode(),
-    method='POST')
-with urllib.request.urlopen(token_req) as r:
-    token = json.loads(r.read())['access_token']
+Usage:  HA_TOKEN=<long-lived-token> python3 scripts/test_airbnb_templates.py
+"""
+import json
+import os
+import sys
+import urllib.request
+
+# 2026-08-09: was a hardcoded refresh token + /auth/token exchange. A long-lived token works
+# directly, so the exchange is gone. Same HA_TOKEN env var as verification/smoke-tests.sh.
+token = os.environ.get('HA_TOKEN')
+if not token:
+    sys.exit('HA_TOKEN not set — create a long-lived access token in HA '
+             '(Profile → Security → Long-lived access tokens), then:\n'
+             '  HA_TOKEN=<token> python3 scripts/test_airbnb_templates.py')
 
 headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
