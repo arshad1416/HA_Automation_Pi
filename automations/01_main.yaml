@@ -1589,31 +1589,40 @@
     trigger: state
 - actions:
   - choose:
+    # Dark out -> restore whatever brightness the schedule says this hour should be.
+    #
+    # `sun.sun == below_horizon` rather than `condition: sun, after: sunset`: that
+    # sun condition compares against TODAY'S sunset, so it is False for every hour
+    # from midnight until sunset. It made the old 02:00-06:00 branch unsatisfiable
+    # (it could never run) and dropped every post-midnight restart into `default`,
+    # which turns the outdoor lights OFF for the rest of the night. HA's own
+    # condition helper recommends this state check for exactly this case.
     - conditions:
-      - after: sunset
-        condition: sun
-      - after: 02:00:00
-        before: 06:00:00
-        condition: time
+      - condition: state
+        entity_id: sun.sun
+        state: below_horizon
       sequence:
       - action: light.turn_on
         data:
-          brightness_pct: 10
-        target:
-          entity_id:
-          - light.lamppost_bulb_1
-          - light.lamppost_bulb_2
-          - light.lamppost_bulb_3
-          - light.front_porch_downlight
-          - light.garage_left_downlight
-          - light.garage_right_downlight
-    - conditions:
-      - after: sunset
-        condition: sun
-      sequence:
-      - action: light.turn_on
-        data:
-          brightness_pct: 90
+          # Same seasonal dim-hour ladder as stairs_pir_motion_light and
+          # hallway_panels_stairs_pir: nightly_dim_brightness from the Nightly
+          # Dimming hour (9 PM winter / 10 PM shoulder / 11 PM summer) through to
+          # sunrise, seasonal sunset brightness before it. The second half of the
+          # `if` is what covers midnight-to-sunrise -- `hour >= dim_hr` alone is
+          # false for every hour after midnight, which is how a 03:00 restart used
+          # to come back at full sunset brightness. Keep the else leg in step with
+          # sunset_outdoor_lights (70 summer / 100 winter / 85 shoulder).
+          brightness_pct: >-
+            {% set m = now().month %}
+            {% set dim_hr = 21 if m in [11,12,1,2]
+                        else 22 if m in [3,4,9,10]
+                        else 23 %}
+            {% if now().hour >= dim_hr
+                  or (is_state('sun.sun', 'below_horizon') and now().hour < 12) %}
+              {{ states('input_number.nightly_dim_brightness') | int(10) }}
+            {% else %}
+              {{ 70 if m in [6, 7, 8] else (100 if m in [12, 1, 2] else 85) }}
+            {% endif %}
         target:
           entity_id:
           - light.lamppost_bulb_1
