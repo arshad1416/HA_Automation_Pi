@@ -9,10 +9,12 @@ check() { local name="$1"; shift; if "$@" >/dev/null 2>&1; then echo "  ✓ $nam
 
 echo "=== 1. Pi prerequisites ==="
 check "Ollama service active"          ssh $PI "systemctl is-active ollama | grep -q active"
-check "Ollama 0.21.2"                  ssh $PI "ollama --version | grep -q 0.21.2"
+# 2026-08-09: exact pins, deliberately. Re-pinned from 0.21.2 / qwen2.5:7b to what the Pi
+# actually runs — these fail on every version bump or model swap, which is the point.
+check "Ollama 0.32.1"                  ssh $PI "ollama --version | grep -qF 0.32.1"
 check "Ollama listening *:11434"       ssh $PI "ss -tln | grep -q ':11434 '"
 check "gemma3-tools:4b-ft pulled"      ssh $PI "ollama list | grep -q 'orieg/gemma3-tools:4b-ft'"
-check "qwen2.5:7b contingency pulled"  ssh $PI "ollama list | grep -q 'qwen2.5:7b'"
+check "qwen3.5:2b-text contingency"    ssh $PI "ollama list | grep -qF 'qwen3.5:2b-text'"
 check "tools capability declared"      ssh $PI "ollama show orieg/gemma3-tools:4b-ft | grep -A4 Capabilities | grep -qw tools"
 
 echo
