@@ -677,7 +677,14 @@ adaptive_lighting:
       - light.hallway_nanoleaf_hallway_lights_right
     min_color_temp: 1800
     max_color_temp: 6500
-    adapt_brightness: true
+    # NOTE: adapt_brightness is NOT a YAML option — it exists only as a parameter to the
+    # adaptive_lighting.apply service and as the runtime switch
+    # switch.adaptive_lighting_hallway_panels_adaptive_lighting_adapt_brightness_hallway_panels
+    # (which defaults ON, so brightness IS adapted without declaring anything here).
+    # Putting it here fails schema validation, and because one bad key aborts setup for the
+    # WHOLE integration it took Whole House, Cabinet Strips and Cabinet Kick Plate down with
+    # it — every AL switch read 'unavailable' and nothing was adapted. Verified against
+    # VALIDATION_TUPLES in custom_components/adaptive_lighting/const.py:323 (v1.30.1).
     brightness_mode: linear
     brightness_mode_time_light: 3600
     brightness_mode_time_dark: 9000
