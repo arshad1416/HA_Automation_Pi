@@ -227,6 +227,68 @@
       - delay: "00:01:00"
 
 # -----------------------------------------------------------------------------
+# Enhancement F1: When all 7 leak sensors clear, release the kitchen cabinet
+# strips + kick plate Nanoleaf lights back to Adaptive Lighting (leak_detection_
+# escalation Tier 2's red 100% flash parks them in manual_control).
+# -----------------------------------------------------------------------------
+- id: leak_release_lights_to_adaptive_lighting
+  alias: "Leak Detection: Release Lights to Adaptive Lighting"
+  description: All 7 moisture sensors clear -> release kitchen cabinet strips + kick plate Nanoleaf lights from Adaptive Lighting manual control (parked there by leak_detection_escalation Tier 2 red 100% flash via take_over_control).
+  mode: single
+  triggers:
+    - trigger: state
+      entity_id: binary_sensor.basement_bathroom_leak_sensor_moisture
+      to: "off"
+      id: clear_basement_bathroom
+    - trigger: state
+      entity_id: binary_sensor.ensuite_leak_sensor_moisture
+      to: "off"
+      id: clear_ensuite
+    - trigger: state
+      entity_id: binary_sensor.kitchen_leak_sensor_moisture
+      to: "off"
+      id: clear_kitchen
+    - trigger: state
+      entity_id: binary_sensor.laundry_room_leak_sensor_moisture
+      to: "off"
+      id: clear_laundry
+    - trigger: state
+      entity_id: binary_sensor.sump_pump_leak_sensor_moisture
+      to: "off"
+      id: clear_sump_pump
+    - trigger: state
+      entity_id: binary_sensor.powder_room_leak_sensor_moisture
+      to: "off"
+      id: clear_powder_room
+    - trigger: state
+      entity_id: binary_sensor.guest_bathroom_leak_sensor_moisture
+      to: "off"
+      id: clear_guest_bathroom
+  conditions:
+    - condition: template
+      value_template: >-
+        {{ states('binary_sensor.basement_bathroom_leak_sensor_moisture') == 'off' and
+        states('binary_sensor.ensuite_leak_sensor_moisture') == 'off' and
+        states('binary_sensor.kitchen_leak_sensor_moisture') == 'off' and
+        states('binary_sensor.laundry_room_leak_sensor_moisture') == 'off' and
+        states('binary_sensor.sump_pump_leak_sensor_moisture') == 'off' and
+        states('binary_sensor.powder_room_leak_sensor_moisture') == 'off' and
+        states('binary_sensor.guest_bathroom_leak_sensor_moisture') == 'off' }}
+  actions:
+    - action: adaptive_lighting.set_manual_control
+      continue_on_error: true
+      target:
+        entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+      data:
+        manual_control: false
+    - action: adaptive_lighting.set_manual_control
+      continue_on_error: true
+      target:
+        entity_id: switch.cabinet_kick_plate_adaptive_lighting_cabinet_kick_plate
+      data:
+        manual_control: false
+
+# -----------------------------------------------------------------------------
 # Enhancement G: Departure security check (locks + office heater) when the
 # last person leaves. Complements house_away_mode (which runs 10 min later and
 # handles ecobee setback / climate AI pause but not locks).
