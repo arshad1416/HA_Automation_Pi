@@ -40,7 +40,12 @@ THERMO_HYGRO_BFF_SKUS = frozenset({"H5301", "H5310"})
 # returns empty strings for their sensorTemperature/sensorHumidity. The
 # coordinator routes these through the BFF read path instead of synthesizing a
 # duplicate device (issue #141, H5179 WiFi thermometer).
-THERMO_HYGRO_BFF_READ_SKUS = frozenset({"H5179"})
+#
+# H5112 (fridge/freezer thermometer) shows the same shape — the device appears in
+# HA but every reading stays empty (issue #150). It is safe to list here even if
+# a given account's BFF has nothing for it: a reading-less BFF entry leaves the
+# device on the Developer poll rather than silencing it (issue #151).
+THERMO_HYGRO_BFF_READ_SKUS = frozenset({"H5179", "H5112"})
 
 # Subset of THERMO_HYGRO_BFF_SKUS that have NO hygrometer (e.g. the H5310 pool
 # thermometer). Govee reports their ``hum`` as the u16 sentinel 0xFFFF, so a

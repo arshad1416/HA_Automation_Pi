@@ -368,6 +368,46 @@ class GoveeApiClient:
         """Recent control-command sends for the diagnostics download (oldest first)."""
         return list(self._recent_commands)
 
+    def record_local_command(
+        self,
+        device_id: str,
+        sku: str,
+        transport: str,
+        capability: dict[str, Any],
+        *,
+        delivered: bool,
+        detail: str | None = None,
+    ) -> None:
+        """Add a non-REST send to the same command history diagnostics reads.
+
+        Only cloud commands used to be recorded, so a diagnostics download from
+        someone whose light ignores a colour change showed nothing at all when
+        that write had gone out over LAN, MQTT or BLE. Since those transports
+        are exactly where "accepted but nothing happened" reports come from
+        (issues #127, #143, #149, #158), they belong in the same buffer.
+
+        Args:
+            device_id: The device the command was addressed to.
+            sku: The device model.
+            transport: ``"lan"`` / ``"mqtt"`` / ``"ble"``.
+            capability: The command payload, in the REST record's shape.
+            delivered: Whether the transport reported the write as delivered —
+                for LAN that means confirmed by readback.
+            detail: Optional note, e.g. why the write wasn't confirmed.
+        """
+        self._recent_commands.append(
+            {
+                "sent_at": datetime.now(timezone.utc).isoformat(),
+                "device": device_id,
+                "sku": sku,
+                "transport": transport,
+                "capability": capability,
+                "http_status": None,
+                "response": {"delivered": delivered, "detail": detail},
+                "error": None if delivered else (detail or "not confirmed"),
+            }
+        )
+
     def peek_last_command_record(self) -> dict[str, Any] | None:
         """Return the most recently appended command record (same object, not a copy).
 

@@ -1,9 +1,8 @@
 """Custom services for Govee integration.
 
 Provides services for:
-- Refresh all scenes
-- Control segment colors
-- Send raw commands (advanced)
+- Refreshing the scene catalog (``govee.refresh_scenes``)
+- Setting per-segment colors on RGBIC devices (``govee.set_segment_color``)
 """
 
 from __future__ import annotations

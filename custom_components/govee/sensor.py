@@ -20,9 +20,8 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
-    CONCENTRATION_PARTS_PER_MILLION,
-    EntityCategory,
     PERCENTAGE,
+    EntityCategory,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
@@ -41,6 +40,15 @@ from .coordinator import GoveeCoordinator
 from .entity import GoveeEntity
 from .models import GoveeDevice
 from .models.device import GoveeLeakSensor, leak_sensor_device_info
+
+try:  # HA >= 2026.7 (CONCENTRATION_PARTS_PER_MILLION is deprecated there)
+    from homeassistant.const import UnitOfRatio
+
+    PARTS_PER_MILLION: str = UnitOfRatio.PARTS_PER_MILLION
+except ImportError:  # hacs.json still declares 2024.11.0 as the minimum
+    from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION
+
+    PARTS_PER_MILLION = CONCENTRATION_PARTS_PER_MILLION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -100,8 +108,20 @@ async def async_setup_entry(
         # not (e.g. H5110 via H5151, #83). Only create the entity when a battery
         # reading is actually present, so SKUs without one don't get a
         # permanently-unknown sensor.
+        #
+        # Skipped only for devices the hub/BFF path ALSO creates a battery
+        # entity for below, since both use the same `<device_id>_battery`
+        # unique_id: HA keeps one and drops the other, leaving the dropped one's
+        # registry entry behind as an Unavailable row (an H5058 behind an H5043,
+        # issue #145). The test is membership of that path, not the SKU — a
+        # standalone H5054 shares the leak SKUs but is never in it, and gets its
+        # battery from the water-detector poll through this entity.
         state = coordinator.get_state(device.device_id)
-        if state is not None and state.battery is not None:
+        if (
+            state is not None
+            and state.battery is not None
+            and not coordinator.is_bff_leak_sensor(device.device_id)
+        ):
             entities.append(GoveeThermoBatterySensor(coordinator, device))
 
     # Register gateway hubs (leak + thermo) before async_add_entities so the
@@ -332,11 +352,14 @@ class GoveeTemperatureSensor(_BffThermometerAvailabilityMixin, SensorEntity):
             if config_entry is not None
             else DEFAULT_API_TEMPERATURE_UNIT
         )
-        if resolve_fahrenheit_conversion(
-            self._device.sku,
-            api_unit,
-            getattr(state, "heater_temperature_unit", None),
-        ):
+        # Heaters carry their unit in the temperature_setting STRUCT; for
+        # everything else the account's own fahOpen preference is the next best
+        # ground truth, because the Developer API mirrors it (issue #157).
+        unit_hint = getattr(state, "heater_temperature_unit", None)
+        if unit_hint is None:
+            unit_hint = self.coordinator.account_temperature_unit(self._device_id)
+
+        if resolve_fahrenheit_conversion(self._device.sku, api_unit, unit_hint):
             return (value - 32.0) * (5.0 / 9.0)
 
         return value
@@ -380,7 +403,7 @@ class GoveeCO2Sensor(GoveeEntity, SensorEntity):
     _attr_translation_key = "sensor_co2"
     _attr_device_class = SensorDeviceClass.CO2
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = CONCENTRATION_PARTS_PER_MILLION
+    _attr_native_unit_of_measurement = PARTS_PER_MILLION
 
     def __init__(
         self,

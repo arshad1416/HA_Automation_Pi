@@ -40,26 +40,27 @@ from .const import (
     CONF_ENABLE_GROUPS,
     CONF_ENABLE_MQTT_CONTROL,
     CONF_ENABLE_SCENES,
-    CONF_ENABLE_SEGMENTS,
     CONF_EXPOSE_TRANSPORT_ENTITIES,
     CONF_LAN_TARGETS,
     CONF_PASSWORD,
     CONF_POLL_INTERVAL,
-    CONF_SEGMENT_MODE,
+    CONF_WATER_DETECTOR_POLL_INTERVAL,
     CONFIG_VERSION,
     DEFAULT_API_TEMPERATURE_UNIT,
     DEFAULT_ENABLE_DIY_SCENES,
     DEFAULT_ENABLE_GROUPS,
     DEFAULT_ENABLE_MQTT_CONTROL,
     DEFAULT_ENABLE_SCENES,
-    DEFAULT_ENABLE_SEGMENTS,
     DEFAULT_EXPOSE_TRANSPORT_ENTITIES,
     DEFAULT_LAN_TARGETS,
     DEFAULT_POLL_INTERVAL,
     DEFAULT_SEGMENT_MODE,
+    DEFAULT_WATER_DETECTOR_POLL_INTERVAL,
     DOMAIN,
     KEY_IOT_CREDENTIALS,
     KEY_IOT_LOGIN_FAILED,
+    MAX_WATER_DETECTOR_POLL_INTERVAL,
+    MIN_WATER_DETECTOR_POLL_INTERVAL,
     SEGMENT_MODE_DISABLED,
     SEGMENT_MODE_GROUPED,
     SEGMENT_MODE_INDIVIDUAL,
@@ -416,8 +417,9 @@ class GoveeConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_ENABLE_GROUPS: DEFAULT_ENABLE_GROUPS,
                 CONF_ENABLE_SCENES: DEFAULT_ENABLE_SCENES,
                 CONF_ENABLE_DIY_SCENES: DEFAULT_ENABLE_DIY_SCENES,
-                CONF_ENABLE_SEGMENTS: DEFAULT_ENABLE_SEGMENTS,
-                CONF_SEGMENT_MODE: DEFAULT_SEGMENT_MODE,
+                CONF_WATER_DETECTOR_POLL_INTERVAL: (
+                    DEFAULT_WATER_DETECTOR_POLL_INTERVAL
+                ),
             },
         )
 
@@ -693,6 +695,19 @@ class GoveeOptionsFlow(OptionsFlow):
                         default=source.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL),
                     ): vol.All(vol.Coerce(int), vol.Range(min=30, max=300)),
                     vol.Optional(
+                        CONF_WATER_DETECTOR_POLL_INTERVAL,
+                        default=source.get(
+                            CONF_WATER_DETECTOR_POLL_INTERVAL,
+                            DEFAULT_WATER_DETECTOR_POLL_INTERVAL,
+                        ),
+                    ): vol.All(
+                        vol.Coerce(int),
+                        vol.Range(
+                            min=MIN_WATER_DETECTOR_POLL_INTERVAL,
+                            max=MAX_WATER_DETECTOR_POLL_INTERVAL,
+                        ),
+                    ),
+                    vol.Optional(
                         CONF_ENABLE_GROUPS,
                         default=source.get(CONF_ENABLE_GROUPS, DEFAULT_ENABLE_GROUPS),
                     ): bool,
@@ -817,7 +832,7 @@ class GoveeOptionsFlow(OptionsFlow):
         device_id = self._selected_devices[self._device_index]
         device = coordinator.devices.get(device_id)
         device_name = device.name if device else device_id
-        default_mode = current_device_modes.get(device_id, SEGMENT_MODE_INDIVIDUAL)
+        default_mode = current_device_modes.get(device_id, DEFAULT_SEGMENT_MODE)
 
         _LOGGER.debug(
             "Showing segment mode form for device %d/%d: %s (%s)",

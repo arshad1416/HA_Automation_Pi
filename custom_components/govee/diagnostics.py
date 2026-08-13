@@ -282,6 +282,8 @@ def _runtime_diag(coordinator: GoveeCoordinator) -> dict[str, Any]:
         "bff_device_values": coordinator.bff_device_values,
         "has_iot_credentials": coordinator.has_iot_credentials,
         "device_topic_count": coordinator.device_topic_count,
+        # How many devices are only commandable via their gateway's topic (#135).
+        "gateway_route_count": coordinator.gateway_route_count,
         "api": {
             "rate_limit_remaining": coordinator.api_rate_limit_remaining,
             "rate_limit_total": coordinator.api_rate_limit_total,

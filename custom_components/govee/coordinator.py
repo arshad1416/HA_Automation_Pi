@@ -49,7 +49,7 @@ except ImportError:  # pragma: no cover — HA installs without Bluetooth
 
 from .ble_advertisement import BleAdvertisementHandler
 from .ble_advertisement import sku_from_ble_name as _sku_from_ble_name  # noqa: F401
-from .api.mqtt_control import command_to_mqtt
+from .api.mqtt_control import color_legacy_followup, command_to_mqtt
 from .api.lan import (
     LanTargetError,
     async_get_lan_broadcast_addresses,
@@ -67,7 +67,9 @@ from .api.lan_control import command_to_lan, lan_brightness_to_device
 from .const import (
     CONF_ENABLE_MQTT_CONTROL,
     CONF_LAN_TARGETS,
+    CONF_WATER_DETECTOR_POLL_INTERVAL,
     DEFAULT_ENABLE_MQTT_CONTROL,
+    DEFAULT_WATER_DETECTOR_POLL_INTERVAL,
     DEVICE_REDISCOVERY_INTERVAL,
     DOMAIN,
     LAN_CORRELATION_TTL_SECONDS,
@@ -76,6 +78,8 @@ from .const import (
     LAN_WRITE_CONFIRM_TIMEOUT,
     LAN_WRITE_SUPPRESS_SECONDS,
     LAN_WRITE_SUPPRESS_THRESHOLD,
+    MAX_WATER_DETECTOR_POLL_INTERVAL,
+    MIN_WATER_DETECTOR_POLL_INTERVAL,
     OPTIMISTIC_GRACE_CAP_SECONDS,
 )
 from .models import (
@@ -147,14 +151,19 @@ SEGMENT_COMMAND_PACING_SECONDS = 0.12
 # a genuinely wrong value (issue #57).
 LAN_BRIGHTNESS_CONFIRM_TOLERANCE = 2
 
+# Tolerance (Kelvin) for confirming a LAN colour-temperature write by reading
+# the device back. Firmware snaps the requested value onto its own grid, so an
+# exact match would reject writes that did land (issues #149, #158).
+LAN_COLOR_TEMP_CONFIRM_TOLERANCE = 150
+
 # BFF polling interval for leak sensor state (seconds)
 BFF_POLL_INTERVAL = 300  # 5 minutes
 
-# Standalone water-detector (H5054) leak-poll interval (seconds). These RF-only
-# sensors deliver their trip only via the account warnMessage history (issue
-# #62); a leak surfaces with up to this much latency. Kept conservative because
-# the account API's rate limit is unverified (homebridge issue #543).
-WATER_DETECTOR_POLL_INTERVAL = 120  # 2 minutes
+
+def normalize_device_id(device_id: str) -> str:
+    """Canonical form for comparing device IDs across Govee's APIs."""
+    return device_id.replace(":", "").upper()
+
 
 # Delay before re-polling device state after a humidifier work_mode/humidity
 # write, to attach a timestamped "what Govee reports N seconds later" snapshot
@@ -273,6 +282,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # Device-specific MQTT topics from undocumented API
         # Maps device_id -> MQTT topic for publishing commands
         self._device_topics: dict[str, str] = {}
+        # device_id -> its gateway's {device, sku, topic}. Gateway-attached BLE
+        # devices (e.g. an H5901 behind an H5044) ignore anything published to
+        # their own topic; commands have to be relayed through the gateway
+        # (issue #135).
+        self._gateway_routes: dict[str, dict[str, str]] = {}
 
         # BLE passthrough manager for MQTT-based commands
         self._ble_manager = BlePassthroughManager(
@@ -322,6 +336,19 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # owned by the BFF poll, not /device/state. Tracked here so
         # _fetch_device_state skips the (futile) developer poll for them.
         self._bff_thermometer_ids: set[str] = set()
+        # Developer-API devices the BFF also lists but has no reading for yet
+        # (issue #151). They stay on the Developer poll — claiming them would
+        # leave the sensor permanently unknown — and are promoted into
+        # _bff_thermometer_ids by the 5-min refresh once a reading shows up.
+        self._bff_thermo_pending: set[str] = set()
+        # The account's own display-unit preference per device, read from the
+        # BFF `deviceSettings.fahOpen` flag. BFF `tem` itself is always °C
+        # (confirmed on an H5111 with fahOpen=false, issue #134), but the
+        # *Developer* API mirrors this preference — an H5310 on a °F account
+        # returns 88.34 meaning 88.34°F (issue #157). Authoritative when known;
+        # FAHRENHEIT_REPORTING_SKUS is only the fallback for accounts whose BFF
+        # list we can't read.
+        self._display_fahrenheit: dict[str, bool] = {}
         # Gateway hubs (e.g. H5044) bridging BFF thermo-hygrometers, keyed by
         # hub_device_id -> {"sku"}. Registered as HA devices so via_device on
         # the thermo entities resolves (#86).
@@ -694,6 +721,20 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """Number of devices with a resolved MQTT publish topic."""
         return len(self._device_topics)
 
+    @property
+    def gateway_route_count(self) -> int:
+        """Number of devices reachable through a gateway's command topic (#135)."""
+        return len(self._gateway_routes)
+
+    def gateway_route(self, device_id: str) -> dict[str, str] | None:
+        """The gateway command route for a device, if it has one.
+
+        Gateway-attached BLE devices (e.g. an H5901 Smart Water Timer behind an
+        H5044) ignore commands published to their own topic — the packet has to
+        be relayed through the gateway (issue #135).
+        """
+        return self._gateway_routes.get(device_id)
+
     def consume_button_press(self, device_id: str) -> bool:
         """Consume one pending button press for device_id. Returns True if consumed."""
         count = self._pending_button_presses.get(device_id, 0)
@@ -722,6 +763,19 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """
         return device_id in self._bff_thermometer_ids
 
+    def account_temperature_unit(self, device_id: str) -> str | None:
+        """Return the account's display unit for a device, if Govee told us.
+
+        ``"fahrenheit"`` / ``"celsius"`` when the BFF device list carried a
+        ``fahOpen`` flag for this device, otherwise None (caller falls back to
+        the SKU allowlist). Same contract as the heater ``unit`` metadata, so it
+        feeds ``resolve_fahrenheit_conversion`` unchanged (issue #157).
+        """
+        fah_open = self._display_fahrenheit.get(device_id)
+        if fah_open is None:
+            return None
+        return "fahrenheit" if fah_open else "celsius"
+
     def is_water_detector(self, device_id: str) -> bool:
         """Return True if this device is a standalone water detector (H5054).
 
@@ -730,6 +784,22 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         gate on ``online`` (issues #62, #145).
         """
         return any(d.device_id == device_id for d in self._water_detectors)
+
+    def is_bff_leak_sensor(self, device_id: str) -> bool:
+        """Return True if BFF/hub discovery owns this device's moisture entity.
+
+        Compared on the colon-stripped form because Govee is not consistent
+        about device-ID formatting between the Developer API and the BFF list
+        (see ``fetch_water_detector_states``).
+
+        Reflects the live roster only. Persisting the answer would make it
+        monotone-true, and a device that leaves the hub would then end up with
+        no moisture entity at all.
+        """
+        target = normalize_device_id(device_id)
+        return any(
+            normalize_device_id(sensor_id) == target for sensor_id in self._leak_sensors
+        )
 
     def is_power_off_pending(self, device_id: str) -> bool:
         """Return True if a power-off command is in flight for this device.
@@ -1555,9 +1625,13 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 self._device_topics = await auth_client.fetch_device_topics(
                     self._iot_credentials.token
                 )
+                # Gateway-attached BLE devices only act on commands published to
+                # their gateway's topic, not their own (#135).
+                self._gateway_routes = auth_client.gateway_routes()
                 _LOGGER.info(
-                    "Fetched MQTT topics for %d devices",
+                    "Fetched MQTT topics for %d devices (%d via a gateway)",
                     len(self._device_topics),
+                    len(self._gateway_routes),
                 )
         except GoveeApiError as err:
             _LOGGER.warning("Failed to fetch device topics: %s", err)
@@ -1648,13 +1722,69 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             self._apply_bff_thermo_battery(thermo_readings)
 
             # Start the 5-min BFF poll if we have leak sensors OR thermometers
-            # whose readings we refresh via the BFF tickle (#83).
-            if self._leak_sensors or self._thermo_bff_devices:
+            # whose readings we refresh via the BFF tickle (#83) — or a battery
+            # reading that simply hasn't arrived yet, which is the only thing
+            # that would ever create the battery entity (issue #132).
+            if (
+                self._leak_sensors
+                or self._thermo_bff_devices
+                or self._battery_candidate_devices()
+            ):
                 self._schedule_bff_poll()
 
         except Exception as err:
             _LOGGER.warning("Failed to discover leak sensors: %s", err)
             # Non-fatal: integration continues without leak sensors
+
+    def _record_local_command(
+        self,
+        device_id: str,
+        sku: str,
+        transport: str,
+        command: DeviceCommand,
+        *,
+        delivered: bool,
+        detail: str | None = None,
+    ) -> None:
+        """Mirror a LAN/MQTT/BLE send into the diagnostics command history.
+
+        Best-effort: diagnostics must never be able to break a control write.
+        """
+        try:
+            self._api_client.record_local_command(
+                device_id,
+                sku,
+                transport,
+                command.to_api_payload(),
+                delivered=delivered,
+                detail=detail,
+            )
+        except Exception:  # pragma: no cover - defensive
+            _LOGGER.debug("Could not record %s command for %s", transport, device_id)
+
+    def _battery_candidate_devices(self) -> set[str]:
+        """Devices that could still gain a battery reading from the BFF.
+
+        The BFF is the only source of battery for gateway-bridged thermometers
+        (#83). If the first discovery pass came back without a reading for one —
+        a transient hiccup, or a hub that hadn't reported yet — nothing else
+        would ever look again, and the battery entity would never be created
+        (issue #132, H5109 behind an H5042). Keeping these in scope lets the
+        5-min poll retry.
+        """
+        candidates: set[str] = set()
+        for device_id, device in self._devices.items():
+            if not device.is_thermometer:
+                continue
+            if (
+                device.device_type in MAINS_POWERED_DEVICE_TYPES
+                or device.sku.upper() in MAINS_POWERED_BATTERY_SKUS
+            ):
+                continue
+            state = self._states.get(device_id)
+            if state is None or state.battery is None:
+                candidates.add(device_id)
+        return candidates
 
     def _apply_bff_thermo_battery(
         self,
@@ -1738,6 +1868,16 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # state now comes from the OpenAPI waterFullEvent push
             # (_on_openapi_event).
 
+    def _note_display_unit(self, device_id: str, sensor: dict[str, Any]) -> None:
+        """Record the account's ``fahOpen`` display preference for a device.
+
+        Only stored when Govee actually reported the flag — a missing value must
+        stay missing so the SKU allowlist keeps its say (issue #157).
+        """
+        fah_open = sensor.get("fah_open")
+        if isinstance(fah_open, bool):
+            self._display_fahrenheit[device_id] = fah_open
+
     async def _discover_bff_thermometers(self) -> None:
         """Discover thermo-hygrometers (H5301) via the BFF device list (issue #86).
 
@@ -1768,13 +1908,34 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 if not device_id:
                     continue
 
+                self._note_display_unit(device_id, sensor)
+
                 # A device already discovered via the Developer API (e.g. the
                 # H5179 WiFi thermometer, #141) whose live reading only comes
                 # from the BFF lastDeviceData — the Developer poll returns empty
                 # strings. Route it through the BFF path (owns its state, skips
                 # the futile Developer poll via _bff_thermometer_ids) instead of
                 # synthesizing a duplicate device.
+                #
+                # Only hand the device over once the BFF has actually produced a
+                # reading, though. Some gateway-bridged units are listed with an
+                # empty lastDeviceData (issue #151), and claiming those would
+                # silence a Developer poll that does work, leaving the sensor
+                # permanently unknown. _refresh_bff_thermometers takes over later
+                # if a reading does show up.
                 if device_id in self._devices:
+                    if (
+                        sensor.get("temperature") is None
+                        and sensor.get("humidity") is None
+                    ):
+                        _LOGGER.debug(
+                            "BFF thermo %s (%s) has no reading — leaving it on the "
+                            "Developer API poll (issue #151)",
+                            sensor.get("name", device_id),
+                            sensor.get("sku", "?"),
+                        )
+                        self._bff_thermo_pending.add(device_id)
+                        continue
                     self._bff_thermometer_ids.add(device_id)
                     state = self._states.get(
                         device_id
@@ -1821,12 +1982,14 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 ):
                     self._sensor_reading_changed_at[device_id] = dt_util.utcnow()
 
-            if self._bff_thermometer_ids:
+            if self._bff_thermometer_ids or self._bff_thermo_pending:
                 _LOGGER.info(
                     "Discovered %d BFF thermo-hygrometers (issue #86)",
                     len(self._bff_thermometer_ids),
                 )
-                # Reuse the 5-min BFF poll loop to refresh readings.
+                # Reuse the 5-min BFF poll loop to refresh readings — also for
+                # the devices still on the Developer poll, so one of them can be
+                # promoted the moment the BFF starts reporting (#151).
                 self._schedule_bff_poll()
 
         except Exception as err:
@@ -1835,7 +1998,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
     async def _refresh_bff_thermometers(self) -> None:
         """Refresh temp/humidity readings for BFF thermo-hygrometers (issue #86)."""
-        if not self._bff_thermometer_ids or not self._iot_credentials:
+        if not self._iot_credentials:
+            return
+        if not self._bff_thermometer_ids and not self._bff_thermo_pending:
             return
 
         try:
@@ -1850,6 +2015,21 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         changed = False
         for sensor in sensors:
             device_id = sensor["device_id"]
+            self._note_display_unit(device_id, sensor)
+
+            # A device parked on the Developer poll because the BFF had nothing
+            # for it (#151) takes over here as soon as a reading appears.
+            if device_id in self._bff_thermo_pending:
+                if sensor.get("temperature") is None and sensor.get("humidity") is None:
+                    continue
+                _LOGGER.info(
+                    "BFF now reports %s — taking over its readings from the "
+                    "Developer API poll (issue #151)",
+                    sensor.get("name", device_id),
+                )
+                self._bff_thermo_pending.discard(device_id)
+                self._bff_thermometer_ids.add(device_id)
+
             existing = self._states.get(device_id)
             if existing is None:
                 continue
@@ -1977,7 +2157,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """
         if not self._iot_credentials:
             return
-        if not self._leak_sensors and not self._thermo_bff_devices:
+        if (
+            not self._leak_sensors
+            and not self._thermo_bff_devices
+            and not self._battery_candidate_devices()
+        ):
             return
 
         try:
@@ -2090,13 +2274,36 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             if not d.is_group and d.supports_water_leak_event
         ]
 
+    @property
+    def _water_detector_poll_interval(self) -> int:
+        """Configured leak-poll interval (seconds) for standalone detectors.
+
+        Read per tick so the value is picked up on the reload that follows an
+        options change. Out-of-range or non-numeric values (e.g. hand-edited
+        options) fall back to the default rather than arming a bad timer.
+        """
+        raw = self._config_entry.options.get(
+            CONF_WATER_DETECTOR_POLL_INTERVAL, DEFAULT_WATER_DETECTOR_POLL_INTERVAL
+        )
+        try:
+            interval = int(raw)
+        except (TypeError, ValueError):
+            return DEFAULT_WATER_DETECTOR_POLL_INTERVAL
+        if not (
+            MIN_WATER_DETECTOR_POLL_INTERVAL
+            <= interval
+            <= MAX_WATER_DETECTOR_POLL_INTERVAL
+        ):
+            return DEFAULT_WATER_DETECTOR_POLL_INTERVAL
+        return interval
+
     def _schedule_water_detector_poll(self) -> None:
         """Schedule the next standalone water-detector leak poll."""
         if self._wd_poll_unsub:
             self._wd_poll_unsub()
         self._wd_poll_unsub = async_call_later(
             self.hass,
-            WATER_DETECTOR_POLL_INTERVAL,
+            self._water_detector_poll_interval,
             self._water_detector_poll_callback,
         )
 
@@ -2893,10 +3100,12 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if self._lan_writes_suppressed(device_id):
             return False
 
-        # [5] Only power + brightness map to LAN; colour / colour-temp / scenes /
-        #     segments / music / DIY / work-modes / toggles (and the H5080/H5083
-        #     power quirk) return None so they keep using REST, where the write
-        #     is acknowledged and no readback confirmation is needed.
+        # [5] Power, brightness, colour and colour-temp map to LAN — exactly the
+        #     four fields a devStatus read reports back, which is what makes the
+        #     verify-by-read below possible. Scenes / segments / music / DIY /
+        #     work-modes / toggles (and the H5080/H5083 power quirk) return None
+        #     so they keep using REST, where the write is acknowledged and no
+        #     readback confirmation is needed.
         mapped = command_to_lan(command, device.sku, device.brightness_range)
         if mapped is None:
             return False
@@ -2927,6 +3136,14 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # to MQTT/REST, which re-applies the optimistic update and delivers
             # it. A transient power-on miss must never flap LAN off (#57).
             self._note_lan_write_miss(device_id)
+            self._record_local_command(
+                device_id,
+                device.sku,
+                "lan",
+                command,
+                delivered=False,
+                detail="no readback within the confirm window",
+            )
             return False
 
         if not self._lan_write_confirmed(device, command, reply):
@@ -2944,6 +3161,14 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # that flap, synced to control activity, was the reported bug (#57).
             self._record_transport_success(device_id, "lan")
             self._note_lan_write_miss(device_id)
+            self._record_local_command(
+                device_id,
+                device.sku,
+                "lan",
+                command,
+                delivered=False,
+                detail="device reported a different value than was sent",
+            )
             return False
 
         # Confirmed: stamp the LAN write (send + success — the verify-by-read
@@ -2953,6 +3178,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         self._record_transport_success(device_id, "lan")
         self._clear_lan_write_misses(device_id)
         self._apply_lan_read(device_id, reply)
+        self._record_local_command(device_id, device.sku, "lan", command, delivered=True)
         return True
 
     def _lan_write_confirmed(
@@ -2963,8 +3189,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     ) -> bool:
         """Return ``True`` when a LAN readback confirms the just-sent write.
 
-        Only power and brightness reach LAN (``command_to_lan`` returns ``None``
-        for everything else), so only those two are confirmable:
+        Power, brightness, colour and colour temperature reach LAN
+        (``command_to_lan`` returns ``None`` for everything else), and all four
+        are confirmable against the ``devStatus`` fields:
 
         * :class:`PowerCommand` — require an exact ``reply.on == command.power_on``.
           A plug whose ``devStatus`` lacks ``onOff`` reports ``reply.on is None``
@@ -2974,6 +3201,12 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
           device-native range and require it within
           ``LAN_BRIGHTNESS_CONFIRM_TOLERANCE`` of the requested value, absorbing
           0-100<->native rounding.
+        * :class:`ColorCommand` — require the reported RGB triplet to match
+          exactly. A device that ignored the write reports its previous colour,
+          which is precisely the case that must fall through to REST (#149).
+        * :class:`ColorTempCommand` — require the reported Kelvin within
+          ``LAN_COLOR_TEMP_CONFIRM_TOLERANCE``; firmware rounds the requested
+          value onto its own grid.
 
         Any other command type is treated as unconfirmable (returns ``False``).
         Such commands should never reach LAN, so this is a defensive backstop.
@@ -2995,6 +3228,15 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 reply.brightness_0_100, device.brightness_range
             )
             return abs(native - command.brightness) <= LAN_BRIGHTNESS_CONFIRM_TOLERANCE
+        if isinstance(command, ColorCommand):
+            return reply.color == command.color
+        if isinstance(command, ColorTempCommand):
+            if reply.color_temp_kelvin is None:
+                return False
+            return (
+                abs(reply.color_temp_kelvin - command.kelvin)
+                <= LAN_COLOR_TEMP_CONFIRM_TOLERANCE
+            )
         return False
 
     async def _try_mqtt_command(
@@ -3024,7 +3266,21 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         )
         if not success:
             self._record_transport_failure(device_id, "mqtt", "publish_failed")
-        return success
+            return False
+
+        # Older strips act only on the legacy `color` command and ignore
+        # `colorwc`. Nothing acknowledges an MQTT publish, so both are sent —
+        # they carry the same RGB, making the follow-up a no-op for devices that
+        # already applied the first one (issues #149, #158).
+        followup = color_legacy_followup(command)
+        if followup is not None:
+            legacy_cmd, legacy_data, legacy_version = followup
+            await self._mqtt_client.async_publish_command(
+                topic, legacy_cmd, legacy_data, cmd_version=legacy_version
+            )
+
+        self._record_local_command(device_id, sku, "mqtt", command, delivered=True)
+        return True
 
     async def _try_ble_command(self, device_id: str, command: DeviceCommand) -> bool:
         """Attempt to send a command via BLE. Returns True on success.

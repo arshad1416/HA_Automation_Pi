@@ -32,14 +32,13 @@ from .const import (
     CONF_ENABLE_DIY_SCENES,
     CONF_ENABLE_GROUPS,
     CONF_ENABLE_SCENES,
-    CONF_ENABLE_SEGMENTS,
     CONF_PASSWORD,
     CONF_POLL_INTERVAL,
     DEFAULT_ENABLE_DIY_SCENES,
     DEFAULT_ENABLE_GROUPS,
     DEFAULT_ENABLE_SCENES,
-    DEFAULT_ENABLE_SEGMENTS,
     DEFAULT_POLL_INTERVAL,
+    DEFAULT_SEGMENT_MODE,
     DOMAIN,
     KEY_IOT_CREDENTIALS,
     KEY_IOT_LOGIN_FAILED,
@@ -370,7 +369,7 @@ async def _async_cleanup_orphaned_entities(
     This handles cleanup when:
     - Devices are removed from the Govee account
     - Group devices are disabled via enable_groups option
-    - Segment entities are disabled via enable_segments option
+    - Segment entities are reconfigured or disabled per device
     - Scene entities are disabled via enable_scenes option
     - DIY scene entities are disabled via enable_diy_scenes option
     """
@@ -416,7 +415,7 @@ async def _async_cleanup_orphaned_entities(
         # Check feature toggles first
         if device_id:
             # Get per-device mode (default to individual)
-            segment_mode = device_modes.get(device_id, SEGMENT_MODE_INDIVIDUAL)
+            segment_mode = device_modes.get(device_id, DEFAULT_SEGMENT_MODE)
             suffix = unique_id[len(device_id) :]
 
             # Use explicit suffix matching to avoid false positives
@@ -515,17 +514,15 @@ async def _async_update_listener(
     enable_diy_scenes = entry.options.get(
         CONF_ENABLE_DIY_SCENES, DEFAULT_ENABLE_DIY_SCENES
     )
-    enable_segments = entry.options.get(CONF_ENABLE_SEGMENTS, DEFAULT_ENABLE_SEGMENTS)
     poll_interval = entry.options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
 
     _LOGGER.debug(
         "Options: poll_interval=%s, enable_groups=%s, enable_scenes=%s, "
-        "enable_diy_scenes=%s, enable_segments=%s",
+        "enable_diy_scenes=%s",
         poll_interval,
         enable_groups,
         enable_scenes,
         enable_diy_scenes,
-        enable_segments,
     )
 
     await hass.config_entries.async_reload(entry.entry_id)

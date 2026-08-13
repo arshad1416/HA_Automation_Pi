@@ -14,10 +14,15 @@ CONF_POLL_INTERVAL: Final = "poll_interval"
 CONF_ENABLE_GROUPS: Final = "enable_groups"
 CONF_ENABLE_SCENES: Final = "enable_scenes"
 CONF_ENABLE_DIY_SCENES: Final = "enable_diy_scenes"
-CONF_ENABLE_SEGMENTS: Final = "enable_segments"
-CONF_SEGMENT_MODE: Final = "segment_mode"
 CONF_EXPOSE_TRANSPORT_ENTITIES: Final = "expose_transport_entities"
 CONF_ENABLE_MQTT_CONTROL: Final = "enable_mqtt_control"
+
+# Standalone water-detector (H5054) leak-poll interval (seconds). These RF-only
+# sensors deliver their trip only via the account warnMessage history (issue
+# #62); a leak surfaces with up to this much latency. Configurable because the
+# account API's rate limit is unverified (homebridge issue #543) — users with
+# many detectors may want to back off, while a single detector can poll faster.
+CONF_WATER_DETECTOR_POLL_INTERVAL: Final = "water_detector_poll_interval"
 
 # Extra LAN discovery targets for devices the local multicast scan can't reach —
 # e.g. Govee devices on a different VLAN/subnet than Home Assistant (issue #57).
@@ -57,9 +62,14 @@ CONF_API_TEMPERATURE_UNIT: Final = "api_temperature_unit"
 #     °C-tagged unit — a ~6.1°F freezer reading surfaced as 43.3°F in HA. Same
 #     BLE-bridged read path as H5110 (issue #83 findings: API returns °F with
 #     no unit field).
+#   H5310 (pool thermometer, gateway-bridged): a pool at 88°F surfaced as ~191°F
+#     — the Developer API had returned 88.34 already in °F (issue #157). This
+#     entry is only the fallback: when the account's own `fahOpen` preference is
+#     known (BFF device list), that hint wins and a °C account is left alone.
 FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
     {
         "H5179",
+        "H5310",
         "H5109",
         "H5110",
         "H5111",
@@ -104,12 +114,18 @@ DEFAULT_POLL_INTERVAL: Final = 60  # seconds
 DEFAULT_ENABLE_GROUPS: Final = False
 DEFAULT_ENABLE_SCENES: Final = True
 DEFAULT_ENABLE_DIY_SCENES: Final = True
-DEFAULT_ENABLE_SEGMENTS: Final = True
 DEFAULT_SEGMENT_MODE: Final = "individual"  # "disabled", "grouped", or "individual"
 DEFAULT_EXPOSE_TRANSPORT_ENTITIES: Final = False
 DEFAULT_ENABLE_MQTT_CONTROL: Final = False
 DEFAULT_API_TEMPERATURE_UNIT: Final = "auto"
 DEFAULT_LAN_TARGETS: Final = ""
+DEFAULT_WATER_DETECTOR_POLL_INTERVAL: Final = 120  # seconds (2 minutes)
+
+# Bounds for the configurable water-detector poll interval (seconds). The lower
+# bound keeps the unverified account-API rate limit at arm's length; the upper
+# bound (1 hour) is the slowest that still makes a leak alert useful.
+MIN_WATER_DETECTOR_POLL_INTERVAL: Final = 60
+MAX_WATER_DETECTOR_POLL_INTERVAL: Final = 3600
 
 # Optimistic state handling
 # Grace window (seconds) during which API polls do NOT overwrite optimistic

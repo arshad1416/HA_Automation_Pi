@@ -59,6 +59,27 @@ def build_color_legacy_data(r: int, g: int, b: int) -> dict[str, Any]:
     return {"r": r, "g": g, "b": b}
 
 
+def color_legacy_followup(
+    command: DeviceCommand,
+) -> tuple[str, dict[str, Any], int] | None:
+    """Return the legacy ``color`` publish that should follow a ``colorwc``.
+
+    Some older devices only act on the legacy ``color`` command and ignore
+    ``colorwc`` entirely (docs/govee-protocol-reference.md §"Some older
+    devices"). An MQTT publish is unacknowledged, so there is no reply to
+    branch on — but both forms carry the same RGB triplet, so sending the
+    legacy one as a follow-up is harmless for devices that already honoured
+    ``colorwc`` and is the whole fix for devices that didn't (issues #149,
+    #158).
+
+    Returns ``None`` for any command that isn't a colour write.
+    """
+    if not isinstance(command, ColorCommand):
+        return None
+    color = command.color
+    return ("color", build_color_legacy_data(color.r, color.g, color.b), 1)
+
+
 def command_to_mqtt(
     command: DeviceCommand, sku: str
 ) -> tuple[str, dict[str, Any], int] | None:

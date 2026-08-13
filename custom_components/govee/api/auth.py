@@ -436,6 +436,10 @@ class GoveeAuthClient:
         # so a diagnostics download reveals whether leak sensors are absent vs.
         # merely under a different path/SKU than discovery expects.
         self._last_bff_raw_response: Any = None
+        # device_id -> its gateway's {device, sku, topic}, from the last BFF
+        # device-list fetch. Gateway-attached BLE devices can only be commanded
+        # through their gateway's topic (issue #135).
+        self._gateway_routes: dict[str, dict[str, str]] = {}
 
         if session is None and hass is not None:
             from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -580,6 +584,59 @@ class GoveeAuthClient:
                 topics[device_id] = topic
         return topics
 
+    @staticmethod
+    def _extract_gateway_routes(devices: list[Any]) -> dict[str, dict[str, str]]:
+        """Map device_id -> its gateway's ``{device, sku, topic}``.
+
+        Gateway-attached BLE devices (e.g. an H5901 Smart Water Timer behind an
+        H5044) carry their own ``GD/`` topic, but publishing there does not
+        actuate them: the gateway ignores it. The command has to go to the
+        *gateway's* command topic, addressed to the gateway, carrying a BLE
+        passthrough packet — so the gateway's own topic has to be known
+        (issue #135, confirmed on live hardware by @thephw).
+
+        Returns an entry only for devices whose ``gatewayInfo`` carries a topic.
+        """
+        routes: dict[str, dict[str, str]] = {}
+        for device in devices:
+            device_id = device.get("device")
+            if not device_id:
+                continue
+
+            device_ext = device.get("deviceExt", {})
+            if isinstance(device_ext, str):
+                try:
+                    device_ext = json.loads(device_ext)
+                except (json.JSONDecodeError, TypeError):
+                    device_ext = {}
+            if not isinstance(device_ext, dict):
+                continue
+
+            device_settings = device_ext.get("deviceSettings", {})
+            if isinstance(device_settings, str):
+                try:
+                    device_settings = json.loads(device_settings)
+                except (json.JSONDecodeError, TypeError):
+                    device_settings = {}
+            if not isinstance(device_settings, dict):
+                continue
+
+            gateway_info = device_settings.get("gatewayInfo", {})
+            if not isinstance(gateway_info, dict):
+                continue
+
+            gateway_topic = gateway_info.get("topic")
+            gateway_device = gateway_info.get("device")
+            if not gateway_topic or not gateway_device:
+                continue
+
+            routes[device_id] = {
+                "device": gateway_device,
+                "sku": gateway_info.get("sku", ""),
+                "topic": gateway_topic,
+            }
+        return routes
+
     async def _fetch_bff_device_topics(self, token: str) -> dict[str, str]:
         """Fetch device MQTT topics from the BFF device list.
 
@@ -607,6 +664,7 @@ class GoveeAuthClient:
                     f"BFF device list failed: {message}", code=response.status
                 )
             devices = data.get("data", {}).get("devices", [])
+            self._gateway_routes = self._extract_gateway_routes(devices)
             return self._extract_topics_from_devices(devices)
 
     async def fetch_device_topics(
@@ -1248,9 +1306,7 @@ class GoveeAuthClient:
                 return any(
                     isinstance(m, dict)
                     and not m.get("read", True)
-                    and str(m.get("message", ""))
-                    .lower()
-                    .replace(" ", "")
+                    and re.sub(r"\s+", "", str(m.get("message", "")).lower())
                     .startswith("leakagealert")
                     for m in messages
                 )
@@ -1259,6 +1315,14 @@ class GoveeAuthClient:
             raise GoveeApiError(
                 f"Connection error fetching leak warning: {err}"
             ) from err
+
+    def gateway_routes(self) -> dict[str, dict[str, str]]:
+        """Gateway command routes discovered by the last topic fetch (#135).
+
+        Keyed by device_id, each value carrying the gateway's ``device``, ``sku``
+        and ``topic``. Empty until :meth:`fetch_device_topics` has run.
+        """
+        return dict(self._gateway_routes)
 
     def bff_device_census(self) -> list[dict[str, Any]]:
         """PII-free summary of the last BFF device list, for diagnostics (#87).

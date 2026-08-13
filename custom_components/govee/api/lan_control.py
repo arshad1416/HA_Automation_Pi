@@ -6,14 +6,20 @@ LAN protocol's own conventions. Pure functions — no I/O — so they are
 trivially unit-testable and free of socket/asyncio dependencies (Clean
 Architecture: domain-adjacent).
 
-Scope is deliberately narrow — only **power** and **brightness** are routed
-over LAN. The LAN ``devStatus`` reply exposes exactly four readable fields
-(``onOff``, ``brightness`` 0-100, ``color``, ``colorTemInKelvin``), but a
-colour write cannot be reliably verified-by-read inside the confirm window
-(a device that ignores a ``colorwc`` write still returns a reply), so colour
-and colour temperature keep using the REST control path. The H5080/H5083
-power-quirk SKUs that :mod:`mqtt_control` special-cases (17/16 power encoding)
-also fall back to REST so their quirk is honoured.
+Scope covers **power**, **brightness**, **colour** and **colour temperature** —
+exactly the four readable fields of the LAN ``devStatus`` reply (``onOff``,
+``brightness`` 0-100, ``color``, ``colorTemInKelvin``), so every one of them
+can be verified by reading the device back. Colour was originally left out
+because a device that ignores a ``colorwc`` write still answers the read; that
+is handled by comparing the *reported value*, so an ignored write simply fails
+to confirm and falls through to REST. Routing colour over LAN matters for the
+strips whose colour the Govee cloud accepts with HTTP 200 and then never
+delivers (issues #149, #158).
+
+Everything else (scenes, segments, music, DIY, work modes, toggles) has no LAN
+representation and keeps using REST. The H5080/H5083 power-quirk SKUs that
+:mod:`mqtt_control` special-cases (17/16 power encoding) also fall back to REST
+so their quirk is honoured.
 
 Two protocol differences from MQTT are encoded here:
 
@@ -31,6 +37,8 @@ from typing import Any
 
 from ..models.commands import (
     BrightnessCommand,
+    ColorCommand,
+    ColorTempCommand,
     DeviceCommand,
     PowerCommand,
 )
@@ -103,12 +111,17 @@ def command_to_lan(
 ) -> tuple[str, dict[str, Any]] | None:
     """Map a command to ``(cmd, data)`` for native LAN control.
 
-    Only power and brightness are routed over LAN. Returns ``None`` for every
-    other command (colour, colour temperature, scenes, segments, music, DIY,
+    Power, brightness, colour and colour temperature are routed over LAN.
+    Returns ``None`` for every other command (scenes, segments, music, DIY,
     work modes, toggles), signalling the caller to fall back to the REST
     control path. ``None`` is also returned for the H5080/H5083 power-quirk
     SKUs so their 17/16 power encoding (honoured only by the REST/MQTT path)
     is preserved.
+
+    Colour and colour temperature share the one ``colorwc`` command. The
+    protocol expects the unused half zeroed: an RGB write sends
+    ``colorTemInKelvin: 0``, and a colour-temperature write sends a zeroed
+    ``color`` triplet — sending both makes the firmware pick one arbitrarily.
 
     Args:
         command: The domain command to translate.
@@ -127,4 +140,21 @@ def command_to_lan(
     if isinstance(command, BrightnessCommand):
         lan_value = device_brightness_to_lan(command.brightness, brightness_range)
         return ("brightness", {"value": lan_value})
+    if isinstance(command, ColorCommand):
+        color = command.color
+        return (
+            "colorwc",
+            {
+                "color": {"r": color.r, "g": color.g, "b": color.b},
+                "colorTemInKelvin": 0,
+            },
+        )
+    if isinstance(command, ColorTempCommand):
+        return (
+            "colorwc",
+            {
+                "color": {"r": 0, "g": 0, "b": 0},
+                "colorTemInKelvin": command.kelvin,
+            },
+        )
     return None

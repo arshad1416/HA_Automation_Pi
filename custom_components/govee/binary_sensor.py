@@ -76,7 +76,18 @@ async def async_setup_entry(
         # device list with a bodyAppearedEvent capability — issue #62. Presence
         # sensors (H5127) share that instance but are excluded here (they get an
         # occupancy sensor below instead of a moisture one) — issue #124.
-        if device.supports_water_leak_event:
+        # Hub-attached sensors (H5058 via H5043) expose the same capability but
+        # already get a moisture entity from the BFF/multiSync path, which
+        # arrived first on the trips measured so far — skip them rather than
+        # duplicate. Fails open by design: an empty roster (API-key-only setup,
+        # or a BFF outage at boot) creates the entity rather than leaving the
+        # sensor blind — see test_outage_leaves_a_working_moisture_entity.
+        # The cost is accepted knowingly: a row seeded during an outage is
+        # suppressed on the next healthy boot, and the repairs notice reports
+        # it. A stale row the user is told about beats a blind leak sensor.
+        if device.supports_water_leak_event and not coordinator.is_bff_leak_sensor(
+            device.device_id
+        ):
             entities.append(GoveeWaterLeakBinarySensor(coordinator, device))
         # mmWave presence/occupancy sensors (H5127) — issue #124. They expose
         # the generic bodyAppearedEvent capability with Presence/Absence

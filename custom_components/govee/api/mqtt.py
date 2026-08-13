@@ -724,3 +724,37 @@ class GoveeAwsIotClient:
             "sku": sku,
         }
         return await self.async_publish_command(device_topic, "ptReal", data)
+
+    async def async_publish_gateway_ptreal(
+        self,
+        gateway_route: dict[str, str],
+        ble_packet_base64: str | list[str],
+    ) -> bool:
+        """Publish a BLE passthrough packet through a device's gateway (#135).
+
+        Gateway-attached BLE devices (e.g. an H5901 Smart Water Timer behind an
+        H5044) do not act on anything published to their own ``GD/`` topic — the
+        gateway ignores it, verified on live hardware. The packet has to go to
+        the *gateway's* topic, addressed to the gateway itself, which then
+        relays it over BLE.
+
+        Args:
+            gateway_route: The gateway's ``{device, sku, topic}``, as returned by
+                ``GoveeAuthClient.gateway_routes()``.
+            ble_packet_base64: Base64-encoded BLE packet, or a list of them.
+
+        Returns:
+            True if the publish succeeded, False otherwise.
+        """
+        topic = gateway_route.get("topic")
+        gateway_device = gateway_route.get("device")
+        if not topic or not gateway_device:
+            _LOGGER.debug("No gateway topic/device to publish ptReal to")
+            return False
+
+        return await self.async_publish_ptreal(
+            gateway_device,
+            gateway_route.get("sku", ""),
+            ble_packet_base64,
+            device_topic=topic,
+        )
