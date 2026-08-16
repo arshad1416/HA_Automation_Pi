@@ -899,7 +899,7 @@
       prompt: '{{ prompt }}'
     response_variable: ai_response
   - variables:
-      ai_raw: '{{ ai_response.content.candidates[0].content.parts[0].text if ai_response.content.candidates is defined and ai_response.content.candidates and ai_response.content.candidates[0].content is defined and ai_response.content.candidates[0].content.parts is defined and ai_response.content.candidates[0].content.parts else '''' }}'
+      ai_raw: '{{ ai_response.content.choices[0].message.content if ai_response.content.choices is defined and ai_response.content.choices and ai_response.content.choices[0].message is defined and ai_response.content.choices[0].message.content is defined else '''' }}'
       ai_json: '{{ ai_raw if ai_raw is mapping else (ai_raw | regex_replace(''(?i)```json\s*'', '''') | regex_replace(''(?i)```\s*'', '''') | trim | from_json({}) if ai_raw is string and ai_raw | trim != '''' and (ai_raw | trim | regex_search(''[\{\[]'')) else {}) }}'
       hvac_mode: '{{ ai_json.hvac_mode | default(none, true) }}'
       ai_setpoint: '{{ ai_json.setpoint | default(none) }}'

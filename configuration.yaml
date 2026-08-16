@@ -706,12 +706,20 @@ logger:
 # Rest API commands for Climate AI - Direct API calls bypassing conversation agent
 rest_command:
   climate_ai_gemini:
-    url: "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
+    url: "http://127.0.0.1:20128/v1/chat/completions"
     method: POST
     headers:
-      x-goog-api-key: !secret gemini_api_key
+      Authorization: "Bearer omniroute-local"
       Content-Type: "application/json"
-    payload: '{"contents":[{"parts":[{"text":{{ prompt | tojson }}}]}],"generationConfig":{"maxOutputTokens":4000}}'
+    payload: >-
+      {
+        "model": "ag/gemini-3.7-flash-medium",
+        "messages": [{"role": "user", "content": {{ prompt | tojson }}}],
+        "max_tokens": 4000,
+        "reasoning_effort": "medium",
+        "temperature": 0,
+        "stream": false
+      }
     content_type: "application/json"
     timeout: 60
 
