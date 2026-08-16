@@ -715,7 +715,7 @@ rest_command:
       {
         "model": "ag/gemini-3.7-flash-medium",
         "messages": [{"role": "user", "content": {{ prompt | tojson }}}],
-        "max_tokens": 4000,
+        "max_tokens": 8192,
         "reasoning_effort": "medium",
         "temperature": 0,
         "stream": false
