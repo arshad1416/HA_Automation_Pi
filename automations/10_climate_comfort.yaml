@@ -1,28 +1,37 @@
-# Evening comfort setpoint — humidity-aware (ASHRAE 55 / ISO 7730 PMV basis).
+# Comfort setpoints — PMV -0.5 "slightly cool" basis (ASHRAE 55 / EN 16798-1 Cat II).
 #
-# Why this exists: the Ecobee's native "Evening" comfort profile carries a 25.5C cool
-# setpoint. When the schedule flips to Evening (~19:00) it cancels the Climate AI's
-# hold, the compressor idles, and upstairs bedrooms (consistently 0.5-1C warmer than
-# the main-floor thermostat) drift warm through the evening.
+# Why this exists: the Ecobee's native comfort profiles carry warm cool-setpoints
+# (Evening 25.5C, Sleep 23.2C). When the schedule flips profiles it cancels the
+# Climate AI's hold, the compressor idles, and upstairs bedrooms (consistently
+# 0.5-1C warmer than the main-floor thermostat) drift warm.
 #
-# Setpoint ladder from thermal-comfort studies: PMV-neutral for summer conditions
-# (0.5 clo, sedentary, ~50% RH) is ~24.5C; each 10 RH points above ~45-50% raises
-# perceived warmth by roughly +0.3-0.5C, so the dry-bulb target drops accordingly.
-# Values stay within the climate_ai_advisor's sanctioned 23.0-25.5C band on 0.5C
-# steps — the hourly AI run remains authoritative after this fires.
+# Evening ladder targets PMV -0.5 — the cool edge of EN 16798-1 Category II —
+# instead of PMV-neutral (~24.5C at 50% RH, 0.5 clo, sedentary): roughly 1.0C
+# under neutral, stepping another 0.5C cooler per 10 RH points above 45%.
+# Sleep is flat 22.5C: sleep research translates to a ~20-22C thermostat under
+# bedding, and 22.5C is the coolest value inside the climate_ai_advisor's
+# sanctioned band — on ULO overnight rates the cheapest cooling window of the day.
+# The hourly AI run remains authoritative after these fire.
 - id: evening_comfort_setpoint
   alias: evening_comfort_setpoint
-  description: 'On the Ecobee Evening comfort-profile transition (~19:00), re-assert a
-    humidity-compensated cooling setpoint instead of the profile''s 25.5C: 24.5C at
-    <=45% RH, 24.0C at 46-55% RH, 23.5C above 55% RH (ASHRAE 55 PMV summer neutral
-    ~24.5C at 50% RH, minus ~0.5C per 10 RH points above 45%). Cooling season only;
-    the hourly climate_ai_advisor stays authoritative afterwards.'
+  description: 'On the Ecobee Evening (~19:00) and Sleep (~23:00) comfort-profile
+    transitions, re-assert humidity-compensated PMV -0.5 cooling setpoints instead
+    of the profiles'' warm defaults. Evening: 23.5C at <=45% RH, 23.0C at 46-55% RH,
+    22.5C above 55% RH (slightly-cool bias: PMV-neutral minus ~1.0C, with ~0.5C per
+    10 RH points above 45%). Sleep: flat 22.5C. Cooling season only; the hourly
+    climate_ai_advisor stays authoritative afterwards.'
   mode: single
   triggers:
   - trigger: state
     entity_id: climate.ecobee_3
     attribute: preset_mode
     to: "Evening"
+    id: evening
+  - trigger: state
+    entity_id: climate.ecobee_3
+    attribute: preset_mode
+    to: "sleep"
+    id: sleep
   conditions:
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
@@ -34,9 +43,9 @@
   - variables:
       rh: '{{ states(''sensor.climate_ai_ecobee_humidity'') | float(states(''sensor.ecobee_current_humidity'') | float(50)) | round(0) }}'
       setpoint: >-
-        {% if rh > 55 %}23.5
-        {% elif rh > 45 %}24.0
-        {% else %}24.5
+        {% if trigger.id == 'sleep' or rh > 55 %}22.5
+        {% elif rh > 45 %}23.0
+        {% else %}23.5
         {% endif %}
   - action: climate.set_temperature
     data:
@@ -47,4 +56,4 @@
   - action: logbook.log
     data:
       name: evening_comfort_setpoint
-      message: 'Evening comfort setpoint {{ setpoint }}C applied at {{ rh }}% RH (replaces Evening profile 25.5C).'
+      message: '{{ trigger.id | capitalize }} profile: comfort setpoint {{ setpoint }}C applied at {{ rh }}% RH (replaces profile default).'
