@@ -8,9 +8,10 @@
 # Evening ladder targets PMV -0.5 — the cool edge of EN 16798-1 Category II —
 # instead of PMV-neutral (~24.5C at 50% RH, 0.5 clo, sedentary): roughly 1.0C
 # under neutral, stepping another 0.5C cooler per 10 RH points above 45%.
-# Sleep is flat 22.5C: sleep research translates to a ~20-22C thermostat under
-# bedding, and 22.5C is the coolest value inside the climate_ai_advisor's
-# sanctioned band — on ULO overnight rates the cheapest cooling window of the day.
+# Sleep is flat 22.0C (user preference 2026-08-16): half a degree under the
+# ladder floor, inside the ULO overnight window (3.9c/kWh) — the cheapest
+# cooling of the day. The advisor band extends to 22.0C so hourly runs hold
+# (never raise) the sleep target until morning.
 # The hourly AI run remains authoritative after these fire.
 - id: evening_comfort_setpoint
   alias: evening_comfort_setpoint
@@ -18,7 +19,7 @@
     transitions, re-assert humidity-compensated PMV -0.5 cooling setpoints instead
     of the profiles'' warm defaults. Evening: 23.5C at <=45% RH, 23.0C at 46-55% RH,
     22.5C above 55% RH (slightly-cool bias: PMV-neutral minus ~1.0C, with ~0.5C per
-    10 RH points above 45%). Sleep: flat 22.5C. Cooling season only; the hourly
+    10 RH points above 45%). Sleep: flat 22.0C. Cooling season only; the hourly
     climate_ai_advisor stays authoritative afterwards.'
   mode: single
   triggers:
@@ -43,7 +44,8 @@
   - variables:
       rh: '{{ states(''sensor.climate_ai_ecobee_humidity'') | float(states(''sensor.ecobee_current_humidity'') | float(50)) | round(0) }}'
       setpoint: >-
-        {% if trigger.id == 'sleep' or rh > 55 %}22.5
+        {% if trigger.id == 'sleep' %}22.0
+        {% elif rh > 55 %}22.5
         {% elif rh > 45 %}23.0
         {% else %}23.5
         {% endif %}
