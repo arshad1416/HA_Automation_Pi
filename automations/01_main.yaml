@@ -2184,6 +2184,7 @@
       - switch.basement_stair_light
       - switch.garage_light_switch_switch_1
       - switch.back_hallway_light_main_switch
+      - switch.dining_room_table_lights
     data: {}
   - action: input_boolean.turn_on
     target:
