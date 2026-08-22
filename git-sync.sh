@@ -60,14 +60,47 @@ fi
 
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
 
+# --- 0b. Repair ownership before git touches the tree -------------------------
+# HACS runs inside the privileged HA container as root, so an integration update
+# writes root:root files into custom_components/. git then cannot unlink them as
+# $(id -un) and every `pull --rebase` dies with "unable to unlink old ... /
+# Permission denied". On 2026-08-22 a govee update did exactly this and wedged
+# the sync completely. Re-chowning what we own is cheap and idempotent; the
+# container is root and unaffected by the change.
+FOREIGN=$(find . -path ./.git -prune -o ! -user "$(id -un)" -print 2>/dev/null | head -1)
+if [ -n "$FOREIGN" ]; then
+    if sudo -n chown -R "$(id -un):$(id -gn)" "$REPO_DIR" >>"$LOG_FILE" 2>&1; then
+        echo "[$TIMESTAMP] Repaired foreign file ownership (e.g. $FOREIGN)" >> "$LOG_FILE"
+    else
+        echo "[$TIMESTAMP] WARN: foreign-owned files present and chown failed: $FOREIGN" >> "$LOG_FILE"
+    fi
+fi
+
 # --- 1. Incorporate remote commits (other writers may have pushed to main) ---
 # --autostash temporarily stashes the ever-changing local telemetry, rebases any
 # local commits onto origin/$BRANCH, then restores the stash.
 if ! git pull --rebase --autostash origin "$BRANCH" >>"$LOG_FILE" 2>&1; then
     git rebase --abort >>"$LOG_FILE" 2>&1 || true
     echo "[$TIMESTAMP] ERROR: pull --rebase failed; will retry next run" >> "$LOG_FILE"
+    # A failing pull exits BEFORE anything is committed, so the backlog stays 0
+    # and the step-0 guard above can never notice. That is how the 2026-08-22
+    # permission wedge stayed invisible: sync was dead, backlog said "fine".
+    # Track consecutive pull failures separately and alert on persistence.
+    PF_FLAG="/var/tmp/ha-git-sync.pullfail"
+    PF=$(( $(cat "$PF_FLAG" 2>/dev/null || echo 0) + 1 ))
+    echo "$PF" > "$PF_FLAG"
+    if [ "$PF" -eq "$ALERT_AFTER" ]; then
+        notify "HA git-sync: pull --rebase is FAILING.
+
+$PF consecutive runs could not incorporate origin/$BRANCH, so nothing is being
+backed up and Mac-side pushes are not reaching the Pi. Backlog stays 0, so the
+stranded-commits alert cannot see this.
+
+Diagnose: ssh pi-lan \"tail -40 $LOG_FILE\""
+    fi
     exit 1
 fi
+rm -f /var/tmp/ha-git-sync.pullfail
 
 # Belt-and-suspenders: if the autostash pop left unmerged paths, reset clean and
 # bail rather than committing/pushing a broken tree. (Local telemetry regenerates.)
