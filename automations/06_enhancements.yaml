@@ -70,6 +70,11 @@
       message: "{{ trigger.to_state.attributes.friendly_name }} open >2 min while HVAC active. Paused to save energy. Will resume when closed."
   - wait_template: "{{ is_state('binary_sensor.front_door_door', 'off') and is_state('binary_sensor.garages_entry_door_door', 'off') }}"
     timeout: "01:00:00"
+    # Explicit since 2026-08-18 (council FX12): the default is true, i.e. on
+    # timeout the restore sequence below RUNS (mode/setpoint/pause-flag). Making
+    # it explicit so a future reader doesn't "fix" a stuck-off bug that isn't
+    # there — verified against HA wait_template semantics.
+    continue_on_timeout: true
   - action: climate.set_hvac_mode
     data:
       hvac_mode: >
@@ -435,69 +440,12 @@
 # VinFast VF9 = ~123 kWh -> ~1.23 kWh per 1% SoC (VF9 native charging data).
 # -----------------------------------------------------------------------------
 
-# R1a: Reconcile kWh delivered vs expected SoC gain at session end (Ioniq 6 / Grizzl-E).
-- id: ev_soc_energy_reconciliation
-  alias: "EV: SoC vs Grizzl-E energy reconciliation"
-  description: >-
-    After a charging session ends, compare the kWh the Grizzl-E delivered with
-    the expected SoC gain for a 77.4 kWh pack and report the reconciliation.
-  mode: single
-  triggers:
-  - entity_id: binary_sensor.grizzl_e_charging
-    from: 'on'
-    to: 'off'
-    for: "00:02:00"
-    trigger: state
-  conditions: []
-  actions:
-  - variables:
-      kwh_delivered: "{{ state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | default(0, true) | float(0) }}"
-      soc_now: "{{ states('sensor.ioniq_6_ev_battery_level') | default(0, true) | float(0) }}"
-      expected_soc_gain: "{{ (kwh_delivered | float(0) / 0.774) | round(1) }}"
-  - if:
-    - condition: template
-      value_template: "{{ kwh_delivered | float(0) > 2 }}"
-    then:
-    - action: notify.mobile_app_cph2655
-      data:
-        title: "EV Charging Reconciliation"
-        message: >
-          Session: {{ kwh_delivered | round(2) }} kWh delivered.
-          Expected ~{{ expected_soc_gain }}% SoC gain (77.4 kWh pack).
-          Current SoC: {{ soc_now }}%.
-
-# R1b: Reconcile VF9 charging energy vs expected SoC gain at session end.
-- id: ev_vf9_soc_energy_reconciliation
-  alias: "EV: VF9 SoC vs charging energy reconciliation"
-  description: >-
-    When VF9 charging stops, compare the home charging energy (kWh) with the
-    expected SoC gain for a ~123 kWh pack and report the reconciliation.
-  mode: single
-  triggers:
-  - entity_id: sensor.vf9_rllv2cja5rh000847_trang_thai_sac
-    from: 'Charging'
-    for: "00:02:00"
-    trigger: state
-  conditions: []
-  actions:
-  - variables:
-      # Per-SESSION grid energy. NOT ..._dien_nang_sac_tai_nha ("Home Charging Energy"),
-      # which is a lifetime accumulator (vinfast api_mqtt.py:614 adds and never resets)
-      # and previously made expected_soc_gain read in the thousands of percent.
-      kwh_delivered: "{{ states('sensor.vf9_rllv2cja5rh000847_dien_nang_lay_tu_luoi_lan_cuoi') | default(0, true) | float(0) }}"
-      soc_now: "{{ states('sensor.vf9_rllv2cja5rh000847_phan_tram_pin') | default(0, true) | float(0) }}"
-      expected_soc_gain: "{{ (kwh_delivered | float(0) / 1.23) | round(1) }}"
-  - if:
-    - condition: template
-      value_template: "{{ kwh_delivered | float(0) > 2 }}"
-    then:
-    - action: notify.mobile_app_cph2655
-      data:
-        title: "VF9 Charging Reconciliation"
-        message: >
-          Session: {{ kwh_delivered | round(2) }} kWh delivered.
-          Expected ~{{ expected_soc_gain }}% SoC gain (123 kWh pack).
-          Current SoC: {{ soc_now }}%.
+# Removed 2026-08-18 (council enhancement E9, notification dedup): R1a
+# ev_soc_energy_reconciliation and R1b ev_vf9_soc_energy_reconciliation fired a
+# third and fourth push per charging session alongside 05_grizzl_e_charging
+# (stopped branch, also removed) and 08_ev_per_vehicle_cost_tracking. The 08
+# attribution notification is now the single end-of-session push (it already
+# carries kWh, delta-SoC, cost and attribution). Both recoverable from git.
 
 # R2: Phantom drain / stale telemetry heuristic while parked at home (both vehicles).
 - id: ev_phantom_drain_detection
@@ -1088,7 +1036,9 @@
     data:
       title: "VF9 Locked"
       message: "{{ who_left }} left home. VF9 doors lock command sent."
-  - action: notify.sm_s926w
+  # Fixed 2026-08-18 (council FX8): was notify.sm_s926w — not a real service,
+  # so this push silently errored on every departure.
+  - action: notify.mobile_app_sm_s926w
     data:
       title: "VF9 Locked"
       message: "{{ who_left }} left home. VF9 doors lock command sent."

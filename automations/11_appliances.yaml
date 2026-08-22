@@ -1,0 +1,144 @@
+# =============================================================================
+# 11_appliances.yaml
+# Appliance & robot-vacuum automations — council enhancement slate 2026-08-17
+# (E5 reassert, E6 stuck notify, E10 washer/dishwasher done alerts), ratified
+# by cx/gpt-5.6-luna. Ships in the Stage 2 automation.reload batch.
+#
+# Device facts (verified live 2026-08-18):
+#   - Dreame Z60 Ultra: vacuum.z60_ultra_roller_complete (dreame_vacuum),
+#     incl. native time entities for off-peak charging and DnD.
+#   - LG front-load washer on lg_thinq: sensor.front_load_washer_current_status
+#     reports initial/detecting/running/rinsing/spinning/end/power_off and
+#     briefly flaps 'unavailable' while polling — so triggers key on the
+#     transition to 'end' only, never on 'off'/'unavailable'.
+#   - LG dishwasher on lg_thinq: binary_sensor.dishwasher_clean_indicator_light
+#     is the done signal (its current_status vocabulary differs from the
+#     washer's and includes 'reserved'/'pause').
+# =============================================================================
+
+# --- E5: Dreame ULO charging + DnD re-assert --------------------------------
+# The one-time native writes (off-peak charging 23:00-07:00 = Alectra ULO
+# ultra-low window, DnD matching house quiet hours) are applied as service
+# calls at deploy time; this automation just re-asserts them daily at noon so
+# a cloud hiccup or app-side change cannot silently drift them. Only writes
+# when a value differs (luna guard: no retry loops).
+- id: dreame_ulo_dnd_reassert
+  alias: "Dreame: ULO charging + DnD re-assert (daily noon)"
+  description: >-
+    Re-assert the vacuum's off-peak charging window (23:00-07:00, Alectra ULO
+    ultra-low) and do-not-disturb times once a day at 12:00, writing only when
+    the current value differs from target.
+  mode: single
+  triggers:
+  - trigger: time
+    at: "12:00:00"
+  actions:
+  - if:
+    - condition: template
+      value_template: "{{ states('time.z60_ultra_roller_complete_off_peak_charging_start') not in ['unknown', 'unavailable', '23:00:00'] }}"
+    then:
+    - action: time.set_value
+      target:
+        entity_id: time.z60_ultra_roller_complete_off_peak_charging_start
+      data:
+        time: "23:00:00"
+  - if:
+    - condition: template
+      value_template: "{{ states('time.z60_ultra_roller_complete_off_peak_charging_end') not in ['unknown', 'unavailable', '07:00:00'] }}"
+    then:
+    - action: time.set_value
+      target:
+        entity_id: time.z60_ultra_roller_complete_off_peak_charging_end
+      data:
+        time: "07:00:00"
+  - if:
+    - condition: template
+      value_template: "{{ states('time.z60_ultra_roller_complete_dnd_start') not in ['unknown', 'unavailable', '21:00:00'] }}"
+    then:
+    - action: time.set_value
+      target:
+        entity_id: time.z60_ultra_roller_complete_dnd_start
+      data:
+        time: "21:00:00"
+  - if:
+    - condition: template
+      value_template: "{{ states('time.z60_ultra_roller_complete_dnd_end') not in ['unknown', 'unavailable', '07:00:00'] }}"
+    then:
+    - action: time.set_value
+      target:
+        entity_id: time.z60_ultra_roller_complete_dnd_end
+      data:
+        time: "07:00:00"
+
+# --- E6: Vacuum stuck/error notification ------------------------------------
+# 5-minute persistence filters transient cloud errors; the recovery case needs
+# no automation — a new incident simply has to persist 5 minutes again.
+- id: dreame_stuck_notify
+  alias: "Dreame: stuck/error notification with room"
+  description: >-
+    When the vacuum has been in 'error' for 5 minutes, push both phones once
+    with the error text and the room it was last in.
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: vacuum.z60_ultra_roller_complete
+    to: "error"
+    for: "00:05:00"
+  actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "🤖 Vacuum stuck"
+      message: >-
+        Dreame error{{ ': ' ~ states('sensor.z60_ultra_roller_complete_error')
+        if states('sensor.z60_ultra_roller_complete_error')
+        not in ['unknown', 'unavailable', 'none', 'No Error', ''] else '' }}
+        — last room: {{ states('sensor.z60_ultra_roller_complete_current_room') }}.
+  - action: notify.mobile_app_sm_s926w
+    data:
+      title: "🤖 Vacuum stuck"
+      message: >-
+        Dreame error{{ ': ' ~ states('sensor.z60_ultra_roller_complete_error')
+        if states('sensor.z60_ultra_roller_complete_error')
+        not in ['unknown', 'unavailable', 'none', 'No Error', ''] else '' }}
+        — last room: {{ states('sensor.z60_ultra_roller_complete_current_room') }}.
+
+# --- E10a: Washer done -------------------------------------------------------
+# 'end' persists until the machine is powered off / next cycle, so the state
+# transition fires exactly once per cycle. The sensor's brief 'unavailable'
+# flaps mid-cycle can never match 'to: end'.
+- id: washer_done_notify
+  alias: "Washer: cycle finished"
+  description: Push both phones when the LG washer finishes its cycle.
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: sensor.front_load_washer_current_status
+    to: "end"
+  actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "🧺 Washer done"
+      message: Wash cycle finished. Time to move it to the dryer.
+  - action: notify.mobile_app_sm_s926w
+    data:
+      title: "🧺 Washer done"
+      message: Wash cycle finished. Time to move it to the dryer.
+
+# --- E10b: Dishwasher done ---------------------------------------------------
+- id: dishwasher_done_notify
+  alias: "Dishwasher: cycle finished"
+  description: Push both phones when the dishwasher's clean indicator comes on.
+  mode: single
+  triggers:
+  - trigger: state
+    entity_id: binary_sensor.dishwasher_clean_indicator_light
+    to: "on"
+  actions:
+  - action: notify.mobile_app_cph2655
+    data:
+      title: "🍽️ Dishwasher done"
+      message: Dishwasher cycle finished — clean dishes ready to unload.
+  - action: notify.mobile_app_sm_s926w
+    data:
+      title: "🍽️ Dishwasher done"
+      message: Dishwasher cycle finished — clean dishes ready to unload.

@@ -502,9 +502,13 @@
   id: '1777445741550'
   mode: single
   triggers:
+  # Lock entities never report 'open' (locked/unlocked/locking/unlocking), so the
+  # original lock.garages_entry_door -> open trigger could never fire. The door
+  # contact sensor is the reliable signal, as the sibling off-automation's cover
+  # checks already assumed.
   - trigger: state
-    entity_id: lock.garages_entry_door
-    to: open
+    entity_id: binary_sensor.garages_entry_door_door
+    to: 'on'
 - actions:
   - action: switch.turn_off
     target:
@@ -734,13 +738,18 @@
       target:
         entity_id: climate.ecobee
   alias: climate_winter_maintain
+  initial_state: false
   conditions:
   - condition: state
     entity_id: input_boolean.climate_winter_mode
     state: 'on'
+  # Fenced 2026-08-18 (council fix plan FX10): this legacy schedule writer fought
+  # the hourly climate_ai_advisor. It may only act when the AI is explicitly OFF;
+  # also disabled at startup (turn it off at deploy time — initial_state binds
+  # at startup only).
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
-    state: 'on'
+    state: 'off'
   description: Winter set ecobee to 22C at 7am and 11pm daily. Gas flat-priced.
   id: climate_winter_maintain
   mode: single
@@ -1281,9 +1290,12 @@
   - condition: state
     entity_id: input_boolean.climate_summer_mode
     state: 'on'
+  # Fenced 2026-08-18 (council fix plan FX10): legacy schedule writer — may only
+  # act when Climate AI is explicitly OFF, otherwise it cancels the AI's holds
+  # (the 21:00 22.0C write fought the AI's 2-hour stability hold).
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
-    state: 'on'
+    state: 'off'
   description: During summer mode, precool the house to 22.0C at 5am, then coast at 24.5C from 7am.
   id: climate_ulo_precool
   triggers:
@@ -1317,9 +1329,11 @@
   - condition: state
     entity_id: input_boolean.climate_summer_mode
     state: 'on'
+  # Fenced 2026-08-18 (council fix plan FX10): same reasoning as
+  # climate_ulo_precool — no direct thermostat writes while the AI owns climate.
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
-    state: 'on'
+    state: 'off'
   - condition: time
     weekday:
     - mon
@@ -1717,6 +1731,10 @@
 - id: security_watchdog_nighttime
   alias: Security Watchdog - Night-time Blind & Light Guard
   trigger:
+  # Covers report open/closed, never 'on' — the original single 'to: on' list
+  # made every cover in it unreachable. Covers and lights are separate triggers
+  # now, and only a cover trigger closes covers (close_cover on a light entity
+  # errored every time a light fired the watchdog).
   - platform: state
     entity_id:
     - cover.dining_room_blinds
@@ -1728,9 +1746,14 @@
     - cover.living_room_blinds_curtain_2
     - cover.mina_s_blinds_curtain
     - cover.mina_s_blinds_curtain_2
+    to: 'open'
+    id: cover_opened
+  - platform: state
+    entity_id:
     - light.front_porch_downlight
     - light.back_yard_lamp_socket
     to: 'on'
+    id: outdoor_light_on
   condition:
   - condition: time
     after: 00:00:00
@@ -1741,6 +1764,8 @@
     data:
       logger: security_watchdog
       message: 'NIGHT GUARD: {{ trigger.entity_id }} to {{ trigger.to_state.state }} at {{ now() }}'
+  - condition: trigger
+    id: cover_opened
   - service: cover.close_cover
     target:
       entity_id: '{{ trigger.entity_id }}'
@@ -1799,7 +1824,13 @@
   - trigger: time_pattern
     minutes: /10
     id: periodic
-  conditions: []
+  conditions:
+  # Fenced 2026-08-18 (council fix plan FX11): this is the bounded OFF path for
+  # the threshold boosters — it may only run while Climate AI is OFF. Re-enable
+  # at deploy time together with the booster ON gates (automation.turn_on).
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'off'
 # DISABLED: not in use
   actions:
   - choose:
@@ -2236,12 +2267,15 @@
       message: Bathroom light turned off after 1.5h timeout.
 - id: blinds_restart_recovery
   alias: Blinds Restart Recovery — unstick all Zigbee blinds after HA restart
-  description: After HA restart, cycle all blinds to unstick them from wedged positions.
+  description: After HA restart, cycle all blinds to unstick them from wedged positions. Daylight only — a night restart used to leave the blinds open until sunrise with nothing to close them (the night watchdog's cover triggers were dead until 2026-08-18).
   mode: single
   triggers:
   - event: start
     trigger: homeassistant
-  conditions: []
+  conditions:
+  - condition: sun
+    after: sunrise
+    before: sunset
   actions:
   - delay:
       seconds: 60
@@ -2528,27 +2562,12 @@
       entity_id:
       - switch.patio_door_light_switch_1
       - switch.foyer_light_switch_1
-- id: '1777271290234'
-  alias: Turn off Side Entrance light when Airbnb is empty
-  description: Turn off side entrance light when Airbnb is not reserved.
-  mode: single
-  triggers:
-  - attribute: description
-    entity_id:
-    - calendar.airbnb_ics
-    - switch.airbnb_reserved
-    from:
-    - Reserved
-    to:
-    - Not available
-    trigger: state
-  conditions: []
-  actions:
-  - action: switch.turn_off
-    target:
-      entity_id:
-      - switch.side_rain_barrel_switch
-      - switch.side_rain_barrel_switch
+# Removed 2026-08-18 (council fix plan FX7): '1777271290234' "Turn off Side
+# Entrance light when Airbnb is empty" — its trigger watched a `description`
+# attribute transition between 'Reserved'/'Not available' that neither a
+# calendar nor a switch ever reports, so it had never fired. The reserved-flag
+# lifecycle is owned by airbnb_reserved_sync / airbnb_checkout. Recoverable
+# from git history.
 - id: '1731550977605'
   initial_state: false
   alias: Turn off Izaan's vent fan when furnace is off
@@ -2561,6 +2580,11 @@
     to: idle
     trigger: state
   conditions:
+  # Fenced 2026-08-18 (council fix plan FX11): AI-off gate, same as the boosters
+  # and smart_vent_fan_control — re-enable at deploy time.
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'off'
   - condition: state
     entity_id: fan.izaan_s_room_20a970
     state: 'on'
@@ -2639,6 +2663,12 @@
     entity_id: sensor.izaans_room_temperature
     trigger: numeric_state
   conditions:
+  # Fenced 2026-08-18 (council fix plan FX11): threshold boosters may only act
+  # while Climate AI is OFF — when the AI is enabled it owns vent fan speeds
+  # (including the 9PM-7AM 30% cap this path ignored).
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'off'
   - condition: state
     entity_id: input_boolean.climate_winter_mode
     state: 'on'
@@ -2661,6 +2691,11 @@
     entity_id: sensor.izaans_room_temperature
     trigger: numeric_state
   conditions:
+  # Fenced 2026-08-18 (council fix plan FX11): see '1749089443236' note above —
+  # AI-off gate on all four threshold boosters.
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'off'
   - condition: state
     entity_id: input_boolean.climate_summer_mode
     state: 'on'
@@ -2683,6 +2718,10 @@
     entity_id: sensor.minas_room_temperature
     trigger: numeric_state
   conditions:
+  # Fenced 2026-08-18 (council fix plan FX11): AI-off gate — see 1749089443236.
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'off'
   - condition: state
     entity_id: input_boolean.climate_winter_mode
     state: 'on'
@@ -2705,6 +2744,10 @@
     entity_id: sensor.minas_room_temperature
     trigger: numeric_state
   conditions:
+  # Fenced 2026-08-18 (council fix plan FX11): AI-off gate — see 1749089443236.
+  - condition: state
+    entity_id: input_boolean.climate_ai_enabled
+    state: 'off'
   - condition: state
     entity_id: input_boolean.climate_summer_mode
     state: 'on'
@@ -3145,6 +3188,15 @@
   triggers:
   - trigger: state
     entity_id: binary_sensor.pir_motion_sensor_2_motion
+    to: 'on'
+    id: motion
+  # Added 2026-08-18 (council enhancement E3): the foyer PIR (same battery Tuya
+  # pulse-only family as the stair sensor) also feeds the after-bedtime night
+  # path — someone crossing the entry hall at night lights the panels the same
+  # way stair motion does. No new writer: this automation already owns the
+  # panels' on/off in this window, and AL still owns brightness/colour.
+  - trigger: state
+    entity_id: binary_sensor.pir_motion_sensor_3_motion
     to: 'on'
     id: motion
   - trigger: state

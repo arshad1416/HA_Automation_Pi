@@ -1,6 +1,10 @@
 - id: grizzl_e_charging_notify
   alias: Grizzl-E Charging Notifications
-  description: Push a mobile notification when EV charging starts and stops (with energy/cost).
+  description: >-
+    Push a mobile notification when EV charging starts. The end-of-session push
+    was removed 2026-08-18 (council enhancement E9, notification dedup): the
+    attribution automation in 08_ev_per_vehicle_cost_tracking.yaml is the single
+    session-end notification (kWh, delta-SoC, cost, attribution).
   mode: queued
   max: 5
   triggers:
@@ -8,33 +12,11 @@
       entity_id: binary_sensor.grizzl_e_charging
       to: "on"
       id: started
-    - trigger: state
-      entity_id: binary_sensor.grizzl_e_charging
-      to: "off"
-      id: stopped
   actions:
-    - choose:
-        - conditions:
-            - condition: trigger
-              id: started
-          sequence:
-            - action: notify.grizzl_ev_phones
-              data:
-                title: "🔌 EV Charging Started"
-                message: >-
-                  Drawing {{ states('sensor.grizzl_e_power') }} W on
-                  {{ state_attr('sensor.grizzl_e_total_cost', 'period_label') }}
-                  ({{ state_attr('sensor.grizzl_e_total_cost', 'rate_cents_kwh') }}¢/kWh).
-        - conditions:
-            - condition: trigger
-              id: stopped
-          sequence:
-            - action: notify.grizzl_ev_phones
-              data:
-                title: "✅ EV Charging Complete"
-                message: >-
-                  Session added
-                  {{ state_attr('sensor.grizzl_e_total_cost', 'session_energy_kwh') | round(2) }} kWh
-                  for ${{ (state_attr('sensor.grizzl_e_total_cost', 'session_cost_cents') / 100) | round(2) }}.
-                  Today: {{ states('sensor.grizzl_e_energy_daily') | round(2) }} kWh /
-                  ${{ states('sensor.grizzl_e_cost_daily') | round(2) }}.
+    - action: notify.grizzl_ev_phones
+      data:
+        title: "🔌 EV Charging Started"
+        message: >-
+          Drawing {{ states('sensor.grizzl_e_power') }} W on
+          {{ state_attr('sensor.grizzl_e_total_cost', 'period_label') }}
+          ({{ state_attr('sensor.grizzl_e_total_cost', 'rate_cents_kwh') }}¢/kWh).

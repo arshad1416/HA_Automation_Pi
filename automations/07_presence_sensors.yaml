@@ -260,23 +260,38 @@
       levels: [60, 35, 15]
   # 3 min trigger + 2 min delay = off at the 5 min mark.
   - delay: "00:02:00"
-  - condition: state
-    entity_id: binary_sensor.kitchen_presence
-    state: "off"
-  - action: script.kitchen_lights_step_dim
-    data:
-      lights: "{{ kitchen_on }}"
-      levels: [10, 5]
-  - action: light.turn_off
-    target:
-      entity_id: "{{ kitchen_on }}"
-    continue_on_error: true
-  # Fade finished — hand the strips back to adaptive lighting.
-  - action: adaptive_lighting.set_manual_control
-    data:
-      entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
-      manual_control: false
-    continue_on_error: true
+  # Fixed 2026-08-18 (council fix FX12 / audit F11): this used to be a bare
+  # `condition: kitchen_presence off` followed by the fade tail, so presence
+  # returning mid-delay aborted BEFORE the adaptive-lighting manual-control
+  # release — leaving the strips parked at 15% in AL manual control. Now the
+  # interrupt path also hands the strips back (kitchen_ambient_restore_on_
+  # presence brings the levels up; it only runs after sunset, and during the
+  # day nothing else was releasing manual control).
+  - if:
+    - condition: state
+      entity_id: binary_sensor.kitchen_presence
+      state: "off"
+    then:
+    - action: script.kitchen_lights_step_dim
+      data:
+        lights: "{{ kitchen_on }}"
+        levels: [10, 5]
+    - action: light.turn_off
+      target:
+        entity_id: "{{ kitchen_on }}"
+      continue_on_error: true
+    # Fade finished — hand the strips back to adaptive lighting.
+    - action: adaptive_lighting.set_manual_control
+      data:
+        entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+        manual_control: false
+      continue_on_error: true
+    else:
+    - action: adaptive_lighting.set_manual_control
+      data:
+        entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
+        manual_control: false
+      continue_on_error: true
 
 - id: kitchen_ambient_restore_on_presence
   alias: "Kitchen — Ambient lights up on presence"

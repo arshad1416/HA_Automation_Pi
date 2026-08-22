@@ -12,9 +12,13 @@ import urllib.request
 # directly, so the exchange is gone. Same HA_TOKEN env var as verification/smoke-tests.sh.
 token = os.environ.get('HA_TOKEN')
 if not token:
-    sys.exit('HA_TOKEN not set — create a long-lived access token in HA '
-             '(Profile → Security → Long-lived access tokens), then:\n'
-             '  HA_TOKEN=<token> python3 scripts/test_airbnb_templates.py')
+    try:
+        import pytest  # being collected by pytest — skip this script, don't kill the suite
+        pytest.skip('HA_TOKEN not set — see file docstring for usage')
+    except ImportError:
+        sys.exit('HA_TOKEN not set — create a long-lived access token in HA '
+                 '(Profile → Security → Long-lived access tokens), then:\n'
+                 '  HA_TOKEN=<token> python3 scripts/test_airbnb_templates.py')
 
 headers = {'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'}
 
