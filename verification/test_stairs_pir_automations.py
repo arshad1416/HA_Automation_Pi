@@ -337,24 +337,72 @@ def check_stairs_light(by_id):
     n = steps_of(stuck["sequence"])
     assert n.index("input_boolean.turn_off") < n.index("light.turn_off")
 
-    # The motion branch must still refuse to touch an already-lit staircase.
+    # Two motion branches now: the original "light was off -> light it" branch, and the
+    # adopt-on-motion branch that claims an ALREADY-lit, unowned staircase overnight.
+    # Both must end by claiming the light, or the timer tail can never expire it.
     motion_branches = [
         o for o in auto["actions"][0]["choose"]
         if any(c.get("condition") == "trigger" and c.get("id") == "motion"
                for c in o["conditions"])
     ]
-    assert len(motion_branches) == 1, (
-        f"expected only the dark branch (the bedtime branch handed over to the hallway "
-        f"panels), got {len(motion_branches)}"
+    assert len(motion_branches) == 2, (
+        f"expected 2 motion branches (dark-and-off, plus adopt-on-motion); "
+        f"got {len(motion_branches)}"
     )
+
+    def light_state_required(branch):
+        for c in branch["conditions"]:
+            if c.get("entity_id") == STAIR_LIGHT:
+                return c.get("state")
+        return None
+
+    off_branches = [b for b in motion_branches if light_state_required(b) == "off"]
+    adopt_branches = [b for b in motion_branches if light_state_required(b) == "on"]
+    assert len(off_branches) == 1, (
+        "exactly one motion branch may light a dark staircase, and it must require "
+        "the light to be off before claiming it"
+    )
+    assert len(adopt_branches) == 1, (
+        "expected exactly one adopt-on-motion branch requiring the light to be 'on'"
+    )
+
     for b in motion_branches:
-        assert any(
-            c.get("entity_id") == STAIR_LIGHT and c.get("state") == "off"
-            for c in b["conditions"]
-        ), "motion branch must require the light to be off before claiming it"
         assert steps_of(b["sequence"])[-1] == "input_boolean.turn_on", (
             "each motion branch must claim the light last"
         )
+
+    # --- adopt-on-motion invariants ---------------------------------------------------
+    # This branch exists because a light switched on by hand, by the Tuya app, or by a
+    # flap-recovery is owned by nothing, and every other branch requires 'off' before
+    # claiming. Observed 2026-08-23: on at 20:11 with no automation context, still on at
+    # 100% at 02:47. Without the guards below it would instead auto-kill a deliberately
+    # lit staircase mid-evening, which is exactly what the claim system was built to
+    # prevent — so all three of these matter.
+    adopt = adopt_branches[0]
+
+    assert any(
+        c.get("entity_id") == CLAIM_STAIRS and c.get("state") == "off"
+        for c in adopt["conditions"]
+    ), (
+        "adopt-on-motion must only claim an UNOWNED light, otherwise it re-claims a "
+        "light the tail is already counting down and restarts the timer forever"
+    )
+
+    hour_gate = [
+        c for c in adopt["conditions"]
+        if c.get("condition") == "template" and "now().hour" in str(c.get("value_template"))
+    ]
+    assert hour_gate, (
+        "adopt-on-motion must be gated to the overnight window; without it a staircase "
+        "lit deliberately at 19:00 gets switched off 5 minutes later"
+    )
+
+    # Adoption must not restate brightness — it takes ownership of whatever is already
+    # set, rather than overriding a deliberate manual level.
+    assert steps_of(adopt["sequence"]) == ["input_boolean.turn_on"], (
+        f"adopt-on-motion must only claim, never re-drive the light; "
+        f"got {steps_of(adopt['sequence'])}"
+    )
 
     # --- the shared timer tail, which is what actually turns the light off ---
     tail = auto["actions"][1:]

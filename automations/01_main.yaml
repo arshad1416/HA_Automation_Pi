@@ -2873,7 +2873,10 @@
 
     input_boolean.stair_light_pir_owned tracks whether this automation is the one holding
     the light on. It is claimed only when the light was found OFF and released whenever
-    the light goes off by any path, so a manually lit staircase is never auto-killed.
+    the light goes off by any path, so a manually lit staircase is never auto-killed
+    during the evening. From the seasonal dim hour through to 06:00 an adopt-on-motion
+    branch also claims a light that is ALREADY on and unowned, so a staircase left burning
+    overnight is expired by the normal 5-minute tail instead of running until morning.
   mode: restart
   triggers:
   - trigger: state
@@ -2989,6 +2992,42 @@
       - action: input_boolean.turn_on
         target:
           entity_id: input_boolean.stair_light_pir_owned
+    # ADOPT-ON-MOTION. Motion while the light is ALREADY on and unclaimed.
+    #
+    # Without this the staircase can burn all night: every branch above requires
+    # light.stair_light to be 'off' before claiming it, and the timer tail refuses to
+    # act without the claim. So a light switched on by hand, by the Tuya app, or by a
+    # flap-recovery is owned by nothing and never gets turned off. Observed 2026-08-23:
+    # on at 20:11 by a manual press with no automation context, still on at 100% at
+    # 02:47 — 6.5 hours, through an entire night.
+    #
+    # The original "never auto-kill a manually lit staircase" intent is preserved by the
+    # hour gate: adoption only happens from the seasonal dim hour through to 06:00. Light
+    # it by hand at 19:00 and it stays lit; leave it burning at 02:00 and the next motion
+    # pulse adopts it so the normal 5-minute tail can expire it.
+    #
+    # Deliberately does NOT restate brightness. Adoption takes ownership of whatever is
+    # already there; re-sending a level would fight a deliberate manual choice, and the
+    # only goal here is that the light eventually goes off.
+    - conditions:
+      - condition: trigger
+        id: motion
+      - condition: state
+        entity_id: light.stair_light
+        state: 'on'
+      - condition: state
+        entity_id: input_boolean.stair_light_pir_owned
+        state: 'off'
+      - condition: template
+        value_template: >-
+          {% set dim_hr = 21 if now().month in [11,12,1,2]
+                      else 22 if now().month in [3,4,9,10]
+                      else 23 %}
+          {{ now().hour >= dim_hr or now().hour < 6 }}
+      sequence:
+      - action: input_boolean.turn_on
+        target:
+          entity_id: input_boolean.stair_light_pir_owned
   # --- shared timer tail (runs after whichever branch above matched) ------------------
   # This replaces the old no_motion trigger, which could never fire: binary_sensor.
   # pir_motion_sensor_2_motion is a battery Tuya PIR that only ever pulses 'on' and sleeps
@@ -2996,10 +3035,11 @@
   # 'off'. So "5 minutes of no motion" never arrived and the stair light was only ever
   # switched off by the bedtime routine tripping light_went_off.
   #
-  # Being outside the choose is deliberate. On a re-trigger while the light is already on,
-  # neither motion branch matches (both require light.stair_light to be 'off'), but this
-  # tail still runs and mode: restart re-arms the delay — so continued motion extends the
-  # window without re-sending brightness.
+  # Being outside the choose is deliberate. On a re-trigger while the light is already on
+  # and already claimed, no branch above matches, but this tail still runs and
+  # mode: restart re-arms the delay — so continued motion extends the window without
+  # re-sending brightness. When the adopt-on-motion branch above has just taken the claim,
+  # this same tail is what actually expires the light.
   - condition: trigger
     id: motion
   # Only ever turn off a light this automation actually lit. A staircase lit by hand, a
