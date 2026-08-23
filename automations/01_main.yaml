@@ -911,7 +911,8 @@
            ~ '\nCHEAP-RATE WARM-ROOM PREFERENCE: Use the authoritative LiveTariff period above. If its period label contains Ultra-Low or Off-Peak and Mina, Izaan, or the upstairs reference is at least 26.0C, prefer a 23.0C cooling setpoint. This is a preference, not a hard override: your returned setpoint is authoritative, and if you return 24.5C the automation will apply 24.5C unchanged. During Mid-Peak or On-Peak, do not select 23.0C solely for this preference.'
            ~ '\nAUTHORITATIVE ECOBEE DATA: Ignore the earlier Ecobee, Indoor, humidity, target, and HVAC values in this prompt. Use these Native-Ecobee-primary normalized values instead: source=' ~ climate_read_entity ~ ', mode=' ~ states(climate_read_entity) ~ ', hvac_action=' ~ (state_attr(climate_read_entity, 'hvac_action') | default('unknown', true)) ~ ', target=' ~ (state_attr(climate_read_entity, 'temperature') | default('unknown', true)) ~ 'C, thermostat=' ~ states('sensor.climate_ai_ecobee_temperature') ~ 'C, humidity=' ~ states('sensor.climate_ai_ecobee_humidity') ~ '%, basement=' ~ states('sensor.climate_ai_basement_temperature') ~ 'C, guest=' ~ states('sensor.climate_ai_guest_room_temperature') ~ 'C, izaan=' ~ states('sensor.climate_ai_izaans_room_temperature') ~ 'C, master=' ~ states('sensor.climate_ai_master_bedroom_temperature') ~ 'C, mina=' ~ states('sensor.climate_ai_minas_room_temperature') ~ 'C, mode_age=' ~ climate_mode_age_minutes ~ ' minutes.'
            ~ '\nNATIVE EQUIPMENT CONTEXT: equipment_running=' ~ ecobee_equipment_running ~ ', compressor_running=' ~ ecobee_compressor_running ~ ', thermostat_fan=' ~ ecobee_hvac_fan_running ~ ', fan_min_on_time=' ~ ecobee_fan_min_on_time ~ ' min/hour, comfort_profile=' ~ ecobee_comfort_profile ~ ', preset=' ~ ecobee_preset_mode ~ ', humidifier_mode=' ~ ecobee_humidifier_mode ~ ', humidifier_action=' ~ ecobee_humidifier_action ~ ', humidity_target=' ~ ecobee_humidity_target ~ '%. If compressor_running is true, return hvac_mode null: never reverse or stop the operating mode from this hourly AI run. Setpoint adjustments remain allowed when justified. Respect Sleep/Evening profiles by prioritizing occupied bedrooms; for Away/away_indefinitely return no HVAC change except urgent freeze/overheat protection. The humidifier adds moisture and does not dehumidify.'
-           ~ '\nEXTERNAL SETPOINT OVERRIDE: requested_target=' ~ (state_attr('climate.ecobee_3', 'temperature') | default('unknown', true)) ~ 'C, effective_target=' ~ (state_attr('climate.ecobee', 'temperature') | default('unknown', true)) ~ 'C, override=' ~ current_setpoint_override_c ~ 'C. The effective target is what the equipment actually runs. A positive override means an external hold (typically a utility touSetback demand-response event) is silently adding that many degrees to every cooling setpoint, so the house runs WARMER than requested and the compressor may never start. When override is 0.5C or more, treat effective_target as the real target: the room must exceed effective_target, not requested_target, before cooling begins. Account for this when judging whether the house is on target and when sizing vent boosters and ceiling fans, and state the override in your reason. Do not fight it by stacking repeated large setpoint drops; prefer fans and vent boosters for occupied rooms and note that the override is the limiting factor.'
+           ~ '\nEXTERNAL SETPOINT OVERRIDE: requested_target=' ~ (state_attr('climate.ecobee_3', 'temperature') | default('unknown', true)) ~ 'C, effective_target=' ~ (state_attr('climate.ecobee', 'temperature') | default('unknown', true)) ~ 'C, override=' ~ current_setpoint_override_c ~ 'C. The effective target is what the equipment actually runs. A positive override means an external hold (typically a utility touSetback demand-response event) is silently adding that many degrees to every cooling setpoint, so the house runs WARMER than requested and the compressor may never start. When override is 0.5C or more, treat effective_target as the real target: the room must exceed effective_target, not requested_target, before cooling begins. Account for this when judging whether the house is on target and when sizing vent boosters and ceiling fans, and state the override in your reason.'
+           ~ '\nOVERRIDE STRATEGY (the enrollment is deliberate and is being KEPT for the utility incentive): do not try to defeat an active override by stacking large setpoint drops, and never treat it as a fault. It is a paid arrangement. Instead: (a) while an override is active, lean on ceiling fans and vent boosters for occupied rooms, since air movement restores comfort without fighting the hold; (b) subtract the override from your setpoint request so the EFFECTIVE target lands where you intend, but only down to the 22.0C floor, and only when an occupied room is genuinely above the effective target; (c) most importantly, PRE-COOL BEFORE the event rather than fighting during it. These events have historically run about two hours in the evening, most often starting near 19:00 local, and are dispatched by the utility rather than fixed, so treat 17:00-19:00 local as the window to build thermal buffer whenever the tariff is Ultra-Low or Off-Peak and rooms are occupied. A house pre-cooled to the low end of the ladder coasts through a +1.1C hold comfortably; a house sitting exactly at target does not.'
            ~ '\nSETPOINT RESOLUTION: Return only null or one of 22.0, 22.5, 23.0, 23.5, 24.0, 24.5, 25.0, 25.5 C. The automation normalizes any other numeric value to the nearest 0.5C before applying hysteresis.'
            ~ '\nHUMIDITY COMFORT: Use a perceived-temperature adjustment of ' ~ indoor_humidity_adjustment_c ~ 'C for current indoor RH. This same adjustment is already included in the pre-calculated perceived temps above; do not add it again. RH 35-55% is the neutral band with no temperature penalty; only sustained RH above 55% or below 35% materially shifts perceived comfort. For setpoint selection, follow the COMFORT SETPOINT GUIDE ladder above — do not invent a separate humidity offset.'
            ~ '\nOUTDOOR CROSS-CHECK: Ecobee weather reports ' ~ (state_attr('weather.ecobee', 'temperature') | default('unknown', true)) ~ 'C and ' ~ (state_attr('weather.ecobee', 'humidity') | default('unknown', true)) ~ '% RH; Forecast Home reports ' ~ outdoor_temp_c ~ 'C and ' ~ outdoor_humidity_pct ~ '% RH with dew point ' ~ outdoor_dew_point_c ~ 'C. Use agreement as confidence. If temperature differs by more than 2C or humidity by more than 15 percentage points, treat outdoor conditions as uncertain and do not change HVAC solely because of weather.'
@@ -1210,25 +1211,31 @@
             reports {{ state_attr(smartthings_climate_entity, 'temperature') }}C,
             and HomeKit reports {{ state_attr(homekit_climate_entity, 'temperature') }}C.
     # Accepted-but-overridden is the silent failure mode: the write succeeded,
-    # so nothing above complains, yet the house never reaches the target. Alert
-    # separately from the not-persisted case because the remedy is different --
-    # this one is fixed on the thermostat/utility side, not by retrying a write.
+    # so nothing above complains, yet the house never reaches the target.
+    # The enrollment is deliberate (utility incentive), so this is INFORMATIONAL
+    # rather than a fault: it explains why cooling looks lazy during an event.
+    # Only surfaced when a room is actually uncomfortable, so an ordinary
+    # well-buffered event stays silent instead of training you to ignore it.
     - if:
       - condition: template
-        value_template: '{{ setpoint_override_c | float(0) >= 0.5 }}'
+        value_template: >-
+          {{ setpoint_override_c | float(0) >= 0.5
+             and (states('sensor.climate_ai_ecobee_temperature') | float(0))
+                 > (effective_setpoint_c | float(99)) + 0.5 }}
       then:
       - action: notify.persistent_notification
         data:
-          title: 'Climate AI setpoint overridden by {{ setpoint_override_c }}C'
+          title: 'Utility event active: running {{ effective_setpoint_c }}C, not {{ setpoint }}C'
           message: >-
-            Requested {{ setpoint }}C but the thermostat is running
-            {{ effective_setpoint_c }}C ({{ setpoint_override_c }}C warmer), so
-            cooling will start late or not at all. This is the signature of a
-            utility touSetback / demand-response hold applying a relative offset
-            on top of every cooling setpoint. Check the ecobee app under
-            Settings > Utility / Demand Response. Indoor is currently
-            {{ states('sensor.climate_ai_ecobee_temperature') }}C with equipment
-            "{{ state_attr(native_climate_entity, 'equipment_running') | default('', true) }}".
+            The utility demand-response hold is adding {{ setpoint_override_c }}C
+            to the cooling setpoint, so the thermostat is holding
+            {{ effective_setpoint_c }}C while indoor is
+            {{ states('sensor.climate_ai_ecobee_temperature') }}C. This is the
+            paid Community Energy Savings enrollment working as designed, not a
+            fault. Fans and vent boosters are the lever during an event; the
+            durable fix is deeper pre-cooling in the 17:00-19:00 window. To end
+            just this event, set a Hold on the thermostat or tap the arrow beside
+            "eco+ is on" and end eco+ for the day.
   - if:
     - condition: template
       value_template: '{{ mode_apply or setp_apply }}'

@@ -106,22 +106,45 @@ Both detection paths fail safe. `climate.ecobee` dropped its `temperature`
 attribute 4 times in 7 days; on those the divergence sensor goes
 *unavailable* and the alert stays silent rather than raising a false alarm.
 
-## How to actually stop it
+## How to live with it (decision: the program is being KEPT)
 
-⚠️ Not an in-app toggle. Per ecobee support, unenrolling from a Community
-Energy Savings / utility program requires **contacting the program provider**
-and asking them to remove the thermostat. Options, in order of permanence:
+⚠️ **Do not "fix" this by unenrolling.** The enrollment is deliberate: it pays
+**$75 up front plus $20/season**. The override is the price of that money, not a
+bug, and the automation is written to cooperate with it rather than fight it.
 
-1. **Unenroll** — contact the utility/program provider (Alectra, or IESO Save
-   on Energy for Peak Perks). Note this forfeits the enrollment incentive.
-2. **Disable eco+** in the ecobee app, which carries Community Energy Savings.
-3. **Per-event opt-out** — because these events are `isOptional: True`, setting
-   a Hold, or tapping the arrow beside "eco+ is on" and ending eco+ for the
-   day, cancels the current event only. It returns tomorrow.
+If someone ever does want out, note it is not an in-app toggle — per ecobee
+support you must contact the *program provider* (Alectra, or IESO Save on
+Energy for Peak Perks) and ask them to remove the thermostat. Disabling eco+
+also drops Community Energy Savings. Neither should be done casually; both
+forfeit the incentive.
 
-Worth a deliberate decision: the program pays roughly $75–125, but it forces
-cooling off 07:00–23:00 — exactly the window the ULO strategy pre-cools *for*.
-It cancels out the overnight pre-cooling this config pays 3.9 ¢/kWh to build.
+**Per-event escape hatch.** Events carry `isOptional: True`, so a single event
+can be cancelled without leaving the program: set a Hold on the thermostat, or
+tap the arrow beside "eco+ is on" and end eco+ for the day. It returns
+tomorrow. Use this on the rare long event, not routinely.
+
+### The strategy that actually works: buffer, don't fight
+
+A +1.11 °C hold is only uncomfortable if the house enters the event sitting
+*exactly* at target. Pre-cooled, it coasts straight through.
+
+1. **Pre-cool 17:00–19:00** whenever the tariff is Ultra-Low or Off-Peak and
+   rooms are occupied. Events historically start near 19:00, so this is where
+   thermal buffer is cheapest to build. This also aligns with the existing ULO
+   strategy rather than competing with it.
+2. **During an event, use air movement.** Ceiling fans and vent boosters
+   restore perceived comfort without fighting the hold, and cost far less than
+   the compressor.
+3. **Compensate the request, within limits.** The advisor may subtract the
+   override so the *effective* target lands where intended, but only down to
+   the 22.0 °C floor and only when an occupied room is genuinely above the
+   effective target. Stacking large drops just to out-muscle the hold is
+   explicitly discouraged.
+
+The advisor prompt encodes all three, and the notification is deliberately
+informational: it fires only when an override is active **and** indoor is more
+than 0.5 °C above the effective target, i.e. when the buffer actually failed.
+A normal, well-buffered event stays silent.
 
 ## Second failure found while investigating
 
