@@ -865,6 +865,18 @@
         {{ state_attr('humidifier.ecobee', 'action') | default('unknown', true) }}
       ecobee_humidity_target: >-
         {{ state_attr('humidifier.ecobee', 'humidity') | default('unknown', true) }}
+      # Gap between the setpoint the cloud API says we requested and the one
+      # HomeKit says the equipment is actually running. Normally 0. A positive
+      # value means something outside this automation (utility touSetback
+      # demand-response holds, in practice) is adding degrees to every cooling
+      # setpoint, so the house runs warmer than asked and may never call for
+      # cooling at all. Reported to the model so it can reason about the real
+      # target instead of the one we merely requested.
+      current_setpoint_override_c: >-
+        {% set requested = state_attr(native_climate_entity, 'temperature') %}
+        {% set effective = state_attr(homekit_climate_entity, 'temperature') %}
+        {{ ((effective | float(0)) - (requested | float(0))) | round(2)
+           if requested is not none and effective is not none else 0 }}
       indoor_humidity_adjustment_c: >-
         {% set rh = states('sensor.climate_ai_ecobee_humidity') | float(45) %}
         {% if rh >= 65 %} 1.0
@@ -899,6 +911,7 @@
            ~ '\nCHEAP-RATE WARM-ROOM PREFERENCE: Use the authoritative LiveTariff period above. If its period label contains Ultra-Low or Off-Peak and Mina, Izaan, or the upstairs reference is at least 26.0C, prefer a 23.0C cooling setpoint. This is a preference, not a hard override: your returned setpoint is authoritative, and if you return 24.5C the automation will apply 24.5C unchanged. During Mid-Peak or On-Peak, do not select 23.0C solely for this preference.'
            ~ '\nAUTHORITATIVE ECOBEE DATA: Ignore the earlier Ecobee, Indoor, humidity, target, and HVAC values in this prompt. Use these Native-Ecobee-primary normalized values instead: source=' ~ climate_read_entity ~ ', mode=' ~ states(climate_read_entity) ~ ', hvac_action=' ~ (state_attr(climate_read_entity, 'hvac_action') | default('unknown', true)) ~ ', target=' ~ (state_attr(climate_read_entity, 'temperature') | default('unknown', true)) ~ 'C, thermostat=' ~ states('sensor.climate_ai_ecobee_temperature') ~ 'C, humidity=' ~ states('sensor.climate_ai_ecobee_humidity') ~ '%, basement=' ~ states('sensor.climate_ai_basement_temperature') ~ 'C, guest=' ~ states('sensor.climate_ai_guest_room_temperature') ~ 'C, izaan=' ~ states('sensor.climate_ai_izaans_room_temperature') ~ 'C, master=' ~ states('sensor.climate_ai_master_bedroom_temperature') ~ 'C, mina=' ~ states('sensor.climate_ai_minas_room_temperature') ~ 'C, mode_age=' ~ climate_mode_age_minutes ~ ' minutes.'
            ~ '\nNATIVE EQUIPMENT CONTEXT: equipment_running=' ~ ecobee_equipment_running ~ ', compressor_running=' ~ ecobee_compressor_running ~ ', thermostat_fan=' ~ ecobee_hvac_fan_running ~ ', fan_min_on_time=' ~ ecobee_fan_min_on_time ~ ' min/hour, comfort_profile=' ~ ecobee_comfort_profile ~ ', preset=' ~ ecobee_preset_mode ~ ', humidifier_mode=' ~ ecobee_humidifier_mode ~ ', humidifier_action=' ~ ecobee_humidifier_action ~ ', humidity_target=' ~ ecobee_humidity_target ~ '%. If compressor_running is true, return hvac_mode null: never reverse or stop the operating mode from this hourly AI run. Setpoint adjustments remain allowed when justified. Respect Sleep/Evening profiles by prioritizing occupied bedrooms; for Away/away_indefinitely return no HVAC change except urgent freeze/overheat protection. The humidifier adds moisture and does not dehumidify.'
+           ~ '\nEXTERNAL SETPOINT OVERRIDE: requested_target=' ~ (state_attr('climate.ecobee_3', 'temperature') | default('unknown', true)) ~ 'C, effective_target=' ~ (state_attr('climate.ecobee', 'temperature') | default('unknown', true)) ~ 'C, override=' ~ current_setpoint_override_c ~ 'C. The effective target is what the equipment actually runs. A positive override means an external hold (typically a utility touSetback demand-response event) is silently adding that many degrees to every cooling setpoint, so the house runs WARMER than requested and the compressor may never start. When override is 0.5C or more, treat effective_target as the real target: the room must exceed effective_target, not requested_target, before cooling begins. Account for this when judging whether the house is on target and when sizing vent boosters and ceiling fans, and state the override in your reason. Do not fight it by stacking repeated large setpoint drops; prefer fans and vent boosters for occupied rooms and note that the override is the limiting factor.'
            ~ '\nSETPOINT RESOLUTION: Return only null or one of 22.0, 22.5, 23.0, 23.5, 24.0, 24.5, 25.0, 25.5 C. The automation normalizes any other numeric value to the nearest 0.5C before applying hysteresis.'
            ~ '\nHUMIDITY COMFORT: Use a perceived-temperature adjustment of ' ~ indoor_humidity_adjustment_c ~ 'C for current indoor RH. This same adjustment is already included in the pre-calculated perceived temps above; do not add it again. RH 35-55% is the neutral band with no temperature penalty; only sustained RH above 55% or below 35% materially shifts perceived comfort. For setpoint selection, follow the COMFORT SETPOINT GUIDE ladder above — do not invent a separate humidity offset.'
            ~ '\nOUTDOOR CROSS-CHECK: Ecobee weather reports ' ~ (state_attr('weather.ecobee', 'temperature') | default('unknown', true)) ~ 'C and ' ~ (state_attr('weather.ecobee', 'humidity') | default('unknown', true)) ~ '% RH; Forecast Home reports ' ~ outdoor_temp_c ~ 'C and ' ~ outdoor_humidity_pct ~ '% RH with dew point ' ~ outdoor_dew_point_c ~ 'C. Use agreement as confidence. If temperature differs by more than 2C or humidity by more than 15 percentage points, treat outdoor conditions as uncertain and do not change HVAC solely because of weather.'
@@ -1167,6 +1180,17 @@
                   - setpoint | float(0)) | abs <= 0.5 }}
         setpoint_persisted: >-
           {{ (native_setpoint_persisted | bool) or (smartthings_setpoint_persisted | bool) }}
+        # A write can "persist" and still not be what the thermostat RUNS.
+        # Both checks above read back the same cloud attribute we just wrote, so
+        # 23.0 == 23.0 passes even while the equipment is really holding 24.1C.
+        # HomeKit reports the effective setpoint, so comparing the two is the
+        # only way this automation can see an externally applied offset (utility
+        # touSetback demand-response events being the one that bit us).
+        effective_setpoint_c: >-
+          {{ state_attr(homekit_climate_entity, 'temperature') | float(setpoint | float(0)) }}
+        setpoint_override_c: >-
+          {{ ((state_attr(homekit_climate_entity, 'temperature') | float(setpoint | float(0)))
+              - (setpoint | float(0))) | round(2) }}
     - if:
       - condition: template
         value_template: '{{ setpoint_persisted }}'
@@ -1185,6 +1209,26 @@
             {{ state_attr(native_climate_entity, 'temperature') }}C, SmartThings
             reports {{ state_attr(smartthings_climate_entity, 'temperature') }}C,
             and HomeKit reports {{ state_attr(homekit_climate_entity, 'temperature') }}C.
+    # Accepted-but-overridden is the silent failure mode: the write succeeded,
+    # so nothing above complains, yet the house never reaches the target. Alert
+    # separately from the not-persisted case because the remedy is different --
+    # this one is fixed on the thermostat/utility side, not by retrying a write.
+    - if:
+      - condition: template
+        value_template: '{{ setpoint_override_c | float(0) >= 0.5 }}'
+      then:
+      - action: notify.persistent_notification
+        data:
+          title: 'Climate AI setpoint overridden by {{ setpoint_override_c }}C'
+          message: >-
+            Requested {{ setpoint }}C but the thermostat is running
+            {{ effective_setpoint_c }}C ({{ setpoint_override_c }}C warmer), so
+            cooling will start late or not at all. This is the signature of a
+            utility touSetback / demand-response hold applying a relative offset
+            on top of every cooling setpoint. Check the ecobee app under
+            Settings > Utility / Demand Response. Indoor is currently
+            {{ states('sensor.climate_ai_ecobee_temperature') }}C with equipment
+            "{{ state_attr(native_climate_entity, 'equipment_running') | default('', true) }}".
   - if:
     - condition: template
       value_template: '{{ mode_apply or setp_apply }}'
@@ -1456,7 +1500,7 @@
       value_template: "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
     - above: 23.5
       condition: numeric_state
-      entity_id: sensor.ecobee_current_temperature
+      entity_id: sensor.climate_ai_ecobee_temperature
     then:
     - action: switch.turn_on
       target:
@@ -1510,7 +1554,7 @@
   mode: single
   triggers:
   - below: 21.0
-    entity_id: sensor.ecobee_current_temperature
+    entity_id: sensor.climate_ai_ecobee_temperature
     trigger: numeric_state
   - minutes: /15
     trigger: time_pattern
@@ -2224,7 +2268,7 @@
   mode: single
   triggers:
   - trigger: template
-    value_template: '{{ states(''sensor.ecobee_current_temperature'') | float(0) > states(''input_number.ac_restore_indoor_threshold'') | float(22) }}'
+    value_template: '{{ states(''sensor.climate_ai_ecobee_temperature'') | float(0) > states(''input_number.ac_restore_indoor_threshold'') | float(22) }}'
   - at: '21:00:00'
     trigger: time
   conditions:
@@ -2237,7 +2281,7 @@
   - condition: template
     value_template: '{{ not (now().isoweekday() < 6 and 16 <= now().hour < 21) }}'
   - condition: template
-    value_template: '{{ states(''sensor.ecobee_current_temperature'') | float(0) > states(''input_number.ac_restore_indoor_threshold'') | float(22) }}'
+    value_template: '{{ states(''sensor.climate_ai_ecobee_temperature'') | float(0) > states(''input_number.ac_restore_indoor_threshold'') | float(22) }}'
   actions:
   - action: climate.set_hvac_mode
     data:
@@ -3446,18 +3490,28 @@
       - cover.mina_s_blinds_curtain
 - id: climate_safety_backstop
   alias: Climate Safety Backstop (overheat/freeze)
-  description: Hardcoded backstop if the AI is unreachable or stale. Forces cool above 27C, heat below 16C.
+  description: >
+    Hardcoded backstop if the AI is unreachable or stale. Forces cool above 27C,
+    heat below 16C.
+    Reads sensor.climate_ai_ecobee_temperature, NOT the raw HomeKit
+    sensor.ecobee_current_temperature this used to watch. That raw sensor stuck
+    at 0 on 2026-08-20T18:54 and was still 0 three days later, which silently
+    disarmed this entire automation: the `above: 4` dropout guard below is what
+    makes a stuck 0 unable to ever fire the freeze branch, and 0 is likewise
+    never above 27, so the overheat branch died too. The canonical sensor falls
+    back native_ecobee -> homekit -> smartthings, so one dead source cannot
+    disarm the last line of defense again.
   mode: single
   triggers:
   # for: reading must persist 5 min, so a transient blip is ignored.
   - trigger: numeric_state
-    entity_id: sensor.ecobee_current_temperature
+    entity_id: sensor.climate_ai_ecobee_temperature
     above: 27
     for: "00:05:00"
   # above: 4 floors out spurious 0/dropout values (e.g. ecobee power-loss reconnect,
   # which has no UPS). A real freeze crosses 15->14, not 22->0.
   - trigger: numeric_state
-    entity_id: sensor.ecobee_current_temperature
+    entity_id: sensor.climate_ai_ecobee_temperature
     above: 4
     below: 16
     for: "00:05:00"
@@ -3466,7 +3520,7 @@
   - choose:
     - conditions:
       - condition: numeric_state
-        entity_id: sensor.ecobee_current_temperature
+        entity_id: sensor.climate_ai_ecobee_temperature
         above: 27
       sequence:
       - action: climate.set_hvac_mode
@@ -3477,7 +3531,7 @@
     - conditions:
       # above: 4 defense-in-depth floor mirrors the trigger guard.
       - condition: numeric_state
-        entity_id: sensor.ecobee_current_temperature
+        entity_id: sensor.climate_ai_ecobee_temperature
         above: 4
         below: 16
       sequence:

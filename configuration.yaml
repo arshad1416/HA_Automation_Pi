@@ -884,28 +884,40 @@ template:
   # is local and exposes the same physical sensors. SmartThings is the final
   # fallback and may report Fahrenheit, so those values are normalized to C.
   - sensor:
+      # Fallback order: native_ecobee -> homekit -> smartthings.
+      #
+      # Each candidate must be both PRESENT and PLAUSIBLE. Presence alone is not
+      # enough: on 2026-08-20 sensor.ecobee_current_temperature (HomeKit) latched
+      # to exactly 0 and stayed there for days. It never became unknown or
+      # unavailable, so a presence-only check would happily forward 0 as the
+      # house temperature and disarm every downstream numeric_state trigger.
+      # An occupied house is never <=4C or >=45C, so anything outside that band
+      # is a dead feed, not a reading.
       - name: Climate AI Ecobee Temperature
         unique_id: climate_ai_ecobee_temperature
         device_class: temperature
         state_class: measurement
         unit_of_measurement: "°C"
         availability: >
-          {{ states('sensor.ecobee_temperature_2') not in ['unknown', 'unavailable', 'none', '']
-             or states('sensor.ecobee_current_temperature') not in ['unknown', 'unavailable', 'none', '']
-             or states('sensor.ecobee_temperature') not in ['unknown', 'unavailable', 'none', ''] }}
+          {% set native = states('sensor.ecobee_temperature_2') | float(-999) %}
+          {% set homekit = states('sensor.ecobee_current_temperature') | float(-999) %}
+          {% set st_raw = states('sensor.ecobee_temperature') | float(-999) %}
+          {% set st = ((st_raw - 32) * 5 / 9) if state_attr('sensor.ecobee_temperature', 'unit_of_measurement') == '°F' else st_raw %}
+          {{ (4 < native < 45) or (4 < homekit < 45) or (4 < st < 45) }}
         state: >
-          {% if states('sensor.ecobee_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}
-            {{ states('sensor.ecobee_temperature_2') | float | round(1) }}
-          {% elif states('sensor.ecobee_current_temperature') not in ['unknown', 'unavailable', 'none', ''] %}
-            {{ states('sensor.ecobee_current_temperature') | float | round(1) }}
-          {% else %}
-            {% set value = states('sensor.ecobee_temperature') | float %}
-            {{ (((value - 32) * 5 / 9) if state_attr('sensor.ecobee_temperature', 'unit_of_measurement') == '°F' else value) | round(1) }}
-          {% endif %}
+          {% set native = states('sensor.ecobee_temperature_2') | float(-999) %}
+          {% set homekit = states('sensor.ecobee_current_temperature') | float(-999) %}
+          {% set st_raw = states('sensor.ecobee_temperature') | float(-999) %}
+          {% set st = ((st_raw - 32) * 5 / 9) if state_attr('sensor.ecobee_temperature', 'unit_of_measurement') == '°F' else st_raw %}
+          {% if 4 < native < 45 %}{{ native | round(1) }}
+          {% elif 4 < homekit < 45 %}{{ homekit | round(1) }}
+          {% else %}{{ st | round(1) }}{% endif %}
         attributes:
           source: >
-            {% if states('sensor.ecobee_temperature_2') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
-            {% elif states('sensor.ecobee_current_temperature') not in ['unknown', 'unavailable', 'none', ''] %}homekit
+            {% set native = states('sensor.ecobee_temperature_2') | float(-999) %}
+            {% set homekit = states('sensor.ecobee_current_temperature') | float(-999) %}
+            {% if 4 < native < 45 %}native_ecobee
+            {% elif 4 < homekit < 45 %}homekit
             {% else %}smartthings{% endif %}
 
       - name: Climate AI Ecobee Humidity
@@ -930,6 +942,41 @@ template:
             {% if states('sensor.ecobee_humidity_2') not in ['unknown', 'unavailable', 'none', ''] %}native_ecobee
             {% elif states('sensor.ecobee_current_humidity') not in ['unknown', 'unavailable', 'none', ''] %}homekit
             {% else %}smartthings{% endif %}
+
+      # Effective-vs-requested cooling setpoint gap.
+      #
+      # The ecobee cloud API reports the setpoint we ASKED for; HomeKit reports
+      # the one the thermostat is actually RUNNING. Those normally match. They
+      # diverge when the thermostat applies a setpoint modifier we did not
+      # write — most importantly a utility `touSetback` demand-response event,
+      # which adds a relative offset (observed: coolRelativeTemp 20 = +1.1C)
+      # invisibly on top of every cooling setpoint.
+      #
+      # This is what broke cooling on 2026-08-22: climate_ai wrote 23.0C, the
+      # thermostat ran 24.1C, the room sat at 23.9C, and the compressor stayed
+      # idle for 15.5h while the house drifted 21.4C -> 24.0C. The advisor's own
+      # verification could not see it, because it reads back the same cloud
+      # attribute it just wrote (23.0 == 23.0 passes).
+      #
+      # Positive value = running WARMER than requested = under-cooling.
+      - name: Climate AI Setpoint Divergence
+        unique_id: climate_ai_setpoint_divergence
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: "°C"
+        availability: >
+          {{ state_attr('climate.ecobee_3', 'temperature') is not none
+             and state_attr('climate.ecobee', 'temperature') is not none }}
+        state: >
+          {{ ((state_attr('climate.ecobee', 'temperature') | float(0))
+              - (state_attr('climate.ecobee_3', 'temperature') | float(0))) | round(2) }}
+        attributes:
+          requested_c: "{{ state_attr('climate.ecobee_3', 'temperature') }}"
+          effective_c: "{{ state_attr('climate.ecobee', 'temperature') }}"
+          # Anything at/above this is a real override, not float noise.
+          overridden: >
+            {{ ((state_attr('climate.ecobee', 'temperature') | float(0))
+                - (state_attr('climate.ecobee_3', 'temperature') | float(0))) >= 0.5 }}
 
       - name: Climate AI Basement Temperature
         unique_id: climate_ai_basement_temperature
