@@ -8,8 +8,8 @@ Nothing in this repo was broken.
 
 ## What actually happened
 
-The thermostat carries a utility **`touSetback`** event, weekdays
-07:00–23:00 local:
+The thermostat carries a utility **`touSetback`** event. As captured live on
+2026-08-22 (a **Saturday**):
 
 ```python
 {'type': 'touSetback', 'name': 'sbk070000',
@@ -29,6 +29,42 @@ Idle was the *correct* behaviour — the target was simply never reachable.
 +2.0 °F sits inside ecobee's documented 1–4 °F Community Energy Savings
 adjustment range, so this is near-certainly IESO **Peak Perks** (or Hydro One
 myEnergy Rewards) via ecobee eco+.
+
+### The schedule is event-driven, not a fixed weekday rule
+
+Do not assume "weekdays 07:00–23:00" from the single payload above. Measuring
+the exact +1.11 °C signature across 8 days of history gives a different and
+much less regular picture (local time):
+
+| Day | +1.11 °C active | Samples |
+| --- | --- | --- |
+| Sun 08-16 | 15:03 → 22:54 | 60 |
+| Mon 08-17 | 19:04 → 20:57 | 24 |
+| Tue 08-18 | *(none)* | 0 |
+| Wed 08-19 | 19:04 → 20:54 | 16 |
+| Thu 08-20 | 19:26 → 20:59 | 16 |
+| Fri 08-21 | 19:04 → 20:46 | 28 |
+| **Sat 08-22** | **09:06 → 22:58** | **79** |
+
+A typical day is a ~2 h evening event around 19:00–21:00. Weekends can run far
+longer, and 08-22 was an outlier at ~14 h — which is why that day, and not the
+others, produced a visibly warm house. Compressor duty that day was the second
+lowest of the week (3.8 h / 15.6 %) despite it being warm.
+
+The offset is dispatched by the utility per event, so **predict nothing from
+the calendar** — read the live `touSetback` event or the divergence sensor.
+
+### Distinguishing a real override from sync lag
+
+Over 8 days, 223 of 248 override samples were **exactly +1.1 °C**. The
+remainder (+0.9, +1.2, +1.4, +1.5, +2.1, +2.5, +3.0) were one-offs clustered at
+`:00` write boundaries, i.e. HA had written a new setpoint and the HomeKit
+bridge had not caught up yet.
+
+So: a *persistent* +1.11 °C is the utility program; a *single sample* of some
+other size right after a setpoint write is almost certainly harmless lag. The
+≥0.5 °C alert threshold catches both, which is intentional — the advisor only
+evaluates it right after its own write, and a sustained lag is worth seeing.
 
 ## Proof
 
