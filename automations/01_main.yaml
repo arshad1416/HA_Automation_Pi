@@ -816,8 +816,23 @@
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
     state: 'on'
-  - condition: template
-    value_template: '{{ now().hour >= 6 }}'
+  # 2026-08-24: this used to be `now().hour >= 6`, which blocked the advisor entirely
+  # from midnight to 06:00 and left a 7-hour blackout every single night (verified in
+  # history: hourly runs 06:00-23:00, then nothing until 06:00).
+  #
+  # That blackout caused real harm on 2026-08-23/24. Ceiling fans switched on at 22:00
+  # ran for 8 hours straight -- Master 480 min against 270 min of actual occupancy,
+  # Izaan 480 min against 140 min -- because the only thing that manages fans is this
+  # automation, and it was not allowed to run. Separately the utility's nightly ~05:30
+  # demand-response pre-cool dropped the setpoint 4.0F to 19.8C and nothing corrected
+  # it until 06:00, which drove every room to its overnight low (Guest 19.6C, below 21C
+  # for 4.5 h).
+  #
+  # The gate was never about sleep stability: it replaced a `sun.sun elevation > -5`
+  # check in 61a69104, i.e. it was daylight-gating for the blinds logic, and the
+  # overnight blackout was collateral. Night decisions are now constrained by
+  # `night_mode` in the prompt (fans/vents only, no setpoint or mode changes) rather
+  # than by refusing to run at all.
   - condition: template
     value_template: '{{ not is_state(''input_boolean.hvac_paused_door_open'', ''on'') }}'
   - condition: template
@@ -877,6 +892,12 @@
         {% set effective = state_attr(homekit_climate_entity, 'temperature') %}
         {{ ((effective | float(0)) - (requested | float(0))) | round(2)
            if requested is not none and effective is not none else 0 }}
+      # 00:00-05:59 local. The advisor now runs through the night (it used to be blocked
+      # entirely, see the condition block above), but on a deliberately reduced remit:
+      # airflow only. Sleeping people should not have the setpoint or HVAC mode moved
+      # around them, and blinds are pointless in the dark -- but a ceiling fan left
+      # running for 8 hours in an empty bedroom is exactly what this run is here to stop.
+      night_mode: '{{ now().hour < 6 }}'
       indoor_humidity_adjustment_c: >-
         {% set rh = states('sensor.climate_ai_ecobee_humidity') | float(45) %}
         {% if rh >= 65 %} 1.0
@@ -914,6 +935,7 @@
            ~ '\nEXTERNAL SETPOINT OVERRIDE: requested_target=' ~ (state_attr('climate.ecobee_3', 'temperature') | default('unknown', true)) ~ 'C, effective_target=' ~ (state_attr('climate.ecobee', 'temperature') | default('unknown', true)) ~ 'C, override=' ~ current_setpoint_override_c ~ 'C. The effective target is what the equipment actually runs. A positive override means an external hold (typically a utility touSetback demand-response event) is silently adding that many degrees to every cooling setpoint, so the house runs WARMER than requested and the compressor may never start. When override is 0.5C or more, treat effective_target as the real target: the room must exceed effective_target, not requested_target, before cooling begins. Account for this when judging whether the house is on target and when sizing vent boosters and ceiling fans, and state the override in your reason.'
            ~ '\nOVERRIDE STRATEGY (the enrollment is deliberate and is being KEPT for the utility incentive): do not try to defeat an active override by stacking large setpoint drops, and never treat it as a fault. It is a paid arrangement. Instead: (a) while an override is active, lean on ceiling fans and vent boosters for occupied rooms, since air movement restores comfort without fighting the hold; (b) subtract the override from your setpoint request so the EFFECTIVE target lands where you intend, but only down to the 22.0C floor, and only when an occupied room is genuinely above the effective target; (c) most importantly, PRE-COOL BEFORE the event rather than fighting during it. These events have historically run about two hours in the evening, most often starting near 19:00 local, and are dispatched by the utility rather than fixed, so treat 17:00-19:00 local as the window to build thermal buffer whenever the tariff is Ultra-Low or Off-Peak and rooms are occupied. A house pre-cooled to the low end of the ladder coasts through a +1.1C hold comfortably; a house sitting exactly at target does not.'
            ~ '\nSETPOINT RESOLUTION: Return only null or one of 22.0, 22.5, 23.0, 23.5, 24.0, 24.5, 25.0, 25.5 C. The automation normalizes any other numeric value to the nearest 0.5C before applying hysteresis.'
+           ~ ('\nNIGHT MODE IS ACTIVE (00:00-05:59 local). Everyone is asleep, so your remit this run is AIRFLOW ONLY. Return setpoint null and hvac_mode null without exception: do not chase the target, do not correct an external override, do not react to the utility pre-cool that drops the setpoint around 05:30. Return blinds no_change; moving them in the dark is pointless and noisy. What you SHOULD do is switch off ceiling fans and set vent boosters to 0 for any room whose RoomPresence is off, because a fan left running in an empty bedroom all night is both wasteful and makes the room feel far colder than the thermostat reading suggests. For rooms that ARE occupied, keep fans no higher than speed 1 and vents no higher than the 30% night cap, and turn them off entirely when the room is at or below the effective target, since cooling airflow on a sleeping person in an already-cool house is the exact complaint this mode exists to prevent. State in your reason that night mode limited you to airflow.' if night_mode else '')
            ~ '\nHUMIDITY COMFORT: Use a perceived-temperature adjustment of ' ~ indoor_humidity_adjustment_c ~ 'C for current indoor RH. This same adjustment is already included in the pre-calculated perceived temps above; do not add it again. RH 35-55% is the neutral band with no temperature penalty; only sustained RH above 55% or below 35% materially shifts perceived comfort. For setpoint selection, follow the COMFORT SETPOINT GUIDE ladder above — do not invent a separate humidity offset.'
            ~ '\nOUTDOOR CROSS-CHECK: Ecobee weather reports ' ~ (state_attr('weather.ecobee', 'temperature') | default('unknown', true)) ~ 'C and ' ~ (state_attr('weather.ecobee', 'humidity') | default('unknown', true)) ~ '% RH; Forecast Home reports ' ~ outdoor_temp_c ~ 'C and ' ~ outdoor_humidity_pct ~ '% RH with dew point ' ~ outdoor_dew_point_c ~ 'C. Use agreement as confidence. If temperature differs by more than 2C or humidity by more than 15 percentage points, treat outdoor conditions as uncertain and do not change HVAC solely because of weather.'
            ~ '\nOUTDOOR ADAPTATION: Current outdoor conditions are ' ~ outdoor_temp_c ~ 'C, ' ~ outdoor_humidity_pct ~ '% RH, dew point ' ~ outdoor_dew_point_c ~ 'C. Use dew point, not outdoor relative humidity alone, to judge outdoor moisture. Weather may shift the normal perceived-temperature target by at most 0.5C; do not change the HVAC merely because a single hourly weather reading changed, and keep the existing two-hour hold. If outdoors is at least 1.5C cooler than the warmest occupied indoor perceived temperature and dew point is below 16C, favor fans, reduced AC, and a null setpoint change; outside air is favorable for optional natural ventilation. If outdoor temperature is 30C or higher while dew point is below 18C and indoor RH is at most 55%, an adaptive 24.5-25.5C cooling target with occupied-room fans is acceptable. If outdoor dew point is 18C or higher, treat the air as moisture-laden: keep the house closed, do not rely on outdoor air for comfort, and when indoor RH exceeds 55% aim near the 22.5-23.0C steps of the guide ladder for cooling/dehumidification rather than 25.5C. When outdoors is below 18C and indoor perceived temperature is already comfortable, avoid mechanical cooling and return a null setpoint. Exceptions to the 0.5C weather adaptation are deliberate ULO pre-cooling and sustained urgent indoor heat/humidity correction.' }}
@@ -967,14 +989,16 @@
            and climate_control_entity | length > 0
            and hvac_mode_n != states(climate_read_entity)
            and not (ecobee_compressor_running | bool)
-           and climate_mode_age_minutes | float(0) > 120 }}
+           and climate_mode_age_minutes | float(0) > 120
+           and not (night_mode | bool) }}
       setp_apply: >-
         {{ setpoint is not none and setpoint | float(-99) >= 22.0 and setpoint | float(-99) <= 25.5
            and not (setpoint | float(-99) >= 25.5 and humidity_pct | float(45) > 60)
            and not (setpoint | float(-99) >= 25.5 and outdoor_dew_point_c | float(10) >= 18
                     and humidity_pct | float(45) > 55)
            and (setpoint_cooldown_ok or comfort_correction)
-           and (setpoint | float(0) - current_target | float(0)) | abs >= 0.5 }}
+           and (setpoint | float(0) - current_target | float(0)) | abs >= 0.5
+           and not (night_mode | bool) }}
       effective_target: '{{ setpoint | float(current_target) if setp_apply else current_target | float(24) }}'
       fan_support_25_5: >-
         {{ is_state('input_boolean.climate_summer_mode', 'on')
