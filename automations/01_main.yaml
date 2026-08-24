@@ -1153,6 +1153,54 @@
         percentage: '{{ [[(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max, 30] | min if now().hour >= 21 or now().hour < 7 else [(ai_json.vent_boosters.mina | default(0, true)) | int(0), 0] | max }}'
       target:
         entity_id: fan.mina_s_room_f851f4
+  # NIGHT AIRFLOW SWEEP — deterministic, not advisory.
+  #
+  # The night-mode prompt asks the model to zero vents in empty rooms, but a returned
+  # `null` means "leave as-is" and the two branches above explicitly skip it
+  # (`!= None`). Measured 2026-08-24 against the live Gemini endpoint with night_mode
+  # forced on: it correctly returned setpoint null, hvac_mode null and every ceiling fan
+  # off, but vent_boosters came back {izaan: null, mina: null} — so two boosters running
+  # at 30% in unoccupied bedrooms would have kept running all night. That is exactly the
+  # complaint this work started from, so the empty-room case is enforced in code rather
+  # than requested in prose.
+  #
+  # Occupied rooms are deliberately left to the model, which may legitimately want
+  # airflow for a sleeping person. This sweep only ever turns things OFF, and only when
+  # the room's presence sensor says nobody is there.
+  - if:
+    - condition: template
+      value_template: '{{ night_mode | bool }}'
+    then:
+    - repeat:
+        for_each:
+        - occ: binary_sensor.izaans_room_presence
+          vent: fan.izaan_s_room_20a970
+          fan: fan.izaan_s_ceiling_fan
+        - occ: binary_sensor.minas_room_presence
+          vent: fan.mina_s_room_f851f4
+          fan: fan.mina_s_ceiling_fan
+        - occ: binary_sensor.master_bedroom_occupancy_combined
+          vent: ''
+          fan: fan.master_bedroom_ceiling_fan
+        sequence:
+        - if:
+          - condition: template
+            value_template: '{{ is_state(repeat.item.occ, ''off'') }}'
+          then:
+          - if:
+            - condition: template
+              value_template: '{{ repeat.item.vent | length > 0 }}'
+            then:
+            - action: fan.set_percentage
+              continue_on_error: true
+              data:
+                percentage: 0
+              target:
+                entity_id: '{{ repeat.item.vent }}'
+          - action: fan.turn_off
+            continue_on_error: true
+            target:
+              entity_id: '{{ repeat.item.fan }}'
   - if:
     - condition: template
       value_template: '{{ setp_apply }}'
