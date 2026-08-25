@@ -583,9 +583,14 @@
     data: {}
     metadata: {}
     target:
+      # august platform for both, matching every other lock automation. This used to
+      # pair lock.front_door (august) with lock.garage_entry (smartthings), i.e. one
+      # door on the fast path and its neighbour on the slow one for no reason.
+      # Measured 2026-08-25: august dispatches in 0.13s median vs 1.55s for the
+      # smartthings mirrors of the same hardware.
       entity_id:
       - lock.front_door
-      - lock.garage_entry
+      - lock.garages_entry_door
   - if:
     - condition: state
       entity_id: cover.larissa_s_garage_door
@@ -2260,13 +2265,28 @@
         for:
           minutes: 30
   actions:
+  # Two physical Yale locks, not four. lock.front_door_2 and lock.garage_entry are
+  # the SmartThings mirrors of the same hardware as lock.front_door and
+  # lock.garages_entry_door (confirmed in the device registry: august vs smartthings
+  # platform, identical devices). Targeting both platforms sent each lock two
+  # commands, and since the august integration already retries once on its own, the
+  # bedtime routine produced FOUR motor cycles per door. Measured 2026-08-24:
+  #   22:44:53 locking -> 22:45:26 locked
+  #   22:45:36 locking -> 22:46:07 locked
+  #   22:46:23 locking -> 22:46:54 locked
+  #   22:47:09 locking -> 22:47:38 locked
+  # ~3 minutes of re-locking an already-locked door, every night.
+  #
+  # Keeping the august entities specifically: measured over 5 rounds they dispatch in
+  # 0.13s median vs 1.55s for the SmartThings mirrors (~12x faster), they report state
+  # changes first in 10 of 11 matched events, and they are the only ones that expose
+  # the transitional 'locking' state at all. The other lock automations (21:00, 23:30,
+  # 02:00) already target august only; this brings bedtime in line with them.
   - action: lock.lock
     target:
       entity_id:
       - lock.front_door
       - lock.garages_entry_door
-      - lock.front_door_2
-      - lock.garage_entry
   - action: cover.close_cover
     target:
       entity_id:
