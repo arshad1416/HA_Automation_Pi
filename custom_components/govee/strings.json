@@ -129,6 +129,9 @@
       },
       "govee_grouped_segment": {
         "name": "{device_name} Segments"
+      },
+      "govee_main_light_panel": {
+        "name": "Main light"
       }
     },
     "number": {
@@ -251,6 +254,16 @@
       },
       "leak_alert_status": {
         "name": "Alert Status"
+      },
+      "connection_mode": {
+        "name": "Connection Mode",
+        "state": {
+          "lan": "LAN",
+          "mqtt": "MQTT",
+          "cloud_api": "Cloud API",
+          "ble": "Bluetooth",
+          "unavailable": "Unavailable"
+        }
       },
       "ieee_address": {
         "name": "IEEE Address"
