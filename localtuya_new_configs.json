@@ -1,0 +1,1029 @@
+{
+ "ebce31ff14cbb27c72ecpw": {
+  "device_id": "ebce31ff14cbb27c72ecpw",
+  "friendly_name": "Airbnb Kitchen Light Strip",
+  "host": "192.168.0.21",
+  "local_key": "w6Jjvva!GpV?c?z^",
+  "model": "",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "20 ( code: switch_led , value: False )",
+   "21 ( code: work_mode , value: white )",
+   "22 ( code: bright_value_v2 , value: 1000 )",
+   "26 ( code: countdown_1 , value: 0 )"
+  ],
+  "entities": [
+   {
+    "platform": "light",
+    "id": "20",
+    "friendly_name": "Light",
+    "icon": "",
+    "entity_category": "None",
+    "brightness": "22",
+    "color_mode": "21",
+    "brightness_lower": 10,
+    "brightness_upper": 1000,
+    "color_temp_reverse": false,
+    "music_mode": false
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb01644e61c9df9fa5argy": {
+  "device_id": "eb01644e61c9df9fa5argy",
+  "friendly_name": "Dual Outlet Irrigation Timer",
+  "host": "",
+  "local_key": "PEO'/?{pD|cO1KD.",
+  "model": "GX-03ZG",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "2 ( code: switch_2 , value: ? )",
+   "3 ( code: countdown_1 , value: 0 )",
+   "4 ( code: countdown_2 , value: 0 )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Outlet 1",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "switch",
+    "id": "2",
+    "friendly_name": "Outlet 2",
+    "icon": "",
+    "entity_category": "None"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebc58b2216f7097c49t1i4": {
+  "device_id": "ebc58b2216f7097c49t1i4",
+  "friendly_name": "Family Room Speaker Plug",
+  "host": "74.15.25.37",
+  "local_key": "%K=$@rq5|_1vAAsm",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "20327148c44f33af4ea0": {
+  "device_id": "20327148c44f33af4ea0",
+  "friendly_name": "3D Printer Energy Monitoring Sm...",
+  "host": "192.168.0.119",
+  "local_key": "2e<dBP4&~=4Z!(p-",
+  "model": "LA-WF7",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "2 ( code: countdown_1 , value: 0 )",
+   "4 ( code: current , value: ? )",
+   "5 ( code: power , value: ? )",
+   "6 ( code: voltage , value: ? )",
+   "9 ( code: add_ele , value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "sensor",
+    "id": "4",
+    "friendly_name": "Current",
+    "icon": "mdi:current-ac",
+    "entity_category": "None",
+    "scaling": 0.001,
+    "unit_of_measurement": "A",
+    "device_class": "current"
+   },
+   {
+    "platform": "sensor",
+    "id": "5",
+    "friendly_name": "Power",
+    "icon": "mdi:flash",
+    "entity_category": "None",
+    "scaling": 1.0,
+    "unit_of_measurement": "W",
+    "device_class": "power",
+    "state_class": "measurement"
+   },
+   {
+    "platform": "sensor",
+    "id": "6",
+    "friendly_name": "Voltage",
+    "icon": "mdi:sine-wave",
+    "entity_category": "None",
+    "scaling": 0.1,
+    "unit_of_measurement": "V",
+    "device_class": "voltage"
+   },
+   {
+    "platform": "sensor",
+    "id": "9",
+    "friendly_name": "Energy",
+    "icon": "mdi:lightning-bolt",
+    "entity_category": "None",
+    "scaling": 0.001,
+    "unit_of_measurement": "kWh",
+    "device_class": "energy",
+    "state_class": "total_increasing"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb152e8acdf2a0c29aprxc": {
+  "device_id": "eb152e8acdf2a0c29aprxc",
+  "friendly_name": "Pool Pump & Heater",
+  "host": "192.168.0.89",
+  "local_key": "#}t@f}V^ZXh>QKrq",
+  "model": "",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )",
+   "40 ( code: light_mode , value: ? )",
+   "41 ( code: child_lock , value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Pump/Heater",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   },
+   {
+    "platform": "switch",
+    "id": "41",
+    "friendly_name": "Child Lock",
+    "icon": "",
+    "entity_category": "None"
+   }
+  ],
+  "protocol_version": "3.4"
+ },
+ "ebcda90e6979dc7bcelxmo": {
+  "device_id": "ebcda90e6979dc7bcelxmo",
+  "friendly_name": "Human Presence Sensor",
+  "host": "192.168.0.61",
+  "local_key": "BLc9WCkI'?XaYmMB",
+  "model": "",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "101 ( value: none )",
+   "103 ( value: ? )",
+   "104 ( value: ? )",
+   "105 ( value: ? )",
+   "107 ( value: ? )",
+   "109 ( value: ? )",
+   "110 ( value: ? )",
+   "111 ( value: ? )",
+   "112 ( value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "sensor",
+    "id": "101",
+    "friendly_name": "Presence State",
+    "icon": "mdi:motion-sensor",
+    "entity_category": "None"
+   }
+  ],
+  "protocol_version": "3.5"
+ },
+ "ebc97595d438d94703df2t": {
+  "device_id": "ebc97595d438d94703df2t",
+  "friendly_name": "PIR motion sensor",
+  "host": "",
+  "local_key": "PEO'/?{pD|cO1KD.",
+  "model": "",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: pir , value: ? )",
+   "2 ( code: battery , value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "binary_sensor",
+    "id": "1",
+    "friendly_name": "Motion",
+    "icon": "mdi:motion-sensor",
+    "entity_category": "None",
+    "device_class": "motion"
+   },
+   {
+    "platform": "sensor",
+    "id": "2",
+    "friendly_name": "Battery",
+    "icon": "mdi:battery",
+    "entity_category": "diagnostic",
+    "unit_of_measurement": "%",
+    "device_class": "battery"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb31343d681a71213dqpfb": {
+  "device_id": "eb31343d681a71213dqpfb",
+  "friendly_name": "Foyer PIR motion sensor",
+  "host": "",
+  "local_key": "PEO'/?{pD|cO1KD.",
+  "model": "",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: pir , value: ? )",
+   "2 ( code: battery , value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "binary_sensor",
+    "id": "1",
+    "friendly_name": "Motion",
+    "icon": "mdi:motion-sensor",
+    "entity_category": "None",
+    "device_class": "motion"
+   },
+   {
+    "platform": "sensor",
+    "id": "2",
+    "friendly_name": "Battery",
+    "icon": "mdi:battery",
+    "entity_category": "diagnostic",
+    "unit_of_measurement": "%",
+    "device_class": "battery"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb50220b3bda1379afeana": {
+  "device_id": "eb50220b3bda1379afeana",
+  "friendly_name": "Upstairs Stair Sensor",
+  "host": "",
+  "local_key": "PEO'/?{pD|cO1KD.",
+  "model": "",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: pir , value: ? )",
+   "2 ( code: battery , value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "binary_sensor",
+    "id": "1",
+    "friendly_name": "Motion",
+    "icon": "mdi:motion-sensor",
+    "entity_category": "None",
+    "device_class": "motion"
+   },
+   {
+    "platform": "sensor",
+    "id": "2",
+    "friendly_name": "Battery",
+    "icon": "mdi:battery",
+    "entity_category": "diagnostic",
+    "unit_of_measurement": "%",
+    "device_class": "battery"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb386a82689ae55335r6it": {
+  "device_id": "eb386a82689ae55335r6it",
+  "friendly_name": "ZigBee Gateway",
+  "host": "174.95.107.2",
+  "local_key": "PEO'/?{pD|cO1KD.",
+  "model": "ZHUB-W",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "sensor",
+    "id": "1",
+    "friendly_name": "Status",
+    "icon": "mdi:information-outline",
+    "entity_category": "diagnostic"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb53ce7da740e3c30b3fya": {
+  "device_id": "eb53ce7da740e3c30b3fya",
+  "friendly_name": "ISV-100W2.0",
+  "host": "70.54.128.63",
+  "local_key": "=ce|<:~]4;p$b8S;",
+  "model": "ISV-100W",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "sensor",
+    "id": "1",
+    "friendly_name": "Status",
+    "icon": "mdi:information-outline",
+    "entity_category": "diagnostic"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebc9634b3be58b35e2pdmn": {
+  "device_id": "ebc9634b3be58b35e2pdmn",
+  "friendly_name": "Salt Lamps",
+  "host": "74.15.25.37",
+  "local_key": "0lCe&[=LF13NB/Z$",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb4d5ece366f1b3574c6a7": {
+  "device_id": "eb4d5ece366f1b3574c6a7",
+  "friendly_name": "Water Dispenser",
+  "host": "24.141.132.2",
+  "local_key": "16d9b25fe088dedd",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb610caa2aff404edat54a": {
+  "device_id": "eb610caa2aff404edat54a",
+  "friendly_name": "Refrigerator Smart Plug",
+  "host": "24.141.132.2",
+  "local_key": "7960f01fe75065f5",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebc84496ee332c18cazl3r": {
+  "device_id": "ebc84496ee332c18cazl3r",
+  "friendly_name": "Kitchen Pantry Light",
+  "host": "24.141.132.2",
+  "local_key": "624e69c20f84eb6d",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb49730c0d2851c0f2vyeu": {
+  "device_id": "eb49730c0d2851c0f2vyeu",
+  "friendly_name": "MR Stereo",
+  "host": "74.15.25.37",
+  "local_key": "]LM]1q[GP3Yr5#Q[",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebcb255ee8ea26f258qsey": {
+  "device_id": "ebcb255ee8ea26f258qsey",
+  "friendly_name": "Izaan's Lamp",
+  "host": "24.141.129.3",
+  "local_key": "a8f175eec39fa616",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb2fdfb05e059df1391dq4": {
+  "device_id": "eb2fdfb05e059df1391dq4",
+  "friendly_name": "Low Voltage Transformer with 3 Zones",
+  "host": "74.15.25.37",
+  "local_key": ";w$Le3-@5)9*YZU5",
+  "model": "TD-120-12WF-1 WiFi",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "2 ( code: switch_2 , value: ? )",
+   "3 ( code: switch_3 , value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Zone 1",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "switch",
+    "id": "2",
+    "friendly_name": "Zone 2",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "switch",
+    "id": "3",
+    "friendly_name": "Zone 3",
+    "icon": "",
+    "entity_category": "None"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb5611b00ec5ece279w2aa": {
+  "device_id": "eb5611b00ec5ece279w2aa",
+  "friendly_name": "Pool Light Old",
+  "host": "24.141.129.3",
+  "local_key": "9e570ba545e1bda2",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb44d3c295288ecf46pwzp": {
+  "device_id": "eb44d3c295288ecf46pwzp",
+  "friendly_name": "Remote Control",
+  "host": "",
+  "local_key": "iWbNsM2J0&AMCja7",
+  "model": "30",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( value: ? )"
+  ],
+  "entities": [
+   {
+    "platform": "sensor",
+    "id": "1",
+    "friendly_name": "Status",
+    "icon": "mdi:information-outline",
+    "entity_category": "diagnostic"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebfb7e2772bce11245oaro": {
+  "device_id": "ebfb7e2772bce11245oaro",
+  "friendly_name": "Pool Pump Old",
+  "host": "24.141.129.3",
+  "local_key": "e52fb9dc6cbdf066",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebc7083a427720af96j24e": {
+  "device_id": "ebc7083a427720af96j24e",
+  "friendly_name": "Salt Chlorinator Old",
+  "host": "24.141.129.3",
+  "local_key": "0a150a4b86365089",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebb6561055d1dd1dadc37e": {
+  "device_id": "ebb6561055d1dd1dadc37e",
+  "friendly_name": "Deck Tree Light",
+  "host": "37.19.213.125",
+  "local_key": "024bb08845ce4eb3",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "eb1558dbc1e3cd8831ys9a": {
+  "device_id": "eb1558dbc1e3cd8831ys9a",
+  "friendly_name": "Driveway Wyze Camera",
+  "host": "24.141.129.3",
+  "local_key": "de1e6d5c0ebf8901",
+  "model": "SP20-Tuya",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "1 ( code: switch_1 , value: ? )",
+   "9 ( code: countdown_1 , value: 0 )",
+   "38 ( code: relay_status , value: memory )"
+  ],
+  "entities": [
+   {
+    "platform": "switch",
+    "id": "1",
+    "friendly_name": "Switch",
+    "icon": "",
+    "entity_category": "None"
+   },
+   {
+    "platform": "number",
+    "id": "9",
+    "friendly_name": "Timer",
+    "icon": "mdi:timer",
+    "entity_category": "config",
+    "min_value": 0,
+    "max_value": 86400,
+    "step_size": 1,
+    "scaling": 1.0,
+    "unit_of_measurement": "s"
+   },
+   {
+    "platform": "select",
+    "id": "38",
+    "friendly_name": "Power-on behavior",
+    "icon": "mdi:circle-double",
+    "entity_category": "config",
+    "select_options": "memory;off;on",
+    "select_options_friendly": "Last State;OFF;ON"
+   }
+  ],
+  "protocol_version": "3.3"
+ },
+ "ebbc40ccadfa6ee1dci8bn": {
+  "device_id": "ebbc40ccadfa6ee1dci8bn",
+  "friendly_name": "Wasserstein Smart Floodlight",
+  "host": "37.19.213.125",
+  "local_key": "30a511410a82d73f",
+  "model": "Smart floodlight",
+  "node_id": null,
+  "product_key": "",
+  "enable_debug": false,
+  "dps_strings": [
+   "20 ( code: switch_led , value: False )",
+   "21 ( code: work_mode , value: white )",
+   "22 ( code: bright_value , value: 1000 )",
+   "23 ( code: temp_value , value: 1000 )",
+   "26 ( code: countdown , value: 0 )",
+   "51 ( code: device_mode , value: auto )",
+   "52 ( code: pir_state , value: none )",
+   "53 ( code: cds , value: 50lux )",
+   "54 ( code: pir_sensitivity , value: middle )",
+   "55 ( code: pir_delay , value: 66 )",
+   "56 ( code: switch_pir , value: True )",
+   "58 ( code: standby_time , value: 1 )",
+   "59 ( code: standby_bright , value: 0 )"
+  ],
+  "entities": [
+   {
+    "platform": "light",
+    "id": "20",
+    "friendly_name": "Light",
+    "icon": "",
+    "entity_category": "None",
+    "brightness": "22",
+    "color_mode": "21",
+    "color_temp": "23",
+    "brightness_lower": 10,
+    "brightness_upper": 1000,
+    "color_temp_max_kelvin": 6500,
+    "color_temp_min_kelvin": 2700,
+    "color_temp_reverse": false,
+    "music_mode": false
+   }
+  ],
+  "protocol_version": "3.3"
+ }
+}
