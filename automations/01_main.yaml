@@ -269,7 +269,7 @@
         These locks were unlocked and have been automatically locked: {{ unlocked }}.
         Additional home status — Blinds: Dining={{ state_attr('cover.dining_room_blinds_curtain','current_position') }}% Family={{ state_attr('cover.family_room_blinds_curtain','current_position') }}% Mina={{ state_attr('cover.mina_s_blinds_curtain','current_position') }}%.
         Office heater: {{ states('switch.office_heater_child_lock') }}.
-        Pool pump: {{ states('switch.pool_pump_heater_socket_1') }}.
+        Pool pump: {{ states('switch.pool_pump_heater_pump_heater') }}.
         EV: {{ states('sensor.ioniq_6_ev_battery_level') }}% SoC, {{ 'charging' if is_state('binary_sensor.grizzl_e_charging', 'on') else 'not charging' }}. Off-peak starts in {{ ((23 - now().hour) * 60 - now().minute) if now().hour < 23 else 'now' }} minutes.
         Compose a calm, brief bedtime summary (2-3 sentences) covering locks, any open blinds, and EV status.
     response_variable: agent
@@ -379,16 +379,16 @@
   - delay:
       seconds: "{{ [0, (today_at(states('input_datetime.airbnb_check_in_time')) - now()).total_seconds() | int] | max }}"
   - action: climate.set_hvac_mode
-    target: {entity_id: climate.airbnb_infrared_heater_2}
+    target: {entity_id: climate.airbnb_infrared_heater}
     data: {hvac_mode: heat}
     continue_on_error: true
   - action: climate.set_temperature
-    target: {entity_id: climate.airbnb_infrared_heater_2}
+    target: {entity_id: climate.airbnb_infrared_heater}
     data: {temperature: "{{ states('input_number.airbnb_heater_temperature') | float(20) }}"}
     continue_on_error: true
   - action: notify.mobile_app_cph2655
     data:
-      message: "Airbnb check-in: heater commanded to heat at {{ states('input_number.airbnb_heater_temperature') | int(20) }}°C — now reporting {{ states('climate.airbnb_infrared_heater_2') }} / {{ state_attr('climate.airbnb_infrared_heater_2','temperature') }}°C."
+      message: "Airbnb check-in: heater commanded to heat at {{ states('input_number.airbnb_heater_temperature') | int(20) }}°C — now reporting {{ states('climate.airbnb_infrared_heater') }} / {{ state_attr('climate.airbnb_infrared_heater','temperature') }}°C."
 - id: airbnb_checkout
   alias: 'Airbnb: Checkout (heater off, floodlight to sensor mode)'
   description: 'Calendar reservation end -> delay until configurable check-out time (input_datetime.airbnb_check_out_time, default 14:00) -> heater off, floodlight off and back to motion-sensor mode, reserved flag off. A same-day new reservation re-arms via Check-in.'
@@ -404,7 +404,7 @@
   - delay:
       seconds: "{{ [0, (today_at(states('input_datetime.airbnb_check_out_time')) - now()).total_seconds() | int] | max }}"
   - action: climate.set_hvac_mode
-    target: {entity_id: climate.airbnb_infrared_heater_2}
+    target: {entity_id: climate.airbnb_infrared_heater}
     data: {hvac_mode: 'off'}
   - action: scene.turn_on
     target: {entity_id: scene.sensor_mode}
@@ -431,11 +431,11 @@
       - condition: not
         conditions:
         - condition: state
-          entity_id: climate.airbnb_infrared_heater_2
+          entity_id: climate.airbnb_infrared_heater
           state: 'off'
       sequence:
       - action: climate.set_hvac_mode
-        target: {entity_id: climate.airbnb_infrared_heater_2}
+        target: {entity_id: climate.airbnb_infrared_heater}
         data: {hvac_mode: 'off'}
       - action: notify.mobile_app_cph2655
         data:
@@ -444,17 +444,17 @@
       - condition: template
         value_template: "{{ is_state('calendar.airbnb_ics','on') and 'reserved' in (state_attr('calendar.airbnb_ics','message') | string | lower) }}"
       - condition: state
-        entity_id: climate.airbnb_infrared_heater_2
+        entity_id: climate.airbnb_infrared_heater
         state: 'off'
       - condition: template
         value_template: "{{ (state_attr('calendar.airbnb_ics','start_time') | as_datetime | as_local).date() == now().date() }}"
       sequence:
       - action: climate.set_hvac_mode
-        target: {entity_id: climate.airbnb_infrared_heater_2}
+        target: {entity_id: climate.airbnb_infrared_heater}
         data: {hvac_mode: heat}
         continue_on_error: true
       - action: climate.set_temperature
-        target: {entity_id: climate.airbnb_infrared_heater_2}
+        target: {entity_id: climate.airbnb_infrared_heater}
         data: {temperature: "{{ states('input_number.airbnb_heater_temperature') | float(20) }}"}
         continue_on_error: true
       - action: notify.mobile_app_cph2655
@@ -1867,13 +1867,9 @@
     entity_id:
     - cover.dining_room_blinds
     - cover.dining_room_blinds_curtain
-    - cover.dining_room_blinds_curtain_2
     - cover.family_room_blinds_curtain
-    - cover.family_room_blinds_curtain_2
     - cover.living_room_blinds_curtain
-    - cover.living_room_blinds_curtain_2
     - cover.mina_s_blinds_curtain
-    - cover.mina_s_blinds_curtain_2
     to: 'open'
     id: cover_opened
   - platform: state
@@ -2588,7 +2584,7 @@
       title: 🔋 Low Battery Alert
 - id: office_heater_smart_control
   alias: Office Heater Smart Control
-  description: 'Heats the office (climate.office_heater_2) to 21°C while the office mmWave sees someone AND the room is below 20°C (the cold trigger also re-heats during continuous occupancy); off after 30 min empty or once the room passes 23°C. Blocked while house_away is on — the mmWave is cat-trippable and away-mode owns the heater then. Fixed 2026-07-10: previous version read the Pi CPU temperature as the room temp and toggled the child-lock switch instead of the heater.'
+  description: 'Heats the office (climate.office_heater) to 21°C while the office mmWave sees someone AND the room is below 20°C (the cold trigger also re-heats during continuous occupancy); off after 30 min empty or once the room passes 23°C. Blocked while house_away is on — the mmWave is cat-trippable and away-mode owns the heater then. Fixed 2026-07-10: previous version read the Pi CPU temperature as the room temp and toggled the child-lock switch instead of the heater.'
   mode: single
   triggers:
   - entity_id: binary_sensor.usb_c_mmwave_sensor_presence
@@ -2602,12 +2598,12 @@
     id: unoccupied
     trigger: state
   - trigger: numeric_state
-    entity_id: climate.office_heater_2
+    entity_id: climate.office_heater
     attribute: current_temperature
     above: 23
     id: warm_enough
   - trigger: numeric_state
-    entity_id: climate.office_heater_2
+    entity_id: climate.office_heater
     attribute: current_temperature
     below: 20
     id: cold
@@ -2623,7 +2619,7 @@
         entity_id: binary_sensor.usb_c_mmwave_sensor_presence
         state: 'on'
       - condition: numeric_state
-        entity_id: climate.office_heater_2
+        entity_id: climate.office_heater
         attribute: current_temperature
         below: 20
       - condition: state
@@ -2632,12 +2628,12 @@
       sequence:
       - action: climate.set_hvac_mode
         target:
-          entity_id: climate.office_heater_2
+          entity_id: climate.office_heater
         data:
           hvac_mode: heat
       - action: climate.set_temperature
         target:
-          entity_id: climate.office_heater_2
+          entity_id: climate.office_heater
         data:
           temperature: 21
     - conditions:
@@ -2648,7 +2644,7 @@
       sequence:
       - action: climate.set_hvac_mode
         target:
-          entity_id: climate.office_heater_2
+          entity_id: climate.office_heater
         data:
           hvac_mode: 'off'
 - id: '1779332000002'
@@ -4036,7 +4032,7 @@
           target_temp_low: 18
   - action: climate.set_hvac_mode
     target:
-      entity_id: climate.office_heater_2
+      entity_id: climate.office_heater
     data:
       hvac_mode: 'off'
   - action: notify.mobile_app_cph2655

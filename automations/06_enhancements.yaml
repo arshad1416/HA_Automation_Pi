@@ -121,7 +121,7 @@
   - action: switch.turn_on
     target:
       entity_id:
-      - switch.pool_pump_heater_socket_1
+      - switch.pool_pump_heater_pump_heater
       - switch.salt_chlorinator
   - action: notify.mobile_app_cph2655
     data:
@@ -549,7 +549,7 @@
       - action: switch.turn_off
         target:
           entity_id:
-          - switch.pool_pump_heater_socket_1
+          - switch.pool_pump_heater_pump_heater
           - switch.salt_chlorinator
           - switch.office_heater_child_lock
       - if:
@@ -573,7 +573,7 @@
       - action: switch.turn_on
         target:
           entity_id:
-          - switch.pool_pump_heater_socket_1
+          - switch.pool_pump_heater_pump_heater
           - switch.salt_chlorinator
       - if:
         - condition: state
@@ -763,7 +763,7 @@
   - action: switch.turn_off
     target:
       entity_id:
-      - switch.pool_pump_heater_socket_1
+      - switch.pool_pump_heater_pump_heater
       - switch.salt_chlorinator
 
 - id: ev_cold_weather_range_alert
