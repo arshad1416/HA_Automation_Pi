@@ -623,6 +623,26 @@ emulated_hue:
     # Scenes used by Echo routines
     scene.good_morning: {hidden: false}
     scene.good_night: {hidden: false}
+    # Covers — Alexa voice: "Alexa, open/close/set Dining Room Blinds to 50%"
+    cover.dining_room_blinds_curtain:
+      name: Dining Room Blinds
+      hidden: false
+    cover.family_room_blinds_curtain:
+      name: Family Room Blinds
+      hidden: false
+    cover.living_room_blinds_curtain:
+      name: Living Room Blinds
+      hidden: false
+    cover.mina_s_blinds_curtain:
+      name: Mina's Blinds
+      hidden: false
+    cover.larissa_s_garage_door_door:
+      name: Larissa's Garage Door
+      hidden: false
+    # Pool pump — localtuya switch (2026-08-27 switchover)
+    switch.pool_pump_heater_pump_heater:
+      name: Pool Pump
+      hidden: false
 
 # Adaptive Lighting — colour curve for the hallway Nanoleaf Light Panels (NL22).
 #
