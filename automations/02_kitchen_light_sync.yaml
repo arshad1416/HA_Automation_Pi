@@ -52,7 +52,18 @@
                 manual_control: false
               continue_on_error: true
 
-            # Island light: on if overcast/UV<4/rain/snow AND NOT quiet hours
+            # Island light: on if it is a dark day AND NOT quiet hours.
+            #
+            # Unified 2026-08-31. This used to be its own test — weather state
+            # in [cloudy, overcast, partlycloudy, rainy, snowy, fog] OR
+            # uv_index < 4 — which disagreed with measured outdoor lux on 40%
+            # of core-daylight samples (280/693 over 8 days), always by being
+            # too eager: it called 'partlycloudy' at 44,475 lx a dark day.
+            # The result was that the island light behaved differently
+            # depending on HOW the kitchen was lit — walk in and it stayed
+            # off, flip the wall switch a minute later and it came on.
+            # binary_sensor.kitchen_dark_day is now the single definition,
+            # shared with kitchen_ambient_restore_on_presence.
             - if:
                 - condition: not
                   conditions:
@@ -60,20 +71,9 @@
                       value_template: >
                         {% set nr = state_attr('sun.sun', 'next_rising') | as_datetime | as_local %}
                         {{ now() < nr and now().date() == nr.date() }}
-                - condition: or
-                  conditions:
-                    - condition: state
-                      entity_id: weather.forecast_home
-                      state:
-                        - cloudy
-                        - overcast
-                        - partlycloudy
-                        - rainy
-                        - snowy
-                        - fog
-                    - condition: template
-                      value_template: >
-                        {{ state_attr('weather.forecast_home', 'uv_index') | float(100) < 4 }}
+                - condition: state
+                  entity_id: binary_sensor.kitchen_dark_day
+                  state: "on"
               then:
                 - action: light.turn_on
                   target:

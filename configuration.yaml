@@ -78,6 +78,21 @@ input_number:
     step: 100
     unit_of_measurement: lx
     initial: 1000
+  # "Dark day" threshold for the kitchen — see binary_sensor.kitchen_dark_day.
+  # Deliberately NOT stairs_dark_lux: across 693 core-daylight (10:00-17:00)
+  # samples over 8 days the MINIMUM reading was 10,890 lx, so a 1000 lx
+  # threshold would never once have fired. Measured daily medians separate
+  # cleanly — overcast 17-20k, partly cloudy 32-41k, clear 74k.
+  # Calibrated on late-August data; re-check after the autumn equinox, when
+  # clear-sky noon drops and 20000 may sit above every winter reading.
+  kitchen_dark_lux:
+    name: Kitchen Dark Threshold (lux)
+    icon: mdi:brightness-6
+    min: 5000
+    max: 60000
+    step: 1000
+    unit_of_measurement: lx
+    initial: 20000
 
 # Manual override toggle for kitchen auto lights
 # Set by manual-off trigger in downstairs_cabinet_occupancy_auto
@@ -853,6 +868,54 @@ template:
         device_class: occupancy
         state: >
           {{ is_state('input_boolean.kitchen_tuya_presence', 'on') }}
+      # Single definition of "it is dark enough in the kitchen to want light".
+      # Consumed by BOTH kitchen_ambient_restore_on_presence (daylight branch)
+      # and kitchen_light_sync (island light) so the room behaves the same
+      # however it was lit. It replaced a weather-state/UV test that disagreed
+      # with measured lux on 40% of core-daylight samples (280/693), always by
+      # being too eager — calling 'partlycloudy' at 44,475 lx a dark day.
+      #
+      # NO device_class: 'light' would render on/off as "light detected",
+      # i.e. the exact inverse of what this sensor means.
+      #
+      # The fallback limb runs only when sensor.illuminance is missing,
+      # unavailable, or STALE. Staleness matters: the measured median update
+      # gap is 300 s but the max observed gap is 580 min, and a sensor stuck
+      # at a low value would otherwise pin this 'on' and hold the main kitchen
+      # light on all day. The guard is safe at night by construction — when it
+      # trips, the elevation < 5 limb returns the same answer the lux test
+      # would have. A missing cloud_coverage attribute defaults to 0, so the
+      # fallback fails toward "not a dark day", i.e. toward leaving lights off.
+      #
+      # Caveat: the guard measures entity update age, not measurement age.
+      # That is a safe proxy only because this value is a continuously varying
+      # computation that changes every cycle (1,451 rows with no two
+      # consecutive identical values). If ha-illuminance ever starts emitting
+      # rounded values, an unchanged reading would stop advancing last_updated
+      # and this guard would silently weaken.
+      - name: Kitchen Dark Day
+        unique_id: kitchen_dark_day
+        state: >
+          {% set s = states.sensor.illuminance %}
+          {% set lux = states('sensor.illuminance') | float(-1) %}
+          {% set fresh = s is not none and (now() - s.last_updated).total_seconds() < 3600 %}
+          {% if lux >= 0 and fresh %}
+            {{ lux < states('input_number.kitchen_dark_lux') | float(20000) }}
+          {% else %}
+            {{ state_attr('sun.sun', 'elevation') | float(90) < 5
+               or ( state_attr('weather.forecast_home', 'cloud_coverage') | float(0) > 70
+                    and state_attr('sun.sun', 'elevation') | float(90) < 25 ) }}
+          {% endif %}
+        attributes:
+          lux: "{{ states('sensor.illuminance') }}"
+          threshold: "{{ states('input_number.kitchen_dark_lux') }}"
+          # Static timestamp, NOT a live age countdown: now() makes this
+          # template re-render every minute, and a recorded attribute that
+          # changes every minute writes a recorder row every minute. This one
+          # moves only when the source sensor moves (~5-minutely).
+          source_updated: >
+            {{ states.sensor.illuminance.last_updated
+               if states.sensor.illuminance is not none else 'none' }}
       # One authoritative master-bedroom occupancy signal. ON when either the
       # LD2420 mmWave sensor or the Ecobee SmartSensor (serial 332D) detects
       # occupancy; unavailable only when both source entities are unavailable.

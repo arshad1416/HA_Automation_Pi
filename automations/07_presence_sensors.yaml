@@ -264,13 +264,20 @@
   # `condition: kitchen_presence off` followed by the fade tail, so presence
   # returning mid-delay aborted BEFORE the adaptive-lighting manual-control
   # release — leaving the strips parked at 15% in AL manual control. Now the
-  # interrupt path also hands the strips back (kitchen_ambient_restore_on_
-  # presence brings the levels up; it only runs after sunset, and during the
-  # day nothing else was releasing manual control).
+  # interrupt path also hands the strips back.
+  # Updated 2026-08-31: kitchen_ambient_restore_on_presence brings the levels
+  # back up, and it now runs in daylight too (not only after sunset), so the
+  # daytime gap this comment used to describe is closed.
+  # `for` added 2026-08-31: a bare state check was satisfied by a presence
+  # BOUNCE during the delay — sensor drops for a few seconds while someone is
+  # standing there, and the lights go off moments after they walked back in.
+  # Requiring a continuous 2 min of absence means only a real departure
+  # reaches the off tail.
   - if:
     - condition: state
       entity_id: binary_sensor.kitchen_presence
       state: "off"
+      for: "00:02:00"
     then:
     - action: script.kitchen_lights_step_dim
       data:
@@ -296,20 +303,46 @@
 - id: kitchen_ambient_restore_on_presence
   alias: "Kitchen — Ambient lights up on presence"
   description: >-
-    Bring the kitchen lights back up when Tuya presence returns. Between the
-    bedtime shutdown and sunrise only the cabinet strips and Nanoleaf
-    multicolor strips come up, at 50%; the rest of the evening every kitchen
-    light goes to 100%. Does nothing while the sun is up.
+    Bring the kitchen lights up when Tuya presence returns. Daylight: the five
+    strips always come up, and the main + island lights join them only on a
+    dark day (binary_sensor.kitchen_dark_day). Between the bedtime shutdown and
+    sunrise: only the strips, at 50%. Rest of the evening: every kitchen light
+    at 100%. Does nothing if sun.sun is unknown, or while the kitchen auto
+    lights disable toggle is on.
   mode: single
   triggers:
   - entity_id: binary_sensor.kitchen_presence
     to: "on"
     trigger: state
   conditions:
+  # Kill switch. Previously declared in configuration.yaml and referenced by
+  # nothing at all; wired up here because a daytime path makes this automation
+  # far more visible. Deliberately gates turn-ON only — graduated dimming and
+  # kitchen_light_sync are outside it, since a kill switch should not also stop
+  # lights turning off.
+  - condition: state
+    entity_id: input_boolean.kitchen_auto_lights_disable
+    state: "off"
+  # Require a real sun.sun reading. Without this the choose below still matches
+  # no branch when sun.sun is unknown/unavailable — but the two actions BEFORE
+  # the choose would already have run, cancelling an in-flight dim and handing
+  # the strips back to adaptive lighting without ever bringing them up. That
+  # leaves the lights stranded mid-fade. The old top-level `below_horizon`
+  # condition made the whole automation a no-op in that case; this preserves
+  # that property while still allowing the daylight branch.
   - condition: state
     entity_id: sun.sun
-    state: below_horizon
+    state:
+    - above_horizon
+    - below_horizon
   actions:
+  # Cancel any in-flight fade before restoring. script.kitchen_lights_step_dim
+  # is mode: parallel, so without this a dim ladder already walking 60/35/15
+  # keeps stepping DOWN over the levels we are about to set — lights come up,
+  # then sink again, which reads as "the automation didn't fire".
+  - action: script.turn_off
+    target:
+      entity_id: script.kitchen_lights_step_dim
   # Presence may have interrupted a dim sequence — hand the strips back to
   # adaptive lighting before bringing the lights up.
   - action: adaptive_lighting.set_manual_control
@@ -317,13 +350,62 @@
       entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
       manual_control: false
     continue_on_error: true
+  # Every branch below is gated on an explicit sun.sun state and there is NO
+  # bare `default:`. That is load-bearing: this automation used to carry a
+  # top-level `sun.sun below_horizon` condition, which quietly made an unknown
+  # or unavailable sun a no-op. Removing it to add daylight support would have
+  # left a bare default that turns all seven lights to 100% during any sun
+  # integration hiccup.
   - choose:
-    # ── Between bedtime and sunrise: dim, cabinet + Nanoleaf strips only ──
-    # The 21:00-09:00 window matters. input_boolean.bedtime_shutdown_done stays
-    # on until its 20:00 reset, so the latch alone would treat a winter evening
-    # (sunset ~16:45) as overnight. sun.sun below_horizon ends the window at
-    # sunrise, so the 09:00 bound is only a backstop.
+    # ── Daylight ─────────────────────────────────────────────────────────
+    # MUST be first. The overnight branch's 21:00-09:00 window overlaps summer
+    # daylight, and it was the (now removed) sun condition — not the 09:00
+    # bound — that actually ended that window at sunrise.
     - conditions:
+      - condition: state
+        entity_id: sun.sun
+        state: above_horizon
+      sequence:
+      # Strips always, dark day or not.
+      - action: light.turn_on
+        data:
+          brightness_pct: 100
+          transition: 3
+        target:
+          entity_id:
+          - light.cabinet_light_strip_left_nanoleaf_light_strip
+          - light.cabinet_light_strip_center_nanoleaf_light_strip
+          - light.cabinet_light_strip_right_nanoleaf_light_strip
+          - light.nanoleaf_multicolor_ls
+          - light.nanoleaf_multicolor_ls_2
+        continue_on_error: true
+      # Main + island only on a dark day, and in their OWN call so that an
+      # unavailable main light cannot abort the strips above. This is not
+      # hypothetical: light.kitchen_light_light_1 was unavailable for a
+      # continuous 17.9 h on 2026-08-30.
+      - if:
+        - condition: state
+          entity_id: binary_sensor.kitchen_dark_day
+          state: "on"
+        then:
+        - action: light.turn_on
+          data:
+            brightness_pct: 100
+            transition: 3
+          target:
+            entity_id:
+            - light.island_light_light
+            - light.kitchen_light_light_1
+          continue_on_error: true
+    # ── Between bedtime and sunrise: dim, cabinet + Nanoleaf strips only ──
+    # input_boolean.bedtime_shutdown_done stays on until its 20:00 reset, so
+    # the latch alone would treat a winter evening (sunset ~16:45) as
+    # overnight; the below_horizon check plus the daylight branch above bound
+    # the window, and the 09:00 bound is only a backstop.
+    - conditions:
+      - condition: state
+        entity_id: sun.sun
+        state: below_horizon
       - condition: state
         entity_id: input_boolean.bedtime_shutdown_done
         state: "on"
@@ -342,18 +424,31 @@
           - light.cabinet_light_strip_right_nanoleaf_light_strip
           - light.nanoleaf_multicolor_ls
           - light.nanoleaf_multicolor_ls_2
+        continue_on_error: true
     # ── Rest of the evening: everything to 100% ──────────────────────────
-    default:
-    - action: light.turn_on
-      data:
-        brightness_pct: 100
-        transition: 3
-      target:
-        entity_id:
-        - light.cabinet_light_strip_left_nanoleaf_light_strip
-        - light.cabinet_light_strip_center_nanoleaf_light_strip
-        - light.cabinet_light_strip_right_nanoleaf_light_strip
-        - light.nanoleaf_multicolor_ls
-        - light.nanoleaf_multicolor_ls_2
-        - light.island_light_light
-        - light.kitchen_light_light_1
+    - conditions:
+      - condition: state
+        entity_id: sun.sun
+        state: below_horizon
+      sequence:
+      - action: light.turn_on
+        data:
+          brightness_pct: 100
+          transition: 3
+        target:
+          entity_id:
+          - light.cabinet_light_strip_left_nanoleaf_light_strip
+          - light.cabinet_light_strip_center_nanoleaf_light_strip
+          - light.cabinet_light_strip_right_nanoleaf_light_strip
+          - light.nanoleaf_multicolor_ls
+          - light.nanoleaf_multicolor_ls_2
+        continue_on_error: true
+      - action: light.turn_on
+        data:
+          brightness_pct: 100
+          transition: 3
+        target:
+          entity_id:
+          - light.island_light_light
+          - light.kitchen_light_light_1
+        continue_on_error: true
