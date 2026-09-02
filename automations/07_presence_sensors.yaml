@@ -408,6 +408,52 @@
             - light.island_light_light
             - light.kitchen_light_light_1
           continue_on_error: true
+        else:
+        # Bright day: still do NOT turn these on from off -- that is exactly
+        # what the kitchen_dark_day gate is for, and it stays. But DO undo a dim
+        # that WE just applied, which is what this else-branch is for.
+        #
+        # The bug this fixes was a one-way ratchet. The two graduated-dim paths
+        # (kitchen_ambient_graduated_dimming above, and the main-light-off path
+        # in 02_kitchen_light_sync.yaml) carry NO kitchen_dark_day condition --
+        # they dim whatever is on, bright day or not. Only the restore was
+        # gated. So on a bright day the island could be walked down to 15/10/5%
+        # and then simply left there, because the branch that brings it back
+        # refused to run.
+        #
+        # Traced end to end in the recorder for 2026-09-02:
+        #   17:30:14  presence had been off 3 min -> step_dim [60,35,15]
+        #   17:32:38  step_dim [10,5] begins, island driven to 10%
+        #   17:32:39  presence returns -> this automation fires, cancels the
+        #             script, restores the strips to 100%, and skips the island
+        #             because binary_sensor.kitchen_dark_day was off (it was off
+        #             from 12:33:13 to 17:35:40 that day)
+        #   17:47:33  next dim ramp -- the first thing to touch the island again
+        # The island sat at 10% for ~15 minutes in the middle of the afternoon
+        # with someone standing in the kitchen. That is the reported symptom.
+        #
+        # Guarded on `is_state('on')` so this can only ever RAISE a light the
+        # fade left on; a light that is off stays off. Note this does mean a
+        # deliberate manual dim on a bright day is pushed back to 100% when you
+        # re-enter -- but the dim ramp does not preserve a manual level either,
+        # and the dark-day branch above has always behaved this way, so this
+        # makes the bright-day path consistent rather than introducing a new
+        # behaviour.
+        - variables:
+            dimmed_but_still_on: >
+              {{ ['light.island_light_light', 'light.kitchen_light_light_1']
+                 | select('is_state', 'on') | list }}
+        - if:
+          - condition: template
+            value_template: "{{ dimmed_but_still_on | count > 0 }}"
+          then:
+          - action: light.turn_on
+            data:
+              brightness_pct: 100
+              transition: 3
+            target:
+              entity_id: "{{ dimmed_but_still_on }}"
+            continue_on_error: true
     # ── Between bedtime and sunrise: dim, cabinet + Nanoleaf strips only ──
     # input_boolean.bedtime_shutdown_done stays on until its 20:00 reset, so
     # the latch alone would treat a winter evening (sunset ~16:45) as
