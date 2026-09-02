@@ -92,7 +92,18 @@
     entity_id: light.nanoleaf_multicolor_ls_2
     state: 'off'
   actions:
+  # skip_condition: false is REQUIRED, not decorative. automation.trigger
+  # defaults to skip_condition: TRUE, i.e. it runs the target's actions while
+  # SKIPPING the target's own conditions. proactive_nightly_lock_check is
+  # guarded by `{{ unlocked != '' }}` -- its whole purpose is to stay silent on
+  # a night when both doors are already locked. Under the default, this bedtime
+  # detection bypassed that guard, so the Echo announced "These locks were
+  # unlocked and have been automatically locked: ." with an empty list on every
+  # night the house was already secure. Verified 2026-09-02: that empty-list
+  # template is the automation's only condition.
   - action: automation.trigger
+    data:
+      skip_condition: false
     target:
       entity_id: automation.proactive_nightly_lock_check
 - id: master_bedroom_supernova_auto_off

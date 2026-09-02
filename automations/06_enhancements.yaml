@@ -174,62 +174,119 @@
     id: guest_bathroom
   conditions: []
   actions:
-  # ---- TIER 1: immediate ----
   - variables:
       location: "{{ trigger.id | replace('_', ' ') | title }}"
-  - action: notify.grizzl_ev_phones
-    data:
-      title: "💧 Leak Detected"
-      message: "Water leak in {{ location }}! Check immediately."
-  - action: notify.alexa_media
-    data:
-      data: {type: announce}
-      message: "Warning. Water leak detected in the {{ location }}. Please check immediately."
-      target:
-      - media_player.downstairs_echo_dot
-      - media_player.upstairs_echo_dot
-  # ---- TIER 2: 30-second sustained ----
-  - delay: "00:00:30"
-  - condition: template
-    value_template: "{{ is_state(trigger.entity_id, 'on') }}"
-  - action: light.turn_on
-    data:
-      color_name: red
-      brightness_pct: 100
-      flash: long
-    target:
-      entity_id:
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-      - light.cabinet_light_strip_left_nanoleaf_light_strip
-      - light.cabinet_light_strip_center_nanoleaf_light_strip
-      - light.cabinet_light_strip_right_nanoleaf_light_strip
-  - action: notify.alexa_media
-    data:
-      data: {type: announce}
-      message: "URGENT. Sustained water leak in the {{ location }}. This is not a false alarm. Please investigate now."
-      target:
-      - media_player.everywhere
-  - action: notify.persistent_notification
-    data:
-      title: "🚨 Sustained Leak: {{ location }}"
-      message: "Leak persisting >30 seconds in {{ location }}. Tier 2 escalation triggered."
-  # ---- TIER 3: 5-minute sustained, repeat capped at 10 ----
-  - delay: "00:04:30"
-  - condition: template
-    value_template: "{{ is_state(trigger.entity_id, 'on') }}"
-  - repeat:
-      count: 10
+  # Restructured 2026-09-02 from one serial chain into four independent alarm
+  # channels. The old shape ran push -> voice -> flash -> voice -> notification
+  # in a single sequence, which made every channel a single point of failure for
+  # every channel after it: notify.alexa_media is a cloud call, and when it
+  # raised, the red flash, the persistent notification and the whole 5-minute
+  # critical loop never ran. Worse, `- condition:` as a bare sequence step is a
+  # STOP, not a filter, so the single sensor-still-wet recheck also gated the
+  # channels that came after it.
+  #
+  # Now each channel owns its own delay, its own recheck and its own failure.
+  # Losing the Echoes costs the voice channel only. Ordering between channels is
+  # no longer load-bearing.
+  - parallel:
+    # ---- PUSH: immediate, plus a sustained notification at 30 s ----
+    - alias: PUSH
       sequence:
+      - action: notify.grizzl_ev_phones
+        continue_on_error: true
+        data:
+          title: "💧 Leak Detected"
+          message: "Water leak in {{ location }}! Check immediately."
+      - delay: "00:00:30"
+      - condition: template
+        value_template: "{{ is_state(trigger.entity_id, 'on') }}"
+      - action: notify.persistent_notification
+        continue_on_error: true
+        data:
+          title: "🚨 Sustained Leak: {{ location }}"
+          message: "Leak persisting >30 seconds in {{ location }}. Tier 2 escalation triggered."
+
+    # ---- VOICE: warn now, urgent at 30 s, critical loop from 5 min ----
+    - alias: VOICE
+      sequence:
+      - action: notify.alexa_media
+        continue_on_error: true
+        data:
+          data: {type: announce}
+          message: "Warning. Water leak detected in the {{ location }}. Please check immediately."
+          target:
+          - media_player.downstairs_echo_dot
+          - media_player.upstairs_echo_dot
+      - delay: "00:00:30"
       - condition: template
         value_template: "{{ is_state(trigger.entity_id, 'on') }}"
       - action: notify.alexa_media
+        continue_on_error: true
         data:
           data: {type: announce}
-          message: "CRITICAL. Water leak still active in {{ location }}. Immediate action required."
+          message: "URGENT. Sustained water leak in the {{ location }}. This is not a false alarm. Please investigate now."
           target:
           - media_player.everywhere
-      - delay: "00:01:00"
+      - delay: "00:04:30"
+      - condition: template
+        value_template: "{{ is_state(trigger.entity_id, 'on') }}"
+      - repeat:
+          count: 10
+          sequence:
+          - condition: template
+            value_template: "{{ is_state(trigger.entity_id, 'on') }}"
+          - action: notify.alexa_media
+            continue_on_error: true
+            data:
+              data: {type: announce}
+              message: "CRITICAL. Water leak still active in {{ location }}. Immediate action required."
+              target:
+              - media_player.everywhere
+          - delay: "00:01:00"
+
+    # ---- VISUAL: red flash at 30 s ----
+    - alias: VISUAL
+      sequence:
+      - delay: "00:00:30"
+      - condition: template
+        value_template: "{{ is_state(trigger.entity_id, 'on') }}"
+      - action: light.turn_on
+        continue_on_error: true
+        data:
+          color_name: red
+          brightness_pct: 100
+          flash: long
+        target:
+          entity_id:
+          - light.nanoleaf_multicolor_ls
+          - light.nanoleaf_multicolor_ls_2
+          - light.cabinet_light_strip_left_nanoleaf_light_strip
+          - light.cabinet_light_strip_center_nanoleaf_light_strip
+          - light.cabinet_light_strip_right_nanoleaf_light_strip
+
+    # ---- AUDIBLE: 2-minute siren burst at 30 s ----
+    # The only channel that works with the house empty, the phones face-down and
+    # the Echoes offline. Deliberately at 30 s, not immediately, so a splash that
+    # dries on its own does not sound the siren.
+    #
+    # No `duration:` key: siren.garage_siren reports supported_features 3
+    # (TURN_ON | TURN_OFF) with no DURATION bit, so a duration argument would be
+    # rejected. The burst is bounded by an explicit turn_off instead, which is
+    # why turn_off carries no continue_on_error -- a silently swallowed failure
+    # there leaves the siren sounding indefinitely.
+    - alias: AUDIBLE
+      sequence:
+      - delay: "00:00:30"
+      - condition: template
+        value_template: "{{ is_state(trigger.entity_id, 'on') }}"
+      - action: siren.turn_on
+        continue_on_error: true
+        target:
+          entity_id: siren.garage_siren
+      - delay: "00:02:00"
+      - action: siren.turn_off
+        target:
+          entity_id: siren.garage_siren
 
 # -----------------------------------------------------------------------------
 # Enhancement F1: When all 7 leak sensors clear, release the kitchen cabinet
@@ -292,6 +349,14 @@
         entity_id: switch.cabinet_kick_plate_adaptive_lighting_cabinet_kick_plate
       data:
         manual_control: false
+    # Backstop for the AUDIBLE channel in leak_detection_escalation. That branch
+    # ends the burst with its own turn_off, but if HA restarts inside the
+    # 2-minute delay the branch is lost and the siren keeps sounding. This
+    # guarantees the siren is silenced once every sensor reads dry.
+    - action: siren.turn_off
+      continue_on_error: true
+      target:
+        entity_id: siren.garage_siren
 
 # -----------------------------------------------------------------------------
 # Enhancement G: Departure security check (locks + office heater) when the
@@ -309,37 +374,48 @@
     to: not_home
     trigger: state
   conditions:
+  # DORMANT -- this automation cannot currently fire, and the fixes below are
+  # latent until it can. Verified against the recorder 2026-09-02: over the full
+  # retention window binary_sensor.larissa_s_s22_presence reported only 'on' and
+  # 'unavailable', never once 'off', so this condition has never been satisfied.
+  # The S22 is a retired handset; the current phone is the S24 Plus, and the
+  # mobile_app registration behind this sensor is bound to a deleted user, which
+  # is why it is stuck. Repointing this at the live device is tracked separately
+  # -- do not "fix" it by deleting the guard, which would make departure lock-up
+  # fire whenever Arshad leaves regardless of whether anyone else is home.
   - condition: state
     entity_id: binary_sensor.larissa_s_s22_presence
     state: 'off'
   actions:
   - variables:
+      # Display-only, and scoped to the same two doors script.lock_house_doors
+      # acts on. The previous version enumerated every lock and excluded
+      # 'lock.airbnb', which is not an entity that exists -- the guest door is
+      # lock.airbnb_door -- so the filter matched nothing and this locked the
+      # Airbnb guest in, along with lock.ioniq_6_door_lock. Same defect as the
+      # 23:30 check; both now delegate to the one idempotent owner.
       unlocked_locks: >
         {{ states.lock
-           | rejectattr('entity_id', 'eq', 'lock.airbnb')
+           | selectattr('entity_id', 'in',
+               ['lock.front_door', 'lock.garages_entry_door'])
            | selectattr('state', 'eq', 'unlocked')
            | map(attribute='attributes.friendly_name')
            | list | join(', ') }}
-      heater_on: "{{ is_state('switch.office_heater_child_lock', 'on') }}"
-  - if:
-    - condition: template
-      value_template: "{{ unlocked_locks != '' }}"
-    then:
-    - action: lock.lock
-      target:
-        entity_id: >
-          {{ states.lock
-             | rejectattr('entity_id', 'eq', 'lock.airbnb')
-             | selectattr('state', 'eq', 'unlocked')
-             | map(attribute='entity_id')
-             | list }}
+      # switch.office_heater_child_lock is the panel child-lock, not the heater.
+      # Turning it off UNLOCKED THE BUTTONS and left the heater running, while
+      # the notification below claimed "Office heater turned off." The heater is
+      # a climate entity; its power is hvac_mode.
+      heater_on: "{{ not is_state('climate.office_heater', 'off') }}"
+  - action: script.lock_house_doors
   - if:
     - condition: template
       value_template: "{{ heater_on }}"
     then:
-    - action: switch.turn_off
+    - action: climate.set_hvac_mode
       target:
-        entity_id: switch.office_heater_child_lock
+        entity_id: climate.office_heater
+      data:
+        hvac_mode: 'off'
   - action: notify.mobile_app_cph2655
     data:
       title: "🏠 Departure Check"

@@ -255,20 +255,19 @@
     to: home
     trigger: state
 - actions:
-  - action: lock.lock
-    target:
-      entity_id: |
-        {{ states.lock
-           | rejectattr('entity_id', 'eq', 'lock.airbnb')
-           | selectattr('state', 'eq', 'unlocked')
-           | map(attribute='entity_id')
-           | list }}
+  # 2026-09-02: was `lock.lock` over a states.lock enumeration with a
+  # rejectattr() exclusion for lock.airbnb. The exclusion did not work: this
+  # locked the Airbnb GUEST's door every night at 23:30, and also reached
+  # lock.ioniq_6_door_lock and the retired lock.front_door_broken. Now delegated
+  # to the single idempotent owner, which uses an explicit two-door allowlist.
+  # Do not reintroduce lock enumeration here.
+  - action: script.lock_house_doors
   - data:
       agent_id: conversation.google_ai_conversation
       text: |
         These locks were unlocked and have been automatically locked: {{ unlocked }}.
         Additional home status — Blinds: Dining={{ state_attr('cover.dining_room_blinds_curtain','current_position') }}% Family={{ state_attr('cover.family_room_blinds_curtain','current_position') }}% Mina={{ state_attr('cover.mina_s_blinds_curtain','current_position') }}%.
-        Office heater: {{ states('switch.office_heater_child_lock') }}.
+        Office heater: {{ states('climate.office_heater') }}.
         Pool pump: {{ states('switch.pool_pump_heater_pump_heater') }}.
         EV: {{ states('sensor.ioniq_6_ev_battery_level') }}% SoC, {{ 'charging' if is_state('binary_sensor.grizzl_e_charging', 'on') else 'not charging' }}. Off-peak starts in {{ ((23 - now().hour) * 60 - now().minute) if now().hour < 23 else 'now' }} minutes.
         Compose a calm, brief bedtime summary (2-3 sentences) covering locks, any open blinds, and EV status.
@@ -292,9 +291,12 @@
   - at: '23:30:00'
     trigger: time
   variables:
+    # Display-only, and scoped to the same two doors the script acts on, so the
+    # narration can never announce a lock this automation did not touch.
     unlocked: |
       {{ states.lock
-         | rejectattr('entity_id', 'eq', 'lock.airbnb')
+         | selectattr('entity_id', 'in',
+             ['lock.front_door', 'lock.garages_entry_door'])
          | selectattr('state', 'eq', 'unlocked')
          | map(attribute='attributes.friendly_name')
          | list
@@ -560,37 +562,29 @@
     entity_id: cover.larissa_s_garage_door_door
     to: closed
 - actions:
-  - action: light.turn_off
-    data: {}
-    metadata: {}
-    target:
-      entity_id:
-      - light.cabinet_light_strip_center_nanoleaf_light_strip
-      - light.cabinet_light_strip_right_nanoleaf_light_strip
-      - light.cabinet_light_strip_left_nanoleaf_light_strip
-      - light.nanoleaf_multicolor_ls
-      - light.nanoleaf_multicolor_ls_2
-      - light.kitchen_light_light_1
-      - light.curtain_lights_v2
-      - light.garage_wall_light
-  - action: switch.turn_off
-    data: {}
-    target:
-      entity_id:
-      - switch.back_hallway_light_switch_1_2
-      - switch.kitchen_pantry_light
-  - action: lock.lock
-    data: {}
-    metadata: {}
-    target:
-      # august platform for both, matching every other lock automation. This used to
-      # pair lock.front_door (august) with lock.garage_entry (smartthings), i.e. one
-      # door on the fast path and its neighbour on the slow one for no reason.
-      # Measured 2026-08-25: august dispatches in 0.13s median vs 1.55s for the
-      # smartthings mirrors of the same hardware.
-      entity_id:
-      - lock.front_door
-      - lock.garages_entry_door
+  # ORDER IS LOAD-BEARING (fixed 2026-09-02). The safety block — locks, then the
+  # two garage doors — now runs FIRST.
+  #
+  # It used to run third, behind two light/switch sweeps. HA aborts a sequence at
+  # the step that raises, so an unreachable cloud light in the first sweep takes
+  # the lock step down with it -- and unreachable Tuya/Govee lights are routine
+  # here.
+  #
+  # This is not hypothetical. Verified against the recorder 2026-09-02 by
+  # correlating automation_triggered with call_service: on 2 of the 5 nights in
+  # the retention window this automation fired on schedule, emitted its 8-entity
+  # light.turn_off, and then stopped -- no switch.turn_off, no lock.lock, and no
+  # error surfaced to any notifier. The other 3 nights completed normally.
+  #
+  # Never place a lock, a garage door, or any other safety action behind a
+  # best-effort cloud call.
+  #
+  # august platform for both doors, matching every other lock automation. This
+  # used to pair lock.front_door (august) with lock.garage_entry (smartthings),
+  # i.e. one door on the fast path and its neighbour on the slow one for no
+  # reason. Measured 2026-08-25: august dispatches in 0.13s median vs 1.55s for
+  # the smartthings mirrors of the same hardware.
+  - action: script.lock_house_doors
   - if:
     - condition: state
       entity_id: cover.larissa_s_garage_door
@@ -607,6 +601,38 @@
     - action: cover.close_cover
       target:
         entity_id: cover.garage_door_wa1nvzx3
+  # Light sweep split local-first, cloud-second, so one unreachable cloud light
+  # cannot take the locally-reachable ones down with it. continue_on_error only
+  # suppresses HomeAssistantError subclasses (helpers/script.py:631), so it
+  # bounds the blast radius rather than eliminating it — the ordering above is
+  # what actually carries the safety guarantee.
+  - action: light.turn_off          # LOCAL: homekit_controller + matter
+    continue_on_error: true
+    data: {}
+    metadata: {}
+    target:
+      entity_id:
+      - light.cabinet_light_strip_center_nanoleaf_light_strip
+      - light.cabinet_light_strip_right_nanoleaf_light_strip
+      - light.cabinet_light_strip_left_nanoleaf_light_strip
+      - light.nanoleaf_multicolor_ls
+      - light.nanoleaf_multicolor_ls_2
+  - action: light.turn_off          # CLOUD: localtuya + govee
+    continue_on_error: true
+    data: {}
+    metadata: {}
+    target:
+      entity_id:
+      - light.kitchen_light_light_1
+      - light.curtain_lights_v2
+      - light.garage_wall_light
+  - action: switch.turn_off
+    continue_on_error: true
+    data: {}
+    target:
+      entity_id:
+      - switch.back_hallway_light_switch_1_2
+      - switch.kitchen_pantry_light
   - action: adaptive_lighting.set_manual_control
     data:
       entity_id: switch.cabinet_strips_adaptive_lighting_cabinet_strips
@@ -1912,17 +1938,17 @@
   triggers:
   - trigger: time
     at: '21:00:00'
-  conditions:
-  - condition: state
-    entity_id: lock.front_door
-    state: unlocked
+  # 2026-09-02: the condition used to be `lock.front_door is unlocked`, which
+  # gated the WHOLE run on the front door. An unlocked garage-entry door behind a
+  # locked front door was skipped entirely and waited for the 23:30 sweep.
+  # Removing the condition is only safe because the idempotence now lives inside
+  # script.lock_house_doors, which issues no command when both doors are already
+  # locked. Do NOT read this as "make the 21:00 pass unconditional" in the naive
+  # sense — an unconditional lock.lock here would drive two motor cycles per door
+  # per night on the August locks.
+  conditions: []
   actions:
-  - action: lock.lock
-    target:
-      entity_id: lock.front_door
-  - action: lock.lock
-    target:
-      entity_id: lock.garages_entry_door
+  - action: script.lock_house_doors
   mode: single
 - id: smartthings_nightly_token_refresh
   alias: Nightly SmartThings Token Refresh
@@ -2278,16 +2304,55 @@
   # changes first in 10 of 11 matched events, and they are the only ones that expose
   # the transitional 'locking' state at all. The other lock automations (21:00, 23:30,
   # 02:00) already target august only; this brings bedtime in line with them.
-  - action: lock.lock
+  #
+  # Fixed 2026-09-02, three changes:
+  #   (a) The latch is set FIRST, not last. It used to be the second-to-last
+  #       action, so any failure in the ~25-entity light/switch sweep aborted the
+  #       run before input_boolean.bedtime_shutdown_done was ever set. The next
+  #       :00/:30 poll then saw the latch still off and re-ran the whole routine,
+  #       re-locking and re-closing all night. Setting it first makes "we started
+  #       a bedtime run tonight" true the moment the run starts, which is what the
+  #       once-per-night guard actually means. It is reset at 20:00 by its own
+  #       automation, so a crashed run costs one skipped night, not a loop.
+  #   (b) lock.lock -> script.lock_house_doors, which skips doors that are already
+  #       locked. That removes the remaining pair of motor cycles the August
+  #       retry produced on top of the fix described above.
+  #   (c) cover.larissa_s_garage_door_door dropped, and the close is now guarded
+  #       on state == open to match the 02:00 automation. Verified in the device
+  #       registry 2026-09-02: that entity is the SAME physical door as
+  #       cover.larissa_s_garage_door -- one device, "Larissa's Garage Door" in
+  #       area Garage, exposed twice (smartthings garage_door + localtuya
+  #       MSG100). Sending close_cover to both drove one opener with two
+  #       commands, exactly the duplicate-integration defect fixed for the locks
+  #       above. Keeping the smartthings entity because it is the only one that
+  #       reports the full state machine -- over the 7-day recorder window it
+  #       logged open/closing/closed, while the localtuya entity logged only
+  #       closed and unavailable and never once reported open, so it cannot
+  #       drive a state guard.
+  #
+  #       NOTE: this automation still never touches cover.garage_door_wa1nvzx3
+  #       (Skylink GDO), which is a DIFFERENT physical door and is closed by the
+  #       02:00 automation only. Left as-is deliberately -- adding it here is a
+  #       behaviour change, not a bug fix.
+  - action: script.lock_house_doors
+  - if:
+    - condition: state
+      entity_id: cover.larissa_s_garage_door
+      state: open
+    then:
+    - action: cover.close_cover
+      target:
+        entity_id: cover.larissa_s_garage_door
+  # Latch here: after the safety block, before the cosmetic sweep. The bug being
+  # fixed is that the latch used to sit second-to-last, so a raise anywhere in
+  # the ~25-entity light/switch sweep left it unset and the next :00/:30 poll
+  # re-ran the entire routine, re-locking and re-closing repeatedly. Moving it
+  # ahead of the sweep fixes that. Deliberately NOT moving it to the very front:
+  # if the lock or garage close fails, the next poll SHOULD retry, and that
+  # retry is cheap because script.lock_house_doors skips already-locked doors.
+  - action: input_boolean.turn_on
     target:
-      entity_id:
-      - lock.front_door
-      - lock.garages_entry_door
-  - action: cover.close_cover
-    target:
-      entity_id:
-      - cover.larissa_s_garage_door
-      - cover.larissa_s_garage_door_door
+      entity_id: input_boolean.bedtime_shutdown_done
   - delay:
       seconds: 10
   - action: light.turn_off
@@ -2325,9 +2390,6 @@
       - switch.back_hallway_light_main_switch
       - switch.dining_room_table_lights
     data: {}
-  - action: input_boolean.turn_on
-    target:
-      entity_id: input_boolean.bedtime_shutdown_done
   - action: notify.mobile_app_cph2655
     data:
       message: |
@@ -4167,13 +4229,31 @@
   mode: single
   triggers:
   # Tuya switch state is device-reported (cloud round trip), so this is a real run signal.
-  - trigger: state
-    entity_id: switch.dual_outlet_irrigation_timer_switch_2
-    to: 'on'
-    for:
-      minutes: 100
+  #
+  # Template trigger, not `to: 'on'` with a `for:`. Changed 2026-09-02.
+  # A state trigger's `for:` timer is reset by ANY state change, and
+  # `unavailable` is a state change. This is a cloud-polled Tuya entity that
+  # goes unavailable routinely -- the recorder shows it flapping through
+  # unavailable on ordinary days -- so a single blip at any point inside the
+  # 100-minute window silently restarted the clock. The failsafe could therefore
+  # never fire during exactly the condition it exists for: a valve left running
+  # while the cloud link is unhealthy.
+  #
+  # `not is_state(..., 'off')` holds across on AND unavailable, so the timer
+  # keeps running through a blip. Only a confirmed 'off' clears it. Fails safe:
+  # an entity stuck unavailable for 100 minutes trips the cap and closes the
+  # valve, which is the correct action when we cannot prove the water is off.
+  - trigger: template
+    value_template: "{{ not is_state('switch.dual_outlet_irrigation_timer_switch_2', 'off') }}"
+    for: "01:40:00"
   conditions: []
   actions:
+  # Captured BEFORE the close attempt, so the notification can say what we
+  # actually tripped on. Tripping on 'unavailable' is a materially different
+  # event from tripping on a confirmed 'on' and needs different wording -- in
+  # the unavailable case we never had proof the valve was open at all.
+  - variables:
+      state_at_trip: "{{ states('switch.dual_outlet_irrigation_timer_switch_2') }}"
   # This is the LAST line of defence, so its close is verified + retried (up to 5x)
   # rather than fire-and-forget — a dropped command here would leave water running.
   - repeat:
@@ -4192,7 +4272,13 @@
         {{ "🚨 Front lawn valve force-closed (100-min cap)" if is_state('switch.dual_outlet_irrigation_timer_switch_2', 'off')
            else "🚨🚨 LAWN VALVE STUCK OPEN - GO SHUT THE TAP" }}
       message: >-
-        valve_2 ran for 100 minutes and hit the hard safety cap.
+        {{ "valve_2 ran for 100 minutes and hit the hard safety cap."
+           if state_at_trip == 'on'
+           else ("valve_2 hit the 100-minute cap but read 'off' by the time the guard ran, so it closed on its own in the last moments — no action was needed."
+                 if state_at_trip == 'off'
+                 else "valve_2 was NOT confirmed off for 100 minutes (it read '"
+                      ~ state_at_trip
+                      ~ "', so the cloud link was unhealthy and the valve may or may not have been running). Hit the hard safety cap and closed it as a precaution.") }}
         {{ "Force-closed successfully (device reports Idle) — check why the watering automation did not close it."
            if is_state('switch.dual_outlet_irrigation_timer_switch_2', 'off')
            else "IT DID NOT CONFIRM CLOSED after 5 attempts (device reports '"

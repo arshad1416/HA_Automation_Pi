@@ -30,3 +30,46 @@ kitchen_lights_step_dim:
             continue_on_error: true
           - delay:
               seconds: 3
+
+# ── Sole owner of lock.lock for the two house doors ──────────────────────────
+# Every automation that locks up (21:00, 23:30, bedtime, 02:00, departure) calls
+# THIS and nothing else. Added 2026-09-02 to fix three defects found by a live
+# re-baseline:
+#
+#   1. proactive_nightly_lock_check enumerated `states.lock` and locked anything
+#      unlocked. Its rejectattr() exclusion for lock.airbnb did not work, so it
+#      locked the Airbnb GUEST in at 23:30 nightly, and also reached
+#      lock.ioniq_6_door_lock and the retired lock.front_door_broken.
+#   2. Several callers sent lock.lock unconditionally to doors that were already
+#      locked. August retries once internally, so an already-locked door was
+#      driven through two visible motor cycles per pass — the same defect
+#      bedtime_routine_auto was fixed for in August (see the measurement note at
+#      01_main.yaml:2264).
+#   3. The 21:00 pass gated the WHOLE run on the front door being unlocked, so an
+#      unlocked garage-entry door behind a locked front door was skipped.
+#
+# An explicit two-door allowlist is the point: never enumerate locks again, or
+# the guest-door bug comes straight back the next time a lock is added. The
+# `targets | count > 0` guard is what makes this idempotent — calling it with
+# both doors locked issues no command at all.
+lock_house_doors:
+  alias: Lock house doors (idempotent)
+  description: >-
+    Locks lock.front_door and lock.garages_entry_door, and only those, and only
+    the ones currently unlocked. Safe to call any number of times.
+  mode: single
+  sequence:
+    - variables:
+        targets: >-
+          {{ states.lock
+             | selectattr('entity_id','in',
+                 ['lock.front_door','lock.garages_entry_door'])
+             | selectattr('state','eq','unlocked')
+             | map(attribute='entity_id') | list }}
+    - if:
+        - condition: template
+          value_template: "{{ targets | count > 0 }}"
+      then:
+        - action: lock.lock
+          target:
+            entity_id: "{{ targets }}"
