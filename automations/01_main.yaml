@@ -2584,7 +2584,7 @@
       title: 🔋 Low Battery Alert
 - id: office_heater_smart_control
   alias: Office Heater Smart Control
-  description: 'Heats the office (climate.office_heater) to 21°C while the office mmWave sees someone AND the room is below 20°C (the cold trigger also re-heats during continuous occupancy); off after 30 min empty or once the room passes 23°C. Blocked while house_away is on — the mmWave is cat-trippable and away-mode owns the heater then. Fixed 2026-07-10: previous version read the Pi CPU temperature as the room temp and toggled the child-lock switch instead of the heater.'
+  description: 'Heats the office (climate.office_heater) to 21°C while the office mmWave sees someone AND the room is between 5°C and 20°C; off after 30 min empty or once the room passes 23°C. Blocked while house_away is on — the mmWave is cat-trippable and away-mode owns the heater then. Fixed 2026-07-10: previous version read the Pi CPU temperature as the room temp and toggled the child-lock switch instead of the heater. Fixed 2026-09-02: added the 5°C plausibility floor and a /30 sweep — the LocalTuya precision of 0.1 made current_temperature read 2.3 instead of 23, so the below-20 test was permanently true and the heater ran on every presence event; the sweep replaces a 30-min state timer that HA restarts silently discard. NOTE: the device also runs its own on-board weekly program (DP 16 week_program1, 07:00 and 18:00 daily) which turns it on with no HA call behind it — disable that in the Smart Life app or HA cannot own this heater.'
   mode: single
   triggers:
   - entity_id: binary_sensor.usb_c_mmwave_sensor_presence
@@ -2602,11 +2602,30 @@
     attribute: current_temperature
     above: 23
     id: warm_enough
+  # `above: 5` is a plausibility floor, not a comfort threshold. The LocalTuya climate
+  # entity multiplies the raw temp_current DP by its `precision` setting, which is 0.1
+  # on this device, so a real 23 C room reported 2.3 and "below 20" was permanently
+  # true — the heat branch fired on every presence event, year-round (audit H3,
+  # confirmed 2026-09-02: raw DP 3 = 23 while the cloud twin climate.office_heater_2
+  # read 23.0 and this entity read 2.3). Setting precision to 1 in the LocalTuya device
+  # options is the actual repair; this band is the belt-and-braces so a mis-scaled,
+  # stuck or dropped reading can never drive the heater again. An occupied room is
+  # never below 5 C.
   - trigger: numeric_state
     entity_id: climate.office_heater
     attribute: current_temperature
+    above: 5
     below: 20
     id: cold
+  # Restart-safe backstop. The `unoccupied` trigger above is a state trigger with
+  # `for: 30 minutes`; that timer is only re-armed by a new state_changed event, so an
+  # HA restart while it is running drops it and the heater stays on until the next
+  # presence on->off cycle. HA restarted 9 times in the last recorded week, so this is
+  # not hypothetical. This sweep re-checks the same condition on a schedule that
+  # survives restarts.
+  - trigger: time_pattern
+    minutes: '/30'
+    id: sweep
   conditions: []
   actions:
   - choose:
@@ -2618,9 +2637,11 @@
       - condition: state
         entity_id: binary_sensor.usb_c_mmwave_sensor_presence
         state: 'on'
+      # Same plausibility floor as the `cold` trigger above — see the note there.
       - condition: numeric_state
         entity_id: climate.office_heater
         attribute: current_temperature
+        above: 5
         below: 20
       - condition: state
         entity_id: input_boolean.house_away
@@ -2641,6 +2662,25 @@
         id:
         - unoccupied
         - warm_enough
+      sequence:
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.office_heater
+        data:
+          hvac_mode: 'off'
+    # Sweep branch: only ever turns the heater OFF, and only when the room has genuinely
+    # been empty for 30 minutes. It cannot turn anything on, so a spurious sweep is safe.
+    - conditions:
+      - condition: trigger
+        id: sweep
+      - condition: state
+        entity_id: climate.office_heater
+        state: heat
+      - condition: state
+        entity_id: binary_sensor.usb_c_mmwave_sensor_presence
+        state: 'off'
+        for:
+          minutes: 30
       sequence:
       - action: climate.set_hvac_mode
         target:
