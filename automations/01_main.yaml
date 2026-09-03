@@ -624,6 +624,13 @@
     target:
       entity_id:
       - light.kitchen_light_light_1
+      # Added 2026-09-03. Its absence was not obvious: light.kitchen_light_light_1
+      # is here, and the kitchen presence automation drives the two together as a
+      # pair, so "the kitchen lights are in the 2 AM sweep" read as true. It was
+      # not -- on the night of 09-02/03 the island light was still on at 100% at
+      # 02:00, survived this automation untouched, and only went off at 02:05:28
+      # when someone hit the physical switch (no service call, no context user).
+      - light.island_light_light
       - light.curtain_lights_v2
       - light.garage_wall_light
   - action: switch.turn_off
@@ -2223,6 +2230,7 @@
       (3) FALLBACK for nights the phone isn't sleep-tracking — same poll, 23:00-04:00, only if the house has clearly settled: family-room TV is confirmed off/idle/standby, all kitchen/family/island lights are confirmed off and unchanged for 30 min, AND no indoor motion has fired for 30 min. Unavailable sensors fail closed.
     Fixed 2026-07-10: sleep sensor was the non-existent sensor.oneplus_13_sleep_confidence (phone is CPH2655); TV guard watched an unavailable TV (un8500auj).
     Fixed 2026-07-19: unavailable TV/light entities no longer count as a settled house, and the fallback now also requires no motion for 30 minutes.
+    Fixed 2026-09-03: the TV guard had drifted onto a second dead entity (lg_webos_tv_cd70, `unavailable` for all 10 of its rows in the 7-day window since 08-27) which made fallback (3) unsatisfiable; repointed to media_player.family_room_tv. NOTE fallback (3) still cannot pass while light.kitchen_light_light_1 is offline — that device has been `unavailable` since 09-02 15:55 and the guard fails closed by design. Until it is back, this routine depends entirely on the phone (1)/(2), and sensor.cph2655_sleep_confidence has not exceeded 80 since 08-31 08:13.
   triggers:
   - entity_id: sensor.cph2655_sleep_confidence
     above: 80
@@ -2272,8 +2280,19 @@
       - condition: time
         after: '23:00:00'
         before: '04:00:00'
+      # Repointed 2026-09-03 (third entity this guard has watched). Over the full
+      # 7-day recorder window media_player.lg_webos_tv_cd70 had 10 state rows and
+      # ALL 10 were `unavailable`, unchanged since 08-27 12:24 -- it never once
+      # reported off/idle/standby, so this condition could never be true and the
+      # whole settled-house fallback was dead. Same failure as the un8500auj entity
+      # replaced on 2026-07-10, one entity later.
+      #
+      # media_player.family_room_tv is the live one: 79 rows over the same window,
+      # actually cycling on/off/unavailable (55/5/19) and updating as of 09-03.
+      # Fail-closed is preserved -- `unavailable` still does not match, which is
+      # the 2026-07-19 behaviour and is deliberate.
       - condition: template
-        value_template: "{{ states('media_player.lg_webos_tv_cd70') in ['off', 'idle', 'standby'] }}"
+        value_template: "{{ states('media_player.family_room_tv') in ['off', 'idle', 'standby'] }}"
       - condition: template
         value_template: >-
           {% set ch = [states.light.kitchen_light_light_1, states.light.family_room_light, states.light.island_light_light] | map(attribute='last_changed') | list %}

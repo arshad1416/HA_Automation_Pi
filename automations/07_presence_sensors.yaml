@@ -316,10 +316,12 @@
   description: >-
     Bring the kitchen lights up when Tuya presence returns. Daylight: the five
     strips always come up, and the main + island lights join them only on a
-    dark day (binary_sensor.kitchen_dark_day). Between the bedtime shutdown and
-    sunrise: only the strips, at 50%. Rest of the evening: every kitchen light
-    at 100%. Does nothing if sun.sun is unknown, or while the kitchen auto
-    lights disable toggle is on.
+    dark day (binary_sensor.kitchen_dark_day). Between 21:00 and sunrise: only
+    the strips, at 50% -- this is now purely time-based, so you get the dim
+    kitchen after 21:00 whether or not the bedtime routine has run (the
+    bedtime_shutdown_done coupling was removed 2026-09-03, see the branch
+    comment). Rest of the evening: every kitchen light at 100%. Does nothing if
+    sun.sun is unknown, or while the kitchen auto lights disable toggle is on.
   mode: single
   triggers:
   - entity_id: binary_sensor.kitchen_presence
@@ -454,18 +456,30 @@
             target:
               entity_id: "{{ dimmed_but_still_on }}"
             continue_on_error: true
-    # ── Between bedtime and sunrise: dim, cabinet + Nanoleaf strips only ──
-    # input_boolean.bedtime_shutdown_done stays on until its 20:00 reset, so
-    # the latch alone would treat a winter evening (sunset ~16:45) as
-    # overnight; the below_horizon check plus the daylight branch above bound
-    # the window, and the 09:00 bound is only a backstop.
+    # ── 21:00 to sunrise: dim, cabinet + Nanoleaf strips only ──
+    # Bounded by sun.sun below_horizon (the daylight branch above owns the day)
+    # plus an explicit 21:00-09:00 window. A winter sunset ~16:45 is therefore
+    # still "evening", not "overnight", which is what the time bound is for.
+    #
+    # This branch used to ALSO require input_boolean.bedtime_shutdown_done to be
+    # on. Removed 2026-09-03: that coupling deadlocks. The latch is only set by
+    # bedtime_routine_auto (01_main.yaml), whose settled-house fallback requires
+    # light.island_light_light to be OFF for 30 min. When the latch is off this
+    # branch cannot match, the choose falls through to the "rest of the evening"
+    # branch below, and THAT branch turns the island light on at 100% on every
+    # presence blip -- which then blocks the fallback that would have set the
+    # latch. Traced on the night of 2026-09-02/03: the latch had been off since
+    # 09-01 20:00, the Tuya presence sensor flapped 36 times between 18:00 and
+    # 03:00, and the island light was re-lit at 100% nine times between 00:23
+    # and 01:49 before someone switched it off by hand at 02:05.
+    #
+    # Time-only is also the honest expression of the intent: "after 21:00 the
+    # kitchen comes up dim". Whether the bedtime routine has run yet is a fact
+    # about the door locks, not about how bright the kitchen should be.
     - conditions:
       - condition: state
         entity_id: sun.sun
         state: below_horizon
-      - condition: state
-        entity_id: input_boolean.bedtime_shutdown_done
-        state: "on"
       - condition: time
         after: "21:00:00"
         before: "09:00:00"
