@@ -850,6 +850,23 @@
     - sensor.upstairs_echo_dot_temperature
     above: 25.9
     for: '00:10:00'
+  # Catch-up for a run the door-open pause ate. The hourly time_pattern above has no
+  # retry, and the hvac_paused_door_open condition below silently drops the run whenever
+  # a pause is open across :00 -- a pause of a few SECONDS is enough. On 2026-09-03 the
+  # 14:00, 15:00 and 16:00 runs were all lost this way, the 16:00 one to a pause open
+  # from 15:59:56 to 16:00:03. That is the expensive one: 16:00 is the weekday On-Peak
+  # boundary where the rate triples to 39.1c/kWh and the "avoid AC" coasting rule is
+  # meant to fire. The house cooled through on-peak for an hour as a result.
+  #
+  # Deliberately narrow (see the paired condition below): this only re-runs when the
+  # missed run was a TARIFF BOUNDARY run. A missed mid-peak run is not worth a second
+  # Gemini call, and retriggering on every pause-clear would add unbounded runs on a
+  # busy door.
+  - trigger: state
+    entity_id: input_boolean.hvac_paused_door_open
+    from: 'on'
+    to: 'off'
+    id: pause_cleared
   conditions:
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
@@ -875,6 +892,25 @@
     value_template: '{{ not is_state(''input_boolean.hvac_paused_door_open'', ''on'') }}'
   - condition: template
     value_template: '{{ states(''weather.forecast_home'') not in (''unknown'', ''unavailable'') }}'
+  # Scopes the pause_cleared trigger above; every other trigger passes straight through.
+  # The catch-up run happens only when BOTH hold:
+  #   (a) we are in a tariff-boundary hour -- 07:00 and 23:00 daily, plus 16:00 and 21:00
+  #       on weekdays only. Weekends are flat off-peak 07:00-23:00, so 16/21 are not
+  #       boundaries then. Mirrors the period rules in grizzl_e_rates.json.
+  #   (b) the run for THIS hour was genuinely missed, i.e. last_triggered predates the
+  #       top of the hour. Without this, a pause opening at 16:10 and clearing at 16:20
+  #       would re-run a 16:00 decision that had already succeeded.
+  # Ontario statutory holidays are treated as weekends by the rate daemon but are not
+  # computed here; on a holiday this can allow one extra 16:00/21:00 catch-up, which is
+  # harmless -- it re-evaluates against the live tariff and will normally return keep.
+  - condition: template
+    value_template: >-
+      {{ trigger is not defined
+         or (trigger.id | default('', true)) != 'pause_cleared'
+         or ( now().hour in ([7, 23] + ([16, 21] if now().isoweekday() <= 5 else []))
+              and ( state_attr('automation.climate_ai_advisor', 'last_triggered') is none
+                    or state_attr('automation.climate_ai_advisor', 'last_triggered')
+                       < now().replace(minute=0, second=0, microsecond=0) ) ) }}
   actions:
   - variables:
       native_climate_entity: climate.ecobee_3
