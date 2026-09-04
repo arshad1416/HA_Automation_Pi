@@ -72,6 +72,12 @@ CONF_API_TEMPERATURE_UNIT: Final = "api_temperature_unit"
 #     — the Developer API had returned 88.34 already in °F (issue #157). This
 #     entry is only the fallback: when the account's own `fahOpen` preference is
 #     known (BFF device list), that hint wins and a °C account is left alone.
+#   H5053 (WiFi thermometer): reports sensorTemperature in °F under the
+#     °C-tagged unit — six units on one account read ~162°F for a real ~72°F
+#     (72.2 × 9/5 + 32 = 162.0), every one reversing to a plausible value for
+#     its location. Developer-API path; the SKU is not in the BFF thermo sets,
+#     so the account's fahOpen preference is never recorded for it and this
+#     entry is the only signal (issue #173).
 FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
     {
         "H5179",
@@ -79,6 +85,7 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
         "H5109",
         "H5110",
         "H5111",
+        "H5053",
         "HS5108",
         "HS5106",
         "H717A",
@@ -89,6 +96,18 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
         "H5220",
     }
 )
+
+
+# Tower Fan 2 family whose oscillation obeys ONLY the AWS IoT ptReal/multiSync
+# frames: the Platform-API oscillationToggle returns HTTP 200 and the sweep
+# motor does not react (govee2mqtt #438/#709, disforw/goveelife #70 — all on
+# the H7107). Gated to the SKUs with a hardware-confirmed frame: H7107 (PR
+# #176 on real hardware + homebridge-govee v11.33.0) and H7105 (homebridge-
+# govee v11.34.0, #1339). The H7106 reports plain on/off oscillation in
+# homebridge's capability grouping, so it is a different protocol class, and
+# the H7108 is unverified — both stay on the REST OscillationCommand, as does
+# every other fan SKU. Compared case-insensitively against GoveeDevice.sku.
+MQTT_OSCILLATION_SKUS: Final = frozenset({"H7105", "H7107"})
 
 
 # SKU-specific segment count overrides.

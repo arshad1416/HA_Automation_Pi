@@ -12,8 +12,10 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from .api.ble_packet import (
+    FAN_OSC_MULTISYNC_PREFIX,
     build_diy_scene_packet,
     build_dreamview_packet,
+    build_fan_oscillation_packet,
     build_music_mode_packet,
     encode_packet_base64,
 )
@@ -122,6 +124,70 @@ class BlePassthroughManager:
         packet = build_dreamview_packet(enabled)
         encoded = encode_packet_base64(packet)
         return await self.async_send_ble_packet(device_id, sku, encoded)
+
+    async def async_send_fan_oscillation(
+        self,
+        device_id: str,
+        sku: str,
+        enabled: bool,
+        swing_tail: list[int] | None = None,
+    ) -> bool:
+        """Send a Tower-Fan oscillation on/off command via BLE passthrough.
+
+        Sends the ptReal 0x33 0x1d frame and, if that went out, the multiSync
+        0x3a 0x1d twin. homebridge sends both because the fan's own
+        oscillation reports travel as multiSync; which of the two the fan
+        honours is unconfirmed (homebridge-govee #1334), so the twin is
+        best-effort and never masks the primary result. The hardware-
+        confirmed requirement for a reliable OFF is that the frame carries no
+        tail bytes — build_fan_oscillation_packet only appends them on ON.
+
+        Args:
+            device_id: Device identifier.
+            sku: Device SKU.
+            enabled: True = oscillate, False = hold still.
+            swing_tail: 4 swing-range bytes for the ON frame (None = bare ON).
+
+        Returns:
+            True if the primary ptReal frame was sent.
+        """
+        client = self._get_mqtt_client()
+        if client is None:
+            return False
+
+        device_topic = await self._ensure_device_topic(device_id)
+
+        ptreal_b64 = encode_packet_base64(
+            build_fan_oscillation_packet(enabled, swing_tail)
+        )
+        ok: bool = await client.async_publish_ptreal(
+            device_id, sku, ptreal_b64, device_topic
+        )
+        if not ok:
+            # The client already logged why (no topic / not connected /
+            # publish error); don't send the twin into the same wall and log
+            # it all a second time.
+            return False
+
+        # multiSync twin (0x3a). The client never raises — it returns False
+        # and logs — so a lost twin is just noted at debug.
+        multi_b64 = encode_packet_base64(
+            build_fan_oscillation_packet(
+                enabled, swing_tail, prefix=FAN_OSC_MULTISYNC_PREFIX
+            )
+        )
+        twin_ok = await client.async_publish_command(
+            device_topic,
+            "multiSync",
+            {"command": [multi_b64], "device": device_id, "sku": sku},
+        )
+        if not twin_ok:
+            _LOGGER.debug(
+                "multiSync oscillation twin for %s not delivered (non-fatal)",
+                device_id,
+            )
+
+        return True
 
     async def async_send_diy_scene(
         self,

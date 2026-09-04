@@ -27,6 +27,7 @@ from homeassistant.util.percentage import (
     percentage_to_ordered_list_item,
 )
 
+from .const import MQTT_OSCILLATION_SKUS
 from .coordinator import GoveeCoordinator
 from .entity import GoveeEntity
 from .models import (
@@ -138,6 +139,11 @@ class GoveeFanEntity(GoveeEntity, FanEntity):
 
         # Set name (uses has_entity_name = True)
         self._attr_name = None  # Use device name
+
+        # Tower Fan 2: warn once (not per press) when the only channel that
+        # moves the sweep motor is unavailable because there is no account
+        # login, so an API-key-only user learns why oscillation does nothing.
+        self._warned_no_mqtt = False
 
         # Detect speed count from device capabilities
         self._manual_preset_name = PRESET_MODE_NORMAL
@@ -608,8 +614,40 @@ class GoveeFanEntity(GoveeEntity, FanEntity):
         self._last_mode_values[work_mode] = mode_value
 
     async def async_oscillate(self, oscillating: bool) -> None:
-        """Oscillate the fan."""
+        """Oscillate the fan.
+
+        Tower Fan 2 family: route through the MQTT ptReal/multiSync frame path
+        (the only channel that moves the sweep motor), falling back to the REST
+        OscillationCommand if MQTT is down or the send fails — so behaviour is
+        never worse than before this path existed.
+        """
         _LOGGER.debug("Setting oscillation: %s", oscillating)
+
+        if self._device.sku.upper() in MQTT_OSCILLATION_SKUS:
+            if self.coordinator.mqtt_connected:
+                try:
+                    # The coordinator owns the optimistic write and the
+                    # listener notification, like every other control path.
+                    if await self.coordinator.async_send_fan_oscillation(
+                        self._device_id, oscillating
+                    ):
+                        return
+                except Exception:  # noqa: BLE001
+                    _LOGGER.warning(
+                        "MQTT oscillation send failed for %s; falling back to the "
+                        "cloud toggle, which is a known no-op on this model",
+                        self._device.name,
+                        exc_info=True,
+                    )
+            elif not self._warned_no_mqtt:
+                self._warned_no_mqtt = True
+                _LOGGER.warning(
+                    "Oscillation on %s (%s) needs Govee account login: the cloud "
+                    "oscillationToggle is a known no-op on this model and only the "
+                    "AWS IoT frame moves the sweep motor",
+                    self._device.name,
+                    self._device.sku,
+                )
 
         await self.coordinator.async_control_device(
             self._device_id,
@@ -624,7 +662,9 @@ class GoveeCeilingFanEntity(GoveeEntity, FanEntity, RestoreEntity):
     ``reverseAirflowToggle`` capabilities — separate from the device's light
     entity (the H1310 reports as devices.types.light). Govee's state poll
     does not return these fan values, so state is optimistic and restored
-    across restarts via RestoreEntity (issue #74).
+    across restarts via RestoreEntity (issue #74). With account login the
+    fan's own AWS IoT status frames (``aa 31``) keep the coordinator state
+    current, so remote/app changes show up too (issue #181).
     """
 
     _attr_icon = "mdi:ceiling-fan-light"
@@ -687,35 +727,56 @@ class GoveeCeilingFanEntity(GoveeEntity, FanEntity, RestoreEntity):
         if oscillating is not None:
             self._oscillating = bool(oscillating)
 
+    # The coordinator state carries the fan's values once the fan has
+    # reported an ``aa 31`` status frame over AWS IoT or a command has been
+    # sent this session (issue #181); before that, the values restored from
+    # the last HA run are the best available.
+
     @property
     def is_on(self) -> bool:
-        """Return True if the fan is on (optimistic)."""
+        """Return True if the fan is on (pushed state, else optimistic)."""
+        state = self.device_state
+        if state is not None and state.ceiling_fan_on is not None:
+            return state.ceiling_fan_on
         return self._is_on
+
+    def _current_speed_value(self) -> int | None:
+        state = self.device_state
+        if state is not None and state.ceiling_fan_speed in self._speed_values:
+            return state.ceiling_fan_speed
+        return self._speed_value
 
     @property
     def percentage(self) -> int | None:
-        """Return current speed as a percentage (optimistic)."""
-        if not self._is_on or self._speed_value is None:
-            return 0 if not self._is_on else None
+        """Return current speed as a percentage (pushed state, else optimistic)."""
+        if not self.is_on:
+            return 0
+        speed_value = self._current_speed_value()
+        if speed_value is None:
+            return None
         try:
-            return ordered_list_item_to_percentage(
-                self._speed_values, self._speed_value
-            )
+            return ordered_list_item_to_percentage(self._speed_values, speed_value)
         except ValueError:
             return None
 
     @property
     def current_direction(self) -> str | None:
-        """Return the current airflow direction (optimistic)."""
+        """Return the current airflow direction (pushed state, else optimistic)."""
         if not self._device.supports_reverse_airflow:
             return None
+        state = self.device_state
+        if state is not None and state.ceiling_fan_reverse is not None:
+            return DIRECTION_REVERSE if state.ceiling_fan_reverse else DIRECTION_FORWARD
         return self._direction
 
     @property
     def oscillating(self) -> bool | None:
-        """Return whether the fan is oscillating (optimistic)."""
+        """Return whether the fan is oscillating (pushed state, else optimistic)."""
         if not self._device.supports_fan_oscillation:
             return None
+        state = self.device_state
+        if state is not None and state.ceiling_fan_swing is not None:
+            return state.ceiling_fan_swing
         return self._oscillating
 
     async def async_turn_on(
@@ -777,6 +838,10 @@ class GoveeCeilingFanEntity(GoveeEntity, FanEntity, RestoreEntity):
         )
         if success:
             self._direction = DIRECTION_REVERSE if reverse else DIRECTION_FORWARD
+            # Changing direction starts the motor on the H1310 even when the
+            # fan was off (issue #181), so reflect that rather than showing
+            # a running fan as off until the next status push.
+            self._is_on = True
             self.async_write_ha_state()
 
     async def async_oscillate(self, oscillating: bool) -> None:

@@ -122,8 +122,12 @@ from .models.commands import (
 )
 from .models.device import (
     INSTANCE_DREAMVIEW,
+    INSTANCE_FAN_OSCILLATE,
+    INSTANCE_FAN_SPEED_MODE,
+    INSTANCE_FAN_TOGGLE,
     INSTANCE_HDMI_SOURCE,
     INSTANCE_HUMIDITY,
+    INSTANCE_REVERSE_AIRFLOW,
     INSTANCE_THERMOSTAT_TOGGLE,
     MAINS_POWERED_BATTERY_SKUS,
     MAINS_POWERED_DEVICE_TYPES,
@@ -3023,8 +3027,18 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         was_offline = not state.online
 
+        # Ceiling-fan combos (H1310/H1370) report the fan and the two lights
+        # as BLE-format frames in op.command, and their device-wide onOff is
+        # the unit's power rather than the light's (issue #181).
+        device = self._devices.get(device_id)
+        ceiling_fan = device is not None and device.supports_ceiling_fan
+
         # Update state from MQTT data (also flips online back True — issue #68)
-        state.update_from_mqtt(state_data)
+        state.update_from_mqtt(state_data, ceiling_fan=ceiling_fan)
+        if ceiling_fan:
+            state.update_ceiling_fan_from_frames(
+                self._op_frames_from(state_data)
+            )
 
         if was_offline:
             device = self._devices.get(device_id)
@@ -3048,6 +3062,19 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             state.presence,
             state_data.get("triSta"),
         )
+
+    @staticmethod
+    def _op_frames_from(state_data: dict[str, Any]) -> list[bytes]:
+        """Decoded ``op.command`` frames the MQTT client attached as hex."""
+        frames: list[bytes] = []
+        for entry in state_data.get("_op_frames", []) or []:
+            if not isinstance(entry, str):
+                continue
+            try:
+                frames.append(bytes.fromhex(entry))
+            except ValueError:
+                continue
+        return frames
 
     def _on_mqtt_give_up(self, attempts: int, last_error: str) -> None:
         """Called by MQTT client when reconnect loop exhausts MAX_RECONNECT_ATTEMPTS.
@@ -3318,6 +3345,23 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 if existing_state.presence is not None and state.presence is None:
                     state.presence = existing_state.presence
 
+                # Integrated ceiling fan and named light toggles (H1310/H1370):
+                # the Developer poll returns "" for every one of them, so the
+                # fresh state has nothing — carry the push-derived / optimistic
+                # values across or the fan entity would fall back to its
+                # restored state on every poll (issue #181). Toggles the poll
+                # DID return (e.g. socketToggle1 on the H5089) win.
+                if existing_state.ceiling_fan_on is not None and state.ceiling_fan_on is None:
+                    state.ceiling_fan_on = existing_state.ceiling_fan_on
+                if existing_state.ceiling_fan_speed is not None and state.ceiling_fan_speed is None:
+                    state.ceiling_fan_speed = existing_state.ceiling_fan_speed
+                if existing_state.ceiling_fan_reverse is not None and state.ceiling_fan_reverse is None:
+                    state.ceiling_fan_reverse = existing_state.ceiling_fan_reverse
+                if existing_state.ceiling_fan_swing is not None and state.ceiling_fan_swing is None:
+                    state.ceiling_fan_swing = existing_state.ceiling_fan_swing
+                for toggle_instance, toggle_value in existing_state.toggles.items():
+                    state.toggles.setdefault(toggle_instance, toggle_value)
+
                 # Stamp when the reading last changed (after preservation, so a
                 # preserved-unchanged value does not count as a change).
                 self._note_sensor_reading_change(device_id, state, existing_state)
@@ -3381,6 +3425,48 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         except Exception as err:
             self._record_transport_failure(device_id, "cloud_api", str(err))
             return err
+
+    async def async_send_fan_oscillation(
+        self, device_id: str, enabled: bool
+    ) -> bool:
+        """Send a Tower-Fan oscillation on/off frame over MQTT.
+
+        Reverse-engineered path for the SKUs in ``MQTT_OSCILLATION_SKUS``,
+        whose oscillation the dev-API oscillationToggle cannot control
+        (no-op). Returns False if the device is unknown, MQTT has no client,
+        or the frame did not go out, so the caller can fall back to the REST
+        OscillationCommand. On success the optimistic state is applied here
+        and listeners are notified — the coordinator owns state, entities
+        observe it — and the send lands in the diagnostics command history
+        with the swing tail that was replayed.
+        """
+        device = self._devices.get(device_id)
+        if not device:
+            return False
+        tail = (
+            self._mqtt_client.fan_swing_tail(device_id)
+            if self._mqtt_client
+            else None
+        )
+        ok = await self._ble_manager.async_send_fan_oscillation(
+            device_id, device.sku, enabled, tail
+        )
+        self._record_local_command(
+            device_id,
+            device.sku,
+            "mqtt",
+            OscillationCommand(oscillating=enabled),
+            delivered=ok,
+            detail=f"ptReal 33 1d {'01' if enabled else '00'} tail={tail}",
+        )
+        if not ok:
+            return False
+        self._record_transport_send(device_id, "mqtt")
+        state = self._states.get(device_id)
+        if state is not None:
+            state.apply_optimistic_oscillation(enabled)
+        self.async_set_updated_data(self._states)
+        return True
 
     async def async_control_device(
         self,
@@ -4289,6 +4375,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         elif isinstance(command, ModeCommand):
             if command.mode_instance == INSTANCE_HDMI_SOURCE:
                 state.apply_optimistic_hdmi_source(command.value)
+            elif command.mode_instance == INSTANCE_FAN_SPEED_MODE:
+                # Setting a speed implies the ceiling fan is running (#181).
+                state.ceiling_fan_speed = command.value
+                state.ceiling_fan_on = True
         elif isinstance(command, TemperatureSettingCommand):
             state.heater_temperature = command.temperature
             state.heater_auto_stop = command.auto_stop
@@ -4316,6 +4406,21 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 state.apply_optimistic_dreamview(command.enabled)
             elif command.toggle_instance == INSTANCE_THERMOSTAT_TOGGLE:
                 state.heater_auto_stop = 1 if command.enabled else 0
+            elif command.toggle_instance == INSTANCE_FAN_TOGGLE:
+                state.ceiling_fan_on = command.enabled
+            elif command.toggle_instance == INSTANCE_REVERSE_AIRFLOW:
+                # The motor starts when the direction is changed while off
+                # (reported on an H1310, #181), so the fan shows as running.
+                state.ceiling_fan_reverse = command.enabled
+                state.ceiling_fan_on = True
+            elif command.toggle_instance == INSTANCE_FAN_OSCILLATE:
+                state.ceiling_fan_swing = command.enabled
+            else:
+                # Generic toggles (socketToggleN, mainLightToggle, ...): keep
+                # the shared state in step with what was just sent, so an
+                # entity reading state.toggles agrees with the one that wrote
+                # it, and a later push or poll can still overwrite it.
+                state.toggles[command.toggle_instance] = command.enabled
 
     async def async_get_scenes(
         self,
