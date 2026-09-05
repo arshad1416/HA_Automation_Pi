@@ -1,30 +1,33 @@
 #!/usr/bin/env python3
-"""apsystems_daemon.py — polls the APsystems OpenAPI (EMA cloud) every 5 minutes
-and streams real solar production into HA via the shared JSON state file.
+"""apsystems_daemon.py — streams real solar production into HA.
 
-Why this exists: the old fetch_solar.py hourly cron only read the system-level
-hourly endpoint, so "current power" was derived from the in-progress hour bucket
-(always 0 -> the power sensor read 0 W all day), and any API hiccup (notably
-code 1001 "No data" at night/day-rollover) zeroed EVERY sensor including
-lifetime totals. The ECU-level endpoints give real 5-minute telemetry:
+PRIMARY source (v1.3): the ECU's local **SunSpec Modbus TCP** interface
+(APsystems doc "SunSpec Modbus" Rev 3.2; unit ID 0, port 502). No quota, no
+cloud, works at night. Falls back to the APsystems OpenAPI cloud when the ECU
+is unreachable.
 
-  /user/api/v2/systems/{sid}/devices/ecu/energy/{eid}?energy_level=minutely
-      -> {time[], power[] (W), energy[] (kWh/slot), today (kWh)}
-  /user/api/v2/systems/{sid}/devices/inverter/batch/energy/{eid}?energy_level=power
-      -> {time[], power: {<inverter>-<channel>: [W, ...]}}   (per-panel)
-  /user/api/v2/systems/summary/{sid}
-      -> {today, month, year, lifetime} kWh
+Local register map (verified live 2026-09-05, cross-referenced with the PDF):
+  model 101 int block @40070 (LEN 50):
+    40072/40073 currents (split-phase legs, ~0.1 A lsb)
+    40084 total power W  (live — observed tracking clouds within 150 s)
+    40086 grid voltage (×0.04 V)   40088 VA   40090 VAR   40092 ~Hz
+  model 114 float32 block @40184 (LEN 48):
+    40214/40216 inverter temps °C
+    40230 today's energy kWh (40232 near-duplicate) — ~5 min refresh
 
-Auth: per-request HmacSHA256 headers (X-CA-*), signed string
-"{ts_ms}/{nonce}/{app_id}/{last_path_segment}/GET/HmacSHA256".
-Credentials come from the environment (EnvironmentFile in the systemd unit) —
-never hardcode them here. Required vars: APS_APP_ID, APS_APP_SECRET,
-APS_SYSTEM_ID, APS_ECU_ID.
+Cloud OpenAPI supplies what Modbus doesn't: month/year/lifetime totals,
+yesterday (daily endpoint), per-inverter panel map — ~75 calls/day, far under
+the ~720/day quota (code 2005, resets 12:00 EDT).
+
+Auth (cloud): HmacSHA256 X-CA-* headers, creds from the environment
+(EnvironmentFile in the systemd unit) — APS_APP_ID, APS_APP_SECRET,
+APS_SYSTEM_ID, APS_ECU_ID. The ECU's LAN address is APS_ECU_IP (the unit file
+adds a /32 route via wlan0 — the ECU lives on the Eero WiFi network, which is
+a parallel 192.168.0.0/24 to the Pi's wired one).
 
 Error policy: values are STICKY — a failed cycle never zeroes the state file.
-1001 ("no data": pre-dawn / day rollover) is a normal night condition, not an
-error. 7002/7003 (server busy) back off one extra cycle. Auth problems set
-status="auth_error" so HA sensors flip unavailable via the stale_min field.
+1001 (night/day rollover) and local power=0 are normal conditions, not errors.
+2005 (quota) backs off 30 min. Local and cloud failures degrade to "stale".
 
 Outputs (atomic write, both files, identical content):
   STATE  (default /opt/homeassistant/apsystems.json)  — HA command_line sensors
@@ -38,6 +41,8 @@ import hashlib
 import hmac
 import json
 import os
+import socket
+import struct
 import sys
 import time
 import urllib.error
@@ -87,6 +92,72 @@ APP_ID = _env("APS_APP_ID")
 APP_SECRET = _env("APS_APP_SECRET")
 SYSTEM_ID = _env("APS_SYSTEM_ID")
 ECU_ID = _env("APS_ECU_ID")
+
+# ECU local SunSpec Modbus (primary source). The unit file installs a /32
+# route via wlan0 — the ECU is on the Eero WiFi LAN, a parallel 192.168.0.0/24
+# to the Pi's wired one, so plain routing picks the wrong interface.
+ECU_IP = os.environ.get("APS_ECU_IP", "192.168.0.134").strip()
+ECU_MODBUS_PORT = 502
+MODBUS_UNIT = 0  # only unit 0 (ECU aggregate) responds; inverters not exposed
+
+
+def modbus_read3(start, qty):
+    """FC3 read holding registers from the ECU. Returns tuple of uint16."""
+    pdu = struct.pack(">BHH", 3, start, qty)
+    frame = struct.pack(">HHHB", 0x4242, 0, len(pdu) + 1, MODBUS_UNIT) + pdu
+    s = socket.create_connection((ECU_IP, ECU_MODBUS_PORT), timeout=5)
+    try:
+        s.sendall(frame)
+        r = s.recv(2048)
+    finally:
+        s.close()
+    if len(r) < 9 or r[7] != 3:
+        raise RuntimeError("bad modbus response")
+    bc = r[8]
+    return struct.unpack(">%dH" % (bc // 2), r[9:9 + bc])
+
+
+def _f32(regs, i):
+    return struct.unpack(">f", struct.pack(">HH", regs[i], regs[i + 1]))[0]
+
+
+def _sane(v, lo, hi):
+    return v is not None and v == v and lo <= v <= hi
+
+
+def fetch_local():
+    """Read the ECU's SunSpec aggregate (unit 0). Raises on any failure.
+
+    Model 101 int block data @40072 (reg 40084 = total W, live);
+    model 114 float32 tail (40214/40216 temps, 40230 today kWh).
+    N/A markers (0xFFFF/0xFFFE) become None rather than garbage numbers.
+    """
+    r101 = modbus_read3(40070, 30)
+    r114 = modbus_read3(40210, 24)
+
+    def i101(addr):
+        v = r101[addr - 40070]
+        return None if v in (65535, 65534) else v
+
+    power_w = i101(40084)
+    voltage = i101(40086)
+    today_kwh = None
+    for idx in (20, 22):  # 40230 then 40232 (near-duplicate accumulator)
+        try:
+            v = _f32(r114, idx)
+        except (IndexError, struct.error):
+            continue
+        if _sane(v, 0, 500):
+            today_kwh = round(v, 3)
+            break
+    return {
+        "power_w": int(power_w) if power_w is not None else 0,
+        "today_kwh": today_kwh,
+        "voltage_v": round(voltage * 0.04, 1) if voltage is not None else None,
+        "va": i101(40088),
+        "temp_c1": round(_f32(r114, 4), 1) if _sane(_f32(r114, 4), -40, 120) else None,
+        "temp_c2": round(_f32(r114, 6), 1) if _sane(_f32(r114, 6), -40, 120) else None,
+    }
 
 
 def api_get(path):
@@ -244,15 +315,15 @@ def main():
         k: v for k, v in prev.items()
         if k in ("power_w", "today_kwh", "month_kwh", "year_kwh", "lifetime_kwh",
                  "current_hour_kwh", "last_slot_time", "data_age_min", "inverters",
-                 "yesterday_date", "yesterday_kwh", "month_date")
+                 "yesterday_date", "yesterday_kwh", "month_date", "today_date")
     }
     if "month_date" not in sticky and "updated" in prev:
         # month/year/lifetime totals were last fetched within this month
         sticky["month_date"] = prev["updated"][:7]
     day_cycle = 0
     last_ok = None  # epoch of last fully successful cycle
-    print(f"apsystems_daemon: polling every {POLL_SEC}s -> {STATE} "
-          f"(hydrated {len(sticky)} keys)", flush=True)
+    print(f"apsystems_daemon: local ECU {ECU_IP}:{ECU_MODBUS_PORT} primary, "
+          f"cloud fallback; -> {STATE} (hydrated {len(sticky)} keys)", flush=True)
 
     while True:
         now = local_now()
@@ -260,42 +331,78 @@ def main():
         day_mode = DAY_START_H <= now.hour < DAY_END_H
         status = "ok"
         error = ""
+        source = ""
         try:
-            if day_mode:
-                # Sun hours: real telemetry
-                day_cycle += 1
-                power_w, today_kwh, cur_hour, last_slot, age = fetch_minutely(day_str)
-                sticky.update(
-                    power_w=power_w, today_kwh=today_kwh, current_hour_kwh=cur_hour,
-                    last_slot_time=last_slot or "",
-                    data_age_min=age if age is not None else -1,
-                )
-                if day_cycle % SUMMARY_EVERY == 1:
-                    sticky["inverters"] = fetch_inverter_power(day_str)
-                    s = fetch_summary()
-                    if s:
-                        sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
-                        sticky["month_date"] = now.strftime("%Y-%m")
-            # Any hour: keep yesterday + month totals fresh (2 calls/day each)
+            # ── primary: local SunSpec Modbus (no quota, works at night) ──
+            loc = fetch_local()
+            source = "local"
+            sticky.update(
+                power_w=loc["power_w"],
+                last_slot_time=now.strftime("%H:%M"),
+                data_age_min=0,
+            )
+            for k in ("voltage_v", "va", "temp_c1", "temp_c2"):
+                if loc[k] is not None:
+                    sticky[k] = loc[k]
+            if loc["today_kwh"] is not None:
+                sticky["today_kwh"] = loc["today_kwh"]
+                sticky["today_date"] = day_str
+            elif sticky.get("today_date") != day_str:
+                sticky["today_kwh"] = 0.0  # new day, local accumulator not yet reporting
+                sticky["today_date"] = day_str
+            # cloud extras at low cadence (what Modbus doesn't expose)
             y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
             if sticky.get("yesterday_date") != y_str:
                 yd = refresh_yesterday()
                 if yd:
                     sticky["yesterday_date"], sticky["yesterday_kwh"] = yd
-            if sticky.get("month_date") != now.strftime("%Y-%m"):
-                s = fetch_summary()
-                if s:
-                    sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
-                    sticky["month_date"] = now.strftime("%Y-%m")
-            # A night cycle that needs no calls is still a successful cycle —
-            # stale_min must not grow overnight (nothing is actually wrong).
+            if day_mode:
+                day_cycle += 1
+                if sticky.get("month_date") != now.strftime("%Y-%m") or day_cycle % SUMMARY_EVERY == 1:
+                    sticky["inverters"] = fetch_inverter_power(day_str)
+                    s = fetch_summary()
+                    if s:
+                        sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
+                        sticky["month_date"] = now.strftime("%Y-%m")
             last_ok = time.time()
-        except urllib.error.HTTPError as e:
-            error = f"http {e.code}"
-            status = "auth_error" if e.code in (401, 403) else "error"
-        except Exception as e:  # noqa: BLE001 — daemon must never die on API state
-            error = str(e)[:200]
-            status = "error"
+        except Exception as e1:  # noqa: BLE001 — fall back to the cloud
+            # ── fallback: cloud minutely telemetry (quota-limited) ─────────
+            try:
+                if day_mode:
+                    power_w, today_kwh, cur_hour, last_slot, age = fetch_minutely(day_str)
+                else:
+                    power_w, today_kwh, cur_hour, last_slot, age = 0, 0.0, 0.0, None, None
+                source = "cloud"
+                if day_mode:
+                    day_cycle += 1
+                    sticky.update(
+                        power_w=power_w, today_kwh=today_kwh, current_hour_kwh=cur_hour,
+                        last_slot_time=last_slot or "",
+                        data_age_min=age if age is not None else -1,
+                    )
+                    if day_cycle % SUMMARY_EVERY == 1:
+                        sticky["inverters"] = fetch_inverter_power(day_str)
+                else:
+                    sticky.update(power_w=0,
+                                  today_kwh=0.0 if sticky.get("today_date") != day_str else sticky.get("today_kwh", 0.0),
+                                  today_date=day_str)
+                y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+                if sticky.get("yesterday_date") != y_str:
+                    yd = refresh_yesterday()
+                    if yd:
+                        sticky["yesterday_date"], sticky["yesterday_kwh"] = yd
+                if sticky.get("month_date") != now.strftime("%Y-%m"):
+                    s = fetch_summary()
+                    if s:
+                        sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
+                        sticky["month_date"] = now.strftime("%Y-%m")
+                last_ok = time.time()
+            except urllib.error.HTTPError as e2:
+                error = f"local: {e1}; cloud: http {e2.code}"
+                status = "auth_error" if e2.code in (401, 403) else "error"
+            except Exception as e2:  # noqa: BLE001
+                error = f"local: {str(e1)[:80]}; cloud: {str(e2)[:80]}"
+                status = "error"
 
         stale_min = int((time.time() - last_ok) / 60) if last_ok else 9999
         if status != "ok":
@@ -316,6 +423,9 @@ def main():
             "capacity_kw": CAPACITY_KW,
             "yesterday_date": sticky.get("yesterday_date", ""),
             "yesterday_kwh": sticky.get("yesterday_kwh", 0.0),
+            "source": source,
+            "voltage_v": sticky.get("voltage_v"),
+            "temp_c": sticky.get("temp_c1"),
             "updated": now_iso,
             "status": status,
             "stale_min": stale_min,

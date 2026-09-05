@@ -1,11 +1,44 @@
-# APsystems OpenAPI — reverse-engineered reference & HA integration
+# APsystems OpenAPI + local ECU SunSpec Modbus — reference & HA integration
 
 System: 11.44 kW, 13× APsystems **DS3-L** dual-channel microinverters behind an
-**ECU-R** (cloud-connected — the ECU is **not** reachable on the LAN; the old
-`ecu_discover.py` */15 cron never found port 8899 and can be retired).
-Cloud account: APsystems EMA. Reverse-engineered 2026-09-05.
+**ECU-R** (ID 216000181195, MAC 80:97:1b:07:25:c3, at **192.168.0.134 on the
+Eero WiFi LAN**). Cloud account: APsystems EMA. Reverse-engineered 2026-09-05.
 
-## Transport & auth
+## Primary source: local ECU SunSpec Modbus TCP (daemon v1.3+)
+
+Official doc: APsystems "SunSpec Modbus" Rev 3.2 (global.apsystems.com, 2024/03
+`SunSpec-Modbus.pdf`); supported on ECU-R 2160 firmware ≥ 1.3.7. Already
+enabled on our unit — no EMA toggle was needed. Port 8899 (old local protocol)
+is closed by firmware; Modbus is the sanctioned local surface.
+
+- `192.168.0.134:502`, **Modbus unit ID 0** (ECU aggregate; units 1..N per
+  inverter time out — not enabled). FC3 holding registers, base 40000.
+- ⚠️ **Network gotcha**: the house has TWO parallel 192.168.0.0/24 LANs. The
+  ECU is on the Eero (WiFi) one; the Pi's wired eth2 is on the other, and its
+  default 192.168.0.x route goes out the wrong interface. The systemd unit
+  pins `192.168.0.134/32 dev wlan0` via ExecStartPre before the daemon starts.
+
+Register map (verified live + cross-checked against the PDF):
+
+| Register | Type | Meaning |
+|---|---|---|
+| 40000 | 2×char | "SunS" signature |
+| 40002/40003 | u16 | DID=1 / LEN=66 (common: APsystems / DS3 / serial) |
+| 40072, 40073 | u16 | split-phase leg currents (×0.1 A) |
+| **40084** | u16 | **total power W (live; tracks clouds within ~150 s)** |
+| 40086 | u16 | grid voltage (×0.04 V) |
+| 40088 / 40090 | u16 | VA / VAR |
+| 40092 | u16 | ~Hz (scale unverified) |
+| 40124, 40126 | float32 | PDF-documented float-current variants |
+| 40214, 40216 | float32 | inverter temperatures °C |
+| **40230** (40232 dup) | float32 | **today's energy kWh** (~5 min refresh) |
+| 40188 | — | write: inverter on/off (0x9CFC) — DO NOT WRITE |
+
+Aggregate only — no per-panel registers (community-confirmed); per-inverter
+detail still comes from the cloud batch endpoint. Lifetime/month/year also
+cloud-only. Cloud call budget with local primary: ~75/day, far under quota.
+
+## Transport & auth (cloud OpenAPI)
 
 - Base URL: `https://api.apsystemsema.com:9282`
 - Official manual: search "APsystems OpenAPI User Manual End User EN" — this
@@ -66,12 +99,15 @@ for values it already holds. Values are sticky — quota outages degrade to
 ## Pipeline into HA
 
 ```
-APsystems cloud ──(5 min poll, signed GETs)── apsystems_daemon.py [systemd: apsystems-solar.service]
+ECU (local SunSpec Modbus, 192.168.0.134:502 unit 0, via wlan0 route)  ── PRIMARY ──┐
+APsystems cloud ──(summary/batch/yesterday, ~75 calls/day) ── totals & per-panel ──┤
+                                                                                    ▼
+                                     apsystems_daemon.py [systemd: apsystems-solar.service]
                                                    │ atomic write
                                                    ├─ /opt/homeassistant/apsystems.json  (→ /config/ in container)
                                                    └─ ~/.hermes/market-intel/solar_data.json (legacy schema kept)
 HA command_line sensors (configuration.yaml): Solar Power Now (60 s), Energy Today (2 min),
-  Month/Year/Lifetime (15/30/60 min) — all availability-gated on stale_min < 360.
+  Month/Year/Lifetime (15/30/60 min), Yesterday — all availability-gated on stale_min < 360.
 ```
 
 Daemon invariants (learned from the old cron's failures):
