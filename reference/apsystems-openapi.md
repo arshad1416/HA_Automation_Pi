@@ -48,7 +48,7 @@ headers: X-CA-AppId, X-CA-Timestamp, X-CA-Nonce,
 |---|---|---|
 | 0 | OK | — |
 | **1001** | **No data** (pre-dawn, day rollover, future date) | normal night condition: power 0, totals sticky — NOT an error (the old cron treated it as fatal and zeroed every sensor) |
-| **2005** | **Daily access limit exceeded** — observed 2026-09-05: quota ≈ 340 calls per endpoint / ~720 account-wide per day (exact reset hour unknown, resets by next day). A naive poll-everything-every-5-min design (864 calls/day) blows it by afternoon. | daemon budgets ~293 calls/day and backs off 30 min on 2005; backfill checkpoints and exits, resuming on later days |
+| **2005** | **Daily access limit exceeded** — observed 2026-09-05: quota ≈ 340 calls per endpoint / ~720 account-wide per day. Reset is at **12:00 EDT (China Standard Time midnight)** — verified 2026-09-06 by elimination: it did not reset at UTC midnight, at 24 h rolling, or overnight EDT. A naive poll-everything-every-5-min design (864 calls/day) blows it by afternoon. | daemon budgets ~293 calls/day and backs off 30 min on 2005; backfill caps itself at 380 calls/day (`--max-calls=380` in the daily cron) so archive completion never starves the live daemon |
 | 7002/7003 | too many requests / busy | daemon doubles its sleep one cycle |
 | No documented quota in the manual — the annex only says "access limit exceeded". |
 
