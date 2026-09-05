@@ -44,8 +44,13 @@ if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
     OUT = sys.argv[1]
 RESUME = "--resume" in sys.argv
 ONLY = ([a.split("=")[1] for a in sys.argv if a.startswith("--only=")] or [None])[0]
+MAX_CALLS = int(([a.split("=")[1] for a in sys.argv if a.startswith("--max-calls=")] or [0])[0])
 if ONLY and ONLY not in ("hourly", "minutely"):
     sys.exit("--only must be hourly or minutely")
+# Observed quota: ~720 calls/account/day, resets 12:00 EDT (CST midnight). The
+# live daemon needs ~293/day, so backfill runs must cap themselves to leave it
+# headroom (--max-calls=380 via the daily cron).
+_call_count = 0
 CHECKPOINT = os.path.expanduser("~/.apsystems_backfill_checkpoint.json")
 
 BASE_URL = "https://api.apsystemsema.com:9282"
@@ -66,8 +71,13 @@ SYSTEM_ID, ECU_ID = _env("APS_SYSTEM_ID"), _env("APS_ECU_ID")
 
 
 def api_get(path):
-    """Returns parsed JSON. Raises QuotaExceeded on code 2005 so the caller
-    can checkpoint and exit instead of burning the rest of the day's calls."""
+    """Returns parsed JSON. Raises QuotaExceeded on code 2005 or when the
+    --max-calls budget is spent, so the caller can checkpoint and exit
+    instead of starving the live daemon's share of the daily quota."""
+    global _call_count
+    _call_count += 1
+    if MAX_CALLS and _call_count > MAX_CALLS:
+        raise QuotaExceeded("daily call budget reached")
     rp = path.split("/")[-1].split("?")[0]
     for attempt in range(6):
         ts = str(int(time.time() * 1000))
@@ -208,9 +218,9 @@ def main():
             if fetched_days % CHECKPOINT_EVERY == 0:
                 save_checkpoint()
             day += timedelta(days=1)
-    except QuotaExceeded:
+    except QuotaExceeded as q:
         save_checkpoint()
-        print(f"quota exhausted at {day} — checkpoint saved; rerun with --resume "
+        print(f"{q} at {day} — checkpoint saved; rerun with --resume "
               f"(remaining: {total_days - fetched_days} days)", flush=True)
         sys.exit(2)
 
