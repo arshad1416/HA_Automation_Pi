@@ -765,33 +765,81 @@ camera:
     input: rtsp://127.0.0.1:8554/garage
 
 command_line:
+  # ── APsystems solar (reads apsystems_daemon.py state; see reference/apsystems-openapi.md) ──
+  # power_w is real ECU telemetry at 5-min cadence — NOT the old hourly approximation.
+  # All sensors go unavailable if the daemon hasn't delivered fresh data in 6 h.
   - sensor:
       name: Solar Power Now
       unique_id: solar_power_now
-      command: >-
-        /usr/local/bin/python3 -c 'import json;
-        d=json.load(open("/config/apsystems.json"));
-        print(int(d.get("power_approx_w",0)))'
+      command: "cat /config/apsystems.json"
       unit_of_measurement: W
-      scan_interval: 300
+      device_class: power
+      state_class: measurement
+      scan_interval: 60
+      value_template: "{{ value_json.power_w | int(0) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+      json_attributes:
+        - inverters
+        - last_slot_time
+        - data_age_min
+        - status
+        - updated
   - sensor:
       name: Solar Energy Today
       unique_id: solar_energy_today
-      command: >-
-        /usr/local/bin/python3 -c 'import json;
-        d=json.load(open("/config/apsystems.json"));
-        print(d.get("today_kwh",0))'
+      command: "cat /config/apsystems.json"
       unit_of_measurement: kWh
-      scan_interval: 300
+      device_class: energy
+      state_class: total_increasing
+      scan_interval: 120
+      value_template: "{{ value_json.today_kwh | float(0) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+      json_attributes:
+        - last_slot_time
+        - status
   - sensor:
       name: Solar Energy Month
       unique_id: solar_energy_month
-      command: >-
-        /usr/local/bin/python3 -c 'import json;
-        d=json.load(open("/config/apsystems.json"));
-        print(d.get("month_kwh",0))'
+      command: "cat /config/apsystems.json"
       unit_of_measurement: kWh
-      scan_interval: 300
+      device_class: energy
+      state_class: total_increasing
+      scan_interval: 900
+      value_template: "{{ value_json.month_kwh | float(0) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+  - sensor:
+      name: Solar Energy Year
+      unique_id: solar_energy_year
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: kWh
+      device_class: energy
+      state_class: total_increasing
+      scan_interval: 1800
+      value_template: "{{ value_json.year_kwh | float(0) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+  - sensor:
+      name: Solar Energy Lifetime
+      unique_id: solar_energy_lifetime
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: kWh
+      device_class: energy
+      state_class: total_increasing
+      scan_interval: 3600
+      value_template: "{{ value_json.lifetime_kwh | float(0) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+  - sensor:
+      name: Solar Energy Yesterday
+      unique_id: solar_energy_yesterday
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: kWh
+      device_class: energy
+      scan_interval: 3600
+      value_template: "{{ value_json.yesterday_kwh | float(0) }}"
+      availability: "{{ value_json.yesterday_date is defined and value_json.yesterday_date != '' }}"
+      json_attributes:
+        - yesterday_date
+        - status
+
 
 
   # ── Grizzl-E Smart EV charger (reads daemon JSON; single /logs client) ──
