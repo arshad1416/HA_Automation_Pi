@@ -1,0 +1,15 @@
+# eth2 USB-NIC watchdog — oneshot, driven by eth2-watchdog.timer.
+# Added 2026-09-05 after the r8152 adapter hung TX for ~5 h (see eth2-watchdog.sh).
+#
+# Install on the Pi:
+#   sudo cp pi-config/eth2-watchdog.service pi-config/eth2-watchdog.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now eth2-watchdog.timer
+# Watch:  journalctl -t eth2-watchdog
+
+[Unit]
+Description=Re-authorize the eth2 USB adapter when it stops transmitting
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/homeassistant/pi-config/eth2-watchdog.sh

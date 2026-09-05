@@ -1,0 +1,12 @@
+# Every 2 min; two consecutive failures are needed before a reset, so worst-case
+# detection is ~4 min against the ~5 h outage of 2026-09-05.
+[Unit]
+Description=Run the eth2 USB-NIC watchdog every 2 minutes
+
+[Timer]
+OnBootSec=3min
+OnUnitActiveSec=2min
+AccuracySec=30s
+
+[Install]
+WantedBy=timers.target
