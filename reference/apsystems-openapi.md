@@ -48,10 +48,20 @@ headers: X-CA-AppId, X-CA-Timestamp, X-CA-Nonce,
 |---|---|---|
 | 0 | OK | — |
 | **1001** | **No data** (pre-dawn, day rollover, future date) | normal night condition: power 0, totals sticky — NOT an error (the old cron treated it as fatal and zeroed every sensor) |
-| 2005 | app account access limit exceeded | regenerate keys at developer portal |
-| 4000/4001 | bad parameter (e.g. invalid `energy_level`) | fix the call |
+| **2005** | **Daily access limit exceeded** — observed 2026-09-05: quota ≈ 340 calls per endpoint / ~720 account-wide per day (exact reset hour unknown, resets by next day). A naive poll-everything-every-5-min design (864 calls/day) blows it by afternoon. | daemon budgets ~293 calls/day and backs off 30 min on 2005; backfill checkpoints and exits, resuming on later days |
 | 7002/7003 | too many requests / busy | daemon doubles its sleep one cycle |
-| No documented per-day call quota; a 5-min poll of 2–3 endpoints has run fine. |
+| No documented quota in the manual — the annex only says "access limit exceeded". |
+
+## Daemon call budget (v1.2, 2026-09-05)
+
+Telemetry is fetched only during **06:00–21:00 local** (~293 calls/day):
+minutely every 5 min (174) + inverter batch & summary every 3rd day-cycle
+(58 + 59) + yesterday/month-rollover daily calls (2). Night cycles make no
+telemetry calls and still count as healthy (`stale_min` stays 0 — the
+availability gate must not flap overnight). On boot the daemon **hydrates its
+sticky state from the state file**, so restarts don't re-fetch (or hit quota)
+for values it already holds. Values are sticky — quota outages degrade to
+"stale" (sensors unavailable after 6 h), never to zeros.
 
 ## Pipeline into HA
 
@@ -78,14 +88,15 @@ Daemon invariants (learned from the old cron's failures):
 `apsystems_backfill.py` (run manually, resumable with `--resume`) downloads
 everything the cloud still holds into `/opt/homeassistant/apsystems_history.json`:
 
-- `yearly[]` — lifetime (system commissioned **2024**, partial first year)
+- `yearly[]` — lifetime (system commissioned **October 2024**, partial first year)
 - `monthly{year: [12 kWh]}` — full lifetime
-- `daily{date: kWh}` — full lifetime
-- `hourly{date: [24 kWh]}` — **retention starts 2025-01-01**
-- `minutely{date: {time[], power[], energy[]}}` — 5-min telemetry, same retention
+- `daily{date: kWh}` — **complete: 705 days, sums to 23,535.73 kWh vs API lifetime 23,535.85**
+- `hourly{date: [24 kWh]}` + `minutely{date: …}` — 340 days (2024-10-12 → 2025-09-18) fetched so far; the 2025-09-19 → present tail exists server-side but hit the **daily quota** mid-run
+- `--resume` skips already-archived days; `--only=hourly|minutely` splits quota across days; on quota exhaustion it checkpoints (`~/.apsystems_backfill_checkpoint.json`) and exits 2.
 
-The archive is a static record (regenerate after N months with
-`ssh pi-lan 'set -a; . ~/.apsystems.env; set +a; python3 /opt/homeassistant/apsystems_backfill.py --resume'`).
+A self-removing Pi cron (`~/apsystems_backfill_daily.sh`, 13:30 daily)
+continues the backfill until `minutely_days ≥ 690`, then deletes its own
+crontab entry. Manual rerun: `ssh pi-lan 'set -a; . ~/.apsystems.env; set +a; python3 /opt/homeassistant/apsystems_backfill.py --resume'`.
 Ideas for using it: join `hourly` with the Alectra UsageAPI hourly consumption
 (see memory/alectra notes) to quantify solar self-consumption and TOU-shift
 value; `daily` feeds year-over-year monthly comparisons.
