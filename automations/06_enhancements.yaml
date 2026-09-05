@@ -87,6 +87,11 @@
       entity_id: '{{ ecobee_control_entity }}'
   # set_hvac_mode alone leaves the thermostat on whatever setpoint it reverted to,
   # so put the pre-pause target back. Skipped if the capture was unavailable/out of range.
+  # Audit 2026-09-05 defect 4.4: during a utility pre-cool the cloud entity already
+  # reports the offset-applied target (23.0 - 2.2 = 20.8C). Writing that back as a
+  # hold made the utility subtract its offset a second time: Thu 2026-09-03 15:20
+  # restore -> requested 20.8, effective 18.6C. In summer the restore is clamped to
+  # the advisor's 22.0-25.5C band; the next hourly run settles the exact value.
   - if:
     - condition: template
       value_template: >-
@@ -94,7 +99,10 @@
     then:
     - action: climate.set_temperature
       data:
-        temperature: '{{ paused_setpoint | float(0) }}'
+        temperature: >-
+          {{ [[paused_setpoint | float(0), 22.0] | max, 25.5] | min
+             if is_state('input_boolean.climate_summer_mode', 'on')
+             else paused_setpoint | float(0) }}
       target:
         entity_id: '{{ ecobee_control_entity }}'
   - action: input_boolean.turn_off

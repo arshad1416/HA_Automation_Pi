@@ -20,7 +20,8 @@
     of the profiles'' warm defaults. Evening: 23.5C at <=45% RH, 23.0C at 46-55% RH,
     22.5C above 55% RH (slightly-cool bias: PMV-neutral minus ~1.0C, with ~0.5C per
     10 RH points above 45%). Sleep: flat 22.0C. Cooling season only; the hourly
-    climate_ai_advisor stays authoritative afterwards.'
+    climate_ai_advisor stays authoritative afterwards. Never writes during live
+    On-Peak (weekday 16:00-21:00): the Evening ladder is applied at 21:01 instead.'
   mode: single
   triggers:
   - trigger: state
@@ -33,6 +34,13 @@
     attribute: preset_mode
     to: "sleep"
     id: sleep
+  # Weekday catch-up: the 19:00 Evening transition falls inside On-Peak (39.1c/kWh)
+  # and is skipped by the tariff condition below, so apply the ladder once the
+  # peak ends. 21:01, not 21:00: the tariff label flips 3-15 s after the hour
+  # (audit 2026-09-05), and 21:00:00 would still read On-Peak.
+  - trigger: time
+    at: "21:01:00"
+    id: evening_late
   conditions:
   - condition: state
     entity_id: input_boolean.climate_ai_enabled
@@ -40,6 +48,22 @@
   - condition: state
     entity_id: climate.ecobee_3
     state: cool
+  # Audit 2026-09-05 defect 4.1: this fired at 19:00 (and again ~20:00 whenever the
+  # utility hold released and the profile re-asserted) on every weekday, writing
+  # 23.0C over the advisor's 25.5C on-peak coast. Fri 2026-09-04 = 117 min of
+  # on-peak compressor time. Fail-open on a missing label: comfort wins if the
+  # rate daemon is down.
+  - condition: template
+    value_template: >-
+      {{ (state_attr('sensor.grizzl_e_total_cost', 'period_label') | default('', true)) != 'On-Peak' }}
+  # The 21:01 catch-up only matters on weekdays and only while the Evening
+  # profile is still the active comfort profile (a hold shows preset 'temp', so
+  # check climate_mode, not preset_mode).
+  - condition: template
+    value_template: >-
+      {{ trigger.id != 'evening_late'
+         or (now().isoweekday() <= 5
+             and state_attr('climate.ecobee_3', 'climate_mode') == 'Evening') }}
   actions:
   - variables:
       rh: '{{ states(''sensor.climate_ai_ecobee_humidity'') | float(states(''sensor.ecobee_current_humidity'') | float(50)) | round(0) }}'
