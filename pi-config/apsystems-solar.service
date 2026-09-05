@@ -1,0 +1,35 @@
+# APsystems solar cloud API → HA bridge daemon — systemd unit.
+#
+# Replaces the old hourly fetch_solar.py cron (which produced a dead power
+# sensor and zeroed all totals on nightly "no data" responses) and the useless
+# */15 ecu_discover.py LAN scan (the ECU is cloud-connected, not on the LAN).
+#
+# Install on the Pi:
+#   1. Credentials (from the old fetch_solar.py header) go in
+#      /home/arshad14/.apsystems.env — mode 600, owner arshad14 — NEVER commit:
+#        APS_APP_ID=<from fetch_solar.py>
+#        APS_APP_SECRET=<from fetch_solar.py>
+#        APS_SYSTEM_ID=B17C730372973038
+#        APS_ECU_ID=216000181195
+#   2. sudo cp pi-config/apsystems-solar.service /etc/systemd/system/
+#      sudo systemctl daemon-reload && sudo systemctl enable --now apsystems-solar
+#   3. Remove the old crontab lines (fetch_solar.py hourly + ecu_discover.py */15).
+#
+# Runs as arshad14 (not root) so the legacy hermes file stays user-owned.
+
+[Unit]
+Description=APsystems OpenAPI solar telemetry bridge (5-min poll -> apsystems.json)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=arshad14
+Group=arshad14
+Environment=TZ=America/Toronto
+EnvironmentFile=/home/arshad14/.apsystems.env
+ExecStart=/usr/bin/python3 /opt/homeassistant/apsystems_daemon.py /opt/homeassistant/apsystems.json /home/arshad14/.hermes/market-intel/solar_data.json
+Restart=always
+RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

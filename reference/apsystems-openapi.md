@@ -73,6 +73,32 @@ Daemon invariants (learned from the old cron's failures):
 - `stale_min` = minutes since last good cycle; HA flips sensors unavailable
   after 6 h of failure.
 
+## Local history archive (`apsystems_history.json`)
+
+`apsystems_backfill.py` (run manually, resumable with `--resume`) downloads
+everything the cloud still holds into `/opt/homeassistant/apsystems_history.json`:
+
+- `yearly[]` — lifetime (system commissioned **2024**, partial first year)
+- `monthly{year: [12 kWh]}` — full lifetime
+- `daily{date: kWh}` — full lifetime
+- `hourly{date: [24 kWh]}` — **retention starts 2025-01-01**
+- `minutely{date: {time[], power[], energy[]}}` — 5-min telemetry, same retention
+
+The archive is a static record (regenerate after N months with
+`ssh pi-lan 'set -a; . ~/.apsystems.env; set +a; python3 /opt/homeassistant/apsystems_backfill.py --resume'`).
+Ideas for using it: join `hourly` with the Alectra UsageAPI hourly consumption
+(see memory/alectra notes) to quantify solar self-consumption and TOU-shift
+value; `daily` feeds year-over-year monthly comparisons.
+
+## Deployment record (2026-09-05)
+
+- `apsystems-solar.service` active on the Pi (systemd, user arshad14,
+  `Restart=always`); creds in `/home/arshad14/.apsystems.env` (600).
+- Old `fetch_solar.py` hourly cron and `ecu_discover.py` */15 cron REMOVED.
+  ⚠️ `ecu_discover.py` still embeds an HA long-lived token — delete the file
+  and revoke the token in HA UI (Profile → Security → Long-lived tokens).
+- HA restarted; sensors verified: power/today/month/year/lifetime/yesterday.
+
 ## Old pipeline (retired)
 
 `fetch_solar.py` hourly cron: hourly endpoint only, `power_approx_w` =

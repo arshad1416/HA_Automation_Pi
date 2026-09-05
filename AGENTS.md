@@ -8,7 +8,7 @@ Home Assistant configuration for the Raspberry Pi 5. The **live copy is `/opt/ho
 
 - `configuration.yaml` — core config. Automations load from `automations/` via `!include_dir_merge_list`; `scripts.yaml` and `scenes.yaml` via `!include`.
 - `automations/*.yaml`, `scenes.yaml`, `scripts.yaml`, `dashboards/`, `blueprints/`, `esphome/` (curated ESPHome YAML — live configs with real WiFi credentials stay on the Pi and are never committed)
-- Root Python daemons: `grizzl_e_daemon.py`, `tuya_kitchen_bridge.py`, `tuya_listener.py`, `update_kitchen_presence.py`, `check_garage_vision.py`
+- Root Python daemons: `grizzl_e_daemon.py`, `tuya_kitchen_bridge.py`, `tuya_listener.py`, `update_kitchen_presence.py`, `check_garage_vision.py`, `apsystems_daemon.py` (solar cloud bridge — see `reference/apsystems-openapi.md`), `apsystems_backfill.py` (one-shot history downloader)
 - `scripts/`, `pi-config/`, `verification/`, `grizzl_e_rates.json` (electricity rate config)
 
 ⚠️ Root `automations.yaml` is **legacy and NOT loaded** — `configuration.yaml` only includes the `automations/` directory. Do not edit it expecting any effect.
