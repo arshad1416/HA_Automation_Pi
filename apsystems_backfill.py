@@ -43,6 +43,9 @@ OUT = "/opt/homeassistant/apsystems_history.json"
 if len(sys.argv) > 1 and not sys.argv[1].startswith("--"):
     OUT = sys.argv[1]
 RESUME = "--resume" in sys.argv
+ONLY = ([a.split("=")[1] for a in sys.argv if a.startswith("--only=")] or [None])[0]
+if ONLY and ONLY not in ("hourly", "minutely"):
+    sys.exit("--only must be hourly or minutely")
 CHECKPOINT = os.path.expanduser("~/.apsystems_backfill_checkpoint.json")
 
 BASE_URL = "https://api.apsystemsema.com:9282"
@@ -63,35 +66,43 @@ SYSTEM_ID, ECU_ID = _env("APS_SYSTEM_ID"), _env("APS_ECU_ID")
 
 
 def api_get(path):
+    """Returns parsed JSON. Raises QuotaExceeded on code 2005 so the caller
+    can checkpoint and exit instead of burning the rest of the day's calls."""
     rp = path.split("/")[-1].split("?")[0]
-    ts = str(int(time.time() * 1000))
-    nonce = uuid.uuid4().hex
-    sig = base64.b64encode(
-        hmac.new(APP_SECRET.encode(),
-                 f"{ts}/{nonce}/{APP_ID}/{rp}/GET/HmacSHA256".encode(),
-                 hashlib.sha256).digest()
-    ).decode()
-    req = urllib.request.Request(
-        f"{BASE_URL}{path}",
-        headers={"X-CA-AppId": APP_ID, "X-CA-Timestamp": ts, "X-CA-Nonce": nonce,
-                 "X-CA-Signature-Method": "HmacSHA256", "X-CA-Signature": sig},
-    )
     for attempt in range(6):
+        ts = str(int(time.time() * 1000))
+        nonce = uuid.uuid4().hex
+        sig = base64.b64encode(
+            hmac.new(APP_SECRET.encode(),
+                     f"{ts}/{nonce}/{APP_ID}/{rp}/GET/HmacSHA256".encode(),
+                     hashlib.sha256).digest()
+        ).decode()
+        req = urllib.request.Request(
+            f"{BASE_URL}{path}",
+            headers={"X-CA-AppId": APP_ID, "X-CA-Timestamp": ts, "X-CA-Nonce": nonce,
+                     "X-CA-Signature-Method": "HmacSHA256", "X-CA-Signature": sig},
+        )
         try:
             with urllib.request.urlopen(req, timeout=25) as resp:
                 d = json.loads(resp.read().decode())
-            if d.get("code") in CODE_BUSY and attempt < 5:
-                print(f"  busy ({d['code']}) — backing off 30s", flush=True)
-                time.sleep(30)
-                continue
-            return d
         except urllib.error.HTTPError as e:
             if attempt < 5:
                 print(f"  HTTP {e.code} — retry in 15s", flush=True)
                 time.sleep(15)
                 continue
             raise
+        if d.get("code") == 2005:
+            raise QuotaExceeded("2005 access limit")
+        if d.get("code") in CODE_BUSY and attempt < 5:
+            print(f"  busy ({d['code']}) — backing off 30s", flush=True)
+            time.sleep(30)
+            continue
+        return d
     return {"code": -1}
+
+
+class QuotaExceeded(Exception):
+    pass
 
 
 def month_days(ym):
@@ -102,14 +113,27 @@ def month_days(ym):
 def main():
     archive = {"meta": {}, "yearly": [], "monthly": {}, "daily": {},
                "hourly": {}, "minutely": {}}
-    if RESUME and os.path.exists(CHECKPOINT):
-        with open(CHECKPOINT) as f:
-            archive = json.load(f)
-        print(f"resumed checkpoint: {len(archive['daily'])} days of daily, "
-              f"{len(archive['minutely'])} of minutely", flush=True)
+    if RESUME:
+        # prefer a mid-run checkpoint; else the last completed archive
+        for path in (CHECKPOINT, OUT):
+            if os.path.exists(path):
+                with open(path) as f:
+                    archive = json.load(f)
+                print(f"resumed {path}: {len(archive['daily'])} days daily, "
+                      f"{len(archive['hourly'])} hourly, {len(archive['minutely'])} minutely",
+                      flush=True)
+                break
+
+    def save_checkpoint():
+        with open(CHECKPOINT + ".tmp", "w") as f:
+            json.dump(archive, f)
+        os.replace(CHECKPOINT + ".tmp", CHECKPOINT)
 
     # ── yearly (lifetime) ────────────────────────────────────────────────
-    d = api_get(f"/user/api/v2/systems/energy/{SYSTEM_ID}?energy_level=yearly")
+    try:
+        d = api_get(f"/user/api/v2/systems/energy/{SYSTEM_ID}?energy_level=yearly")
+    except QuotaExceeded:
+        sys.exit("quota already exhausted — rerun later with --resume")
     yearly = [float(v or 0) for v in (d.get("data") or [])] if d.get("code") == CODE_OK else []
     archive["yearly"] = yearly
     if not yearly:
@@ -154,34 +178,41 @@ def main():
     day = commission
     fetched_days = 0
     total_days = (today - commission).days + 1
-    while day <= today:
-        ds = day.isoformat()
-        if ds not in archive["minutely"] or ds not in archive["hourly"]:
-            time.sleep(PAUSE_SEC)
-            d = api_get(f"/user/api/v2/systems/energy/{SYSTEM_ID}"
-                        f"?energy_level=hourly&date_range={ds}")
-            if d.get("code") == CODE_OK:
-                archive["hourly"][ds] = [round(float(v or 0), 3) for v in (d.get("data") or [])]
-            time.sleep(PAUSE_SEC)
-            d = api_get(f"/user/api/v2/systems/{SYSTEM_ID}/devices/ecu/energy/{ECU_ID}"
-                        f"?energy_level=minutely&date_range={ds}")
-            if d.get("code") == CODE_OK:
-                data = d.get("data") or {}
-                if data.get("time"):
-                    archive["minutely"][ds] = {
-                        "time": data.get("time"),
-                        "power": [int(float(p or 0)) for p in (data.get("power") or [])],
-                        "energy": [round(float(e or 0), 4) for e in (data.get("energy") or [])],
-                    }
-        fetched_days += 1
-        if fetched_days % 25 == 0:
-            print(f"  {fetched_days}/{total_days} days "
-                  f"({ds}, minutely so far: {len(archive['minutely'])})", flush=True)
-        if fetched_days % CHECKPOINT_EVERY == 0:
-            with open(CHECKPOINT + ".tmp", "w") as f:
-                json.dump(archive, f)
-            os.replace(CHECKPOINT + ".tmp", CHECKPOINT)
-        day += timedelta(days=1)
+    try:
+        while day <= today:
+            ds = day.isoformat()
+            if (ONLY in (None, "hourly") and ds not in archive["hourly"]) or \
+               (ONLY in (None, "minutely") and ds not in archive["minutely"]):
+                if ONLY in (None, "hourly") and ds not in archive["hourly"]:
+                    time.sleep(PAUSE_SEC)
+                    d = api_get(f"/user/api/v2/systems/energy/{SYSTEM_ID}"
+                                f"?energy_level=hourly&date_range={ds}")
+                    if d.get("code") == CODE_OK:
+                        archive["hourly"][ds] = [round(float(v or 0), 3) for v in (d.get("data") or [])]
+                if ONLY in (None, "minutely") and ds not in archive["minutely"]:
+                    time.sleep(PAUSE_SEC)
+                    d = api_get(f"/user/api/v2/systems/{SYSTEM_ID}/devices/ecu/energy/{ECU_ID}"
+                                f"?energy_level=minutely&date_range={ds}")
+                    if d.get("code") == CODE_OK:
+                        data = d.get("data") or {}
+                        if data.get("time"):
+                            archive["minutely"][ds] = {
+                                "time": data.get("time"),
+                                "power": [int(float(p or 0)) for p in (data.get("power") or [])],
+                                "energy": [round(float(e or 0), 4) for e in (data.get("energy") or [])],
+                            }
+            fetched_days += 1
+            if fetched_days % 25 == 0:
+                print(f"  {fetched_days}/{total_days} days "
+                      f"({ds}, minutely so far: {len(archive['minutely'])})", flush=True)
+            if fetched_days % CHECKPOINT_EVERY == 0:
+                save_checkpoint()
+            day += timedelta(days=1)
+    except QuotaExceeded:
+        save_checkpoint()
+        print(f"quota exhausted at {day} — checkpoint saved; rerun with --resume "
+              f"(remaining: {total_days - fetched_days} days)", flush=True)
+        sys.exit(2)
 
     # ── finalize ─────────────────────────────────────────────────────────
     days = sorted(k for k in archive["daily"] if archive["daily"][k] is not None)

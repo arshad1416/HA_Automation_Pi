@@ -58,8 +58,16 @@ SITE_TZ = "Canada/Eastern"  # confirmed by /systems/inverters/{sid}
 CAPACITY_KW = 11.44
 
 POLL_SEC = 300          # matches the ECU's ~5 min cloud upload cadence
-SUMMARY_EVERY = 3       # fetch month/year/lifetime every 3rd cycle (~15 min)
+SUMMARY_EVERY = 3       # fetch inverter/summary data every 3rd DAY cycle (~15 min)
 STALE_UNAVAILABLE_MIN = 360  # HA availability template cuts off past this
+DAY_START_H, DAY_END_H = 6, 21   # local hours in which telemetry is fetched
+QUOTA_BACKOFF_SEC = 1800  # code 2005 (daily access limit) — retry in 30 min
+
+# Observed 2026-09-05: the app account has a DAILY call quota (~340 per
+# endpoint / ~720 account-wide; code 2005 when exhausted). The old "poll every
+# endpoint every 5 min around the clock" design (864 calls/day) would blow it
+# by mid-afternoon. Budget below stays under ~300/day:
+#   minutely 174 (every 5 min, 06:00-21:00) + batch 58 + summary 59 + daily 2.
 
 # Response codes (manual annex 4.1). 1001=no data (night); 7002/7003=busy.
 CODE_OK = 0
@@ -220,34 +228,67 @@ def atomic_write(path, payload):
     os.replace(tmp, path)
 
 
+def load_existing(path):
+    """Hydrate sticky values from a previous state file so a daemon restart
+    doesn't re-fetch (or fail on quota) for things it already knows."""
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
 def main():
-    sticky = {}  # last good values — never regress to zeros on transient errors
-    cycle = 0
+    prev = load_existing(STATE)
+    sticky = {
+        k: v for k, v in prev.items()
+        if k in ("power_w", "today_kwh", "month_kwh", "year_kwh", "lifetime_kwh",
+                 "current_hour_kwh", "last_slot_time", "data_age_min", "inverters",
+                 "yesterday_date", "yesterday_kwh", "month_date")
+    }
+    if "month_date" not in sticky and "updated" in prev:
+        # month/year/lifetime totals were last fetched within this month
+        sticky["month_date"] = prev["updated"][:7]
+    day_cycle = 0
     last_ok = None  # epoch of last fully successful cycle
-    print(f"apsystems_daemon: polling every {POLL_SEC}s -> {STATE}", flush=True)
+    print(f"apsystems_daemon: polling every {POLL_SEC}s -> {STATE} "
+          f"(hydrated {len(sticky)} keys)", flush=True)
 
     while True:
-        day_str = local_now().strftime("%Y-%m-%d")
-        cycle += 1
+        now = local_now()
+        day_str = now.strftime("%Y-%m-%d")
+        day_mode = DAY_START_H <= now.hour < DAY_END_H
         status = "ok"
         error = ""
         try:
-            power_w, today_kwh, cur_hour, last_slot, age = fetch_minutely(day_str)
-            inverters = fetch_inverter_power(day_str)
-            if cycle % SUMMARY_EVERY == 1 or "month_kwh" not in sticky:
-                s = fetch_summary()
-                if s:
-                    sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
-            y_str = (local_now() - timedelta(days=1)).strftime("%Y-%m-%d")
+            if day_mode:
+                # Sun hours: real telemetry
+                day_cycle += 1
+                power_w, today_kwh, cur_hour, last_slot, age = fetch_minutely(day_str)
+                sticky.update(
+                    power_w=power_w, today_kwh=today_kwh, current_hour_kwh=cur_hour,
+                    last_slot_time=last_slot or "",
+                    data_age_min=age if age is not None else -1,
+                )
+                if day_cycle % SUMMARY_EVERY == 1:
+                    sticky["inverters"] = fetch_inverter_power(day_str)
+                    s = fetch_summary()
+                    if s:
+                        sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
+                        sticky["month_date"] = now.strftime("%Y-%m")
+            # Any hour: keep yesterday + month totals fresh (2 calls/day each)
+            y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
             if sticky.get("yesterday_date") != y_str:
                 yd = refresh_yesterday()
                 if yd:
                     sticky["yesterday_date"], sticky["yesterday_kwh"] = yd
-            sticky.update(
-                power_w=power_w, today_kwh=today_kwh, current_hour_kwh=cur_hour,
-                last_slot_time=last_slot or "", data_age_min=age if age is not None else -1,
-                inverters=inverters,
-            )
+            if sticky.get("month_date") != now.strftime("%Y-%m"):
+                s = fetch_summary()
+                if s:
+                    sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
+                    sticky["month_date"] = now.strftime("%Y-%m")
+            # A night cycle that needs no calls is still a successful cycle —
+            # stale_min must not grow overnight (nothing is actually wrong).
             last_ok = time.time()
         except urllib.error.HTTPError as e:
             error = f"http {e.code}"
@@ -258,7 +299,7 @@ def main():
 
         stale_min = int((time.time() - last_ok) / 60) if last_ok else 9999
         if status != "ok":
-            print(f"cycle {cycle} failed ({error}); serving sticky data "
+            print(f"cycle failed ({error}); serving sticky data "
                   f"(stale {stale_min} min)", flush=True)
 
         now_iso = datetime.now().astimezone().isoformat(timespec="seconds")
@@ -290,9 +331,15 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"state write failed: {e}", flush=True)
 
-        # 7002/7003 backoff: double the sleep for one cycle to be polite
-        sleep = POLL_SEC * 2 if "7002" in error or "7003" in error else POLL_SEC
-        time.sleep(sleep)
+        # quota (2005) backs off hard; busy (7002/7003) doubles one cycle
+        if "2005" in error:
+            print(f"quota exceeded (daily access limit); backing off "
+                  f"{QUOTA_BACKOFF_SEC // 60} min", flush=True)
+            time.sleep(QUOTA_BACKOFF_SEC)
+        elif "7002" in error or "7003" in error:
+            time.sleep(POLL_SEC * 2)
+        else:
+            time.sleep(POLL_SEC)
 
 
 if __name__ == "__main__":
