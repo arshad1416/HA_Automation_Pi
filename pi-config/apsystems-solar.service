@@ -27,6 +27,11 @@ User=arshad14
 Group=arshad14
 Environment=TZ=America/Toronto
 EnvironmentFile=/home/arshad14/.apsystems.env
+# The ECU lives on the Eero WiFi LAN — a PARALLEL 192.168.0.0/24 to the Pi's
+# wired eth2 — so the kernel's default route for 192.168.0.x goes out the wrong
+# interface. Pin the ECU host route to wlan0 ("+" = run this one shot as root).
+# Optional env override: APS_ECU_IP (default 192.168.0.134, port 502 unit 0).
+ExecStartPre=+/usr/bin/ip route replace 192.168.0.134/32 dev wlan0
 ExecStart=/usr/bin/python3 /opt/homeassistant/apsystems_daemon.py /opt/homeassistant/apsystems.json /home/arshad14/.hermes/market-intel/solar_data.json
 Restart=always
 RestartSec=30
