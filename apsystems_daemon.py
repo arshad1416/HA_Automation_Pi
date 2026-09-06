@@ -63,10 +63,18 @@ SITE_TZ = "Canada/Eastern"  # confirmed by /systems/inverters/{sid}
 CAPACITY_KW = 11.44
 
 POLL_SEC = 300          # matches the ECU's ~5 min cloud upload cadence
-SUMMARY_EVERY = 3       # fetch inverter/summary data every 3rd DAY cycle (~15 min)
+SUMMARY_EVERY = 3       # (legacy; cloud extras are now time-gated below)
 STALE_UNAVAILABLE_MIN = 360  # HA availability template cuts off past this
 DAY_START_H, DAY_END_H = 6, 21   # local hours in which telemetry is fetched
-QUOTA_BACKOFF_SEC = 1800  # code 2005 (daily access limit) — retry in 30 min
+EXTRAS_HOURS = (12, 17)  # local hours for cloud extras (per-panel + totals)
+QUOTA_BACKOFF_SEC = 1800  # code 2005 (access limit) — retry in 30 min
+
+# QUOTA REALITY (documented 2026-09-06): ~1000 API calls per MONTH per app
+# account (emlynmac/apsystems-openapi README). The old fetch_solar hourly cron
+# (~730/mo) ran under it for months; the Sept-4 history backfill spent the
+# balance in one night -> locked from 2026-09-05 until the monthly reset
+# (expected 2026-10-01). Budget here: ~150/month (yesterday 60 + summary 31 +
+# per-panel 60), leaving headroom for backfill catch-up days.
 
 # Observed 2026-09-05: the app account has a DAILY call quota (~340 per
 # endpoint / ~720 account-wide; code 2005 when exhausted). The old "poll every
@@ -401,7 +409,11 @@ def main():
                 for k in ("lifetime_kwh", "year_kwh", "month_kwh"):
                     if sticky.get(k) is not None:
                         sticky[k] = round(sticky[k] + delta_kwh, 4)
-            # cloud extras at low cadence (what Modbus doesn't expose)
+            # cloud extras at low cadence (what Modbus doesn't expose).
+            # The quota is ~1000 calls per MONTH (emlynmac/apsystems-openapi
+            # README; 2005 = monthly quota reached, "data resumes when the
+            # limit resets") — so extras run ~2 windows/day, not every cycle:
+            # ≈150 calls/month total, leaving headroom for the backfill.
             y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
             if sticky.get("yesterday_date") != y_str:
                 yd = refresh_yesterday()
@@ -409,7 +421,14 @@ def main():
                     sticky["yesterday_date"], sticky["yesterday_kwh"] = yd
             if day_mode:
                 day_cycle += 1
-                if sticky.get("month_date") != now.strftime("%Y-%m") or day_cycle % SUMMARY_EVERY == 1:
+                extras_slot = f"{day_str}-{now.hour}"
+                month_roll = sticky.get("month_date") != now.strftime("%Y-%m")
+                extras_due = month_roll or (
+                    now.hour in EXTRAS_HOURS
+                    and sticky.get("extras_slot") != extras_slot
+                )
+                if extras_due:
+                    sticky["extras_slot"] = extras_slot
                     sticky["inverters"] = fetch_inverter_power(day_str)
                     s = fetch_summary()
                     if s:
