@@ -336,7 +336,8 @@ def main():
         if k in ("power_w", "today_kwh", "month_kwh", "year_kwh", "lifetime_kwh",
                  "current_hour_kwh", "last_slot_time", "data_age_min", "inverters",
                  "yesterday_date", "yesterday_kwh", "month_date", "today_date",
-                 "today_peak_kwh", "today_peak_date")
+                 "today_peak_kwh", "today_peak_date", "int_date", "int_ts",
+                 "today_int_kwh")
     }
     if "month_date" not in sticky and "updated" in prev:
         # month/year/lifetime totals were last fetched within this month
@@ -365,12 +366,41 @@ def main():
             for k in ("voltage_v", "va", "temp_c1", "temp_c2"):
                 if loc[k] is not None:
                     sticky[k] = loc[k]
-            if loc["today_kwh"] is not None or sticky.get("today_date") == day_str:
-                record_today(sticky, loc["today_kwh"], day_str)
-            elif sticky.get("today_date") != day_str:
-                # new day, local accumulator not yet reporting
-                sticky["today_date"] = day_str
-                sticky["today_kwh"] = 0.0
+            # ── local energy accounting (v1.4) ──────────────────────────
+            # ECU reg 40230 proved unreliable as the daily total (resets after
+            # sunset AND froze mid-day twice) and the cloud quota can stay
+            # locked for days — so the daemon derives energy from local power:
+            #   today    = integral of 40084 W over the day (register only as
+            #              a floor via max())
+            #   yesterday= previous day's final integral at midnight rollover
+            #   lifetime/month/year creep forward by the same increments and
+            #              are corrected by cloud summary whenever it answers.
+            now_ts = time.time()
+            if sticky.get("int_date") != day_str:
+                prev_date = sticky.get("int_date")
+                prev_peak = sticky.get("today_peak_kwh") or 0.0
+                if prev_date and prev_peak > 0:
+                    sticky["yesterday_date"] = prev_date
+                    sticky["yesterday_kwh"] = round(prev_peak, 3)
+                if prev_date is None:
+                    # first v1.4 boot (possibly mid-day): seed from best available
+                    sticky["today_int_kwh"] = max(
+                        loc["today_kwh"] or 0.0, sticky.get("today_kwh") or 0.0)
+                else:
+                    sticky["today_int_kwh"] = 0.0  # genuine midnight rollover
+                sticky["int_date"] = day_str
+            delta_kwh = 0.0
+            if sticky.get("int_ts"):
+                dt_s = min(now_ts - sticky["int_ts"], 900)  # cap: don't bridge outages
+                if dt_s > 0:
+                    delta_kwh = loc["power_w"] * dt_s / 3.6e6
+            sticky["today_int_kwh"] = sticky.get("today_int_kwh", 0.0) + delta_kwh
+            sticky["int_ts"] = now_ts
+            record_today(sticky, max(sticky["today_int_kwh"], loc["today_kwh"] or 0.0), day_str)
+            if delta_kwh > 0:
+                for k in ("lifetime_kwh", "year_kwh", "month_kwh"):
+                    if sticky.get(k) is not None:
+                        sticky[k] = round(sticky[k] + delta_kwh, 4)
             # cloud extras at low cadence (what Modbus doesn't expose)
             y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
             if sticky.get("yesterday_date") != y_str:
