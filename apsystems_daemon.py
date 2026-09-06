@@ -239,6 +239,8 @@ def fetch_inverter_power(day_str):
         f"?energy_level=power&date_range={day_str}"
     )
     if d.get("code") != CODE_OK:
+        if d.get("code") != CODE_NO_DATA:
+            print(f"cloud inverter-batch code={d.get('code')}", flush=True)
         return {}
     power = (d.get("data") or {}).get("power") or {}
     out = {}
@@ -254,6 +256,8 @@ def fetch_summary():
     """Returns (month, year, lifetime) kWh or None on failure."""
     d = api_get(f"/user/api/v2/systems/summary/{SYSTEM_ID}")
     if d.get("code") != CODE_OK:
+        if d.get("code") != CODE_NO_DATA:
+            print(f"cloud summary code={d.get('code')}", flush=True)
         return None
     sd = d.get("data") or {}
     return (
@@ -299,6 +303,22 @@ def atomic_write(path, payload):
     os.replace(tmp, path)
 
 
+def record_today(sticky, val, day_str):
+    """The ECU's local today-accumulator resets itself after sunset (observed
+    2026-09-05: read 0.0 kWh at 22:14 after a ~33 kWh day). Track the day's
+    peak so 'Energy Today' holds the final daily total until local midnight."""
+    if sticky.get("today_peak_date") != day_str:
+        sticky["today_peak_date"] = day_str
+        sticky["today_peak_kwh"] = 0.0
+    if val is not None:
+        sticky["today_date"] = day_str
+        if val > sticky.get("today_peak_kwh", 0.0):
+            sticky["today_peak_kwh"] = val
+    sticky["today_kwh"] = (
+        sticky.get("today_peak_kwh", 0.0) if sticky.get("today_date") == day_str else 0.0
+    )
+
+
 def load_existing(path):
     """Hydrate sticky values from a previous state file so a daemon restart
     doesn't re-fetch (or fail on quota) for things it already knows."""
@@ -315,7 +335,8 @@ def main():
         k: v for k, v in prev.items()
         if k in ("power_w", "today_kwh", "month_kwh", "year_kwh", "lifetime_kwh",
                  "current_hour_kwh", "last_slot_time", "data_age_min", "inverters",
-                 "yesterday_date", "yesterday_kwh", "month_date", "today_date")
+                 "yesterday_date", "yesterday_kwh", "month_date", "today_date",
+                 "today_peak_kwh", "today_peak_date")
     }
     if "month_date" not in sticky and "updated" in prev:
         # month/year/lifetime totals were last fetched within this month
@@ -344,12 +365,12 @@ def main():
             for k in ("voltage_v", "va", "temp_c1", "temp_c2"):
                 if loc[k] is not None:
                     sticky[k] = loc[k]
-            if loc["today_kwh"] is not None:
-                sticky["today_kwh"] = loc["today_kwh"]
-                sticky["today_date"] = day_str
+            if loc["today_kwh"] is not None or sticky.get("today_date") == day_str:
+                record_today(sticky, loc["today_kwh"], day_str)
             elif sticky.get("today_date") != day_str:
-                sticky["today_kwh"] = 0.0  # new day, local accumulator not yet reporting
+                # new day, local accumulator not yet reporting
                 sticky["today_date"] = day_str
+                sticky["today_kwh"] = 0.0
             # cloud extras at low cadence (what Modbus doesn't expose)
             y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
             if sticky.get("yesterday_date") != y_str:
@@ -376,16 +397,16 @@ def main():
                 if day_mode:
                     day_cycle += 1
                     sticky.update(
-                        power_w=power_w, today_kwh=today_kwh, current_hour_kwh=cur_hour,
+                        power_w=power_w, current_hour_kwh=cur_hour,
                         last_slot_time=last_slot or "",
                         data_age_min=age if age is not None else -1,
                     )
+                    record_today(sticky, today_kwh, day_str)
                     if day_cycle % SUMMARY_EVERY == 1:
                         sticky["inverters"] = fetch_inverter_power(day_str)
                 else:
-                    sticky.update(power_w=0,
-                                  today_kwh=0.0 if sticky.get("today_date") != day_str else sticky.get("today_kwh", 0.0),
-                                  today_date=day_str)
+                    sticky.update(power_w=0)
+                    record_today(sticky, None, day_str)
                 y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
                 if sticky.get("yesterday_date") != y_str:
                     yd = refresh_yesterday()

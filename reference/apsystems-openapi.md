@@ -31,7 +31,7 @@ Register map (verified live + cross-checked against the PDF):
 | 40092 | u16 | ~Hz (scale unverified) |
 | 40124, 40126 | float32 | PDF-documented float-current variants |
 | 40214, 40216 | float32 | inverter temperatures °C |
-| **40230** (40232 dup) | float32 | **today's energy kWh** (~5 min refresh) |
+| **40230** (40232 dup) | float32 | **today's energy kWh** (~5 min refresh; ⚠️ the register resets itself after sunset — read 0.0 at 22:14 after a ~33 kWh day — so the daemon tracks the day's peak and displays it until local midnight) |
 | 40188 | — | write: inverter on/off (0x9CFC) — DO NOT WRITE |
 
 Aggregate only — no per-panel registers (community-confirmed); per-inverter
@@ -81,7 +81,7 @@ headers: X-CA-AppId, X-CA-Timestamp, X-CA-Nonce,
 |---|---|---|
 | 0 | OK | — |
 | **1001** | **No data** (pre-dawn, day rollover, future date) | normal night condition: power 0, totals sticky — NOT an error (the old cron treated it as fatal and zeroed every sensor) |
-| **2005** | **Daily access limit exceeded** — observed 2026-09-05: quota ≈ 340 calls per endpoint / ~720 account-wide per day. Reset is at **12:00 EDT (China Standard Time midnight)** — verified 2026-09-06 by elimination: it did not reset at UTC midnight, at 24 h rolling, or overnight EDT. A naive poll-everything-every-5-min design (864 calls/day) blows it by afternoon. | daemon budgets ~293 calls/day and backs off 30 min on 2005; backfill caps itself at 380 calls/day (`--max-calls=380` in the daily cron) so archive completion never starves the live daemon |
+| **2005** | **Access limit exceeded** — observed 2026-09-05: ~720 calls then lockout. **Reset is NOT at a fixed hour** (12:00 EDT / CST midnight theory falsified — still locked at 22:14 EDT, >21 h after exhaustion). Best remaining fit: **rolling ~24 h window** (~720 calls) — would free ~01:00 EDT when the burst ages out; verify then. | daemon is local-first so live data ignores the quota entirely; cloud extras soft-fail (logged `cloud … code=2005`) and retry; backfill checkpoints and exits, resuming on later days |
 | 7002/7003 | too many requests / busy | daemon doubles its sleep one cycle |
 | No documented quota in the manual — the annex only says "access limit exceeded". |
 
