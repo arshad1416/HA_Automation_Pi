@@ -77,10 +77,22 @@ views:
         show_header_toggle: false
         entities:
           - entity: sensor.solar_credits_today
-            name: Credits value today
+            name: Today
             icon: mdi:cash-plus
+          - entity: sensor.solar_credits_yesterday
+            name: Yesterday
+            icon: mdi:cash-refund
+          - entity: sensor.solar_credits_week
+            name: This Week
+            icon: mdi:calendar-week
           - entity: sensor.solar_credits_month
-            name: Credits value this month
+            name: This Month
+            icon: mdi:calendar-month
+          - entity: sensor.solar_credits_year
+            name: This Year
+            icon: mdi:calendar-range
+          - entity: sensor.solar_credits_lifetime
+            name: Lifetime
             icon: mdi:cash-multiple
           - type: attribute
             entity: sensor.solar_credits_today
@@ -91,13 +103,17 @@ views:
           Every solar kWh is valued at the hour's OEB **UL-TOU energy rate**
           (overnight 3.9¢ / weekend off-peak 9.8¢ / mid-peak 15.7¢ /
           on-peak 39.1¢) — the same rate Alectra credits for net-metered
-          exports, and the rate self-consumed kWh displace.
+          exports, and the rate self-consumed kWh displace. Since solar
+          produces mainly during on-peak weekdays, the production-weighted
+          average works out to **~17¢/kWh**.
 
-          *Caveat:* without a consumption meter the **self-use vs. export
-          split** isn't measurable — this is the credit value of *all*
-          production. Alectra nets credits monthly against your bill; actual
-          export-only credits can be reconciled from the Alectra portal's
-          hourly data.
+          *Day-level values since Sep 5 are computed from live panel data;
+          earlier totals (week before Sep 7, month before Sep 1, year,
+          lifetime) are estimated from the production archive at that
+          average rate.* *Caveat:* without a consumption meter the
+          **self-use vs. export split** isn't measurable — Alectra nets
+          credits monthly against your bill; reconcile actuals from the
+          Alectra portal's hourly data.
 
       # ── System health ──────────────────────────────────────────────
       - type: horizontal-stack

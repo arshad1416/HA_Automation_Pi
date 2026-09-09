@@ -94,10 +94,27 @@ The daemon converts each energy increment at the hour's OEB **UL-TOU rate**
 holidays computed in-daemon). Rationale: Alectra net metering credits exports
 at the hour's energy rate, and self-consumed kWh displace the same rate — so
 `Σ kWh(h) × rate(h)` is the net-metering credit value of all production.
-State: `credits_today_cad` (midnight reset) + `credits_month_cad` (month
-reset); HA sensors `solar_credits_today/month` (CAD) and `solar_rate_now`.
-**No export meter exists** (ECU-R has no CTs) — the self-use vs. export split
-isn't measurable; reconcile actuals against Alectra portal hourly data.
+State: `credits_today_cad` (midnight reset), `credits_yesterday_cad`
+(captured at midnight), `credits_week_cad` (Mon 00:00, ISO week),
+`credits_month_cad`, `credits_year_cad` (Jan 1), `credits_lifetime_cad`;
+HA sensors `solar_credits_today/yesterday/week/month/year/lifetime` (CAD) +
+`solar_rate_now`. **Backfill-seeded 2026-09-09**: Sep 5–8 exact from recorder
+integrals × hourly rates; everything earlier estimated from archive daily kWh
+× the production-weighted average ULO rate (**17.08 ¢/kWh** — solar output
+concentrates in weekday on-peak hours). Results: Sep 8 = $6.98 (39.6 kWh),
+Sep 7 = $3.76 (38.4 kWh, Labour Day = off-peak all day), Sep MTD $42.08,
+2026 YTD $4,036.54, lifetime ≈ $6,419.93. **No export meter exists** (ECU-R
+has no CTs) — the self-use vs. export split isn't measurable; reconcile
+actuals against Alectra portal hourly data.
+
+Restart-safety (bug fixed 2026-09-09): the daemon's state payload now
+persists its internal keys (`int_date`, `int_ts`, `today_int_kwh`,
+`today_peak_*`, `week_key`, `year_key`) — payload-only writes used to strip
+them, so every service bounce zeroed the week/year buckets and reset the
+running integral. Rollover keys also initialize silently when absent (never
+zero on first sight). Night clamp: the ECU's aggregate register reports a
+phantom ~300 W standby value at night (observed 2026-09-09 00:10; VA/VAR
+nonzero) — power is forced to 0 outside the 06:00–21:00 window.
 
 Dashboard: `dashboards/solar.yaml`, registered as sidebar **"Solar"**
 (url_path `solar-power` — HA requires a hyphen) via the `lovelace:` block.

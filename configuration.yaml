@@ -853,6 +853,24 @@ command_line:
         - rate_period
         - status
   - sensor:
+      name: Solar Credits Yesterday
+      unique_id: solar_credits_yesterday
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: CAD
+      device_class: monetary
+      scan_interval: 1800
+      value_template: "{{ value_json.credits_yesterday_cad | float(0) | round(2) }}"
+  - sensor:
+      name: Solar Credits Week
+      unique_id: solar_credits_week
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: CAD
+      device_class: monetary
+      state_class: total_increasing
+      scan_interval: 600
+      value_template: "{{ value_json.credits_week_cad | float(0) | round(2) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+  - sensor:
       name: Solar Credits Month
       unique_id: solar_credits_month
       command: "cat /config/apsystems.json"
@@ -861,6 +879,26 @@ command_line:
       state_class: total_increasing
       scan_interval: 900
       value_template: "{{ value_json.credits_month_cad | float(0) | round(2) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+  - sensor:
+      name: Solar Credits Year
+      unique_id: solar_credits_year
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: CAD
+      device_class: monetary
+      state_class: total_increasing
+      scan_interval: 1800
+      value_template: "{{ value_json.credits_year_cad | float(0) | round(2) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+  - sensor:
+      name: Solar Credits Lifetime
+      unique_id: solar_credits_lifetime
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: CAD
+      device_class: monetary
+      state_class: total_increasing
+      scan_interval: 3600
+      value_template: "{{ value_json.credits_lifetime_cad | float(0) | round(2) }}"
       availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
   - sensor:
       name: Solar Rate Now

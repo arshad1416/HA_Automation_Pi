@@ -110,31 +110,40 @@ MODBUS_UNIT = 0  # only unit 0 (ECU aggregate) responds; inverters not exposed
 
 
 def modbus_read3(start, qty):
-    """FC3 read holding registers from the ECU. Returns tuple of uint16."""
+    """FC3 read holding registers from the ECU. Returns tuple of uint16.
+    One reconnect+retry — the ECU intermittently accepts a connection then
+    times out without responding (observed nightly since 2026-09-08)."""
     pdu = struct.pack(">BHH", 3, start, qty)
     frame = struct.pack(">HHHB", 0x4242, 0, len(pdu) + 1, MODBUS_UNIT) + pdu
-    s = socket.create_connection((ECU_IP, ECU_MODBUS_PORT), timeout=5)
-    try:
-        s.sendall(frame)
-        r = b""
-        while len(r) < 9:
-            chunk = s.recv(2048)
-            if not chunk:
-                break
-            r += chunk
-        if len(r) >= 9:
-            need = 9 + r[8]
-            while len(r) < need:
-                chunk = s.recv(2048)
-                if not chunk:
-                    break
-                r += chunk
-    finally:
-        s.close()
-    if len(r) < 9 or r[7] != 3:
-        raise RuntimeError("bad modbus response")
-    bc = r[8]
-    return struct.unpack(">%dH" % (bc // 2), r[9:9 + bc])
+    last_err = None
+    for attempt in (1, 2):
+        try:
+            s = socket.create_connection((ECU_IP, ECU_MODBUS_PORT), timeout=6)
+            try:
+                s.sendall(frame)
+                r = b""
+                while len(r) < 9:
+                    chunk = s.recv(2048)
+                    if not chunk:
+                        break
+                    r += chunk
+                if len(r) >= 9:
+                    need = 9 + r[8]
+                    while len(r) < need:
+                        chunk = s.recv(2048)
+                        if not chunk:
+                            break
+                        r += chunk
+            finally:
+                s.close()
+            if len(r) < 9 or r[7] != 3:
+                raise RuntimeError("bad modbus response")
+            bc = r[8]
+            return struct.unpack(">%dH" % (bc // 2), r[9:9 + bc])
+        except (OSError, RuntimeError) as e:
+            last_err = e
+            time.sleep(1)
+    raise last_err
 
 
 def _f32(regs, i):
@@ -448,6 +457,13 @@ def main():
             # ── primary: local SunSpec Modbus (no quota, works at night) ──
             loc = fetch_local()
             source = "local"
+            if not day_mode:
+                # Observed 2026-09-09 ~00:20: the ECU's aggregate register
+                # reports a phantom ~300 W standby value at night (VA/VAR
+                # nonzero, physically impossible for PV). Clamp to 0 outside
+                # the 06:00-21:00 production window so today's integral and
+                # credits only ever see real sunlight.
+                loc["power_w"] = 0
             sticky.update(
                 power_w=loc["power_w"],
                 last_slot_time=now.strftime("%H:%M"),
@@ -484,12 +500,21 @@ def main():
                 iso = now.isocalendar()
                 wk = f"{iso.year}-W{iso.week:02d}"
                 if sticky.get("week_key") != wk:
-                    sticky["week_key"] = wk
-                    sticky["credits_week_cad"] = 0.0  # Monday 00:00 rollover
+                    # absent key = first run under this scheme: initialize
+                    # WITHOUT zeroing (seeds survive restarts). Zero only on
+                    # a genuine week change.
+                    if sticky.get("week_key") is None:
+                        sticky["week_key"] = wk
+                    else:
+                        sticky["week_key"] = wk
+                        sticky["credits_week_cad"] = 0.0  # Monday 00:00 rollover
                 yr = day_str[:4]
                 if sticky.get("year_key") != yr:
-                    sticky["year_key"] = yr
-                    sticky["credits_year_cad"] = 0.0  # Jan 1 rollover
+                    if sticky.get("year_key") is None:
+                        sticky["year_key"] = yr
+                    else:
+                        sticky["year_key"] = yr
+                        sticky["credits_year_cad"] = 0.0  # Jan 1 rollover
                 sticky["int_date"] = day_str
             delta_kwh = 0.0
             if sticky.get("int_ts"):
@@ -612,6 +637,17 @@ def main():
             "credits_month_cad": sticky.get("credits_month_cad", 0.0),
             "credits_year_cad": sticky.get("credits_year_cad", 0.0),
             "credits_lifetime_cad": sticky.get("credits_lifetime_cad", 0.0),
+            # ── internal state, persisted so restarts never lose the
+            #    rollover keys or the running integral (learned 2026-09-09:
+            #    payload-only writes stripped these and restarted clean every
+            #    time the service bounced)
+            "int_date": sticky.get("int_date"),
+            "int_ts": sticky.get("int_ts"),
+            "today_int_kwh": sticky.get("today_int_kwh", 0.0),
+            "today_peak_kwh": sticky.get("today_peak_kwh", 0.0),
+            "today_peak_date": sticky.get("today_peak_date"),
+            "week_key": sticky.get("week_key"),
+            "year_key": sticky.get("year_key"),
             "updated": now_iso,
             "status": status,
             "stale_min": stale_min,
