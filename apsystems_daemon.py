@@ -663,12 +663,11 @@ def main():
         except Exception as e:  # noqa: BLE001
             print(f"state write failed: {e}", flush=True)
 
-        # quota (2005) backs off hard; busy (7002/7003) doubles one cycle
-        if "2005" in error:
-            print(f"quota exceeded (daily access limit); backing off "
-                  f"{QUOTA_BACKOFF_SEC // 60} min", flush=True)
-            time.sleep(QUOTA_BACKOFF_SEC)
-        elif "7002" in error or "7003" in error:
+        # Always keep the 5-min cadence. The old 2005 global backoff (v1.2,
+        # when cloud was primary) froze LOCAL polling for 30 min whenever the
+        # ECU hiccuped during a quota lockout — local reads are quota-free,
+        # so there is nothing to back off anymore.
+        if "7002" in error or "7003" in error:
             time.sleep(POLL_SEC * 2)
         else:
             time.sleep(POLL_SEC)
