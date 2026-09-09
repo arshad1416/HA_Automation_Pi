@@ -425,7 +425,9 @@ def main():
                  "current_hour_kwh", "last_slot_time", "data_age_min", "inverters",
                  "yesterday_date", "yesterday_kwh", "month_date", "today_date",
                  "today_peak_kwh", "today_peak_date", "int_date", "int_ts",
-                 "today_int_kwh", "credits_today_cad", "credits_month_cad")
+                 "today_int_kwh", "credits_today_cad", "credits_month_cad",
+                 "credits_yesterday_cad", "credits_week_cad", "credits_year_cad",
+                 "credits_lifetime_cad", "week_key", "year_key")
     }
     if "month_date" not in sticky and "updated" in prev:
         # month/year/lifetime totals were last fetched within this month
@@ -475,9 +477,19 @@ def main():
                         loc["today_kwh"] or 0.0, sticky.get("today_kwh") or 0.0)
                 else:
                     sticky["today_int_kwh"] = 0.0  # genuine midnight rollover
+                    sticky["credits_yesterday_cad"] = sticky.get("credits_today_cad", 0.0)
                     sticky["credits_today_cad"] = 0.0
                 if sticky.get("int_date", day_str)[:7] != day_str[:7]:
                     sticky["credits_month_cad"] = 0.0  # month rollover
+                iso = now.isocalendar()
+                wk = f"{iso.year}-W{iso.week:02d}"
+                if sticky.get("week_key") != wk:
+                    sticky["week_key"] = wk
+                    sticky["credits_week_cad"] = 0.0  # Monday 00:00 rollover
+                yr = day_str[:4]
+                if sticky.get("year_key") != yr:
+                    sticky["year_key"] = yr
+                    sticky["credits_year_cad"] = 0.0  # Jan 1 rollover
                 sticky["int_date"] = day_str
             delta_kwh = 0.0
             if sticky.get("int_ts"):
@@ -488,10 +500,12 @@ def main():
             sticky["int_ts"] = now_ts
             # UL-TOU credit/value engine: kWh × the hour's energy rate
             period, rate_c = rate_period(now)
-            sticky["credits_today_cad"] = round(
-                sticky.get("credits_today_cad", 0.0) + delta_kwh * rate_c / 100, 4)
-            sticky["credits_month_cad"] = round(
-                sticky.get("credits_month_cad", 0.0) + delta_kwh * rate_c / 100, 4)
+            earn = delta_kwh * rate_c / 100
+            sticky["credits_today_cad"] = round(sticky.get("credits_today_cad", 0.0) + earn, 4)
+            sticky["credits_week_cad"] = round(sticky.get("credits_week_cad", 0.0) + earn, 4)
+            sticky["credits_month_cad"] = round(sticky.get("credits_month_cad", 0.0) + earn, 4)
+            sticky["credits_year_cad"] = round(sticky.get("credits_year_cad", 0.0) + earn, 4)
+            sticky["credits_lifetime_cad"] = round(sticky.get("credits_lifetime_cad", 0.0) + earn, 4)
             record_today(sticky, max(sticky["today_int_kwh"], loc["today_kwh"] or 0.0), day_str)
             if delta_kwh > 0:
                 for k in ("lifetime_kwh", "year_kwh", "month_kwh"):
@@ -593,7 +607,11 @@ def main():
             "rate_period": rate_period(now)[0],
             "rate_now_cents": rate_period(now)[1],
             "credits_today_cad": sticky.get("credits_today_cad", 0.0),
+            "credits_yesterday_cad": sticky.get("credits_yesterday_cad", 0.0),
+            "credits_week_cad": sticky.get("credits_week_cad", 0.0),
             "credits_month_cad": sticky.get("credits_month_cad", 0.0),
+            "credits_year_cad": sticky.get("credits_year_cad", 0.0),
+            "credits_lifetime_cad": sticky.get("credits_lifetime_cad", 0.0),
             "updated": now_iso,
             "status": status,
             "stale_min": stale_min,
