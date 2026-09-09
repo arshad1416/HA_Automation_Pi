@@ -23,6 +23,7 @@ CONF_ENABLE_MQTT_CONTROL: Final = "enable_mqtt_control"
 # account API's rate limit is unverified (homebridge issue #543) — users with
 # many detectors may want to back off, while a single detector can poll faster.
 CONF_WATER_DETECTOR_POLL_INTERVAL: Final = "water_detector_poll_interval"
+CONF_PROBE_POLL_INTERVAL: Final = "probe_poll_interval"
 
 # Extra LAN discovery targets for devices the local multicast scan can't reach —
 # e.g. Govee devices on a different VLAN/subnet than Home Assistant (issue #57).
@@ -110,6 +111,17 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
 MQTT_OSCILLATION_SKUS: Final = frozenset({"H7105", "H7107"})
 
 
+# Multi-outlet plugs whose Developer API capability list carries only the
+# master powerSwitch (no socketToggle{N}) but whose outlets homebridge-govee
+# drives individually over AWS IoT with a bitmask `turn` value:
+# ((1 << i) << 4) | ((1 << i) if on else 0) — 17/16, 34/32, 68/64 for the
+# three outlets, 119/112 for all (lib/device/switch-triple.js). The public
+# REST API rejects anything other than 0/1 here, so these switches exist only
+# with account login and are optimistic until the plug's own onOff readback
+# is decoded (issue #184). SKU -> outlet count.
+MULTI_OUTLET_MQTT_SKUS: Final = {"H5160": 3, "H5161": 3}
+
+
 # SKU-specific segment count overrides.
 # Some Govee devices report a higher segment count via the API than
 # the physical sections on the device. This dict pins the real count
@@ -168,12 +180,18 @@ DEFAULT_ENABLE_MQTT_CONTROL: Final = False
 DEFAULT_API_TEMPERATURE_UNIT: Final = "auto"
 DEFAULT_LAN_TARGETS: Final = ""
 DEFAULT_WATER_DETECTOR_POLL_INTERVAL: Final = 120  # seconds (2 minutes)
+# Probe thermometers are pull devices, so this interval is the entire
+# update rate while cooking. 30 s keeps a roast legible without hammering
+# the device; the poll only runs while its live-polling switch is on.
+DEFAULT_PROBE_POLL_INTERVAL: Final = 30  # seconds
 
 # Bounds for the configurable water-detector poll interval (seconds). The lower
 # bound keeps the unverified account-API rate limit at arm's length; the upper
 # bound (1 hour) is the slowest that still makes a leak alert useful.
 MIN_WATER_DETECTOR_POLL_INTERVAL: Final = 60
 MAX_WATER_DETECTOR_POLL_INTERVAL: Final = 3600
+MIN_PROBE_POLL_INTERVAL: Final = 10
+MAX_PROBE_POLL_INTERVAL: Final = 600
 
 # Optimistic state handling
 # Grace window (seconds) during which API polls do NOT overwrite optimistic
@@ -295,6 +313,7 @@ SUFFIX_REFRESH_SCENES: Final = "_refresh_scenes"
 SUFFIX_NIGHT_LIGHT: Final = "_night_light"
 SUFFIX_LIGHT_ZONE: Final = "_light_zone_"
 SUFFIX_SOCKET: Final = "_socket_"
+SUFFIX_MQTT_OUTLET: Final = "_mqtt_outlet_"
 SUFFIX_MAIN_LIGHT: Final = "_main_light"
 # Distinct from SUFFIX_MAIN_LIGHT (the switch backed by the cloud
 # ``mainLightToggle`` capability) — this is the dedicated main-panel light

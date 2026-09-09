@@ -12,6 +12,7 @@ from typing import Any
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import STATE_ON, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
@@ -27,6 +28,7 @@ from .const import (
     SUFFIX_NEBULA_LIGHT,
     SUFFIX_NIGHT_LIGHT,
     SUFFIX_SIDE_LIGHT,
+    SUFFIX_MQTT_OUTLET,
     SUFFIX_SOCKET,
 )
 from .coordinator import GoveeCoordinator
@@ -94,6 +96,12 @@ async def async_setup_entry(
     entities: list[SwitchEntity] = []
 
     for device in coordinator.devices.values():
+        # Probe thermometers only report when polled, so the poll needs an
+        # explicit, restorable on/off that the owner controls.
+        if device.is_probe_thermometer:
+            entities.append(GoveeProbeLivePollingSwitch(coordinator, device))
+            continue
+
         # Create switch for smart plugs (power on/off)
         if device.is_plug and device.supports_power:
             entities.append(GoveePlugSwitchEntity(coordinator, device))
@@ -195,6 +203,14 @@ async def async_setup_entry(
                     device.name,
                 )
 
+            # Outlets the Developer API does not expose individually but the
+            # AWS IoT `turn` bitmask can drive (H5160/H5161, issue #184).
+            for outlet_index in range(device.mqtt_outlet_count):
+                entities.append(GoveeMqttOutletSwitchEntity(coordinator, device, outlet_index))
+                _LOGGER.debug(
+                    "Created MQTT outlet switch %d for %s", outlet_index + 1, device.name
+                )
+
             # Named per-part light toggles — main/background on ceiling-fan
             # lights (H1310/H1370, issue #114), nebula/side/bottom on the
             # H60B3 uplighter (issue #126). Govee returns "" for these on
@@ -221,6 +237,54 @@ async def async_setup_entry(
 
     async_add_entities(entities)
     _LOGGER.debug("Set up %d Govee switch entities", len(entities))
+
+
+class GoveeProbeLivePollingSwitch(GoveeEntity, SwitchEntity, RestoreEntity):
+    """Arms live polling for a probe thermometer (H5192).
+
+    Probe thermometers answer only when asked, so this switch is what makes the
+    entities update at all. It is off by default and restores across restarts:
+    polling every 30 seconds around the clock would drain a battery device that
+    is only interesting while something is cooking.
+
+    Turning it on fires one immediate read so the entities populate without
+    waiting for the first tick.
+    """
+
+    _attr_entity_category = EntityCategory.CONFIG
+    _attr_translation_key = "probe_live_polling"
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        """Initialize the live polling switch."""
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_probe_live_polling"
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the previous polling state and re-arm the timer if needed."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state is not None and last_state.state == STATE_ON:
+            self.coordinator.set_probe_polling(self._device_id, True)
+
+    @property
+    def is_on(self) -> bool:
+        """Return True while polling is armed."""
+        return self.coordinator.is_probe_polling(self._device_id)
+
+    @property
+    def available(self) -> bool:
+        """Always available: this is a local toggle, not a device capability."""
+        return True
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Arm polling and read once immediately."""
+        self.coordinator.set_probe_polling(self._device_id, True)
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Disarm polling."""
+        self.coordinator.set_probe_polling(self._device_id, False)
+        self.async_write_ha_state()
 
 
 class GoveePlugSwitchEntity(GoveeEntity, SwitchEntity):
@@ -451,6 +515,72 @@ class GoveeSocketSwitchEntity(GoveeEntity, SwitchEntity):
         await self._set(False)
 
 
+class GoveeMqttOutletSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
+    """One outlet of a multi-outlet plug driven over AWS IoT only (issue #184).
+
+    The H5160/H5161 advertise a single ``powerSwitch`` to the Developer API,
+    so the only per-outlet control is homebridge-govee's bitmask ``turn`` on
+    the account MQTT session. State comes from the bitmask the plug reports
+    (push ``onOff`` / poll ``powerSwitch``, decoded by the coordinator);
+    before the first report it is optimistic and restored across restarts.
+    Unavailable without the AWS IoT session because nothing else can carry
+    the command.
+    """
+
+    _attr_device_class = SwitchDeviceClass.OUTLET
+    _attr_translation_key = "govee_socket"
+
+    @property
+    def assumed_state(self) -> bool:
+        """Assumed until the plug has reported its outlet bitmask (#184)."""
+        state = self.device_state
+        return state is None or self._toggle_key not in state.toggles
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice, outlet_index: int) -> None:
+        """Initialize the outlet switch entity."""
+        super().__init__(coordinator, device)
+        self._outlet_index = outlet_index
+        self._toggle_key = f"outlet{outlet_index + 1}"
+        self._attr_unique_id = f"{device.device_id}{SUFFIX_MQTT_OUTLET}{outlet_index}"
+        self._attr_translation_placeholders = {"socket": str(outlet_index + 1)}
+        self._is_on = False
+
+    async def async_added_to_hass(self) -> None:
+        """Restore optimistic state on startup."""
+        await super().async_added_to_hass()
+        last_state = await self.async_get_last_state()
+        if last_state:
+            self._is_on = last_state.state == "on"
+
+    @property
+    def available(self) -> bool:
+        """Only the AWS IoT session can carry the command."""
+        return super().available and self.coordinator.mqtt_connected
+
+    @property
+    def is_on(self) -> bool:
+        """Return True if the outlet is on (optimistic, shared via state.toggles)."""
+        state = self.device_state
+        if state is not None:
+            live = state.toggles.get(self._toggle_key)
+            if live is not None:
+                return live
+        return self._is_on
+
+    async def _set(self, enabled: bool) -> None:
+        if await self.coordinator.async_set_mqtt_outlet(self._device_id, self._outlet_index, enabled):
+            self._is_on = enabled
+            self.async_write_ha_state()
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn the outlet on."""
+        await self._set(True)
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn the outlet off."""
+        await self._set(False)
+
+
 class GoveeNamedLightSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
     """On/off switch for a named light part — main/background on ceiling-fan
     lights (H1310/H1370, issue #114), nebula/side/bottom on the H60B3
@@ -595,11 +725,22 @@ class GoveeMusicModeSwitchEntity(GoveeEntity, SwitchEntity):
             # Get current sensitivity and mode from state, or use defaults
             state = self.device_state
             sensitivity = 50
-            music_mode = 1  # Default to Rhythm mode
+            # Default to the first mode the device advertises. The old
+            # hard-coded 1 ("Rhythm" on most strips) is not a valid value on
+            # every SKU — the H6022 offers 3/4/5/6 and rejects 1 with
+            # "Parameter value out of range" (issue #186).
+            valid_modes = [
+                int(opt["value"])
+                for opt in self._device.get_music_mode_options()
+                if isinstance(opt.get("value"), int)
+            ]
+            music_mode = valid_modes[0] if valid_modes else 1
             if state:
                 if state.music_sensitivity is not None:
                     sensitivity = state.music_sensitivity
-                if state.music_mode_value is not None:
+                if state.music_mode_value is not None and (
+                    not valid_modes or state.music_mode_value in valid_modes
+                ):
                     music_mode = state.music_mode_value
 
             command = MusicModeCommand(

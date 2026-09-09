@@ -23,9 +23,17 @@ import ssl
 import tempfile
 import time
 from collections import deque
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
+
+from ..models.device import PROBE_THERMOMETER_BFF_SKUS
+from .probe_thermometer import (
+    concat_command_blocks,
+    decode_limits,
+    decode_probe_reading,
+    decode_status_frame,
+)
 
 # Import aiomqtt at module level to avoid blocking in event loop
 try:
@@ -42,11 +50,33 @@ _LOGGER = logging.getLogger(__name__)
 
 # AWS IoT connection settings
 AWS_IOT_PORT = 8883
-AWS_IOT_KEEPALIVE = 120
+# 60 s like Home Assistant core's default: paho only notices a dead peer after
+# 1-2 keepalive periods, so this bounds a silent half-open session to ~2 min.
+AWS_IOT_KEEPALIVE = 60
 RECONNECT_BASE = 5
 RECONNECT_MAX = 300
+# aiomqtt's default budget for every broker round-trip (CONNACK, SUBACK,
+# DISCONNECT ack). Publishes use the much shorter ACK_TIMEOUT below.
 CONNECTION_TIMEOUT = 60
+# PUBACK budget for QoS-1 publishes (Home Assistant core's TIMEOUT_ACK). A
+# half-open socket to AWS IoT otherwise "succeeds" for up to 2x keepalive
+# while the command never arrives and the REST fallback is skipped.
+ACK_TIMEOUT = 10
+# Consecutive failed connection attempts (or sessions that died before
+# STABLE_SESSION_SECONDS) after which on_give_up fires ONCE to surface a repair
+# issue. The loop never stops retrying: a multi-hour outage must self-heal when
+# the network returns, exactly as Home Assistant core's MQTT client and this
+# integration's own OpenAPI events client behave. Name kept for history.
 MAX_RECONNECT_ATTEMPTS = 50
+# A session that lasted at least this long before dropping is a healthy
+# connection that was lost, not a failed attempt: backoff resets. Shorter
+# sessions count as failures so a flap (AWS IoT client-id takeover by another
+# install on the same account, a policy revocation) backs off instead of
+# hammering the endpoint every RECONNECT_BASE seconds forever.
+STABLE_SESSION_SECONDS = 60
+# MQTT 3.1.1 SUBACK return code for a refused subscription (AWS IoT sends it
+# when the account policy does not allow the topic).
+SUBACK_FAILURE = 0x80
 
 # --- multiSync 0xEE 0x34 sub-device frames ------------------------------------
 #
@@ -104,6 +134,72 @@ o/ufQJVtMVT8QtPHRh8jrdkPSHCa2XV4cdFyQzR1bldZwgJcJmApzyMZFo6IQ6XU
 5MsI+yMRQ+hDKXJioaldXgjUkK642M4UwtBV8ob2xJNDd2ZhwLnoQdeXeGADbkpy
 rqXRfboQnoZsG4q5WTP468SQvvG5
 -----END CERTIFICATE-----"""
+
+# AWS recommends trusting every Amazon Trust Services root, not just Root CA 1:
+# the -ats endpoints serve an RSA chain (Root CA 1) today, but the ECC chains
+# (Root CA 3/4) and Root CA 2 are equally valid and a pin on one root would
+# fail verification the day AWS rotates. Source: https://www.amazontrust.com/repository/
+AMAZON_ROOT_CAS = (
+    AMAZON_ROOT_CA1
+    + "\n"
+    + """-----BEGIN CERTIFICATE-----
+MIIFQTCCAymgAwIBAgITBmyf0pY1hp8KD+WGePhbJruKNzANBgkqhkiG9w0BAQwF
+ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
+b24gUm9vdCBDQSAyMB4XDTE1MDUyNjAwMDAwMFoXDTQwMDUyNjAwMDAwMFowOTEL
+MAkGA1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJv
+b3QgQ0EgMjCCAiIwDQYJKoZIhvcNAQEBBQADggIPADCCAgoCggIBAK2Wny2cSkxK
+gXlRmeyKy2tgURO8TW0G/LAIjd0ZEGrHJgw12MBvIITplLGbhQPDW9tK6Mj4kHbZ
+W0/jTOgGNk3Mmqw9DJArktQGGWCsN0R5hYGCrVo34A3MnaZMUnbqQ523BNFQ9lXg
+1dKmSYXpN+nKfq5clU1Imj+uIFptiJXZNLhSGkOQsL9sBbm2eLfq0OQ6PBJTYv9K
+8nu+NQWpEjTj82R0Yiw9AElaKP4yRLuH3WUnAnE72kr3H9rN9yFVkE8P7K6C4Z9r
+2UXTu/Bfh+08LDmG2j/e7HJV63mjrdvdfLC6HM783k81ds8P+HgfajZRRidhW+me
+z/CiVX18JYpvL7TFz4QuK/0NURBs+18bvBt+xa47mAExkv8LV/SasrlX6avvDXbR
+8O70zoan4G7ptGmh32n2M8ZpLpcTnqWHsFcQgTfJU7O7f/aS0ZzQGPSSbtqDT6Zj
+mUyl+17vIWR6IF9sZIUVyzfpYgwLKhbcAS4y2j5L9Z469hdAlO+ekQiG+r5jqFoz
+7Mt0Q5X5bGlSNscpb/xVA1wf+5+9R+vnSUeVC06JIglJ4PVhHvG/LopyboBZ/1c6
++XUyo05f7O0oYtlNc/LMgRdg7c3r3NunysV+Ar3yVAhU/bQtCSwXVEqY0VThUWcI
+0u1ufm8/0i2BWSlmy5A5lREedCf+3euvAgMBAAGjQjBAMA8GA1UdEwEB/wQFMAMB
+Af8wDgYDVR0PAQH/BAQDAgGGMB0GA1UdDgQWBBSwDPBMMPQFWAJI/TPlUq9LhONm
+UjANBgkqhkiG9w0BAQwFAAOCAgEAqqiAjw54o+Ci1M3m9Zh6O+oAA7CXDpO8Wqj2
+LIxyh6mx/H9z/WNxeKWHWc8w4Q0QshNabYL1auaAn6AFC2jkR2vHat+2/XcycuUY
++gn0oJMsXdKMdYV2ZZAMA3m3MSNjrXiDCYZohMr/+c8mmpJ5581LxedhpxfL86kS
+k5Nrp+gvU5LEYFiwzAJRGFuFjWJZY7attN6a+yb3ACfAXVU3dJnJUH/jWS5E4ywl
+7uxMMne0nxrpS10gxdr9HIcWxkPo1LsmmkVwXqkLN1PiRnsn/eBG8om3zEK2yygm
+btmlyTrIQRNg91CMFa6ybRoVGld45pIq2WWQgj9sAq+uEjonljYE1x2igGOpm/Hl
+urR8FLBOybEfdF849lHqm/osohHUqS0nGkWxr7JOcQ3AWEbWaQbLU8uz/mtBzUF+
+fUwPfHJ5elnNXkoOrJupmHN5fLT0zLm4BwyydFy4x2+IoZCn9Kr5v2c69BoVYh63
+n749sSmvZ6ES8lgQGVMDMBu4Gon2nL2XA46jCfMdiyHxtN/kHNGfZQIG6lzWE7OE
+76KlXIx3KadowGuuQNKotOrN8I1LOJwZmhsoVLiJkO/KdYE+HvJkJMcYr07/R54H
+9jVlpNMKVv/1F2Rs76giJUmTtt8AF9pYfl3uxRuw0dFfIRDH+fO6AgonB8Xx1sfT
+4PsJYGw=
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIBtjCCAVugAwIBAgITBmyf1XSXNmY/Owua2eiedgPySjAKBggqhkjOPQQDAjA5
+MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6b24g
+Um9vdCBDQSAzMB4XDTE1MDUyNjAwMDAwMFoXDTQwMDUyNjAwMDAwMFowOTELMAkG
+A1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJvb3Qg
+Q0EgMzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABCmXp8ZBf8ANm+gBG1bG8lKl
+ui2yEujSLtf6ycXYqm0fc4E7O5hrOXwzpcVOho6AF2hiRVd9RFgdszflZwjrZt6j
+QjBAMA8GA1UdEwEB/wQFMAMBAf8wDgYDVR0PAQH/BAQDAgGGMB0GA1UdDgQWBBSr
+ttvXBp43rDCGB5Fwx5zEGbF4wDAKBggqhkjOPQQDAgNJADBGAiEA4IWSoxe3jfkr
+BqWTrBqYaGFy+uGh0PsceGCmQ5nFuMQCIQCcAu/xlJyzlvnrxir4tiz+OpAUFteM
+YyRIHN8wfdVoOw==
+-----END CERTIFICATE-----
+-----BEGIN CERTIFICATE-----
+MIIB8jCCAXigAwIBAgITBmyf18G7EEwpQ+Vxe3ssyBrBDjAKBggqhkjOPQQDAzA5
+MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6b24g
+Um9vdCBDQSA0MB4XDTE1MDUyNjAwMDAwMFoXDTQwMDUyNjAwMDAwMFowOTELMAkG
+A1UEBhMCVVMxDzANBgNVBAoTBkFtYXpvbjEZMBcGA1UEAxMQQW1hem9uIFJvb3Qg
+Q0EgNDB2MBAGByqGSM49AgEGBSuBBAAiA2IABNKrijdPo1MN/sGKe0uoe0ZLY7Bi
+9i0b2whxIdIA6GO9mif78DluXeo9pcmBqqNbIJhFXRbb/egQbeOc4OO9X4Ri83Bk
+M6DLJC9wuoihKqB1+IGuYgbEgds5bimwHvouXKNCMEAwDwYDVR0TAQH/BAUwAwEB
+/zAOBgNVHQ8BAf8EBAMCAYYwHQYDVR0OBBYEFNPsxzplbszh2naaVvuc84ZtV+WB
+MAoGCCqGSM49BAMDA2gAMGUCMDqLIfG9fhGt0O9Yli/W651+kI0rz2ZVwyzjKKlw
+CkcO8DdZEv8tmZQoTipPNU0zWgIxAOp1AE47xDqUEpHJWEadIRNyp4iciuRMStuW
+1KyLa2tJElMzrdfkviT8tQp21KW8EA==
+-----END CERTIFICATE-----
+"""
+)
 
 
 # Type for state update callback
@@ -177,6 +273,35 @@ def _decode_op_frames(op: Any) -> list[bytes]:
     return frames
 
 
+def _subscription_refused(granted: Any) -> bool:
+    """True if a SUBACK reports the subscription was refused.
+
+    paho hands aiomqtt a ``tuple[int]`` of granted QoS values for MQTT 3.1.1
+    (0x80 = failure) or a list of ``ReasonCodes`` for MQTT 5.
+    """
+    try:
+        for code in granted or ():
+            if isinstance(code, int):
+                if code >= SUBACK_FAILURE:
+                    return True
+            elif getattr(code, "is_failure", False):
+                return True
+    except TypeError:  # pragma: no cover - defensive
+        return False
+    return False
+
+
+def _same_iot_credentials(a: GoveeIotCredentials, b: GoveeIotCredentials) -> bool:
+    """Whether two credential sets connect identically (token differences don't matter)."""
+    return (
+        a.iot_cert == b.iot_cert
+        and a.iot_key == b.iot_key
+        and a.client_id == b.client_id
+        and a.endpoint == b.endpoint
+        and a.account_topic == b.account_topic
+    )
+
+
 class GoveeAwsIotClient:
     """AWS IoT MQTT client for real-time Govee device state updates.
 
@@ -200,24 +325,40 @@ class GoveeAwsIotClient:
         credentials: GoveeIotCredentials,
         on_state_update: StateUpdateCallback,
         on_give_up: GiveUpCallback | None = None,
+        on_connected: Callable[[], None] | None = None,
+        on_disconnected: Callable[[], None] | None = None,
     ) -> None:
         """Initialize the AWS IoT MQTT client.
 
         Args:
             credentials: IoT credentials from Govee login API.
             on_state_update: Callback(device_id, state_dict) for state changes.
-            on_give_up: Optional callback fired when the reconnect loop
-                exhausts MAX_RECONNECT_ATTEMPTS. Use to surface a repair
-                issue so the user can intervene (e.g., reload integration).
+            on_give_up: Optional callback fired ONCE when MAX_RECONNECT_ATTEMPTS
+                consecutive attempts have failed. Use to surface a repair
+                issue; the loop keeps retrying regardless.
+            on_connected: Optional callback fired after every successful
+                CONNACK + SUBACK, so the caller can clear that repair issue.
+            on_disconnected: Optional callback fired when a live session
+                drops, so status entities reflect it immediately instead of
+                on the next poll.
         """
         self._credentials = credentials
         self._on_state_update = on_state_update
         self._on_give_up = on_give_up
+        self._on_connected = on_connected
+        self._on_disconnected = on_disconnected
         self._running = False
         self._connected = False
         self._task: asyncio.Task[None] | None = None
         self._temp_dir: tempfile.TemporaryDirectory[str] | None = None
-        self._max_backoff_count = 0
+        # TLS context built once per credential set and reused across
+        # reconnects (an SSLContext is reusable; HA core builds its once too).
+        # Invalidated by async_restart() when the credentials change.
+        self._ssl_context: ssl.SSLContext | None = None
+        self._unhealthy_reported = False
+        self._consecutive_failures = 0
+        self._last_error: str | None = None
+        self._connected_since: float | None = None
         self._client: Any | None = None  # aiomqtt.Client when connected
         # Last raw state payload seen per device, retained for diagnostics so a
         # dump shows exactly what AWS IoT pushed (redacted at dump time).
@@ -231,6 +372,11 @@ class GoveeAwsIotClient:
         # undecoded hub packets (e.g. the H5059's 0xEE 0x35 wet alarm in #87)
         # without asking end users to enable verbose logging.
         self._recent_multisync: deque[dict[str, Any]] = deque(maxlen=64)
+        # Same idea for probe-thermometer frames: keeping the raw hex means
+        # the next probe SKU can be decoded from a diagnostics download
+        # alone, without asking the owner to run verbose logging while
+        # cooking.
+        self._recent_probe_frames: deque[dict[str, Any]] = deque(maxlen=64)
         # Latest Tower-Fan swing-range tail bytes per device_id, harvested from
         # inbound aa1d status frames. Used to rebuild the oscillation-ON packet
         # so the fan resumes its own physically-configured sweep arc.
@@ -251,6 +397,11 @@ class GoveeAwsIotClient:
         return list(self._recent_multisync)
 
     @property
+    def recent_probe_frames(self) -> list[dict[str, Any]]:
+        """Recent probe-thermometer frames (hex) for diagnostics."""
+        return list(self._recent_probe_frames)
+
+    @property
     def last_message_ts(self) -> datetime | None:
         """UTC timestamp of the most recent inbound MQTT state message."""
         return self._last_message_ts
@@ -261,8 +412,48 @@ class GoveeAwsIotClient:
 
     @property
     def connected(self) -> bool:
-        """Return True if connected to AWS IoT."""
+        """Return True if connected AND subscribed to the account topic."""
         return self._connected
+
+    @property
+    def consecutive_failures(self) -> int:
+        """Failed connection attempts since the last stable session (diagnostics)."""
+        return self._consecutive_failures
+
+    @property
+    def last_error(self) -> str | None:
+        """Last connection error, or None (diagnostics)."""
+        return self._last_error
+
+    @property
+    def connected_since(self) -> datetime | None:
+        """UTC time the current session became connected, or None (diagnostics)."""
+        if self._connected_since is None or not self._connected:
+            return None
+        age = time.monotonic() - self._connected_since
+        return datetime.now(timezone.utc) - timedelta(seconds=age)
+
+    async def async_restart(self, credentials: GoveeIotCredentials) -> bool:
+        """Swap in new credentials and reconnect if anything relevant changed.
+
+        A re-login can rotate the account's certificate, key or topic; the
+        session that authenticated with the old set keeps running until it
+        drops, after which the old material would be retried for good.
+        Returns True if a restart happened.
+        """
+        if _same_iot_credentials(self._credentials, credentials):
+            self._credentials = credentials
+            return False
+        was_running = self._running
+        await self.async_stop()
+        self._credentials = credentials
+        self._ssl_context = None
+        self._consecutive_failures = 0
+        self._unhealthy_reported = False
+        if was_running:
+            await self.async_start()
+        _LOGGER.info("AWS IoT MQTT client restarted with refreshed credentials")
+        return True
 
     @property
     def available(self) -> bool:
@@ -318,6 +509,7 @@ class GoveeAwsIotClient:
 
         self._client = None
         self._connected = False
+        self._connected_since = None
         _LOGGER.info("AWS IoT MQTT client stopped")
 
     def _create_ssl_context_sync(self) -> ssl.SSLContext:
@@ -328,9 +520,14 @@ class GoveeAwsIotClient:
         - Loads client certificate and key for client authentication
         - Enforces TLS 1.2+ as required by AWS IoT
 
+        ``load_cert_chain`` needs real files, so the certificate and key are
+        written to a private temp directory that is removed as soon as the
+        context has loaded them — the key material lives in the context, not
+        on disk, for the rest of the session.
+
         This method is blocking and should be run in an executor.
         """
-        # Clean up any existing temp directory first
+        # Clean up any leftover temp directory first
         if self._temp_dir:
             try:
                 self._temp_dir.cleanup()
@@ -338,12 +535,8 @@ class GoveeAwsIotClient:
                 pass
             self._temp_dir = None
 
-        temp_dir = None
-        try:
-            # Create temp directory for certificate files
-            temp_dir = tempfile.TemporaryDirectory()
-            temp_path = Path(temp_dir.name)
-
+        with tempfile.TemporaryDirectory() as temp_name:
+            temp_path = Path(temp_name)
             cert_path = temp_path / "cert.pem"
             key_path = temp_path / "key.pem"
 
@@ -360,40 +553,38 @@ class GoveeAwsIotClient:
             ssl_context.check_hostname = True
 
             # Load Amazon Root CA for server certificate verification
-            ssl_context.load_verify_locations(cadata=AMAZON_ROOT_CA1)
+            ssl_context.load_verify_locations(cadata=AMAZON_ROOT_CAS)
 
             # Load client certificate and private key for mutual TLS
             ssl_context.load_cert_chain(str(cert_path), str(key_path))
 
-            _LOGGER.debug("SSL context created for AWS IoT MQTT")
-
-            # Store reference after successful creation
-            self._temp_dir = temp_dir
-            return ssl_context
-
-        except Exception:
-            # Clean up temp directory on failure
-            if temp_dir:
-                try:
-                    temp_dir.cleanup()
-                except Exception:
-                    pass
-            raise
+        _LOGGER.debug("SSL context created for AWS IoT MQTT")
+        return ssl_context
 
     async def _create_ssl_context(self) -> ssl.SSLContext:
-        """Create SSL context with certificate files (async wrapper).
-
-        Runs blocking SSL context creation in an executor.
-        """
-        loop = asyncio.get_running_loop()
-        return await loop.run_in_executor(None, self._create_ssl_context_sync)
+        """Return the cached SSL context, building it in an executor on first use."""
+        if self._ssl_context is None:
+            loop = asyncio.get_running_loop()
+            self._ssl_context = await loop.run_in_executor(
+                None, self._create_ssl_context_sync
+            )
+        return self._ssl_context
 
     async def _connection_loop(self) -> None:
-        """Maintain AWS IoT MQTT connection with exponential backoff."""
+        """Maintain the AWS IoT MQTT connection; never stops retrying.
+
+        Exponential backoff RECONNECT_BASE..RECONNECT_MAX between failed
+        attempts. A session that lived at least STABLE_SESSION_SECONDS resets
+        the backoff when it drops; a shorter one counts as a failure so a flap
+        backs off too. After MAX_RECONNECT_ATTEMPTS consecutive failures
+        ``on_give_up`` fires once (a repair issue) and the loop carries on at
+        RECONNECT_MAX cadence until the network comes back or the client is
+        stopped.
+        """
         reconnect_interval = RECONNECT_BASE
-        reconnect_attempts = 0
 
         while self._running:
+            session_started: float | None = None
             try:
                 ssl_context = await self._create_ssl_context()
 
@@ -412,24 +603,51 @@ class GoveeAwsIotClient:
                     timeout=CONNECTION_TIMEOUT,
                 ) as client:
                     self._client = client
-                    self._connected = True
-                    self._max_backoff_count = 0
-                    reconnect_interval = RECONNECT_BASE
-                    reconnect_attempts = 0
 
-                    _LOGGER.info(
-                        "Connected to AWS IoT MQTT at %s",
-                        self._credentials.endpoint,
-                    )
-
-                    # Subscribe to account topic for all device updates
+                    # Subscribe to the account topic for all device updates,
+                    # at QoS 1 like the OpenAPI events client. AWS IoT answers
+                    # a policy-refused subscription with SUBACK 0x80 and keeps
+                    # the session up — without this check the client would
+                    # sit "connected" and deaf forever.
                     topic = self._credentials.account_topic
-                    await client.subscribe(topic)
+                    granted = await client.subscribe(topic, qos=1)
+                    if _subscription_refused(granted):
+                        raise aiomqtt.MqttError(
+                            f"account topic subscription refused (SUBACK {granted!r})"
+                        )
+
+                    self._connected = True
+                    session_started = time.monotonic()
+                    self._connected_since = session_started
+                    if self._consecutive_failures:
+                        _LOGGER.info(
+                            "Connected to AWS IoT MQTT at %s after %d failed attempt(s)",
+                            self._credentials.endpoint,
+                            self._consecutive_failures,
+                        )
+                    else:
+                        _LOGGER.info(
+                            "Connected to AWS IoT MQTT at %s",
+                            self._credentials.endpoint,
+                        )
+                    # The failure streak and backoff are NOT reset here: a
+                    # session that dies within STABLE_SESSION_SECONDS is a
+                    # flap and must keep backing off. They reset once the
+                    # session has proven itself (below, or when it drops late).
+                    self._last_error = None
                     _LOGGER.debug("Subscribed to topic: %s", topic[:30] + "...")
+                    self._notify_connected()
 
                     async for message in client.messages:
                         if not self._running:
                             break  # type: ignore[unreachable]
+                        if (
+                            self._consecutive_failures
+                            and time.monotonic() - session_started >= STABLE_SESSION_SECONDS
+                        ):
+                            self._consecutive_failures = 0
+                            self._unhealthy_reported = False
+                            reconnect_interval = RECONNECT_BASE
                         await self._handle_message(message)
 
                     self._client = None
@@ -440,38 +658,84 @@ class GoveeAwsIotClient:
 
             except Exception as err:
                 self._client = None
+                was_connected = self._connected
                 self._connected = False
+                self._connected_since = None
+                self._last_error = f"{type(err).__name__}: {err}"
+                if was_connected:
+                    self._notify_disconnected()
 
-                if self._running:
-                    reconnect_attempts += 1
+                if not self._running:
+                    break  # type: ignore[unreachable]
 
-                    if reconnect_attempts >= MAX_RECONNECT_ATTEMPTS:
+                if (
+                    session_started is not None
+                    and time.monotonic() - session_started >= STABLE_SESSION_SECONDS
+                ):
+                    # A healthy session was lost (keepalive timeout, broker
+                    # restart, network blip): not a failure streak.
+                    self._consecutive_failures = 0
+                    self._unhealthy_reported = False
+                    reconnect_interval = RECONNECT_BASE
+                    _LOGGER.warning(
+                        "AWS IoT connection lost after %ds (%s); reconnecting in %ds",
+                        int(time.monotonic() - session_started),
+                        self._last_error,
+                        reconnect_interval,
+                    )
+                else:
+                    self._consecutive_failures += 1
+                    # First failure is worth a WARNING; the rest of a streak is
+                    # noise at that level (HA core logs retries at DEBUG).
+                    _LOGGER.log(
+                        logging.WARNING if self._consecutive_failures == 1 else logging.DEBUG,
+                        "AWS IoT connection %s (%s); reconnecting in %ds (attempt %d)",
+                        "dropped early" if session_started is not None else "failed",
+                        self._last_error,
+                        reconnect_interval,
+                        self._consecutive_failures,
+                    )
+                    if (
+                        self._consecutive_failures >= MAX_RECONNECT_ATTEMPTS
+                        and not self._unhealthy_reported
+                    ):
+                        self._unhealthy_reported = True
                         _LOGGER.error(
-                            "AWS IoT connection failed after %d attempts, giving up",
-                            reconnect_attempts,
+                            "AWS IoT connection has failed %d times in a row (last: %s); "
+                            "surfacing a repair and continuing to retry every %ds",
+                            self._consecutive_failures,
+                            self._last_error,
+                            RECONNECT_MAX,
                         )
                         if self._on_give_up is not None:
                             try:
-                                self._on_give_up(reconnect_attempts, str(err))
+                                self._on_give_up(self._consecutive_failures, str(err))
                             except Exception as cb_err:  # pragma: no cover
                                 _LOGGER.warning("give-up callback raised: %s", cb_err)
-                        self._running = False
-                        break
 
-                    _LOGGER.warning(
-                        "AWS IoT connection error (%s): %s. "
-                        "Reconnecting in %ds (attempt %d/%d)",
-                        type(err).__name__,
-                        err,
-                        reconnect_interval,
-                        reconnect_attempts,
-                        MAX_RECONNECT_ATTEMPTS,
-                    )
-
-                    await asyncio.sleep(reconnect_interval)
-                    reconnect_interval = min(reconnect_interval * 2, RECONNECT_MAX)
+                await asyncio.sleep(reconnect_interval)
+                reconnect_interval = min(reconnect_interval * 2, RECONNECT_MAX)
 
         self._connected = False
+        self._connected_since = None
+
+    def _notify_disconnected(self) -> None:
+        """Tell the owner a live session dropped."""
+        if self._on_disconnected is None:
+            return
+        try:
+            self._on_disconnected()
+        except Exception as err:  # pragma: no cover - defensive
+            _LOGGER.warning("disconnected callback raised: %s", err)
+
+    def _notify_connected(self) -> None:
+        """Tell the owner a session is up (clears the disconnect repair)."""
+        if self._on_connected is None:
+            return
+        try:
+            self._on_connected()
+        except Exception as err:  # pragma: no cover - defensive
+            _LOGGER.warning("connected callback raised: %s", err)
 
     async def _handle_message(self, message: Any) -> None:
         """Handle incoming AWS IoT MQTT message.
@@ -524,11 +788,26 @@ class GoveeAwsIotClient:
             )
 
             data = json.loads(payload_str)
-
-            # Ignore command messages (our own publishes or responses)
-            if "msg" in data:
-                _LOGGER.debug("Ignoring command/response message")
+            if not isinstance(data, dict):
+                _LOGGER.debug("Ignoring non-object AWS IoT payload")
                 return
+
+            # Older devices wrap the whole status in a JSON string under
+            # "msg" (homebridge-govee unwraps it too); our own publishes are
+            # {"msg": {"cmd", "data", ...}} objects. Unwrap the former, drop
+            # the latter.
+            if "msg" in data:
+                wrapped = data["msg"]
+                if isinstance(wrapped, str):
+                    try:
+                        wrapped = json.loads(wrapped)
+                    except json.JSONDecodeError:
+                        wrapped = None
+                if isinstance(wrapped, dict) and "device" in wrapped and "state" in wrapped:
+                    data = wrapped
+                else:
+                    _LOGGER.debug("Ignoring command/response message")
+                    return
 
             device_id = data.get("device")
 
@@ -566,8 +845,20 @@ class GoveeAwsIotClient:
                 ):
                     self._fan_swing_tail[device_id] = list(_fb[3:7])
 
-            # Handle multiSync messages (leak sensor events)
             cmd = data.get("cmd")
+
+            # Probe thermometers (H5192) answer reads over ptReal and
+            # volunteer a status frame on power-on. Gated on the SKU because
+            # light strips push their own 0xAA 0x05/0x13/0xA5 packets
+            # through op.command, which must never reach this decoder.
+            if data.get("sku", "") in PROBE_THERMOMETER_BFF_SKUS and cmd in (
+                "status",
+                "ptReal",
+            ):
+                self._handle_probe_frame(device_id, data)
+                return
+
+            # Handle multiSync messages (leak sensor events)
             if cmd == "multiSync":
                 self._handle_multisync(device_id, data)
                 return
@@ -627,6 +918,72 @@ class GoveeAwsIotClient:
                 "hex": safe.hex(),
             }
         )
+
+    def _handle_probe_frame(self, device_id: str, data: dict[str, Any]) -> None:
+        """Handle a probe-thermometer frame (H5192) from status or ptReal.
+
+        Three frame kinds arrive on this path, all identified by byte 1 of the
+        reassembled 20-byte packet (byte 0 varies between 0x40 and 0x47 and
+        carries no meaning here):
+
+        - 0x0F: the full status frame the device volunteers on power-on, both
+          probes with readings and limits in one packet
+        - 0x24: the answer to a live read, one probe's core and ambient
+        - 0x12: the answer to a limits read, one probe's alarm corridor
+
+        Anything else is left to the diagnostics ring buffer, which is written
+        before decoding so an unknown frame from the next probe SKU survives
+        into a download.
+        """
+        raw = concat_command_blocks(data.get("op", {}).get("command", []))
+        if raw is None:
+            return
+
+        self._recent_probe_frames.append(
+            {
+                "ts": datetime.now(timezone.utc).isoformat(),
+                "device_id": device_id,
+                "sku": data.get("sku", ""),
+                "cmd": data.get("cmd", ""),
+                "header": raw[:2].hex(),
+                "length": len(raw),
+                "hex": raw.hex(),
+            }
+        )
+
+        probes: dict[int, dict[str, float | None]] = {}
+
+        status = decode_status_frame(raw)
+        if status is not None:
+            probes = status
+        else:
+            reading = decode_probe_reading(raw)
+            if reading is not None:
+                probe, core, ambient = reading
+                probes = {probe: {"core": core, "ambient": ambient}}
+            else:
+                decoded_limits = decode_limits(raw)
+                if decoded_limits is not None:
+                    probe, limits = decoded_limits
+                    probes = {
+                        probe: {
+                            "core_max": limits.core_max,
+                            "core_min": limits.core_min,
+                            "ambient_max": limits.ambient_max,
+                            "ambient_min": limits.ambient_min,
+                        }
+                    }
+
+        if not probes:
+            _LOGGER.debug(
+                "Unhandled probe frame from %s: %s", device_id, raw[:2].hex()
+            )
+            return
+
+        try:
+            self._on_state_update(device_id, {"_probe_frame": True, "probes": probes})
+        except Exception as err:
+            _LOGGER.error("probe callback failed for %s: %s", device_id, err)
 
     def _handle_multisync(self, hub_device_id: str, data: dict[str, Any]) -> None:
         """Handle multiSync messages from hub devices (e.g., H5043 leak hub).
@@ -837,7 +1194,13 @@ class GoveeAwsIotClient:
         }
 
         try:
-            await self._client.publish(device_topic, json.dumps(payload))
+            # QoS 1: success means the broker PUBACKed within ACK_TIMEOUT, not
+            # that the bytes reached the kernel. On a half-open socket this
+            # fails fast so the caller's REST fallback runs instead of an
+            # optimistic update masking a lost command.
+            await self._client.publish(
+                device_topic, json.dumps(payload), qos=1, timeout=ACK_TIMEOUT
+            )
             _LOGGER.debug(
                 "Published %s to %s...",
                 cmd,
