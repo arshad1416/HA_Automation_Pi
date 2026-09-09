@@ -1,0 +1,125 @@
+# Solar production — YAML-managed Lovelace dashboard
+# Deployed to: /opt/homeassistant/dashboards/solar.yaml (= /config/dashboards/...)
+# Registered via the `lovelace:` block in configuration.yaml (url_path: solar).
+# Data: apsystems_daemon.py -> apsystems.json -> command_line sensors
+# (see reference/apsystems-openapi.md). Credits use OEB ULO energy rates,
+# same schedule/rates as the EV dashboard — see grizzl_e_rates.json.
+# NOTE: YAML-managed dashboards must start with `views:` (no top-level `title:`).
+views:
+  - title: Overview
+    path: overview
+    icon: mdi:solar-power-variant
+    cards:
+      # ── Live production ────────────────────────────────────────────
+      - type: horizontal-stack
+        cards:
+          - type: tile
+            entity: sensor.solar_power_now
+            name: Producing Now
+            icon: mdi:solar-power-variant
+            features:
+              - type: "numeric-attribute"
+                attribute: data_age_min
+                name: Data age (min)
+          - type: tile
+            entity: sensor.solar_rate_now
+            name: Earning Rate
+            icon: mdi:cash-multiple
+      - type: gauge
+        entity: sensor.solar_power_now
+        name: Live Solar Power (11.44 kW array)
+        unit: W
+        min: 0
+        max: 11440
+        severity:
+          green: 1000
+          yellow: 4500
+          red: 8000
+        needle: true
+
+      # ── Power curve (long-term statistics: purge-proof 5-min means) ─
+      - type: statistics-graph
+        title: Power — last 24 h (5-min statistics)
+        entities:
+          - entity: sensor.solar_power_now
+            name: Power (W)
+        stat_types:
+          - mean
+        period:
+          calendar:
+            period: day
+        chart_type: line
+
+      # ── Energy totals ──────────────────────────────────────────────
+      - type: entities
+        title: ☀️ Energy Production
+        show_header_toggle: false
+        entities:
+          - entity: sensor.solar_energy_today
+            name: Today
+            icon: mdi:weather-sunny
+          - entity: sensor.solar_energy_yesterday
+            name: Yesterday
+            icon: mdi:weather-sunset
+          - entity: sensor.solar_energy_month
+            name: This Month
+            icon: mdi:calendar-month
+          - entity: sensor.solar_energy_year
+            name: This Year
+            icon: mdi:calendar-range
+          - entity: sensor.solar_energy_lifetime
+            name: Lifetime
+            icon: mdi:molecule-co2
+
+      # ── Net-metering credit value (UL-TOU) ─────────────────────────
+      - type: entities
+        title: 💰 Solar Value at ULO Rates (net-metering basis)
+        show_header_toggle: false
+        entities:
+          - entity: sensor.solar_credits_today
+            name: Credits value today
+            icon: mdi:cash-plus
+          - entity: sensor.solar_credits_month
+            name: Credits value this month
+            icon: mdi:cash-multiple
+          - type: attribute
+            entity: sensor.solar_credits_today
+            attribute: rate_period
+            name: Current rate period
+      - type: markdown
+        content: >
+          Every solar kWh is valued at the hour's OEB **UL-TOU energy rate**
+          (overnight 3.9¢ / weekend off-peak 9.8¢ / mid-peak 15.7¢ /
+          on-peak 39.1¢) — the same rate Alectra credits for net-metered
+          exports, and the rate self-consumed kWh displace.
+
+          *Caveat:* without a consumption meter the **self-use vs. export
+          split** isn't measurable — this is the credit value of *all*
+          production. Alectra nets credits monthly against your bill; actual
+          export-only credits can be reconciled from the Alectra portal's
+          hourly data.
+
+      # ── System health ──────────────────────────────────────────────
+      - type: horizontal-stack
+        cards:
+          - type: tile
+            entity: sensor.solar_power_now
+            name: Grid Voltage
+            icon: mdi:sine-wave
+            state_content:
+              - attribute:voltage_v
+              - unit
+          - type: tile
+            entity: sensor.solar_power_now
+            name: Inverter Temp
+            icon: mdi:thermometer
+            state_content:
+              - attribute:temp_c
+              - unit
+          - type: tile
+            entity: sensor.solar_power_now
+            name: Source
+            icon: mdi:lan-connect
+            state_content:
+              - attribute:source
+              - attribute:last_slot_time

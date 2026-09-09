@@ -48,7 +48,7 @@ import time
 import urllib.error
 import urllib.request
 import uuid
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 
 try:
     from zoneinfo import ZoneInfo
@@ -311,6 +311,74 @@ def atomic_write(path, payload):
     os.replace(tmp, path)
 
 
+# ------------------------------------------------------------------ UL-TOU
+# Ontario OEB Ultra-Low Overnight schedule + Alectra energy rates, same
+# semantics as grizzl_e_daemon.py (rates from grizzl_e_rates.json next to the
+# state file). Solar net-metering basis: every solar kWh either displaces an
+# imported kWh or is exported — both credit/value at the hour's energy rate.
+DEFAULT_RATES = {"overnight": 3.9, "weekend_offpeak": 9.8,
+                 "midpeak": 15.7, "onpeak": 39.1}
+
+
+def load_rates():
+    try:
+        with open(os.path.join(os.path.dirname(STATE) or ".", "grizzl_e_rates.json")) as f:
+            r = json.load(f).get("ulo_energy_cents_kwh", {})
+        return {**DEFAULT_RATES, **{k: float(v) for k, v in r.items()}}
+    except Exception:
+        return dict(DEFAULT_RATES)
+
+
+RATES = load_rates()
+
+
+def _easter(y):
+    a, b, c = y % 19, y // 100, y % 100
+    d, e = b // 4, b % 4
+    f = (b + 8) // 25
+    g = (b - f + 1) // 3
+    h = (19 * a + b - d - g + 15) % 30
+    i, k = c // 4, c % 4
+    l = (32 + 2 * e + 2 * i - h - k) % 7
+    m = (a + 11 * h + 22 * l) // 451
+    mo = (h + l - 7 * m + 114) // 31
+    return date(y, mo, (h + l - 7 * m + 114) % 31 + 1)
+
+
+def _nth_weekday(y, mo, wd, n):
+    d = date(y, mo, 1)
+    d += timedelta(days=(wd - d.weekday()) % 7)
+    return d + timedelta(days=7 * (n - 1))
+
+
+def _holidays(y):
+    vd = date(y, 5, 24)
+    while vd.weekday() != 0:
+        vd -= timedelta(days=1)
+    return {
+        date(y, 1, 1), _nth_weekday(y, 2, 0, 3), _easter(y) - timedelta(days=2),
+        vd, date(y, 7, 1), _nth_weekday(y, 8, 0, 1), _nth_weekday(y, 9, 0, 1),
+        _nth_weekday(y, 10, 0, 2), date(y, 12, 25), date(y, 12, 26),
+    }
+
+
+_HOLIDAY_CACHE = {}
+
+
+def rate_period(dt):
+    h = dt.hour
+    if h >= 23 or h < 7:
+        p = "overnight"
+    elif dt.weekday() >= 5 or dt.date() in _HOLIDAY_CACHE.setdefault(
+            dt.year, _holidays(dt.year)):
+        p = "weekend_offpeak"
+    elif 16 <= h < 21:
+        p = "onpeak"
+    else:
+        p = "midpeak"
+    return p, RATES[p]
+
+
 def record_today(sticky, val, day_str):
     """The ECU's local today-accumulator resets itself after sunset (observed
     2026-09-05: read 0.0 kWh at 22:14 after a ~33 kWh day). Track the day's
@@ -345,7 +413,7 @@ def main():
                  "current_hour_kwh", "last_slot_time", "data_age_min", "inverters",
                  "yesterday_date", "yesterday_kwh", "month_date", "today_date",
                  "today_peak_kwh", "today_peak_date", "int_date", "int_ts",
-                 "today_int_kwh")
+                 "today_int_kwh", "credits_today_cad", "credits_month_cad")
     }
     if "month_date" not in sticky and "updated" in prev:
         # month/year/lifetime totals were last fetched within this month
@@ -396,6 +464,9 @@ def main():
                         loc["today_kwh"] or 0.0, sticky.get("today_kwh") or 0.0)
                 else:
                     sticky["today_int_kwh"] = 0.0  # genuine midnight rollover
+                    sticky["credits_today_cad"] = 0.0
+                if sticky.get("int_date", day_str)[:7] != day_str[:7]:
+                    sticky["credits_month_cad"] = 0.0  # month rollover
                 sticky["int_date"] = day_str
             delta_kwh = 0.0
             if sticky.get("int_ts"):
@@ -404,6 +475,12 @@ def main():
                     delta_kwh = loc["power_w"] * dt_s / 3.6e6
             sticky["today_int_kwh"] = sticky.get("today_int_kwh", 0.0) + delta_kwh
             sticky["int_ts"] = now_ts
+            # UL-TOU credit/value engine: kWh × the hour's energy rate
+            period, rate_c = rate_period(now)
+            sticky["credits_today_cad"] = round(
+                sticky.get("credits_today_cad", 0.0) + delta_kwh * rate_c / 100, 4)
+            sticky["credits_month_cad"] = round(
+                sticky.get("credits_month_cad", 0.0) + delta_kwh * rate_c / 100, 4)
             record_today(sticky, max(sticky["today_int_kwh"], loc["today_kwh"] or 0.0), day_str)
             if delta_kwh > 0:
                 for k in ("lifetime_kwh", "year_kwh", "month_kwh"):
@@ -496,6 +573,10 @@ def main():
             "source": source,
             "voltage_v": sticky.get("voltage_v"),
             "temp_c": sticky.get("temp_c1"),
+            "rate_period": rate_period(now)[0],
+            "rate_now_cents": rate_period(now)[1],
+            "credits_today_cad": sticky.get("credits_today_cad", 0.0),
+            "credits_month_cad": sticky.get("credits_month_cad", 0.0),
             "updated": now_iso,
             "status": status,
             "stale_min": stale_min,

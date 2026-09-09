@@ -839,6 +839,39 @@ command_line:
       json_attributes:
         - yesterday_date
         - status
+  - sensor:
+      name: Solar Credits Today
+      unique_id: solar_credits_today
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: CAD
+      device_class: monetary
+      state_class: total_increasing
+      scan_interval: 300
+      value_template: "{{ value_json.credits_today_cad | float(0) | round(2) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+      json_attributes:
+        - rate_period
+        - status
+  - sensor:
+      name: Solar Credits Month
+      unique_id: solar_credits_month
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: CAD
+      device_class: monetary
+      state_class: total_increasing
+      scan_interval: 900
+      value_template: "{{ value_json.credits_month_cad | float(0) | round(2) }}"
+      availability: "{{ value_json.stale_min is defined and value_json.stale_min < 360 }}"
+  - sensor:
+      name: Solar Rate Now
+      unique_id: solar_rate_now
+      command: "cat /config/apsystems.json"
+      unit_of_measurement: "¢/kWh"
+      scan_interval: 300
+      value_template: "{{ value_json.rate_now_cents | float(0) }}"
+      json_attributes:
+        - rate_period
+        - status
 
 
 
@@ -1591,6 +1624,12 @@ notify:
 lovelace:
   mode: storage
   dashboards:
+    solar-power:
+      mode: yaml
+      title: Solar
+      icon: mdi:solar-power-variant
+      show_in_sidebar: true
+      filename: dashboards/solar.yaml
     ev-charging:
       mode: yaml
       title: EV Charging
