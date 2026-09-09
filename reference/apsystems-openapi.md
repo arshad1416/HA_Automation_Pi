@@ -85,6 +85,25 @@ headers: X-CA-AppId, X-CA-Timestamp, X-CA-Nonce,
 | 7002/7003 | too many requests / busy | daemon doubles its sleep one cycle |
 | No documented quota in the manual — the annex only says "access limit exceeded". |
 
+## UL-TOU credit/value engine (daemon v1.4.2) + Solar dashboard
+
+The daemon converts each energy increment at the hour's OEB **UL-TOU rate**
+(same rates + schedule logic as `grizzl_e_daemon.py`, from
+`grizzl_e_rates.json`: overnight 3.9¢ 23:00–07:00, weekend/holiday off-peak
+9.8¢, weekday on-peak 39.1¢ 16:00–21:00, mid-peak 15.7¢ otherwise; Ontario
+holidays computed in-daemon). Rationale: Alectra net metering credits exports
+at the hour's energy rate, and self-consumed kWh displace the same rate — so
+`Σ kWh(h) × rate(h)` is the net-metering credit value of all production.
+State: `credits_today_cad` (midnight reset) + `credits_month_cad` (month
+reset); HA sensors `solar_credits_today/month` (CAD) and `solar_rate_now`.
+**No export meter exists** (ECU-R has no CTs) — the self-use vs. export split
+isn't measurable; reconcile actuals against Alectra portal hourly data.
+
+Dashboard: `dashboards/solar.yaml`, registered as sidebar **"Solar"**
+(url_path `solar-power` — HA requires a hyphen) via the `lovelace:` block.
+Cards: live gauge + tiles, 24 h power statistics-graph (purge-proof 5-min
+means), energy totals, credit cards with basis note, system-health tiles.
+
 ## Daemon call budget (v1.2, 2026-09-05)
 
 Telemetry is fetched only during **06:00–21:00 local** (~293 calls/day):

@@ -116,7 +116,19 @@ def modbus_read3(start, qty):
     s = socket.create_connection((ECU_IP, ECU_MODBUS_PORT), timeout=5)
     try:
         s.sendall(frame)
-        r = s.recv(2048)
+        r = b""
+        while len(r) < 9:
+            chunk = s.recv(2048)
+            if not chunk:
+                break
+            r += chunk
+        if len(r) >= 9:
+            need = 9 + r[8]
+            while len(r) < need:
+                chunk = s.recv(2048)
+                if not chunk:
+                    break
+                r += chunk
     finally:
         s.close()
     if len(r) < 9 or r[7] != 3:
@@ -442,7 +454,6 @@ def main():
             for k in ("voltage_v", "va", "temp_c1", "temp_c2"):
                 if loc[k] is not None:
                     sticky[k] = loc[k]
-            # ── local energy accounting (v1.4) ──────────────────────────
             # ECU reg 40230 proved unreliable as the daily total (resets after
             # sunset AND froze mid-day twice) and the cloud quota can stay
             # locked for days — so the daemon derives energy from local power:
@@ -491,28 +502,34 @@ def main():
             # README; 2005 = monthly quota reached, "data resumes when the
             # limit resets") — so extras run ~2 windows/day, not every cycle:
             # ≈150 calls/month total, leaving headroom for the backfill.
-            y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
-            if sticky.get("yesterday_date") != y_str:
-                yd = refresh_yesterday()
-                if yd:
-                    sticky["yesterday_date"], sticky["yesterday_kwh"] = yd
-            if day_mode:
-                day_cycle += 1
-                extras_slot = f"{day_str}-{now.hour}"
-                month_roll = sticky.get("month_date") != now.strftime("%Y-%m")
-                extras_due = month_roll or (
-                    now.hour in EXTRAS_HOURS
-                    and sticky.get("extras_slot") != extras_slot
-                )
-                if extras_due:
-                    sticky["extras_slot"] = extras_slot
-                    sticky["inverters"] = fetch_inverter_power(day_str)
-                    s = fetch_summary()
-                    if s:
-                        sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
-                        sticky["month_date"] = now.strftime("%Y-%m")
+            # BEST EFFORT: a cloud hiccup here must never demote a good
+            # local read to the cloud fallback.
+            try:
+                y_str = (now - timedelta(days=1)).strftime("%Y-%m-%d")
+                if sticky.get("yesterday_date") != y_str:
+                    yd = refresh_yesterday()
+                    if yd:
+                        sticky["yesterday_date"], sticky["yesterday_kwh"] = yd
+                if day_mode:
+                    day_cycle += 1
+                    extras_slot = f"{day_str}-{now.hour}"
+                    month_roll = sticky.get("month_date") != now.strftime("%Y-%m")
+                    extras_due = month_roll or (
+                        now.hour in EXTRAS_HOURS
+                        and sticky.get("extras_slot") != extras_slot
+                    )
+                    if extras_due:
+                        sticky["extras_slot"] = extras_slot
+                        sticky["inverters"] = fetch_inverter_power(day_str)
+                        s = fetch_summary()
+                        if s:
+                            sticky["month_kwh"], sticky["year_kwh"], sticky["lifetime_kwh"] = s
+                            sticky["month_date"] = now.strftime("%Y-%m")
+            except Exception as e:  # noqa: BLE001 — extras are optional
+                print(f"cloud extras failed (local data unaffected): {e}", flush=True)
             last_ok = time.time()
         except Exception as e1:  # noqa: BLE001 — fall back to the cloud
+            print(f"local ECU read failed: {str(e1)[:120]}", flush=True)
             # ── fallback: cloud minutely telemetry (quota-limited) ─────────
             try:
                 if day_mode:
