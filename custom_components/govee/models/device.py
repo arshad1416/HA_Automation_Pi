@@ -28,6 +28,13 @@ LEAK_HUB_SKUS = frozenset({"H5043", "H5044"})
 # SKU-locked here, consistent with LEAK_SENSOR_SKUS. Add new presence SKUs here.
 PRESENCE_SENSOR_SKUS = frozenset({"H5127"})
 
+# Pump-model dehumidifiers (H7152 "Max") — the only variant with a drain
+# pump/hose, distinct from the H7150/H7151 tank-only models. Neither the
+# pump-fault flag nor the hose-connection mode is a capability or event; both
+# are decoded from AWS IoT push frames (see GoveeDeviceState). Detection is
+# therefore SKU-locked, issue #114 follow-up.
+PUMP_DEHUMIDIFIER_SKUS = frozenset({"H7152"})
+
 # Thermo-hygrometer SKUs that the Govee *Developer* API (/user/devices) does
 # NOT return, so they never reach capability-based discovery and "don't show
 # up" (issue #86). These battery WiFi sensors are present in the account-login
@@ -617,6 +624,18 @@ class GoveeDevice:
         )
 
     @property
+    def supports_pump_state(self) -> bool:
+        """Check if device can report a pump-fault flag (H7152 "Max").
+
+        Not a capability (absent from the discovered capabilities list even
+        while the fault is active), not on the OpenAPI event channel, and not
+        in the flat MQTT ``state`` keys — confirmed empty across live fault
+        captures. Detection is SKU-locked (``PUMP_DEHUMIDIFIER_SKUS``) rather
+        than capability-based, since the flag never surfaces there at all.
+        """
+        return self.sku.upper() in PUMP_DEHUMIDIFIER_SKUS
+
+    @property
     def supports_presence_event(self) -> bool:
         """Check if device is an mmWave presence/occupancy sensor (H5127).
 
@@ -653,7 +672,13 @@ class GoveeDevice:
     @property
     def supports_temperature_sensor(self) -> bool:
         """Check if device exposes a sensorTemperature property (e.g. H5109,
-        H5179). The capability is read-only — surfaced as an HA sensor."""
+        H5179), or is a pump-model dehumidifier (H7152) whose AWS IoT push
+        frames carry a reverse-engineered live temperature reading — no
+        capability exists for that one at all, see
+        GoveeDeviceState.update_temperature_from_frames. The capability path
+        is read-only — surfaced as an HA sensor either way."""
+        if self.sku.upper() in PUMP_DEHUMIDIFIER_SKUS:
+            return True
         return any(
             cap.type == CAPABILITY_PROPERTY
             and cap.instance == INSTANCE_SENSOR_TEMPERATURE
@@ -662,7 +687,13 @@ class GoveeDevice:
 
     @property
     def supports_humidity_sensor(self) -> bool:
-        """Check if device exposes a sensorHumidity property."""
+        """Check if device exposes a sensorHumidity property, or is a
+        pump-model dehumidifier (H7152) whose AWS IoT push frames carry a
+        reverse-engineered live humidity reading alongside temperature — no
+        capability exists for that one at all, see
+        GoveeDeviceState.update_temperature_from_frames."""
+        if self.sku.upper() in PUMP_DEHUMIDIFIER_SKUS:
+            return True
         return any(
             cap.type == CAPABILITY_PROPERTY and cap.instance == INSTANCE_SENSOR_HUMIDITY
             for cap in self.capabilities

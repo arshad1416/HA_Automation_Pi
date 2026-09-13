@@ -35,6 +35,7 @@ from .const import (
     CONF_API_TEMPERATURE_UNIT,
     DEFAULT_API_TEMPERATURE_UNIT,
     DOMAIN,
+    GOVEE_DAILY_REQUEST_LIMIT,
     resolve_fahrenheit_conversion,
 )
 from .coordinator import GoveeCoordinator
@@ -104,6 +105,13 @@ async def async_setup_entry(
         # last data received and last command sent (directional freshness).
         entities.append(GoveeAllDataLastUpdatedSensor(coordinator, device))
         entities.append(GoveeLastCommandSentSensor(coordinator, device))
+        # "Last Update Received" above is the max across every transport, so a
+        # healthy Cloud API poll keeps it looking fresh even when MQTT
+        # specifically has been silent for hours — misleading for diagnosing
+        # devices whose state depends entirely on MQTT (no capability or poll
+        # fallback for some fields). This is the MQTT-only signal.
+        if coordinator.mqtt_client is not None:
+            entities.append(GoveeMqttLastReceivedPerDeviceSensor(coordinator, device))
         # Probe thermometers get dedicated per-probe entities instead of the
         # generic temperature sensor: one reading per probe and channel
         # cannot be expressed by a single sensorTemperature value.
@@ -119,6 +127,11 @@ async def async_setup_entry(
 
         if device.supports_temperature_sensor:
             entities.append(GoveeTemperatureSensor(coordinator, device))
+        # Hose-connection mode for pump-model dehumidifiers (H7152 "Max") —
+        # same SKU gate as the pump-fault sensor, since both are decoded
+        # from the same AWS IoT push (issue #114 follow-up).
+        if device.supports_pump_state:
+            entities.append(GoveeDehumidifierModeSensor(coordinator, device))
         # Second probe on dual-probe SKUs (#150). Gated on a reading actually
         # being present rather than on the SKU: the same model ships with one
         # or two probes connected, and a device with nothing on probe 2 must
@@ -223,11 +236,32 @@ class GoveeRateLimitSensor(CoordinatorEntity["GoveeCoordinator"], SensorEntity):
         return self.coordinator.api_rate_limit_remaining
 
     @property
-    def extra_state_attributes(self) -> dict[str, int]:
-        """Return additional rate limit info."""
+    def extra_state_attributes(self) -> dict[str, float]:
+        """Return additional rate limit info.
+
+        The sensor's own value is the per-minute allowance Govee reports in
+        response headers. The daily cap is not reported by the API at all, so
+        the request counts here are measured locally — without them an install
+        has no way to tell whether it is inside the documented 10,000/day.
+
+        What the counts include: every REST call the integration makes, which
+        is the state poll plus periodic device rediscovery and scene fetches —
+        not the state poll alone. They will therefore read somewhat above what
+        "devices x polls per day" predicts. That gap is the point, not a
+        defect: the daily cap applies to all of it, so a figure that counted
+        only the poll would understate the spend.
+
+        They are nonetheless a lower bound. Counting happens when a response
+        is handled, so a request that fails below the HTTP layer is missed.
+        Read these as "at least this many".
+        """
         return {
             "total_limit": self.coordinator.api_rate_limit_total,
             "reset_time": self.coordinator.api_rate_limit_reset,
+            "requests_today": self.coordinator.api_requests_today,
+            "requests_last_24h": self.coordinator.api_requests_last_24h,
+            "requests_per_hour": self.coordinator.api_requests_per_hour,
+            "daily_limit": GOVEE_DAILY_REQUEST_LIMIT,
         }
 
 
@@ -411,6 +445,35 @@ class GoveeTemperatureSensor(_BffThermometerAvailabilityMixin, SensorEntity):
             return (value - 32.0) * (5.0 / 9.0)
 
         return value
+
+
+class GoveeDehumidifierModeSensor(GoveeEntity, SensorEntity):
+    """Hose-connection mode for pump-model dehumidifiers (H7152 "Max").
+
+    "Pump" while the drain hose reads as connected (the app's "Pump Mode");
+    "Water Tank" once it doesn't (draining into the bucket instead). Decoded
+    from byte offset 9 of the AWS IoT push's ``aa 19`` status frame — see
+    :meth:`GoveeDeviceState.update_dehumidifier_mode_from_frames` for how
+    this was confirmed (a live test toggling the device's own hose-detection
+    button, watched against the app's own Mode label).
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "govee_dehumidifier_mode"
+    _attr_device_class = SensorDeviceClass.ENUM
+    _attr_options = ["pump", "tank"]
+    _attr_icon = "mdi:pump"
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        """Initialize the dehumidifier-mode sensor."""
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_dehumidifier_mode"
+
+    @property
+    def native_value(self) -> str | None:
+        """Return "pump" or "tank", or None until a push has landed."""
+        state = self.device_state
+        return state.dehumidifier_mode if state else None
 
 
 class GoveeSecondProbeTemperatureSensor(GoveeTemperatureSensor):
@@ -705,6 +768,36 @@ class GoveeLastCommandSentSensor(GoveeEntity, SensorEntity):
     @property
     def native_value(self) -> datetime | None:
         return self.coordinator.device_last_command_sent(self._device.device_id)
+
+
+class GoveeMqttLastReceivedPerDeviceSensor(GoveeEntity, SensorEntity):
+    """When this specific device last received an inbound MQTT push.
+
+    "Last Update Received" (``GoveeAllDataLastUpdatedSensor``) is the max
+    across every transport, so a healthy Cloud API poll (default every 60s)
+    keeps it looking fresh even when MQTT specifically has gone quiet for a
+    long time — misleading for diagnosing devices whose state depends
+    entirely on MQTT with no capability or poll fallback. This sensor
+    isolates the MQTT-only signal instead.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "mqtt_last_received_device"
+    _attr_device_class = SensorDeviceClass.TIMESTAMP
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:cloud-sync-outline"
+
+    def __init__(
+        self,
+        coordinator: GoveeCoordinator,
+        device: GoveeDevice,
+    ) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_mqtt_last_received"
+
+    @property
+    def native_value(self) -> datetime | None:
+        return self.coordinator.mqtt_last_receive_for(self._device.device_id)
 
 
 class GoveeConnectionModeSensor(GoveeEntity, SensorEntity):

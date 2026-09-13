@@ -261,10 +261,18 @@ class GoveeMusicSensitivityNumber(
         """
         sensitivity = int(value)
 
-        # Get current music mode from state, default to 1 (Rhythm)
+        # The sensitivity rides in the same STRUCT as the mode, so a mode the
+        # device advertises must go with it. The old hard-coded default of 1
+        # ("Rhythm" on most strips) is rejected by the H6022 (valid: 3/4/5/6)
+        # with "Parameter value out of range" — the same defect the music-mode
+        # switch was fixed for in v2026.9.2 (issue #186). A remembered mode is
+        # only reused when the device actually advertises it.
         state = self.coordinator.get_state(self._device_id)
-        music_mode = 1
-        if state and state.music_mode_value is not None:
+        valid_modes = [
+            int(opt["value"]) for opt in self._device.get_music_mode_options() if isinstance(opt.get("value"), int)
+        ]
+        music_mode = valid_modes[0] if valid_modes else 1
+        if state and state.music_mode_value is not None and (not valid_modes or state.music_mode_value in valid_modes):
             music_mode = state.music_mode_value
 
         command = MusicModeCommand(

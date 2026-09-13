@@ -19,6 +19,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CALLBACK_TYPE, HomeAssistant, callback
 from homeassistant.exceptions import ConfigEntryAuthFailed
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -73,11 +74,13 @@ from .const import (
     CONF_EMAIL,
     CONF_ENABLE_MQTT_CONTROL,
     CONF_LAN_TARGETS,
+    CONF_MQTT_STATUS_INTERVAL,
     CONF_PASSWORD,
     CONF_PROBE_POLL_INTERVAL,
     CONF_WATER_DETECTOR_POLL_INTERVAL,
     DEFAULT_API_TEMPERATURE_UNIT,
     DEFAULT_ENABLE_MQTT_CONTROL,
+    DEFAULT_MQTT_STATUS_INTERVAL,
     DEFAULT_PROBE_POLL_INTERVAL,
     DEFAULT_WATER_DETECTOR_POLL_INTERVAL,
     DEVICE_REDISCOVERY_INTERVAL,
@@ -91,10 +94,13 @@ from .const import (
     LAN_WRITE_CONFIRM_TIMEOUT,
     LAN_WRITE_SUPPRESS_SECONDS,
     LAN_WRITE_SUPPRESS_THRESHOLD,
+    MAX_MQTT_STATUS_INTERVAL,
     MAX_PROBE_POLL_INTERVAL,
     MAX_WATER_DETECTOR_POLL_INTERVAL,
+    MIN_MQTT_STATUS_INTERVAL,
     MIN_PROBE_POLL_INTERVAL,
     MIN_WATER_DETECTOR_POLL_INTERVAL,
+    MQTT_STATUS_POLL_OFF,
     OPTIMISTIC_GRACE_CAP_SECONDS,
     resolve_fahrenheit_conversion,
 )
@@ -145,6 +151,7 @@ from .models.device import (
     MAINS_POWERED_BATTERY_SKUS,
     MAINS_POWERED_DEVICE_TYPES,
     PROBE_THERMOMETER_BFF_SKUS,
+    PUMP_DEHUMIDIFIER_SKUS,
 )
 from .models.device import GoveeLeakSensor, GoveeLeakSensorState
 from .scene_cache import SceneCacheManager
@@ -450,6 +457,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # its live-polling switch on, so an idle thermometer is left alone.
         self._probe_poll_unsub: CALLBACK_TYPE | None = None
         self._probe_polling_enabled: set[str] = set()
+        # Periodic per-device MQTT status re-query (see async_publish_status_query
+        # docstring) — devices don't reliably push spontaneously; this is what the
+        # Govee app itself does while its device list is on screen.
+        self._status_poll_unsub: CALLBACK_TYPE | None = None
         # Last seen lastTime per detector — warnMessage is only called when the
         # device has freshly reported (or is currently wet), keeping the account
         # API request count low.
@@ -518,6 +529,21 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     def api_rate_limit_reset(self) -> int:
         """Return API rate limit reset time."""
         return self._api_client.rate_limit_reset
+
+    @property
+    def api_requests_last_24h(self) -> int:
+        """Requests spent in the trailing 24 hours (hourly resolution)."""
+        return self._api_client.requests_last_24h
+
+    @property
+    def api_requests_today(self) -> int:
+        """Requests spent since UTC midnight."""
+        return self._api_client.requests_today
+
+    @property
+    def api_requests_per_hour(self) -> float:
+        """Mean requests/hour over the history held."""
+        return self._api_client.requests_per_hour
 
     @property
     def mqtt_client(self) -> GoveeAwsIotClient | None:
@@ -1056,6 +1082,16 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             await self._run_startup_step(
                 self._fetch_device_topics(), "fetch device topics"
             )
+            # Devices are largely poll-triggered responders on their own MQTT
+            # topic, not autonomous pushers (see async_publish_status_query).
+            # The initial query itself is fired from _on_mqtt_connected, not
+            # here: _start_mqtt only spawns the connection-loop task and
+            # returns immediately, so a query attempted at this point would
+            # see client.connected still False (the TLS handshake and
+            # CONNACK/SUBACK haven't completed yet) and silently no-op. Arm
+            # the recurring timer here regardless, as a backstop independent
+            # of when the connection actually lands.
+            self._schedule_status_poll()
 
         # OpenAPI event subscription — needs only the API key (no account
         # login), so it runs regardless of IoT credentials. Failure-isolated:
@@ -3062,6 +3098,93 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     device_id, device.sku, build_limits_read_packet(probe)
                 )
 
+    @property
+    def _mqtt_status_poll_interval(self) -> int:
+        """Configured MQTT status-poll interval (seconds), clamped to bounds.
+
+        Read per tick so the value is picked up on the reload that follows an
+        options change. ``MQTT_STATUS_POLL_OFF`` (0) is the documented way to
+        turn the re-query off and is returned as-is; any other out-of-range or
+        non-numeric value (e.g. hand-edited options) falls back to the default
+        rather than arming a bad timer.
+        """
+        raw = self._config_entry.options.get(
+            CONF_MQTT_STATUS_INTERVAL, DEFAULT_MQTT_STATUS_INTERVAL
+        )
+        try:
+            interval = int(raw)
+        except (TypeError, ValueError):
+            return DEFAULT_MQTT_STATUS_INTERVAL
+        if interval == MQTT_STATUS_POLL_OFF:
+            return MQTT_STATUS_POLL_OFF
+        if not (MIN_MQTT_STATUS_INTERVAL <= interval <= MAX_MQTT_STATUS_INTERVAL):
+            return DEFAULT_MQTT_STATUS_INTERVAL
+        return interval
+
+    @property
+    def _mqtt_status_poll_enabled(self) -> bool:
+        """False when the user set the re-query interval to 0 (off)."""
+        return self._mqtt_status_poll_interval != MQTT_STATUS_POLL_OFF
+
+    @property
+    def _mqtt_status_poll_targets(self) -> list[str]:
+        """Device IDs eligible for the periodic MQTT status re-query.
+
+        Any device with a known device-specific MQTT topic — anything the
+        coordinator could also publish a command to. Groups have no topic of
+        their own and are excluded.
+        """
+        return [
+            device_id
+            for device_id, device in self._devices.items()
+            if not device.is_group and device_id in self._device_topics
+        ]
+
+    def _schedule_status_poll(self) -> None:
+        """Schedule the next MQTT status re-query, replacing any pending timer.
+
+        Arms nothing when the option is 0 (off); a pending timer is still
+        cancelled so a reload that turned the feature off leaves no tick behind.
+        """
+        if self._status_poll_unsub:
+            self._status_poll_unsub()
+            self._status_poll_unsub = None
+        if not self._mqtt_status_poll_enabled:
+            return
+        self._status_poll_unsub = async_call_later(
+            self.hass, self._mqtt_status_poll_interval, self._status_poll_callback
+        )
+
+    async def _status_poll_callback(self, _now: Any = None) -> None:
+        """Periodic callback: re-query every eligible device, then re-arm."""
+        await self._poll_mqtt_status()
+        self._schedule_status_poll()
+
+    async def _poll_mqtt_status(self) -> None:
+        """Publish a status query to every device's own MQTT topic.
+
+        See ``GoveeAwsIotClient.async_publish_status_query`` for why this
+        exists — without it, devices that don't autonomously push (most of
+        them, per the Android app reverse-engineering) go stale the moment
+        nobody has asked in a while. Queries go out sequentially, one device
+        at a time, rather than in parallel: the interval already trades update
+        latency for request volume, so there is no reason to burst all of them
+        at once. They are fire-and-forget (QoS 0), so the loop never waits on
+        a broker acknowledgement between devices. A no-op when the option is
+        0 (off).
+        """
+        if not self._mqtt_status_poll_enabled:
+            return
+        client = self._mqtt_client
+        if client is None or not client.connected:
+            return
+
+        for device_id in self._mqtt_status_poll_targets:
+            topic = self._device_topics.get(device_id)
+            if not topic:
+                continue
+            await client.async_publish_status_query(topic)
+
     async def async_set_probe_limits(
         self,
         device_id: str,
@@ -3283,6 +3406,15 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             state.update_ceiling_fan_from_frames(
                 self._op_frames_from(state_data)
             )
+        if device is not None and device.supports_pump_state:
+            frames = self._op_frames_from(state_data)
+            state.update_pump_state_from_frames(frames)
+            state.update_dehumidifier_mode_from_frames(frames)
+        # Pump-model dehumidifiers (H7152) carry live temperature/humidity
+        # only in these BLE-format status frames — no capability exists for
+        # either (issue #114 follow-up).
+        if device is not None and device.sku.upper() in PUMP_DEHUMIDIFIER_SKUS:
+            state.update_temperature_from_frames(self._op_frames_from(state_data))
         if device is not None and device.mqtt_outlet_count:
             self._apply_outlet_mask(device, state, state_data.get("onOff"))
 
@@ -3334,6 +3466,20 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # The MQTT status sensor and per-device connection-mode sensors read
         # the client; nudge them now rather than on the next poll.
         self.async_set_updated_data(self._states)
+        # Devices are poll-triggered responders (see async_publish_status_query)
+        # — query every device now that a session is actually confirmed live,
+        # rather than waiting up to a full _mqtt_status_poll_interval. This is
+        # the initial query for a fresh connection (a query attempted during
+        # _async_setup would race the handshake and lose — see the comment
+        # there) and also covers every later reconnect, so a drop-and-recover
+        # doesn't leave state stale for up to the full interval either.
+        # Skipped entirely when the user turned the re-query off (0).
+        if self._mqtt_status_poll_enabled:
+            self._config_entry.async_create_background_task(
+                self.hass,
+                self._poll_mqtt_status(),
+                name="govee_mqtt_connected_status_poll",
+            )
 
     @callback
     def _on_mqtt_disconnected(self) -> None:
@@ -3396,26 +3542,38 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # BLE-capable devices would stay cloud-only until a manual reload.
         self._ble_handler.enroll_from_cache()
 
-        # Create tasks for parallel fetching
-        tasks = [
-            self._fetch_device_state(device_id, device)
+        # Devices the user has fully disabled cost a cloud request per poll and
+        # give nothing back. On an install where a batch of devices moved to
+        # another protocol, that is the largest slice of the daily API budget.
+        fully_disabled = self._devices_with_all_entities_disabled()
+        pollable = {
+            device_id: device
             for device_id, device in self._devices.items()
+            if device_id not in fully_disabled
+        }
+        skipped = len(self._devices) - len(pollable)
+        if skipped:
+            _LOGGER.debug(
+                "Skipping %d device(s) with all entities disabled", skipped
+            )
+
+        if not pollable:
+            return self._states
+
+        # Create tasks for parallel fetching. Each fetch carries its own
+        # deadline: a single timeout around the whole gather discarded every
+        # device's result as soon as one device was slow, so one unreachable
+        # bulb held the entire house's state hostage for that cycle.
+        tasks = [
+            self._fetch_device_state_bounded(device_id, device)
+            for device_id, device in pollable.items()
         ]
 
-        # Scale timeout based on device count (2s per device, min 30s, max 120s)
-        timeout = min(max(STATE_FETCH_TIMEOUT, len(self._devices) * 2), 120)
-
-        # Wait for all with timeout
-        try:
-            async with asyncio.timeout(timeout):
-                results = await asyncio.gather(*tasks, return_exceptions=True)
-        except TimeoutError:
-            _LOGGER.warning("State fetch timed out after %ds", timeout)
-            return self._states
+        results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results
         successful_updates = 0
-        for device_id, result in zip(self._devices.keys(), results):
+        for device_id, result in zip(pollable.keys(), results):
             if isinstance(result, GoveeDeviceState):
                 self._states[device_id] = result
                 successful_updates += 1
@@ -3458,6 +3616,112 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             _LOGGER.debug("Govee LAN read refresh failed: %s", err)
 
         return self._states
+
+    def _owning_device_id(self, unique_id: str) -> str | None:
+        """Map an entity registry unique_id back to the device it belongs to.
+
+        Entity unique_ids are either the bare device id (entity.py) or the
+        device id followed by an underscore-prefixed suffix (every SUFFIX_* in
+        const.py starts with "_"). Testing a bare prefix instead would let one
+        device claim another's entities whenever one id is a prefix of the
+        other, which is not hypothetical: group devices carry purely numeric
+        ids, where prefix collisions are easy.
+        """
+        if unique_id in self._devices:
+            return unique_id
+        head = unique_id.split("_", 1)[0]
+        if head in self._devices:
+            return head
+        # Device ids are MAC-shaped or numeric, so the split above resolves
+        # them all; this is the safety net if that ever stops being true.
+        for device_id in self._devices:
+            if unique_id.startswith(f"{device_id}_"):
+                return device_id
+        return None
+
+    def _devices_with_all_entities_disabled(self) -> set[str]:
+        """Device ids that have registry entities and every one is disabled.
+
+        Polling such a device buys nothing: no entity will ever show the
+        result. Each one still spends a request against Govee's documented
+        10,000/day budget every cycle.
+
+        The common cause is a device that a better transport took over — moved
+        to Matter, or controlled locally by another integration — whose cloud
+        twin was disabled here rather than removed. Those twins stay in the
+        account device list forever, so on a mature install they can outnumber
+        the devices still in use and dominate the daily spend. The cause does
+        not matter to this check: any device the user has fully switched off is
+        one the cloud need not be asked about.
+
+        Built in a single pass over the registry. Asking per device would walk
+        the whole entity list once per device on every poll, which is
+        quadratic for no gain.
+
+        A device with no registry entries is deliberately absent from the
+        result — that is the normal state during first setup, before platforms
+        have added their entities, and skipping then would stall discovery.
+        A registry failure returns an empty set, so nothing is ever skipped
+        because the lookup broke.
+        """
+        try:
+            registry = er.async_get(self.hass)
+            entries = er.async_entries_for_config_entry(
+                registry, self._config_entry.entry_id
+            )
+        except Exception as err:  # noqa: BLE001 - registry must never fail a poll
+            _LOGGER.debug("Entity registry unavailable, polling every device: %s", err)
+            return set()
+
+        has_entities: set[str] = set()
+        has_enabled: set[str] = set()
+        for entry in entries:
+            device_id = self._owning_device_id(entry.unique_id)
+            if device_id is None:
+                continue
+            has_entities.add(device_id)
+            if entry.disabled_by is None:
+                has_enabled.add(device_id)
+        return has_entities - has_enabled
+
+    def _entities_all_disabled(self, device_id: str) -> bool:
+        """True when this one device has entities and all of them are disabled."""
+        return device_id in self._devices_with_all_entities_disabled()
+
+    async def _fetch_device_state_bounded(
+        self,
+        device_id: str,
+        device: GoveeDevice,
+    ) -> GoveeDeviceState | Exception:
+        """Fetch one device's state under its own deadline.
+
+        Returns the exception rather than raising so ``asyncio.gather`` keeps
+        every other device's result. ``_fetch_device_state`` already converts
+        most failures into a returned exception; this bounds the call in time
+        and catches anything that escapes, so a device that never answers
+        costs only its own slot in the poll.
+
+        Args:
+            device_id: Device identifier.
+            device: Device instance.
+
+        Returns:
+            GoveeDeviceState, or the Exception that stopped the fetch.
+        """
+        try:
+            async with asyncio.timeout(STATE_FETCH_TIMEOUT):
+                return await self._fetch_device_state(device_id, device)
+        except TimeoutError as err:
+            _LOGGER.debug(
+                "State fetch for %s timed out after %ds",
+                device_id,
+                STATE_FETCH_TIMEOUT,
+            )
+            self._record_transport_failure(device_id, "cloud_api", "poll_timeout")
+            return err
+        except Exception as err:  # noqa: BLE001 - isolate one device's failure
+            self._record_transport_failure(device_id, "cloud_api", str(err))
+            return err
 
     async def _fetch_device_state(
         self,
@@ -3620,6 +3884,16 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     state.battery = existing_state.battery
                 if existing_state.water_full is not None and state.water_full is None:
                     state.water_full = existing_state.water_full
+                # Pump-abnormal and hose-connection mode (H7152) are decoded
+                # only from AWS IoT push frames — the Developer poll has no
+                # field for either, so the fresh state has them as None.
+                # Preserve the push-derived values across the poll or the
+                # sensors flicker to "unknown" every poll cycle (same class
+                # of bug as #118/#124).
+                if existing_state.pump_state is not None and state.pump_state is None:
+                    state.pump_state = existing_state.pump_state
+                if existing_state.dehumidifier_mode is not None and state.dehumidifier_mode is None:
+                    state.dehumidifier_mode = existing_state.dehumidifier_mode
                 # Occupancy (H5127) is a momentary push event; the developer
                 # /device/state poll returns only `online` for it (never the
                 # bodyAppearedEvent value), so the fresh state has presence=None.
@@ -4963,6 +5237,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if self._probe_poll_unsub:
             self._probe_poll_unsub()
             self._probe_poll_unsub = None
+        # Cancel periodic MQTT status re-query
+        if self._status_poll_unsub:
+            self._status_poll_unsub()
+            self._status_poll_unsub = None
 
         # Disconnect all BLE devices
         for ble_device in self._ble_devices.values():
