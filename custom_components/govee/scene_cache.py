@@ -30,9 +30,7 @@ class SceneCacheManager:
     for removed devices are cleaned up when requested.
     """
 
-    def __init__(
-        self, api_client: GoveeApiClient, cache_ttl: int = SCENE_CACHE_TTL
-    ) -> None:
+    def __init__(self, api_client: GoveeApiClient, cache_ttl: int = SCENE_CACHE_TTL) -> None:
         """Initialize the scene cache manager.
 
         Args:
@@ -117,20 +115,21 @@ class SceneCacheManager:
             return []
 
         # Deduplicate concurrent requests for the same device
+        # Shielded so a cancelled caller (an entity being removed mid-add)
+        # does not cancel the fetch every other waiter shares.
         if device_id in self._scene_inflight:
             _LOGGER.debug("Joining in-flight scene request for %s", device.name)
-            return await self._scene_inflight[device_id]
+            return await asyncio.shield(self._scene_inflight[device_id])
 
         task = asyncio.ensure_future(self._fetch_and_cache_scenes(device_id, device))
         self._scene_inflight[device_id] = task
         try:
-            return await task
+            return await asyncio.shield(task)
         finally:
-            self._scene_inflight.pop(device_id, None)
+            if task.done():
+                self._scene_inflight.pop(device_id, None)
 
-    async def _fetch_and_cache_scenes(
-        self, device_id: str, device: GoveeDevice
-    ) -> list[dict[str, Any]]:
+    async def _fetch_and_cache_scenes(self, device_id: str, device: GoveeDevice) -> list[dict[str, Any]]:
         """Fetch scenes from API and update cache.
 
         Args:
@@ -149,7 +148,7 @@ class SceneCacheManager:
         try:
             scenes = await self._api_client.get_dynamic_scenes(device_id, device.sku)
             self._scene_cache[device_id] = (time.monotonic(), scenes)
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Fetched and cached %d scenes for %s",
                 len(scenes),
                 device.name,
@@ -214,22 +213,20 @@ class SceneCacheManager:
             return []
 
         # Deduplicate concurrent requests for the same device
+        # Shielded for the same reason as the scene fetch above.
         if device_id in self._diy_scene_inflight:
             _LOGGER.debug("Joining in-flight DIY scene request for %s", device.name)
-            return await self._diy_scene_inflight[device_id]
+            return await asyncio.shield(self._diy_scene_inflight[device_id])
 
-        task = asyncio.ensure_future(
-            self._fetch_and_cache_diy_scenes(device_id, device)
-        )
+        task = asyncio.ensure_future(self._fetch_and_cache_diy_scenes(device_id, device))
         self._diy_scene_inflight[device_id] = task
         try:
-            return await task
+            return await asyncio.shield(task)
         finally:
-            self._diy_scene_inflight.pop(device_id, None)
+            if task.done():
+                self._diy_scene_inflight.pop(device_id, None)
 
-    async def _fetch_and_cache_diy_scenes(
-        self, device_id: str, device: GoveeDevice
-    ) -> list[dict[str, Any]]:
+    async def _fetch_and_cache_diy_scenes(self, device_id: str, device: GoveeDevice) -> list[dict[str, Any]]:
         """Fetch DIY scenes from API and update cache.
 
         Args:
@@ -248,7 +245,7 @@ class SceneCacheManager:
         try:
             scenes = await self._api_client.get_diy_scenes(device_id, device.sku)
             self._diy_scene_cache[device_id] = (time.monotonic(), scenes)
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Fetched and cached %d DIY scenes for %s",
                 len(scenes),
                 device.name,

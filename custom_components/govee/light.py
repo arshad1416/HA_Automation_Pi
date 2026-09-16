@@ -25,22 +25,24 @@ from homeassistant.components.light import (  # type: ignore[attr-defined]
     LightEntity,
     LightEntityFeature,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoredExtraData, RestoreEntity
 
 from .const import (
     CONF_ENABLE_SCENES,
+    CONF_SEGMENT_MODE_BY_DEVICE,
     DEFAULT_ENABLE_SCENES,
     DEFAULT_SEGMENT_MODE,
+    DOMAIN,
     MAIN_LIGHT_TOGGLE_SKUS,
     SEGMENT_MODE_BOTH,
     SEGMENT_MODE_GROUPED,
     SEGMENT_MODE_INDIVIDUAL,
     SUFFIX_MAIN_LIGHT_TOGGLE,
 )
-from .coordinator import GoveeCoordinator
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
 from .models import (
     BrightnessCommand,
@@ -71,7 +73,7 @@ MAIN_LIGHT_ON_KELVIN = 4000
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee lights from a config entry."""
@@ -80,7 +82,7 @@ async def async_setup_entry(
     entities: list[LightEntity] = []
 
     # Get per-device segment modes
-    device_modes = entry.options.get("segment_mode_by_device", {})
+    device_modes = entry.options.get(CONF_SEGMENT_MODE_BY_DEVICE, {})
 
     # Check if scenes are enabled in options
     enable_scenes = entry.options.get(CONF_ENABLE_SCENES, DEFAULT_ENABLE_SCENES)
@@ -300,9 +302,7 @@ class GoveeLightEntity(GoveeEntity, LightEntity, RestoreEntity):
     def _ha_to_device_brightness(self, ha_brightness: int) -> int:
         """Convert HA brightness (0-255) to device range, respecting min."""
         ratio = ha_brightness / HA_BRIGHTNESS_MAX
-        result = int(
-            self._brightness_min + ratio * (self._brightness_max - self._brightness_min)
-        )
+        result = int(self._brightness_min + ratio * (self._brightness_max - self._brightness_min))
         return max(self._brightness_min, min(self._brightness_max, result))
 
     def _device_to_ha_brightness(self, device_brightness: int) -> int:
@@ -310,11 +310,7 @@ class GoveeLightEntity(GoveeEntity, LightEntity, RestoreEntity):
         device_range = self._brightness_max - self._brightness_min
         if device_range <= 0:
             return 0
-        result = int(
-            (device_brightness - self._brightness_min)
-            / device_range
-            * HA_BRIGHTNESS_MAX
-        )
+        result = int((device_brightness - self._brightness_min) / device_range * HA_BRIGHTNESS_MAX)
         return max(0, min(HA_BRIGHTNESS_MAX, result))
 
     async def async_turn_on(self, **kwargs: Any) -> None:
@@ -323,64 +319,44 @@ class GoveeLightEntity(GoveeEntity, LightEntity, RestoreEntity):
         if ATTR_EFFECT in kwargs:
             effect_name = kwargs[ATTR_EFFECT]
             scene_info = self._effect_to_scene.get(effect_name)
-            if scene_info:
-                scene_id, scene_name = scene_info
-                await self.coordinator.async_control_device(
-                    self._device_id,
-                    SceneCommand(scene_id=scene_id, scene_name=scene_name),
+            if scene_info is None:
+                raise ServiceValidationError(
+                    translation_domain=DOMAIN,
+                    translation_key="unknown_effect",
+                    translation_placeholders={
+                        "effect": str(effect_name),
+                        "device": self._device.name,
+                    },
                 )
-            else:
-                _LOGGER.warning(
-                    "Unknown effect '%s' for %s", effect_name, self._device.name
-                )
+            scene_id, scene_name = scene_info
+            await self._async_send_command(SceneCommand(scene_id=scene_id, scene_name=scene_name))
             return
 
         # Handle brightness
         if ATTR_BRIGHTNESS in kwargs:
             ha_brightness = kwargs[ATTR_BRIGHTNESS]
             device_brightness = self._ha_to_device_brightness(ha_brightness)
-            if not await self.coordinator.async_control_device(
-                self._device_id,
-                BrightnessCommand(brightness=device_brightness),
-            ):
-                _LOGGER.warning("Brightness command failed for %s", self._device_id)
+            await self._async_send_command(BrightnessCommand(brightness=device_brightness))
 
         # Handle RGB color
         if ATTR_RGB_COLOR in kwargs:
             r, g, b = kwargs[ATTR_RGB_COLOR]
             color = RGBColor(r=r, g=g, b=b)
-            if not await self.coordinator.async_control_device(
-                self._device_id,
-                ColorCommand(color=color),
-            ):
-                _LOGGER.warning("Color command failed for %s", self._device_id)
+            await self._async_send_command(ColorCommand(color=color))
 
         # Handle color temperature
         if ATTR_COLOR_TEMP_KELVIN in kwargs:
             kelvin = kwargs[ATTR_COLOR_TEMP_KELVIN]
-            if not await self.coordinator.async_control_device(
-                self._device_id,
-                ColorTempCommand(kelvin=kelvin),
-            ):
-                _LOGGER.warning("Color temp command failed for %s", self._device_id)
+            await self._async_send_command(ColorTempCommand(kelvin=kelvin))
 
         # Only send power command if light is off or no attributes were set
-        has_attribute = any(
-            k in kwargs
-            for k in (ATTR_BRIGHTNESS, ATTR_RGB_COLOR, ATTR_COLOR_TEMP_KELVIN)
-        )
+        has_attribute = any(k in kwargs for k in (ATTR_BRIGHTNESS, ATTR_RGB_COLOR, ATTR_COLOR_TEMP_KELVIN))
         if not has_attribute or not self.is_on:
-            await self.coordinator.async_control_device(
-                self._device_id,
-                PowerCommand(power_on=True),
-            )
+            await self._async_send_command(PowerCommand(power_on=True))
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light off."""
-        await self.coordinator.async_control_device(
-            self._device_id,
-            PowerCommand(power_on=False),
-        )
+        await self._async_send_command(PowerCommand(power_on=False))
 
     def _build_effect_mapping(self, scenes: list[dict[str, Any]]) -> None:
         """Build effect name mappings from scene data.
@@ -420,9 +396,7 @@ class GoveeLightEntity(GoveeEntity, LightEntity, RestoreEntity):
                 power = last_state.state == "on"
                 brightness = None
                 if last_state.attributes.get("brightness"):
-                    brightness = self._ha_to_device_brightness(
-                        last_state.attributes["brightness"]
-                    )
+                    brightness = self._ha_to_device_brightness(last_state.attributes["brightness"])
                 self.coordinator.restore_group_state(self._device_id, power, brightness)
 
         # Load scenes for effect support (skip group devices - no scene API support)
@@ -466,7 +440,6 @@ class GoveeMainLightEntity(GoveeLightEntity):
         """Initialize the main-panel entity."""
         super().__init__(coordinator, device, enable_scenes=False)
         self._attr_unique_id = f"{device.device_id}{SUFFIX_MAIN_LIGHT_TOGGLE}"
-        self._attr_name = "Main light"
 
         # What to return to on turn_on. Only ever holds a non-black colour.
         self._last_on_kelvin: int | None = None
@@ -502,10 +475,7 @@ class GoveeMainLightEntity(GoveeLightEntity):
         """
         if ATTR_BRIGHTNESS in kwargs:
             device_brightness = self._ha_to_device_brightness(kwargs[ATTR_BRIGHTNESS])
-            if not await self.coordinator.async_control_device(
-                self._device_id, BrightnessCommand(brightness=device_brightness)
-            ):
-                _LOGGER.warning("Brightness command failed for %s", self._device_id)
+            await self._async_send_command(BrightnessCommand(brightness=device_brightness))
 
         if ATTR_RGB_COLOR in kwargs:
             r, g, b = kwargs[ATTR_RGB_COLOR]
@@ -513,29 +483,22 @@ class GoveeMainLightEntity(GoveeLightEntity):
                 # Asking for black is asking for off.
                 await self.async_turn_off()
                 return
-            if await self.coordinator.async_control_device(
-                self._device_id, ColorCommand(color=RGBColor(r=r, g=g, b=b))
-            ):
-                self._last_on_rgb = (r, g, b)
-                self._last_on_kelvin = None
+            await self._async_send_command(ColorCommand(color=RGBColor(r=r, g=g, b=b)))
+            self._last_on_rgb = (r, g, b)
+            self._last_on_kelvin = None
         elif ATTR_COLOR_TEMP_KELVIN in kwargs:
             kelvin = kwargs[ATTR_COLOR_TEMP_KELVIN]
-            if await self.coordinator.async_control_device(
-                self._device_id, ColorTempCommand(kelvin=kelvin)
-            ):
-                self._last_on_kelvin = kelvin
-                self._last_on_rgb = None
+            await self._async_send_command(ColorTempCommand(kelvin=kelvin))
+            self._last_on_kelvin = kelvin
+            self._last_on_rgb = None
         elif not self.is_on:
             # Coming back from black with nothing specified — restore whatever
             # it was last lit with, falling back to neutral white.
             if self._last_on_rgb is not None:
                 r, g, b = self._last_on_rgb
-                await self.coordinator.async_control_device(
-                    self._device_id, ColorCommand(color=RGBColor(r=r, g=g, b=b))
-                )
+                await self._async_send_command(ColorCommand(color=RGBColor(r=r, g=g, b=b)))
             else:
-                await self.coordinator.async_control_device(
-                    self._device_id,
+                await self._async_send_command(
                     ColorTempCommand(kelvin=self._last_on_kelvin or MAIN_LIGHT_ON_KELVIN),
                 )
 
@@ -581,18 +544,12 @@ class GoveeMainLightEntity(GoveeLightEntity):
                 self._last_on_rgb = state.color.as_tuple
                 self._last_on_kelvin = None
 
-        if not await self.coordinator.async_control_device(
-            self._device_id, ColorCommand(color=RGBColor(r=0, g=0, b=0))
-        ):
-            _LOGGER.warning("Main light off failed for %s", self._device_id)
-            return
+        await self._async_send_command(ColorCommand(color=RGBColor(r=0, g=0, b=0)))
 
         # Black wipes the ring too, so put it back — this is what leaves the
         # ring lit while the panel stays dark. The write was black, so an
         # all-black ring needs no replay: it is already dark either way.
-        await self.coordinator.async_reassert_segments(
-            self._device_id, wrote_black=True
-        )
+        await self.coordinator.async_reassert_segments(self._device_id, wrote_black=True)
         self.async_write_ha_state()
 
     @property
@@ -641,7 +598,6 @@ class GoveeNightLightEntity(GoveeEntity, LightEntity):
     """
 
     _attr_translation_key = "govee_nightlight"
-    _attr_icon = "mdi:lightbulb-night"
 
     def __init__(
         self,
@@ -667,20 +623,14 @@ class GoveeNightLightEntity(GoveeEntity, LightEntity):
 
     def _ha_to_device_brightness(self, ha_brightness: int) -> int:
         ratio = ha_brightness / HA_BRIGHTNESS_MAX
-        result = int(
-            self._brightness_min + ratio * (self._brightness_max - self._brightness_min)
-        )
+        result = int(self._brightness_min + ratio * (self._brightness_max - self._brightness_min))
         return max(self._brightness_min, min(self._brightness_max, result))
 
     def _device_to_ha_brightness(self, device_brightness: int) -> int:
         device_range = self._brightness_max - self._brightness_min
         if device_range <= 0:
             return 0
-        result = int(
-            (device_brightness - self._brightness_min)
-            / device_range
-            * HA_BRIGHTNESS_MAX
-        )
+        result = int((device_brightness - self._brightness_min) / device_range * HA_BRIGHTNESS_MAX)
         return max(0, min(HA_BRIGHTNESS_MAX, result))
 
     @property
@@ -742,41 +692,30 @@ class GoveeNightLightEntity(GoveeEntity, LightEntity):
         temp_range = self._device.color_temp_range
         return temp_range.max_kelvin if temp_range else 9000
 
-    async def _set_toggle(self, enabled: bool) -> bool:
-        success = await self.coordinator.async_control_device(
-            self._device_id,
+    async def _set_toggle(self, enabled: bool) -> None:
+        """Switch the nightlight toggle; raise if the command is not accepted."""
+        await self._async_send_command(
             ToggleCommand(toggle_instance=INSTANCE_NIGHT_LIGHT, enabled=enabled),
         )
-        if success:
-            state = self.device_state
-            if state is not None:
-                state.toggles[INSTANCE_NIGHT_LIGHT] = enabled
-            self.async_write_ha_state()
-        return success
+        state = self.device_state
+        if state is not None:
+            state.toggles[INSTANCE_NIGHT_LIGHT] = enabled
+        self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the nightlight on with optional brightness/colour."""
         if ATTR_BRIGHTNESS in kwargs:
             device_brightness = self._ha_to_device_brightness(kwargs[ATTR_BRIGHTNESS])
-            await self.coordinator.async_control_device(
-                self._device_id, BrightnessCommand(brightness=device_brightness)
-            )
+            await self._async_send_command(BrightnessCommand(brightness=device_brightness))
 
         if ATTR_RGB_COLOR in kwargs:
             r, g, b = kwargs[ATTR_RGB_COLOR]
-            await self.coordinator.async_control_device(
-                self._device_id, ColorCommand(color=RGBColor(r=r, g=g, b=b))
-            )
+            await self._async_send_command(ColorCommand(color=RGBColor(r=r, g=g, b=b)))
 
         if ATTR_COLOR_TEMP_KELVIN in kwargs:
-            await self.coordinator.async_control_device(
-                self._device_id, ColorTempCommand(kelvin=kwargs[ATTR_COLOR_TEMP_KELVIN])
-            )
+            await self._async_send_command(ColorTempCommand(kelvin=kwargs[ATTR_COLOR_TEMP_KELVIN]))
 
-        has_attribute = any(
-            k in kwargs
-            for k in (ATTR_BRIGHTNESS, ATTR_RGB_COLOR, ATTR_COLOR_TEMP_KELVIN)
-        )
+        has_attribute = any(k in kwargs for k in (ATTR_BRIGHTNESS, ATTR_RGB_COLOR, ATTR_COLOR_TEMP_KELVIN))
         if not has_attribute or not self.is_on:
             await self._set_toggle(True)
 

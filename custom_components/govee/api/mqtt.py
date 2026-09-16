@@ -139,10 +139,7 @@ rqXRfboQnoZsG4q5WTP468SQvvG5
 # the -ats endpoints serve an RSA chain (Root CA 1) today, but the ECC chains
 # (Root CA 3/4) and Root CA 2 are equally valid and a pin on one root would
 # fail verification the day AWS rotates. Source: https://www.amazontrust.com/repository/
-AMAZON_ROOT_CAS = (
-    AMAZON_ROOT_CA1
-    + "\n"
-    + """-----BEGIN CERTIFICATE-----
+AMAZON_ROOT_CAS = AMAZON_ROOT_CA1 + "\n" + """-----BEGIN CERTIFICATE-----
 MIIFQTCCAymgAwIBAgITBmyf0pY1hp8KD+WGePhbJruKNzANBgkqhkiG9w0BAQwF
 ADA5MQswCQYDVQQGEwJVUzEPMA0GA1UEChMGQW1hem9uMRkwFwYDVQQDExBBbWF6
 b24gUm9vdCBDQSAyMB4XDTE1MDUyNjAwMDAwMFoXDTQwMDUyNjAwMDAwMFowOTEL
@@ -199,7 +196,6 @@ CkcO8DdZEv8tmZQoTipPNU0zWgIxAOp1AE47xDqUEpHJWEadIRNyp4iciuRMStuW
 1KyLa2tJElMzrdfkviT8tQp21KW8EA==
 -----END CERTIFICATE-----
 """
-)
 
 
 # Type for state update callback
@@ -243,9 +239,7 @@ def _decode_thermo_frame(raw: bytes) -> dict[str, Any] | None:
 
     return {
         "sensor_slot": raw[2],
-        "temperature_c": (
-            temp_byte + (temp_carry << 8) + THERMO_TEMP_OFFSET
-        ) / THERMO_TEMP_SCALE,
+        "temperature_c": (temp_byte + (temp_carry << 8) + THERMO_TEMP_OFFSET) / THERMO_TEMP_SCALE,
         "battery": battery,
         "frame_ts": frame_ts,
     }
@@ -468,8 +462,7 @@ class GoveeAwsIotClient:
         """
         if not AIOMQTT_AVAILABLE:
             _LOGGER.warning(
-                "aiomqtt library not available - AWS IoT MQTT disabled. "
-                "Install with: pip install aiomqtt"
+                "aiomqtt library not available - AWS IoT MQTT disabled. " "Install with: pip install aiomqtt"
             )
             return
 
@@ -565,9 +558,7 @@ class GoveeAwsIotClient:
         """Return the cached SSL context, building it in an executor on first use."""
         if self._ssl_context is None:
             loop = asyncio.get_running_loop()
-            self._ssl_context = await loop.run_in_executor(
-                None, self._create_ssl_context_sync
-            )
+            self._ssl_context = await loop.run_in_executor(None, self._create_ssl_context_sync)
         return self._ssl_context
 
     async def _connection_loop(self) -> None:
@@ -612,9 +603,7 @@ class GoveeAwsIotClient:
                     topic = self._credentials.account_topic
                     granted = await client.subscribe(topic, qos=1)
                     if _subscription_refused(granted):
-                        raise aiomqtt.MqttError(
-                            f"account topic subscription refused (SUBACK {granted!r})"
-                        )
+                        raise aiomqtt.MqttError(f"account topic subscription refused (SUBACK {granted!r})")
 
                     self._connected = True
                     session_started = time.monotonic()
@@ -641,10 +630,7 @@ class GoveeAwsIotClient:
                     async for message in client.messages:
                         if not self._running:
                             break  # type: ignore[unreachable]
-                        if (
-                            self._consecutive_failures
-                            and time.monotonic() - session_started >= STABLE_SESSION_SECONDS
-                        ):
+                        if self._consecutive_failures and time.monotonic() - session_started >= STABLE_SESSION_SECONDS:
                             self._consecutive_failures = 0
                             self._unhealthy_reported = False
                             reconnect_interval = RECONNECT_BASE
@@ -668,10 +654,7 @@ class GoveeAwsIotClient:
                 if not self._running:
                     break  # type: ignore[unreachable]
 
-                if (
-                    session_started is not None
-                    and time.monotonic() - session_started >= STABLE_SESSION_SECONDS
-                ):
+                if session_started is not None and time.monotonic() - session_started >= STABLE_SESSION_SECONDS:
                     # A healthy session was lost (keepalive timeout, broker
                     # restart, network blip): not a failure streak.
                     self._consecutive_failures = 0
@@ -695,10 +678,7 @@ class GoveeAwsIotClient:
                         reconnect_interval,
                         self._consecutive_failures,
                     )
-                    if (
-                        self._consecutive_failures >= MAX_RECONNECT_ATTEMPTS
-                        and not self._unhealthy_reported
-                    ):
+                    if self._consecutive_failures >= MAX_RECONNECT_ATTEMPTS and not self._unhealthy_reported:
                         self._unhealthy_reported = True
                         _LOGGER.error(
                             "AWS IoT connection has failed %d times in a row (last: %s); "
@@ -771,9 +751,7 @@ class GoveeAwsIotClient:
             # errors="replace" keeps the JSON parseable; a replaced char only
             # ever lands inside a string value (a name), never structural JSON.
             payload_str = (
-                raw_payload.decode("utf-8", errors="replace")
-                if isinstance(raw_payload, bytes)
-                else str(raw_payload)
+                raw_payload.decode("utf-8", errors="replace") if isinstance(raw_payload, bytes) else str(raw_payload)
             )
 
             # Log every inbound account-topic message before any filtering so a
@@ -837,12 +815,7 @@ class GoveeAwsIotClient:
             # else — so an unknown aa 1d sub-report can't be replayed as a
             # bogus range.
             for _fb in frames:
-                if (
-                    len(_fb) >= 7
-                    and _fb[0] == 0xAA
-                    and _fb[1] == 0x1D
-                    and _fb[2] in (0x00, 0x01)
-                ):
+                if len(_fb) >= 7 and _fb[0] == 0xAA and _fb[1] == 0x1D and _fb[2] in (0x00, 0x01):
                     self._fan_swing_tail[device_id] = list(_fb[3:7])
 
             cmd = data.get("cmd")
@@ -866,9 +839,7 @@ class GoveeAwsIotClient:
             state = data.get("state", {})
 
             if not state:
-                _LOGGER.debug(
-                    "AWS IoT message missing state for %s, ignoring", device_id
-                )
+                _LOGGER.debug("AWS IoT message missing state for %s, ignoring", device_id)
                 return
 
             _LOGGER.debug(
@@ -975,9 +946,7 @@ class GoveeAwsIotClient:
                     }
 
         if not probes:
-            _LOGGER.debug(
-                "Unhandled probe frame from %s: %s", device_id, raw[:2].hex()
-            )
+            _LOGGER.debug("Unhandled probe frame from %s: %s", device_id, raw[:2].hex())
             return
 
         try:
@@ -1092,9 +1061,7 @@ class GoveeAwsIotClient:
                 # Leak/dry event. Probe-state bytes 14/16 carry the H5059 wet
                 # flag (issue #87); byte 5 is battery. OR both so older SKUs
                 # decoded off byte 5 keep working and H5059 is added.
-                is_wet = raw[5] == 0x01 or (
-                    len(raw) >= 17 and (raw[14] == 0x01 or raw[16] == 0x01)
-                )
+                is_wet = raw[5] == 0x01 or (len(raw) >= 17 and (raw[14] == 0x01 or raw[16] == 0x01))
 
                 _LOGGER.debug(
                     "Leak event from hub %s: slot=%d wet=%s",
@@ -1198,9 +1165,7 @@ class GoveeAwsIotClient:
             # that the bytes reached the kernel. On a half-open socket this
             # fails fast so the caller's REST fallback runs instead of an
             # optimistic update masking a lost command.
-            await self._client.publish(
-                device_topic, json.dumps(payload), qos=1, timeout=ACK_TIMEOUT
-            )
+            await self._client.publish(device_topic, json.dumps(payload), qos=1, timeout=ACK_TIMEOUT)
             _LOGGER.debug(
                 "Published %s to %s...",
                 cmd,
@@ -1263,9 +1228,7 @@ class GoveeAwsIotClient:
             # QoS 0, like govee2mqtt: a status query is a periodic nudge, so a
             # lost one costs a single interval and nothing more, and the caller
             # never sits on a PUBACK wait between devices.
-            await self._client.publish(
-                device_topic, json.dumps(payload), qos=0, timeout=ACK_TIMEOUT
-            )
+            await self._client.publish(device_topic, json.dumps(payload), qos=0, timeout=ACK_TIMEOUT)
             _LOGGER.debug("Published status query to %s...", device_topic[:30])
             return True
         except Exception as err:

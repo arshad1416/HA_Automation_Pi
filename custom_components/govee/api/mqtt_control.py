@@ -45,6 +45,20 @@ def build_brightness_data(brightness_1_100: int) -> dict[str, Any]:
     return {"val": brightness_1_100}
 
 
+def device_brightness_to_mqtt(brightness: int, brightness_range: tuple[int, int] = (0, 100)) -> int:
+    """Map a device-native brightness onto the 1-100 scale ``brightness`` takes.
+
+    ``BrightnessCommand.brightness`` is device-native (most lights advertise
+    0-100 or 1-100, a few 0-254). A range that already fits in 0-100 passes
+    through untouched so the common case sends exactly what the REST path
+    would; a wider range is rescaled, mirroring the LAN path.
+    """
+    low, high = brightness_range
+    if high > 100 and high > low:
+        brightness = round((brightness - low) / (high - low) * 100)
+    return max(1, min(100, int(brightness)))
+
+
 def build_color_data(r: int, g: int, b: int) -> dict[str, Any]:
     """Build the ``data`` payload for a native ``colorwc`` command (preferred)."""
     return {"color": {"r": r, "g": g, "b": b}, "colorTemInKelvin": 0}
@@ -81,18 +95,23 @@ def color_legacy_followup(
 
 
 def command_to_mqtt(
-    command: DeviceCommand, sku: str
+    command: DeviceCommand, sku: str, brightness_range: tuple[int, int] = (0, 100)
 ) -> tuple[str, dict[str, Any], int] | None:
     """Map a command to ``(cmd, data, cmd_version)`` for native MQTT control.
 
     Returns ``None`` for commands that have no native MQTT representation
     (color temperature, scenes, segments, etc.), signalling the caller to
-    fall back to the REST control path.
+    fall back to the REST control path. ``brightness_range`` is the device's
+    native range, used to put brightness on the 1-100 MQTT scale.
     """
     if isinstance(command, PowerCommand):
         return ("turn", build_turn_data(command.power_on, sku), 0)
     if isinstance(command, BrightnessCommand):
-        return ("brightness", build_brightness_data(command.brightness), 0)
+        return (
+            "brightness",
+            build_brightness_data(device_brightness_to_mqtt(command.brightness, brightness_range)),
+            0,
+        )
     if isinstance(command, ColorCommand):
         color = command.color
         return ("colorwc", build_color_data(color.r, color.g, color.b), 0)

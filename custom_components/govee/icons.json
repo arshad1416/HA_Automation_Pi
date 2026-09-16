@@ -1,5 +1,48 @@
 {
   "entity": {
+    "binary_sensor": {
+      "govee_water_full": {
+        "default": "mdi:cup-water"
+      },
+      "govee_pump_state": {
+        "default": "mdi:pump"
+      },
+      "govee_water_leak": {
+        "default": "mdi:water-alert"
+      },
+      "govee_occupancy": {
+        "default": "mdi:motion-sensor"
+      },
+      "device_connectivity": {
+        "default": "mdi:lan-connect"
+      },
+      "cloud_api_connectivity": {
+        "default": "mdi:cloud"
+      },
+      "mqtt_connectivity": {
+        "default": "mdi:cloud-sync"
+      },
+      "ble_connectivity": {
+        "default": "mdi:bluetooth"
+      },
+      "lan_connectivity": {
+        "default": "mdi:lan"
+      },
+      "leak_online": {
+        "default": "mdi:radio-tower"
+      },
+      "leak_hub_online": {
+        "default": "mdi:web"
+      }
+    },
+    "button": {
+      "refresh_scenes": {
+        "default": "mdi:refresh"
+      },
+      "clear_water_full": {
+        "default": "mdi:water-check"
+      }
+    },
     "fan": {
       "govee_fan": {
         "default": "mdi:fan",
@@ -15,6 +58,119 @@
             }
           }
         }
+      },
+      "govee_ceiling_fan": {
+        "default": "mdi:ceiling-fan-light"
+      }
+    },
+    "light": {
+      "govee_nightlight": {
+        "default": "mdi:lightbulb-night"
+      }
+    },
+    "number": {
+      "govee_music_sensitivity": {
+        "default": "mdi:microphone"
+      }
+    },
+    "select": {
+      "govee_scene_select": {
+        "default": "mdi:palette"
+      },
+      "govee_snapshot_select": {
+        "default": "mdi:camera-iris"
+      },
+      "govee_diy_scene_select": {
+        "default": "mdi:palette-advanced"
+      },
+      "govee_hdmi_source_select": {
+        "default": "mdi:hdmi-port"
+      },
+      "govee_music_mode_select": {
+        "default": "mdi:music"
+      },
+      "govee_fan_speed_select": {
+        "default": "mdi:fan"
+      },
+      "govee_purifier_mode_select": {
+        "default": "mdi:air-purifier"
+      },
+      "govee_preset_scene_select": {
+        "default": "mdi:scent"
+      },
+      "govee_nightlight_scene_select": {
+        "default": "mdi:weather-night"
+      }
+    },
+    "sensor": {
+      "rate_limit_remaining": {
+        "default": "mdi:speedometer"
+      },
+      "mqtt_status": {
+        "default": "mdi:cloud-sync"
+      },
+      "mqtt_last_received": {
+        "default": "mdi:cloud-sync-outline"
+      },
+      "govee_dehumidifier_mode": {
+        "default": "mdi:pump"
+      },
+      "sensor_filter_life": {
+        "default": "mdi:air-filter"
+      },
+      "all_data_last_updated": {
+        "default": "mdi:database-clock"
+      },
+      "last_command_sent": {
+        "default": "mdi:send-clock"
+      },
+      "mqtt_last_received_device": {
+        "default": "mdi:cloud-sync-outline"
+      },
+      "connection_mode": {
+        "default": "mdi:lan-pending",
+        "state": {
+          "lan": "mdi:lan",
+          "mqtt": "mdi:cloud-sync",
+          "cloud_api": "mdi:cloud",
+          "ble": "mdi:bluetooth",
+          "unavailable": "mdi:lan-pending"
+        }
+      },
+      "leak_alert_status": {
+        "default": "mdi:bell-alert"
+      },
+      "ieee_address": {
+        "default": "mdi:identifier"
+      }
+    },
+    "switch": {
+      "govee_light_zone": {
+        "default": "mdi:lightbulb-multiple"
+      },
+      "govee_music_mode": {
+        "default": "mdi:music"
+      },
+      "govee_dreamview": {
+        "default": "mdi:movie-open"
+      },
+      "govee_main_light": {
+        "default": "mdi:ceiling-light"
+      },
+      "govee_background_light": {
+        "default": "mdi:wall-sconce-flat"
+      },
+      "govee_nebula_light": {
+        "default": "mdi:shimmer"
+      },
+      "govee_ripple_light": {
+        "default": "mdi:waves"
+      },
+      "govee_side_light": {
+        "default": "mdi:wall-sconce"
+      },
+      "govee_bottom_light": {
+        "default": "mdi:floor-lamp"
       }
     }
   }

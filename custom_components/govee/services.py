@@ -1,8 +1,15 @@
-"""Custom services for Govee integration.
+"""Service actions for the Govee integration.
 
-Provides services for:
-- Refreshing the scene catalog (``govee.refresh_scenes``)
-- Setting per-segment colors on RGBIC devices (``govee.set_segment_color``)
+Provides:
+- ``govee.refresh_scenes``: re-fetch the scene catalog for one or all devices.
+- ``govee.set_segment_color``: set the colour of individual RGBIC segments.
+
+Actions are registered once from ``async_setup`` so automations that reference
+them validate even while no config entry is loaded (quality-scale rule
+``action-setup``), and invalid input raises ``ServiceValidationError`` (rule
+``action-exceptions``). ``device_id`` accepts either the Home Assistant device
+registry ID (what the device selector produces) or the Govee device ID, so
+automations written against the Govee ID keep working.
 """
 
 from __future__ import annotations
@@ -10,8 +17,10 @@ from __future__ import annotations
 import logging
 
 import voluptuous as vol
-from homeassistant.core import HomeAssistant, ServiceCall
-from homeassistant.helpers import config_validation as cv
+from homeassistant.config_entries import ConfigEntryState
+from homeassistant.core import HomeAssistant, ServiceCall, callback
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import config_validation as cv, device_registry as dr
 
 from .const import DOMAIN
 from .coordinator import GoveeCoordinator
@@ -19,22 +28,24 @@ from .models import RGBColor, SegmentColorCommand
 
 _LOGGER = logging.getLogger(__name__)
 
-# Service names
+ATTR_DEVICE_ID = "device_id"
+ATTR_RGB_COLOR = "rgb_color"
+ATTR_SEGMENTS = "segments"
+
 SERVICE_REFRESH_SCENES = "refresh_scenes"
 SERVICE_SET_SEGMENT_COLOR = "set_segment_color"
 
-# Service schemas
 SERVICE_REFRESH_SCENES_SCHEMA = vol.Schema(
     {
-        vol.Optional("device_id"): cv.string,
+        vol.Optional(ATTR_DEVICE_ID): cv.string,
     }
 )
 
 SERVICE_SET_SEGMENT_COLOR_SCHEMA = vol.Schema(
     {
-        vol.Required("device_id"): cv.string,
-        vol.Required("segments"): vol.All(cv.ensure_list, [cv.positive_int]),
-        vol.Required("rgb_color"): vol.All(
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Required(ATTR_SEGMENTS): vol.All(cv.ensure_list, [cv.positive_int]),
+        vol.Required(ATTR_RGB_COLOR): vol.All(
             vol.ExactSequence((cv.byte, cv.byte, cv.byte)),
             vol.Coerce(tuple),
         ),
@@ -42,125 +53,138 @@ SERVICE_SET_SEGMENT_COLOR_SCHEMA = vol.Schema(
 )
 
 
-async def async_set_segment_color_handler(
-    hass: HomeAssistant, call: ServiceCall
-) -> None:
-    """Handle ``govee.set_segment_color`` — module-level, testable.
+def _loaded_coordinators(hass: HomeAssistant) -> list[GoveeCoordinator]:
+    """Return the coordinator of every loaded Govee config entry."""
+    return [
+        entry.runtime_data
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.state is ConfigEntryState.LOADED
+    ]
 
-    Rejects any segment index outside the device's effective
-    ``segment_count`` (which already factors in ``SKU_SEGMENT_OVERRIDES``
-    for SKUs like H7075 that the API over-reports). On rejection the
-    service logs a warning and returns without dispatching — this keeps
-    the HA service call visible in the log instead of silently dropping
-    a command that the cloud would refuse anyway.
+
+def _resolve_device_id(hass: HomeAssistant, raw_id: str) -> str:
+    """Map a Home Assistant device registry ID to the Govee device ID.
+
+    Anything that is not a registry ID (a Govee device ID, for instance)
+    passes through unchanged.
     """
-    device_id = call.data["device_id"]
-    segments = call.data["segments"]
-    rgb = call.data["rgb_color"]
+    device_entry = dr.async_get(hass).async_get(raw_id)
+    if device_entry is not None:
+        for domain, identifier in device_entry.identifiers:
+            if domain == DOMAIN:
+                return identifier
+    return raw_id
 
-    coordinator = _get_coordinator_for_device(hass, device_id)
-    if not coordinator:
-        _LOGGER.error("Device %s not found", device_id)
+
+def _get_coordinator_for_device(hass: HomeAssistant, raw_id: str) -> tuple[GoveeCoordinator, str] | None:
+    """Return ``(coordinator, govee_device_id)`` for a device, or None if unknown."""
+    device_id = _resolve_device_id(hass, raw_id)
+    for coordinator in _loaded_coordinators(hass):
+        if device_id in coordinator.devices:
+            return coordinator, device_id
+    return None
+
+
+def _device_not_found(raw_id: str) -> ServiceValidationError:
+    """Error for a ``device_id`` that no loaded entry knows."""
+    return ServiceValidationError(
+        translation_domain=DOMAIN,
+        translation_key="device_not_found",
+        translation_placeholders={"device_id": raw_id},
+    )
+
+
+async def async_refresh_scenes_handler(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Handle ``govee.refresh_scenes`` for one device or every device."""
+    raw_id = call.data.get(ATTR_DEVICE_ID)
+    if raw_id:
+        found = _get_coordinator_for_device(hass, raw_id)
+        if found is None:
+            raise _device_not_found(raw_id)
+        coordinator, device_id = found
+        await coordinator.async_get_scenes(device_id, refresh=True)
+        _LOGGER.debug("Refreshed scenes for device %s", device_id)
         return
 
-    device = coordinator.devices.get(device_id)
-    if device is not None:
-        n = device.segment_count
-        bad = [i for i in segments if i >= n]
-        if bad:
-            _LOGGER.warning(
-                "Rejecting set_segment_color for device %s: indices %s are out "
-                "of range (segment_count=%s)",
-                device_id,
-                bad,
-                n,
-            )
-            return
+    coordinators = _loaded_coordinators(hass)
+    if not coordinators:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="not_loaded",
+        )
+    for coordinator in coordinators:
+        for dev_id, device in coordinator.devices.items():
+            if device.supports_scenes:
+                await coordinator.async_get_scenes(dev_id, refresh=True)
+    _LOGGER.debug("Refreshed scenes for all devices")
 
-    color = RGBColor(r=rgb[0], g=rgb[1], b=rgb[2])
+
+async def async_set_segment_color_handler(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Handle ``govee.set_segment_color``.
+
+    Rejects any segment index outside the device's effective
+    ``segment_count`` (which already factors in ``SKU_SEGMENT_OVERRIDES`` for
+    SKUs like the H7075 that the API over-reports) with a
+    ``ServiceValidationError``, so the caller learns why nothing happened
+    instead of the cloud silently refusing the command.
+    """
+    raw_id = call.data[ATTR_DEVICE_ID]
+    segments: list[int] = call.data[ATTR_SEGMENTS]
+    rgb = call.data[ATTR_RGB_COLOR]
+
+    found = _get_coordinator_for_device(hass, raw_id)
+    if found is None:
+        raise _device_not_found(raw_id)
+    coordinator, device_id = found
+
+    device = coordinator.devices.get(device_id)
+    device_name = device.name if device is not None else device_id
+    if device is not None:
+        count = device.segment_count
+        bad = [index for index in segments if index >= count]
+        if bad:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="segment_out_of_range",
+                translation_placeholders={
+                    "device": device_name,
+                    "indices": ", ".join(str(index) for index in bad),
+                    "count": str(count),
+                },
+            )
+
     command = SegmentColorCommand(
         segment_indices=tuple(segments),
-        color=color,
+        color=RGBColor(r=rgb[0], g=rgb[1], b=rgb[2]),
     )
+    if not await coordinator.async_control_device(device_id, command):
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="command_failed",
+            translation_placeholders={"device": device_name},
+        )
+    _LOGGER.debug("Set segments %s to color %s on device %s", segments, rgb, device_id)
 
-    await coordinator.async_control_device(device_id, command)
-    _LOGGER.info(
-        "Set segments %s to color %s on device %s",
-        segments,
-        rgb,
-        device_id,
-    )
 
+@callback
+def async_setup_services(hass: HomeAssistant) -> None:
+    """Register the Govee service actions (called once from ``async_setup``)."""
 
-async def async_setup_services(hass: HomeAssistant) -> None:
-    """Set up Govee services."""
+    async def _refresh_scenes(call: ServiceCall) -> None:
+        await async_refresh_scenes_handler(hass, call)
 
-    async def async_refresh_scenes(call: ServiceCall) -> None:
-        """Refresh scenes for device(s)."""
-        device_id = call.data.get("device_id")
-
-        # Get all coordinators
-        coordinators = _get_coordinators(hass)
-
-        for coordinator in coordinators:
-            if device_id:
-                # Refresh specific device
-                if device_id in coordinator.devices:
-                    await coordinator.async_get_scenes(device_id, refresh=True)
-                    _LOGGER.info("Refreshed scenes for device %s", device_id)
-            else:
-                # Refresh all devices
-                for dev_id, device in coordinator.devices.items():
-                    if device.supports_scenes:
-                        await coordinator.async_get_scenes(dev_id, refresh=True)
-                _LOGGER.info("Refreshed scenes for all devices")
-
-    async def _set_segment_color_bound(call: ServiceCall) -> None:
-        """Bind ``hass`` for the registered service handler."""
+    async def _set_segment_color(call: ServiceCall) -> None:
         await async_set_segment_color_handler(hass, call)
 
-    # Register services
     hass.services.async_register(
         DOMAIN,
         SERVICE_REFRESH_SCENES,
-        async_refresh_scenes,
+        _refresh_scenes,
         schema=SERVICE_REFRESH_SCENES_SCHEMA,
     )
-
     hass.services.async_register(
         DOMAIN,
         SERVICE_SET_SEGMENT_COLOR,
-        _set_segment_color_bound,
+        _set_segment_color,
         schema=SERVICE_SET_SEGMENT_COLOR_SCHEMA,
     )
-
-    _LOGGER.debug("Govee services registered")
-
-
-async def async_unload_services(hass: HomeAssistant) -> None:
-    """Unload Govee services."""
-    hass.services.async_remove(DOMAIN, SERVICE_REFRESH_SCENES)
-    hass.services.async_remove(DOMAIN, SERVICE_SET_SEGMENT_COLOR)
-    _LOGGER.debug("Govee services unloaded")
-
-
-def _get_coordinators(hass: HomeAssistant) -> list[GoveeCoordinator]:
-    """Get all Govee coordinators."""
-    coordinators = []
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if hasattr(entry, "runtime_data") and isinstance(
-            entry.runtime_data, GoveeCoordinator
-        ):
-            coordinators.append(entry.runtime_data)
-    return coordinators
-
-
-def _get_coordinator_for_device(
-    hass: HomeAssistant,
-    device_id: str,
-) -> GoveeCoordinator | None:
-    """Get coordinator that manages a specific device."""
-    for coordinator in _get_coordinators(hass):
-        if device_id in coordinator.devices:
-            return coordinator
-    return None

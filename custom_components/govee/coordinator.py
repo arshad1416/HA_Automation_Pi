@@ -1,7 +1,6 @@
 """DataUpdateCoordinator for Govee integration.
 
-Manages device discovery, state polling, and MQTT integration.
-Implements IStateProvider protocol for clean architecture.
+Manages device discovery, state polling, and the MQTT, LAN, and BLE transports.
 """
 
 from __future__ import annotations
@@ -31,12 +30,12 @@ from .api import (
     GoveeApiError,
     GoveeAuthError,
     GoveeAwsIotClient,
+    GoveeConnectionError,
     GoveeDeviceNotFoundError,
     GoveeIotCredentials,
     GoveeRateLimitError,
 )
 from .api.auth import GoveeAuthClient, _derive_client_id
-from .api.ble_packet import DIY_STYLE_NAMES
 from .api.openapi_events import GoveeOpenApiEventClient
 from .ble_passthrough import BlePassthroughManager
 
@@ -101,6 +100,9 @@ from .const import (
     MIN_PROBE_POLL_INTERVAL,
     MIN_WATER_DETECTOR_POLL_INTERVAL,
     MQTT_STATUS_POLL_OFF,
+    MQTT_STATUS_QUERY_EXCLUDED_SKUS,
+    MQTT_STATUS_QUERY_QUARANTINE_STRIKES,
+    MQTT_STATUS_QUERY_SPACING,
     OPTIMISTIC_GRACE_CAP_SECONDS,
     resolve_fahrenheit_conversion,
 )
@@ -133,11 +135,11 @@ from .models.commands import (
     create_dreamview_command,
 )
 from .api.probe_thermometer import (
-    PROBES,
     ProbeLimits,
     build_limits_read_packet,
     build_limits_write_packet,
     build_probe_read_packet,
+    probes_for_sku,
 )
 from .models.device import (
     INSTANCE_DREAMVIEW,
@@ -156,10 +158,8 @@ from .models.device import (
 from .models.device import GoveeLeakSensor, GoveeLeakSensorState
 from .scene_cache import SceneCacheManager
 from .repairs import (
-    async_create_auth_issue,
     async_create_mqtt_issue,
     async_create_rate_limit_issue,
-    async_delete_auth_issue,
     async_delete_mqtt_issue,
     async_delete_rate_limit_issue,
 )
@@ -203,14 +203,25 @@ BFF_POLL_INTERVAL = 300  # 5 minutes
 
 # Field names a probe frame may carry. Derived from the dataclass so a new
 # channel cannot be silently dropped by the merge.
-_PROBE_READING_FIELDS: Final = frozenset(
-    f.name for f in dataclasses.fields(ProbeReading)
-)
+_PROBE_READING_FIELDS: Final = frozenset(f.name for f in dataclasses.fields(ProbeReading))
 
 
 def normalize_device_id(device_id: str) -> str:
     """Canonical form for comparing device IDs across Govee's APIs."""
     return device_id.replace(":", "").upper()
+
+
+# HTTP statuses that mean Govee's backend itself is down, as opposed to a
+# rejected request. Together with connection and timeout errors they define an
+# outage for the whole-poll check in ``_async_update_data``.
+_OUTAGE_HTTP_CODES: Final = frozenset({500, 502, 503, 504})
+
+
+def _is_outage_error(err: Exception) -> bool:
+    """True for a failure that means the cloud API could not be reached at all."""
+    if isinstance(err, (GoveeConnectionError, TimeoutError)):
+        return True
+    return isinstance(err, GoveeApiError) and err.code in _OUTAGE_HTTP_CODES
 
 
 # Delay before re-polling device state after a humidifier work_mode/humidity
@@ -249,8 +260,6 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     - Scene caching
     - Optimistic state updates
     - Group device handling
-
-    Implements IStateProvider protocol for entities.
     """
 
     def __init__(
@@ -297,9 +306,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         self._iot_credentials = iot_credentials
         self._enable_groups = enable_groups
         # Opt-in: route power/brightness/color over MQTT instead of REST.
-        self._enable_mqtt_control = config_entry.options.get(
-            CONF_ENABLE_MQTT_CONTROL, DEFAULT_ENABLE_MQTT_CONTROL
-        )
+        self._enable_mqtt_control = config_entry.options.get(CONF_ENABLE_MQTT_CONTROL, DEFAULT_ENABLE_MQTT_CONTROL)
 
         # Device registry
         self._devices: dict[str, GoveeDevice] = {}
@@ -461,6 +468,18 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # docstring) — devices don't reliably push spontaneously; this is what the
         # Govee app itself does while its device list is on screen.
         self._status_poll_unsub: CALLBACK_TYPE | None = None
+        # One sweep at a time: the connect-time sweep and the timer's must not
+        # interleave, or the blame below could land on the wrong device.
+        self._status_sweep_running = False
+        # Device whose status query is the last thing published, held for
+        # MQTT_STATUS_QUERY_SPACING after the publish. A session that drops
+        # while this is set is blamed on that device (issue #195).
+        self._status_query_in_flight: str | None = None
+        # Per-device count of sessions AWS closed right after its query; at
+        # MQTT_STATUS_QUERY_QUARANTINE_STRIKES the device joins the quarantine
+        # and is left out of every later sweep until the entry reloads.
+        self._status_query_strikes: dict[str, int] = {}
+        self._status_query_quarantine: set[str] = set()
         # Last seen lastTime per detector — warnMessage is only called when the
         # device has freshly reported (or is currently wet), keeping the account
         # API request count low.
@@ -509,6 +528,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         self._lan_write_suppressed_until: dict[str, float] = {}
         # Monotonic timestamp of the last LAN rescan, for throttling (LAN-011).
         self._last_lan_rescan: float = 0.0
+        # Startup discovery steps that failed or timed out in this session.
+        # While non-empty, the orphan cleanup in __init__.py must not treat
+        # entities of not-yet-discovered devices as stale.
+        self._startup_steps_failed: set[str] = set()
 
     @property
     def devices(self) -> dict[str, GoveeDevice]:
@@ -655,9 +678,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         misses = self._lan_write_misses.get(device_id, 0) + 1
         self._lan_write_misses[device_id] = misses
         if misses >= LAN_WRITE_SUPPRESS_THRESHOLD:
-            self._lan_write_suppressed_until[device_id] = (
-                time.monotonic() + LAN_WRITE_SUPPRESS_SECONDS
-            )
+            self._lan_write_suppressed_until[device_id] = time.monotonic() + LAN_WRITE_SUPPRESS_SECONDS
             _LOGGER.debug(
                 "Govee LAN: suppressing LAN write attempts for %s after %d "
                 "unconfirmed writes — writes use MQTT/REST for %ds; LAN reads "
@@ -710,9 +731,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
     def _refresh_ble_staleness(self) -> None:
         """Mark BLE unavailable for devices whose last advertisement is stale."""
-        self._transport.refresh_ble_staleness(
-            self._devices, set(self._ble_devices.keys())
-        )
+        self._transport.refresh_ble_staleness(self._devices, set(self._ble_devices.keys()))
 
     def _refresh_lan_staleness(self) -> None:
         """Mark LAN unavailable for non-LAN or stale-read devices (issue #57).
@@ -754,6 +773,32 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     def bff_device_values(self) -> list[dict[str, Any]]:
         """Redacted per-device BFF scalar values for diagnostics (#114)."""
         return self._bff_device_values
+
+    @property
+    def discovery_incomplete(self) -> bool:
+        """True when a startup discovery step failed or timed out this session.
+
+        The orphan cleanup uses this to keep entities of devices that a
+        failed BFF/account step would otherwise have discovered.
+        """
+        return bool(self._startup_steps_failed)
+
+    @property
+    def hub_device_ids(self) -> set[str]:
+        """IDs of the gateway devices this entry registers (leak and thermo hubs)."""
+        ids = {sensor.hub_device_id for sensor in self._leak_sensors.values() if sensor.hub_device_id}
+        ids.update(hub_id for hub_id in self._bff_thermo_hubs if hub_id)
+        return ids
+
+    @property
+    def lan_active_count(self) -> int:
+        """Devices currently correlated to a LAN address (diagnostics)."""
+        return len(self._lan_devices)
+
+    @property
+    def lan_unmatched_count(self) -> int:
+        """LAN scan replies that matched no device ID (diagnostics)."""
+        return len(self._lan_unmatched)
 
     def _note_sensor_reading_change(
         self,
@@ -913,13 +958,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         no moisture entity at all.
         """
         target = normalize_device_id(device_id)
-        return any(
-            normalize_device_id(sensor_id) == target for sensor_id in self._leak_sensors
-        )
+        return any(normalize_device_id(sensor_id) == target for sensor_id in self._leak_sensors)
 
-    def record_segment_color(
-        self, device_id: str, segment_index: int, rgb: tuple[int, int, int]
-    ) -> None:
+    def record_segment_color(self, device_id: str, segment_index: int, rgb: tuple[int, int, int]) -> None:
         """Note a segment's colour so a later whole-device write can restore it.
 
         Called both when a segment command is dispatched and by the segment
@@ -930,9 +971,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """
         self._segment_colors.setdefault(device_id, {})[segment_index] = rgb
 
-    async def async_reassert_segments(
-        self, device_id: str, *, wrote_black: bool = False
-    ) -> None:
+    async def async_reassert_segments(self, device_id: str, *, wrote_black: bool = False) -> None:
         """Re-send the segments' last known colours after a whole-device write.
 
         On the two-zone Ceiling Light Pro fixtures (MAIN_LIGHT_TOGGLE_SKUS) the
@@ -1055,6 +1094,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             async with asyncio.timeout(STARTUP_STEP_TIMEOUT):
                 await coro
         except TimeoutError:
+            self._startup_steps_failed.add(name)
             _LOGGER.warning(
                 "Startup step %r did not complete within %ss; continuing without "
                 "it (it will retry on the next poll)",
@@ -1062,9 +1102,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 STARTUP_STEP_TIMEOUT,
             )
         except Exception as err:  # noqa: BLE001
-            _LOGGER.warning(
-                "Startup step %r failed (%s); continuing without it", name, err
-            )
+            self._startup_steps_failed.add(name)
+            _LOGGER.warning("Startup step %r failed (%s); continuing without it", name, err)
 
     async def _async_setup(self) -> None:
         """Set up the coordinator - discover devices and start MQTT.
@@ -1079,9 +1118,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             await self._start_mqtt()
             # Fetch device-specific MQTT topics for publishing commands. Bounded:
             # it hits the legacy + BFF device lists and must not hang setup (#146).
-            await self._run_startup_step(
-                self._fetch_device_topics(), "fetch device topics"
-            )
+            await self._run_startup_step(self._fetch_device_topics(), "fetch device topics")
             # Devices are largely poll-triggered responders on their own MQTT
             # topic, not autonomous pushers (see async_publish_status_query).
             # The initial query itself is fired from _on_mqtt_connected, not
@@ -1100,22 +1137,16 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         # Discover leak sensors via BFF API (requires email/password). Bounded so
         # a hung BFF call degrades to polling instead of cancelling setup (#146).
-        await self._run_startup_step(
-            self._discover_leak_sensors(), "discover leak sensors"
-        )
+        await self._run_startup_step(self._discover_leak_sensors(), "discover leak sensors")
 
         # Discover BFF-only thermo-hygrometers (H5301) that the Developer API
         # omits (issue #86). Also requires email/password.
-        await self._run_startup_step(
-            self._discover_bff_thermometers(), "discover BFF thermometers"
-        )
+        await self._run_startup_step(self._discover_bff_thermometers(), "discover BFF thermometers")
 
         # Standalone water detectors (H5054) deliver their trip only via the
         # account warnMessage history — start the dedicated leak poll (issue #62).
         if self._water_detectors and self._iot_credentials:
-            await self._run_startup_step(
-                self._poll_water_detectors(), "poll water detectors"
-            )
+            await self._run_startup_step(self._poll_water_detectors(), "poll water detectors")
             self._schedule_water_detector_poll()
 
         # LAN (UDP) transport is opened LAST, after every fallible discovery /
@@ -1141,9 +1172,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         ``expand_lan_targets``.
         """
         raw_targets = self._config_entry.options.get(CONF_LAN_TARGETS, "")
-        overrides = parse_lan_device_overrides(
-            raw_targets if isinstance(raw_targets, str) else ""
-        )
+        overrides = parse_lan_device_overrides(raw_targets if isinstance(raw_targets, str) else "")
         now = time.monotonic()
         resolved: dict[str, LanDeviceInfo] = {}
         self._lan_write_only = set()
@@ -1193,15 +1222,13 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # Rollback escape hatch: an explicit "off" disables LAN with no socket
         # work, so a user can opt out of the auto-enabled transport entirely.
         if isinstance(raw_targets, str) and raw_targets.strip().lower() == "off":
-            _LOGGER.info("Govee LAN transport disabled via %s='off'", CONF_LAN_TARGETS)
+            _LOGGER.debug("Govee LAN transport disabled via %s='off'", CONF_LAN_TARGETS)
             return
 
         # Tolerate a stale / invalid targets option: a bad cross-VLAN entry must
         # not break LAN setup, let alone the integration. Fall back to no extras.
         try:
-            extra_targets = expand_lan_targets(
-                raw_targets if isinstance(raw_targets, str) else ""
-            )
+            extra_targets = expand_lan_targets(raw_targets if isinstance(raw_targets, str) else "")
         except LanTargetError as err:
             _LOGGER.warning(
                 "Ignoring invalid %s option (%r): %s",
@@ -1226,9 +1253,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 broadcast_targets=broadcast_targets,
             )
         except OSError as err:
-            _LOGGER.info(
-                "Govee LAN discovery scan could not bind, LAN disabled: %s", err
-            )
+            _LOGGER.info("Govee LAN discovery scan could not bind, LAN disabled: %s", err)
             return
 
         client = GoveeLanClient(self._on_lan_dev_status)
@@ -1243,9 +1268,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # before propagating so a partially-built setup never strands the bind
         # (blocking #5) — even though the steps below are not expected to raise.
         try:
-            matched, unmatched = correlate_scan(
-                scan, set(self._devices), time.monotonic()
-            )
+            matched, unmatched = correlate_scan(scan, set(self._devices), time.monotonic())
             # Manual device_id=ip[!] overrides (#164) fill in devices scan
             # correlation can never reach on a segmented network — its reply
             # is multicast and can't cross the VLAN boundary back to us. A
@@ -1258,8 +1281,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 # Don't hold sockets for nothing — stop the client and stay
                 # disabled.
                 _LOGGER.debug(
-                    "Govee LAN: scan answered but no device correlated "
-                    "(%d unmatched) — LAN disabled",
+                    "Govee LAN: scan answered but no device correlated " "(%d unmatched) — LAN disabled",
                     len(unmatched),
                 )
                 await client.async_stop()
@@ -1278,8 +1300,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             raise
 
         _LOGGER.info(
-            "Govee LAN transport enabled for %d device(s) (%d unmatched scan "
-            "record(s))",
+            "Govee LAN transport enabled for %d device(s) (%d unmatched scan " "record(s))",
             len(self._lan_devices),
             len(self._lan_unmatched),
         )
@@ -1328,11 +1349,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         than one does (ambiguous, e.g. a botched DHCP lease) — the only safe
         answer is to skip LAN for that datagram (blocking #3).
         """
-        matches = [
-            device_id
-            for device_id, info in self._lan_devices.items()
-            if info.ip == src_ip
-        ]
+        matches = [device_id for device_id, info in self._lan_devices.items() if info.ip == src_ip]
         return matches[0] if len(matches) == 1 else None
 
     @callback
@@ -1370,17 +1387,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         optimistic_ts = existing_state.last_optimistic_update
         if optimistic_ts is None:
             return False
-        poll_seconds = (
-            self.update_interval.total_seconds()
-            if self.update_interval is not None
-            else 60.0
-        )
+        poll_seconds = self.update_interval.total_seconds() if self.update_interval is not None else 60.0
         grace_window = min(2 * poll_seconds, OPTIMISTIC_GRACE_CAP_SECONDS)
         return (time.monotonic() - optimistic_ts) < grace_window
 
-    def _apply_lan_read(
-        self, device_id: str, status: LanDevStatus, *, notify: bool = True
-    ) -> None:
+    def _apply_lan_read(self, device_id: str, status: LanDevStatus, *, notify: bool = True) -> None:
         """Overlay a parsed LAN ``devStatus`` onto a device's existing state.
 
         Additive and abortable: a device with no existing state returns without
@@ -1427,9 +1438,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             existing.color_temp_kelvin,
             existing.online,
         )
-        existing.update_from_lan(
-            overlay, skip_power_brightness=self._in_optimistic_grace(existing)
-        )
+        existing.update_from_lan(overlay, skip_power_brightness=self._in_optimistic_grace(existing))
         # A devStatus reply reaching here is a confirmed inbound read — proof of
         # life — so stamp LAN read success (read => success). This is the read
         # half of the LAN recording asymmetry (see refresh_lan_staleness): the
@@ -1525,9 +1534,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         raw_targets = self._config_entry.options.get(CONF_LAN_TARGETS, "")
         try:
-            extra_targets = expand_lan_targets(
-                raw_targets if isinstance(raw_targets, str) else ""
-            )
+            extra_targets = expand_lan_targets(raw_targets if isinstance(raw_targets, str) else "")
         except LanTargetError:
             extra_targets = []
 
@@ -1587,7 +1594,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         try:
             devices = await self._api_client.get_devices()
 
-            _LOGGER.info(
+            _LOGGER.debug(
                 "API returned %d devices (enable_groups=%s)",
                 len(devices),
                 self._enable_groups,
@@ -1612,7 +1619,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
                 # Filter group devices unless enabled
                 if device.is_group and not self._enable_groups:
-                    _LOGGER.info(
+                    _LOGGER.debug(
                         "Skipping group device: %s (device_id=%s) because enable_groups=False",
                         device.name,
                         device.device_id,
@@ -1622,12 +1629,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 _LOGGER.debug("Adding device to coordinator: %s", device.device_id)
                 self._devices[device.device_id] = device
                 # Create empty state for each device
-                self._states[device.device_id] = GoveeDeviceState.create_empty(
-                    device.device_id
-                )
+                self._states[device.device_id] = GoveeDeviceState.create_empty(device.device_id)
                 self._ensure_transport_health(device.device_id)
 
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Discovered %d Govee devices (enable_groups=%s)",
                 len(self._devices),
                 self._enable_groups,
@@ -1639,12 +1644,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # Scene cache is populated lazily via async_get_scenes() / async_get_diy_scenes()
             # during entity setup, avoiding rate limit pressure at startup
 
-            # Clear any auth issues on success
-            await async_delete_auth_issue(self.hass, self._config_entry)
-
         except GoveeAuthError as err:
-            # Create repair issue for auth failure
-            await async_create_auth_issue(self.hass, self._config_entry)
+            # Home Assistant starts its own reauth flow for this exception.
             raise ConfigEntryAuthFailed("Invalid API key") from err
         except GoveeApiError as err:
             raise UpdateFailed(f"Failed to discover devices: {err}") from err
@@ -1678,18 +1679,13 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         # Apply the same group filter discovery uses, so a group device left
         # disabled doesn't look "new" on every pass and reload-loop.
-        candidate_ids = {
-            device.device_id
-            for device in devices
-            if not (device.is_group and not self._enable_groups)
-        }
+        candidate_ids = {device.device_id for device in devices if not (device.is_group and not self._enable_groups)}
         new_ids = candidate_ids - set(self._devices)
         if not new_ids:
             return
 
         _LOGGER.info(
-            "Detected %d new Govee device(s) since startup (%s) — reloading the "
-            "integration to add them (#101)",
+            "Detected %d new Govee device(s) since startup (%s) — reloading the " "integration to add them (#101)",
             len(new_ids),
             ", ".join(sorted(new_ids)),
         )
@@ -1711,16 +1707,12 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if self._mqtt_client.available:
             try:
                 await self._mqtt_client.async_start()
-                _LOGGER.info("MQTT client started for real-time updates")
+                _LOGGER.debug("MQTT client started for real-time updates")
                 # The disconnect repair is cleared by _on_mqtt_connected once
                 # a session is actually up, not when the task is spawned.
             except Exception as err:
                 _LOGGER.warning("MQTT client failed to start: %s", err)
-                await async_create_mqtt_issue(
-                    self.hass,
-                    self._config_entry,
-                    str(err),
-                )
+                async_create_mqtt_issue(self.hass, self._config_entry, str(err))
         else:
             _LOGGER.warning("MQTT library not available")
 
@@ -1786,9 +1778,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             state = self._get_or_create_state(device_id)
             state.water_full = bool(value)
             self._water_full_changed_at[device_id] = dt_util.utcnow()
-            _LOGGER.info(
-                "Water tank full event for %s (%s): %s", device_id, sku, bool(value)
-            )
+            _LOGGER.debug("Water tank full event for %s (%s): %s", device_id, sku, bool(value))
             self.async_set_updated_data(self._states)
             return
 
@@ -1799,7 +1789,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if instance == "bodyAppearedEvent" and device.supports_presence_event:
             state = self._get_or_create_state(device_id)
             state.presence = value == 1
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Presence event for %s (%s): %s",
                 device_id,
                 sku,
@@ -1816,7 +1806,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if instance == "bodyAppearedEvent" and device.supports_water_leak_event:
             state = self._get_or_create_state(device_id)
             state.water_leak = value == 1
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Water-leak event for %s (%s): %s",
                 device_id,
                 sku,
@@ -1863,7 +1853,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         state = self._get_or_create_state(device_id)
         state.water_full = False
         self._water_full_changed_at[device_id] = dt_util.utcnow()
-        _LOGGER.info("Water-tank-full alert cleared for %s (user action, #118)", device_id)
+        _LOGGER.debug("Water-tank-full alert cleared for %s (user action, #118)", device_id)
         self.async_set_updated_data(self._states)
 
     @callback
@@ -1953,9 +1943,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         self._iot_credentials = credentials
         self._persist_refreshed_credentials(credentials)
-        ir.async_delete_issue(
-            self.hass, DOMAIN, f"mqtt_token_expired_{self._config_entry.entry_id}"
-        )
+        ir.async_delete_issue(self.hass, DOMAIN, f"mqtt_token_expired_{self._config_entry.entry_id}")
         _LOGGER.info("Account token refreshed — BFF data should resume")
         # Hand the new material to the transport that authenticates with it.
         # A running client restarts only if cert/key/topic actually changed;
@@ -2016,11 +2004,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         except GoveeAuthError as err:
             _LOGGER.debug("BFF %s rejected the token: %s", description, err)
 
-        credentials = (
-            self._iot_credentials
-            if await self._async_refresh_iot_credentials()
-            else None
-        )
+        credentials = self._iot_credentials if await self._async_refresh_iot_credentials() else None
         if credentials is None:
             return None
 
@@ -2042,7 +2026,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # Gateway-attached BLE devices only act on commands published to
             # their gateway's topic, not their own (#135).
             self._gateway_routes = auth_client.gateway_routes()
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Fetched MQTT topics for %d devices (%d via a gateway)",
                 len(self._device_topics),
                 len(self._gateway_routes),
@@ -2106,12 +2090,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 state.read = sensor.get("read", True)
                 self._leak_states[leak_sensor.device_id] = state
 
-                self._sno_to_sensor_id[(leak_sensor.hub_device_id, leak_sensor.sno)] = (
-                    leak_sensor.device_id
-                )
+                self._sno_to_sensor_id[(leak_sensor.hub_device_id, leak_sensor.sno)] = leak_sensor.device_id
 
             if self._leak_sensors:
-                _LOGGER.info(
+                _LOGGER.debug(
                     "Discovered %d leak sensors across %d hubs",
                     len(self._leak_sensors),
                     len({s.hub_device_id for s in self._leak_sensors.values()}),
@@ -2127,9 +2109,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # This set only gates whether the 5-min tickle poll runs (#83).
             self._thermo_bff_devices = set(thermo_readings) & set(self._devices)
             if self._thermo_bff_devices:
-                _LOGGER.info(
-                    "BFF tickle enabled for %d thermometer device(s); readings "
-                    "come from the Developer API poll",
+                _LOGGER.debug(
+                    "BFF tickle enabled for %d thermometer device(s); readings " "come from the Developer API poll",
                     len(self._thermo_bff_devices),
                 )
 
@@ -2142,11 +2123,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # whose readings we refresh via the BFF tickle (#83) — or a battery
             # reading that simply hasn't arrived yet, which is the only thing
             # that would ever create the battery entity (issue #132).
-            if (
-                self._leak_sensors
-                or self._thermo_bff_devices
-                or self._battery_candidate_devices()
-            ):
+            if self._leak_sensors or self._thermo_bff_devices or self._battery_candidate_devices():
                 self._schedule_bff_poll()
 
         except Exception as err:
@@ -2193,10 +2170,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         for device_id, device in self._devices.items():
             if not device.is_thermometer:
                 continue
-            if (
-                device.device_type in MAINS_POWERED_DEVICE_TYPES
-                or device.sku.upper() in MAINS_POWERED_BATTERY_SKUS
-            ):
+            if device.device_type in MAINS_POWERED_DEVICE_TYPES or device.sku.upper() in MAINS_POWERED_BATTERY_SKUS:
                 continue
             state = self._states.get(device_id)
             if state is None or state.battery is None:
@@ -2259,11 +2233,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 except (TypeError, ValueError):
                     pass
 
-        if (
-            allow_reload
-            and newly_battery_capable
-            and not self._battery_reload_scheduled
-        ):
+        if allow_reload and newly_battery_capable and not self._battery_reload_scheduled:
             self._battery_reload_scheduled = True
             _LOGGER.info(
                 "Battery reading now available for %d thermometer(s) that had "
@@ -2272,9 +2242,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 len(newly_battery_capable),
                 ", ".join(sorted(newly_battery_capable)),
             )
-            self.hass.config_entries.async_schedule_reload(
-                self._config_entry.entry_id
-            )
+            self.hass.config_entries.async_schedule_reload(self._config_entry.entry_id)
 
             # NOTE: the BFF ``deviceSettings.waterFull`` field is deliberately
             # NOT applied here anymore. It is the app's "Full Bucket Alert"
@@ -2382,17 +2350,14 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                         and sensor.get("humidity") is None
                     ):
                         _LOGGER.debug(
-                            "BFF thermo %s (%s) has no reading — leaving it on the "
-                            "Developer API poll (issue #151)",
+                            "BFF thermo %s (%s) has no reading — leaving it on the " "Developer API poll (issue #151)",
                             sensor.get("name", device_id),
                             sensor.get("sku", "?"),
                         )
                         self._bff_thermo_pending.add(device_id)
                         continue
                     self._bff_thermometer_ids.add(device_id)
-                    state = self._states.get(
-                        device_id
-                    ) or GoveeDeviceState.create_empty(device_id)
+                    state = self._states.get(device_id) or GoveeDeviceState.create_empty(device_id)
                     state.online = sensor.get("online", state.online)
                     if sensor.get("temperature") is not None:
                         state.sensor_temperature = sensor.get("temperature")
@@ -2403,20 +2368,15 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     if sensor.get("battery") is not None:
                         state.battery = sensor.get("battery")
                     self._states[device_id] = state
-                    if (
-                        state.sensor_temperature is not None
-                        or state.sensor_humidity is not None
-                    ):
+                    if state.sensor_temperature is not None or state.sensor_humidity is not None:
                         self._sensor_reading_changed_at[device_id] = dt_util.utcnow()
                     continue
 
                 if sensor["sku"] in PROBE_THERMOMETER_BFF_SKUS:
-                    self._devices[device_id] = (
-                        GoveeDevice.synthetic_probe_thermometer(
-                            device_id=device_id,
-                            sku=sensor["sku"],
-                            name=sensor["name"],
-                        )
+                    self._devices[device_id] = GoveeDevice.synthetic_probe_thermometer(
+                        device_id=device_id,
+                        sku=sensor["sku"],
+                        name=sensor["name"],
                     )
                     # Membership here buys three things at once: the
                     # Developer poll skips the device (it 404s on this SKU),
@@ -2451,14 +2411,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 state.battery = sensor.get("battery")
                 self._states[device_id] = state
                 self._ensure_transport_health(device_id)
-                if (
-                    state.sensor_temperature is not None
-                    or state.sensor_humidity is not None
-                ):
+                if state.sensor_temperature is not None or state.sensor_humidity is not None:
                     self._sensor_reading_changed_at[device_id] = dt_util.utcnow()
 
             if self._bff_thermometer_ids or self._bff_thermo_pending:
-                _LOGGER.info(
+                _LOGGER.debug(
                     "Discovered %d BFF thermo-hygrometers (issue #86)",
                     len(self._bff_thermometer_ids),
                 )
@@ -2503,9 +2460,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     and sensor.get("humidity") is None
                 ):
                     continue
-                _LOGGER.info(
-                    "BFF now reports %s — taking over its readings from the "
-                    "Developer API poll (issue #151)",
+                _LOGGER.debug(
+                    "BFF now reports %s — taking over its readings from the " "Developer API poll (issue #151)",
                     sensor.get("name", device_id),
                 )
                 self._bff_thermo_pending.discard(device_id)
@@ -2546,27 +2502,20 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # accounts whose BFF omits lastTime.
             if self._bff_reading_is_stale(device_id, sensor):
                 _LOGGER.debug(
-                    "Ignoring BFF reading for %s: not newer than the frame "
-                    "already applied (#151)",
+                    "Ignoring BFF reading for %s: not newer than the frame " "already applied (#151)",
                     sensor.get("name", device_id),
                 )
                 new_state.sensor_temperature = existing.sensor_temperature
                 new_state.sensor_temperature_2 = existing.sensor_temperature_2
                 new_state.sensor_humidity = existing.sensor_humidity
-                new_state.battery = (
-                    sensor.get("battery")
-                    if sensor.get("battery") is not None
-                    else existing.battery
-                )
+                new_state.battery = sensor.get("battery") if sensor.get("battery") is not None else existing.battery
                 self._states[device_id] = new_state
                 continue
 
             # Preserve last good reading when the BFF omits it this cycle —
             # battery WiFi sensors upload infrequently.
             new_state.sensor_temperature = (
-                sensor.get("temperature")
-                if sensor.get("temperature") is not None
-                else existing.sensor_temperature
+                sensor.get("temperature") if sensor.get("temperature") is not None else existing.sensor_temperature
             )
             new_state.sensor_temperature_2 = (
                 sensor.get("temperature_2")
@@ -2587,19 +2536,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     "the integration to add its sensor (#150)",
                     sensor.get("name", device_id),
                 )
-                self.hass.config_entries.async_schedule_reload(
-                    self._config_entry.entry_id
-                )
+                self.hass.config_entries.async_schedule_reload(self._config_entry.entry_id)
             new_state.sensor_humidity = (
-                sensor.get("humidity")
-                if sensor.get("humidity") is not None
-                else existing.sensor_humidity
+                sensor.get("humidity") if sensor.get("humidity") is not None else existing.sensor_humidity
             )
-            new_state.battery = (
-                sensor.get("battery")
-                if sensor.get("battery") is not None
-                else existing.battery
-            )
+            new_state.battery = sensor.get("battery") if sensor.get("battery") is not None else existing.battery
             self._note_sensor_reading_change(device_id, new_state, existing)
             self._states[device_id] = new_state
             self._record_transport_success(device_id, "cloud_api")
@@ -2683,9 +2624,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """Schedule the next BFF poll in 5 minutes."""
         if self._bff_poll_unsub:
             self._bff_poll_unsub()
-        self._bff_poll_unsub = async_call_later(
-            self.hass, BFF_POLL_INTERVAL, self._bff_poll_callback
-        )
+        self._bff_poll_unsub = async_call_later(self.hass, BFF_POLL_INTERVAL, self._bff_poll_callback)
 
     async def _bff_poll_callback(self, _now: Any = None) -> None:
         """Callback for periodic BFF polling."""
@@ -2705,11 +2644,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """
         if not self._iot_credentials:
             return
-        if (
-            not self._leak_sensors
-            and not self._thermo_bff_devices
-            and not self._battery_candidate_devices()
-        ):
+        if not self._leak_sensors and not self._thermo_bff_devices and not self._battery_candidate_devices():
             return
 
         try:
@@ -2733,9 +2668,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # sensor id schedules a reload, which re-runs the tested discovery +
         # platform setup so its entities are created without a manual reload.
         if not self._bff_reload_scheduled:
-            new_leak_ids = {
-                s["device_id"] for s in sensor_data if s.get("device_id")
-            } - set(self._leak_sensors)
+            new_leak_ids = {s["device_id"] for s in sensor_data if s.get("device_id")} - set(self._leak_sensors)
             if new_leak_ids:
                 self._bff_reload_scheduled = True
                 _LOGGER.info(
@@ -2744,9 +2677,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     len(new_leak_ids),
                     ", ".join(sorted(new_leak_ids)),
                 )
-                self.hass.config_entries.async_schedule_reload(
-                    self._config_entry.entry_id
-                )
+                self.hass.config_entries.async_schedule_reload(self._config_entry.entry_id)
                 return
 
         # Refresh BLE-bridged thermometer battery from the BFF data (#83). The
@@ -2769,9 +2700,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             state.online = sensor.get("online", True)
             state.gateway_online = sensor.get("gateway_online", True)
             bff_wet_time = sensor.get("last_wet_time")
-            if bff_wet_time and (
-                state.last_wet_time is None or bff_wet_time > state.last_wet_time
-            ):
+            if bff_wet_time and (state.last_wet_time is None or bff_wet_time > state.last_wet_time):
                 state.last_wet_time = bff_wet_time
             state.read = sensor.get("read", True)
 
@@ -2815,11 +2744,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         and no pollable event state — their trip is fetched separately via the
         account warnMessage history (issue #62).
         """
-        return [
-            d
-            for d in self._devices.values()
-            if not d.is_group and d.supports_water_leak_event
-        ]
+        return [d for d in self._devices.values() if not d.is_group and d.supports_water_leak_event]
 
     @property
     def _water_detector_poll_interval(self) -> int:
@@ -2829,18 +2754,12 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         options change. Out-of-range or non-numeric values (e.g. hand-edited
         options) fall back to the default rather than arming a bad timer.
         """
-        raw = self._config_entry.options.get(
-            CONF_WATER_DETECTOR_POLL_INTERVAL, DEFAULT_WATER_DETECTOR_POLL_INTERVAL
-        )
+        raw = self._config_entry.options.get(CONF_WATER_DETECTOR_POLL_INTERVAL, DEFAULT_WATER_DETECTOR_POLL_INTERVAL)
         try:
             interval = int(raw)
         except (TypeError, ValueError):
             return DEFAULT_WATER_DETECTOR_POLL_INTERVAL
-        if not (
-            MIN_WATER_DETECTOR_POLL_INTERVAL
-            <= interval
-            <= MAX_WATER_DETECTOR_POLL_INTERVAL
-        ):
+        if not (MIN_WATER_DETECTOR_POLL_INTERVAL <= interval <= MAX_WATER_DETECTOR_POLL_INTERVAL):
             return DEFAULT_WATER_DETECTOR_POLL_INTERVAL
         return interval
 
@@ -2878,18 +2797,14 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         try:
             async with GoveeAuthClient(hass=self.hass) as auth_client:
-                states = await auth_client.fetch_water_detector_states(
-                    token, device_ids
-                )
+                states = await auth_client.fetch_water_detector_states(token, device_ids)
                 changed = False
                 for device_id, info in states.items():
                     state = self._states.get(device_id)
                     if state is None:
                         continue
 
-                    online = bool(info.get("online", True)) and bool(
-                        info.get("gateway_online", True)
-                    )
+                    online = bool(info.get("online", True)) and bool(info.get("gateway_online", True))
                     last_time = info.get("last_time") or 0
                     prev_time = self._water_leak_last_time.get(device_id, 0)
 
@@ -2898,13 +2813,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     # been cleared in the app.
                     if last_time > prev_time or state.water_leak:
                         try:
-                            is_wet = await auth_client.fetch_leak_warning(
-                                token, device_id, sku_by_id[device_id]
-                            )
+                            is_wet = await auth_client.fetch_leak_warning(token, device_id, sku_by_id[device_id])
                         except Exception as err:  # noqa: BLE001
-                            _LOGGER.debug(
-                                "warnMessage poll failed for %s: %s", device_id, err
-                            )
+                            _LOGGER.debug("warnMessage poll failed for %s: %s", device_id, err)
                             is_wet = bool(state.water_leak)
                         if state.water_leak != is_wet:
                             state.water_leak = is_wet
@@ -2923,8 +2834,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                         changed = True
                     state.source = "api"
                     _LOGGER.debug(
-                        "Water-detector %s: online=%s water_leak=%s battery=%s "
-                        "last_time=%s",
+                        "Water-detector %s: online=%s water_leak=%s battery=%s " "last_time=%s",
                         device_id,
                         online,
                         state.water_leak,
@@ -2969,7 +2879,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if prev_wet != is_wet:
             sensor = self._leak_sensors.get(sensor_id)
             sensor_name = sensor.name if sensor else sensor_id
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Leak sensor '%s' changed: %s -> %s",
                 sensor_name,
                 "wet" if prev_wet else "dry",
@@ -3023,9 +2933,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     @property
     def _probe_poll_interval(self) -> int:
         """Configured probe-poll interval in seconds, clamped to sane bounds."""
-        raw = self._config_entry.options.get(
-            CONF_PROBE_POLL_INTERVAL, DEFAULT_PROBE_POLL_INTERVAL
-        )
+        raw = self._config_entry.options.get(CONF_PROBE_POLL_INTERVAL, DEFAULT_PROBE_POLL_INTERVAL)
         try:
             interval = int(raw)
         except (TypeError, ValueError):
@@ -3061,9 +2969,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """Schedule the next probe read, replacing any pending timer."""
         if self._probe_poll_unsub:
             self._probe_poll_unsub()
-        self._probe_poll_unsub = async_call_later(
-            self.hass, self._probe_poll_interval, self._probe_poll_callback
-        )
+        self._probe_poll_unsub = async_call_later(self.hass, self._probe_poll_interval, self._probe_poll_callback)
 
     async def _probe_poll_callback(self, _now: Any = None) -> None:
         """Periodic callback: read every armed probe, then re-arm the timer."""
@@ -3090,13 +2996,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             device = self._devices.get(device_id)
             if device is None:
                 continue
-            for probe in PROBES:
-                await self._ble_manager.async_send_ble_packet(
-                    device_id, device.sku, build_probe_read_packet(probe)
-                )
-                await self._ble_manager.async_send_ble_packet(
-                    device_id, device.sku, build_limits_read_packet(probe)
-                )
+            for probe in probes_for_sku(device.sku):
+                await self._ble_manager.async_send_ble_packet(device_id, device.sku, build_probe_read_packet(probe))
+                await self._ble_manager.async_send_ble_packet(device_id, device.sku, build_limits_read_packet(probe))
 
     @property
     def _mqtt_status_poll_interval(self) -> int:
@@ -3108,9 +3010,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         non-numeric value (e.g. hand-edited options) falls back to the default
         rather than arming a bad timer.
         """
-        raw = self._config_entry.options.get(
-            CONF_MQTT_STATUS_INTERVAL, DEFAULT_MQTT_STATUS_INTERVAL
-        )
+        raw = self._config_entry.options.get(CONF_MQTT_STATUS_INTERVAL, DEFAULT_MQTT_STATUS_INTERVAL)
         try:
             interval = int(raw)
         except (TypeError, ValueError):
@@ -3132,13 +3032,41 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         Any device with a known device-specific MQTT topic — anything the
         coordinator could also publish a command to. Groups have no topic of
-        their own and are excluded.
+        their own and are excluded, as is any device quarantined because AWS
+        IoT closed the session right after querying it (issue #195), and any
+        device whose SKU is known outright to do that
+        (MQTT_STATUS_QUERY_EXCLUDED_SKUS) without needing to learn it the
+        quarantine's way, one strike at a time.
         """
         return [
             device_id
             for device_id, device in self._devices.items()
-            if not device.is_group and device_id in self._device_topics
+            if not device.is_group
+            and device_id in self._device_topics
+            and device_id not in self._status_query_quarantine
+            and device.sku not in MQTT_STATUS_QUERY_EXCLUDED_SKUS
         ]
+
+    @property
+    def mqtt_status_query_strikes(self) -> list[dict[str, Any]]:
+        """Devices blamed for an AWS IoT session drop, for diagnostics (#195).
+
+        One entry per device the session dropped right after querying: its
+        id (redacted by diagnostics), SKU, strike count, and whether it has
+        reached the quarantine. Empty when every sweep has been clean.
+        """
+        census: list[dict[str, Any]] = []
+        for device_id, strikes in self._status_query_strikes.items():
+            device = self._devices.get(device_id)
+            census.append(
+                {
+                    "device_id": device_id,
+                    "sku": device.sku if device else None,
+                    "strikes": strikes,
+                    "quarantined": device_id in self._status_query_quarantine,
+                }
+            )
+        return census
 
     def _schedule_status_poll(self) -> None:
         """Schedule the next MQTT status re-query, replacing any pending timer.
@@ -3166,24 +3094,44 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         See ``GoveeAwsIotClient.async_publish_status_query`` for why this
         exists — without it, devices that don't autonomously push (most of
         them, per the Android app reverse-engineering) go stale the moment
-        nobody has asked in a while. Queries go out sequentially, one device
-        at a time, rather than in parallel: the interval already trades update
-        latency for request volume, so there is no reason to burst all of them
-        at once. They are fire-and-forget (QoS 0), so the loop never waits on
-        a broker acknowledgement between devices. A no-op when the option is
-        0 (off).
+        nobody has asked in a while. Queries go out one device at a time,
+        MQTT_STATUS_QUERY_SPACING apart, rather than in a burst: AWS IoT
+        answers a publish it refuses by closing the whole session, and with
+        the queries spaced out a drop lands inside one device's window, so
+        ``_on_mqtt_disconnected`` can blame — and eventually quarantine — that
+        device instead of the sweep taking push state down for every device
+        on every reconnect (issue #195). They are fire-and-forget (QoS 0), so
+        the loop never waits on a broker acknowledgement. The sweep stops as
+        soon as the session is gone: the reconnect runs its own. A no-op when
+        the option is 0 (off) or another sweep is still in progress.
         """
         if not self._mqtt_status_poll_enabled:
             return
         client = self._mqtt_client
         if client is None or not client.connected:
             return
+        if self._status_sweep_running:
+            _LOGGER.debug("MQTT status sweep still in progress; not starting another")
+            return
 
-        for device_id in self._mqtt_status_poll_targets:
-            topic = self._device_topics.get(device_id)
-            if not topic:
-                continue
-            await client.async_publish_status_query(topic)
+        self._status_sweep_running = True
+        try:
+            for device_id in self._mqtt_status_poll_targets:
+                # mypy narrowed ``connected`` to True at the guard above and
+                # does not see the awaits in between invalidating that.
+                if not client.connected:
+                    break  # type: ignore[unreachable]
+                topic = self._device_topics.get(device_id)
+                if not topic:
+                    continue
+                self._status_query_in_flight = device_id
+                try:
+                    await client.async_publish_status_query(topic)
+                    await asyncio.sleep(MQTT_STATUS_QUERY_SPACING)
+                finally:
+                    self._status_query_in_flight = None
+        finally:
+            self._status_sweep_running = False
 
     async def async_set_probe_limits(
         self,
@@ -3212,26 +3160,18 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         limits = ProbeLimits(
             core_max=core_max if core_max is not None else current.core_max,
             core_min=core_min if core_min is not None else current.core_min,
-            ambient_max=(
-                ambient_max if ambient_max is not None else current.ambient_max
-            ),
-            ambient_min=(
-                ambient_min if ambient_min is not None else current.ambient_min
-            ),
+            ambient_max=(ambient_max if ambient_max is not None else current.ambient_max),
+            ambient_min=(ambient_min if ambient_min is not None else current.ambient_min),
         )
 
         packet = build_limits_write_packet(probe, limits)
-        sent = await self._ble_manager.async_send_ble_packet(
-            device_id, device.sku, packet
-        )
+        sent = await self._ble_manager.async_send_ble_packet(device_id, device.sku, packet)
         if not sent:
             return False
 
         # Read back rather than trusting the write: the device acknowledges the
         # packet, not the stored value.
-        await self._ble_manager.async_send_ble_packet(
-            device_id, device.sku, build_limits_read_packet(probe)
-        )
+        await self._ble_manager.async_send_ble_packet(device_id, device.sku, build_limits_read_packet(probe))
         return True
 
     @callback
@@ -3273,9 +3213,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         state = self._states.get(device_id) or GoveeDeviceState.create_empty(device_id)
         previous_temperature = state.sensor_temperature
 
-        state.sensor_temperature = self._thermo_frame_temperature(
-            device_id, device.sku, state_data["temperature_c"]
-        )
+        state.sensor_temperature = self._thermo_frame_temperature(device_id, device.sku, state_data["temperature_c"])
         if state_data.get("battery") is not None:
             state.battery = state_data["battery"]
         # The frame is proof of life from the sub-device itself. Govee's own
@@ -3286,10 +3224,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         # Last *change*, not last confirmation — same semantic as the poll
         # path's _note_sensor_reading_change (#83). The first frame stamps too.
-        if (
-            previous_temperature != state.sensor_temperature
-            or device_id not in self._sensor_reading_changed_at
-        ):
+        if previous_temperature != state.sensor_temperature or device_id not in self._sensor_reading_changed_at:
             self._sensor_reading_changed_at[device_id] = dt_util.utcnow()
 
         frame_ts = state_data.get("frame_ts")
@@ -3308,9 +3243,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         )
         self.async_set_updated_data(self._states)
 
-    def _thermo_frame_temperature(
-        self, device_id: str, sku: str, celsius: float
-    ) -> float:
+    def _thermo_frame_temperature(self, device_id: str, sku: str, celsius: float) -> float:
         """Put a decoded °C reading into the unit the entity expects.
 
         The temperature sensor converts °F→°C for SKUs in
@@ -3342,11 +3275,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             return
 
         sensor = self._leak_sensors[sensor_id]
-        _LOGGER.info("Button pressed on leak sensor '%s'", sensor.name)
+        _LOGGER.debug("Button pressed on leak sensor '%s'", sensor.name)
 
-        self._pending_button_presses[sensor_id] = (
-            self._pending_button_presses.get(sensor_id, 0) + 1
-        )
+        self._pending_button_presses[sensor_id] = self._pending_button_presses.get(sensor_id, 0) + 1
         async_dispatcher_send(self.hass, f"{DOMAIN}_leak_update")
         self._schedule_bff_leak_poll()
 
@@ -3403,9 +3334,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # Update state from MQTT data (also flips online back True — issue #68)
         state.update_from_mqtt(state_data, ceiling_fan=ceiling_fan)
         if ceiling_fan:
-            state.update_ceiling_fan_from_frames(
-                self._op_frames_from(state_data)
-            )
+            state.update_ceiling_fan_from_frames(self._op_frames_from(state_data))
         if device is not None and device.supports_pump_state:
             frames = self._op_frames_from(state_data)
             state.update_pump_state_from_frames(frames)
@@ -3420,7 +3349,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         if was_offline:
             device = self._devices.get(device_id)
-            _LOGGER.info(
+            _LOGGER.debug(
                 "MQTT push restored online status for %s (was offline per cloud)",
                 device.name if device else device_id,
             )
@@ -3458,11 +3387,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     @callback
     def _on_mqtt_connected(self) -> None:
         """A session is up and subscribed: clear the disconnect repair."""
-        self._config_entry.async_create_background_task(
-            self.hass,
-            async_delete_mqtt_issue(self.hass, self._config_entry),
-            name="govee_mqtt_connected_clear_issue",
-        )
+        async_delete_mqtt_issue(self.hass, self._config_entry)
         # The MQTT status sensor and per-device connection-mode sensors read
         # the client; nudge them now rather than on the next poll.
         self.async_set_updated_data(self._states)
@@ -3484,7 +3409,45 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     @callback
     def _on_mqtt_disconnected(self) -> None:
         """A live session dropped: let status entities show it immediately."""
+        self._blame_status_query_for_drop()
         self.async_set_updated_data(self._states)
+
+    def _blame_status_query_for_drop(self) -> None:
+        """Charge a session drop to the device whose status query is in flight.
+
+        AWS IoT closes the session, rather than answering, when it refuses a
+        publish — so a drop within MQTT_STATUS_QUERY_SPACING of a query is
+        that device's doing. The first strike is only logged: a network drop
+        can coincide with a sweep. At MQTT_STATUS_QUERY_QUARANTINE_STRIKES the
+        device is quarantined from every later sweep (until the entry
+        reloads), so the account subscription and the other devices' queries
+        survive it (issue #195).
+        """
+        device_id = self._status_query_in_flight
+        if device_id is None:
+            return
+        self._status_query_in_flight = None
+        strikes = self._status_query_strikes.get(device_id, 0) + 1
+        self._status_query_strikes[device_id] = strikes
+        device = self._devices.get(device_id)
+        label = f"{device.name} ({device.sku})" if device else device_id
+        if strikes < MQTT_STATUS_QUERY_QUARANTINE_STRIKES:
+            _LOGGER.debug(
+                "AWS IoT session dropped right after the status query to %s (strike %d of %d)",
+                label,
+                strikes,
+                MQTT_STATUS_QUERY_QUARANTINE_STRIKES,
+            )
+            return
+        self._status_query_quarantine.add(device_id)
+        _LOGGER.warning(
+            "AWS IoT closed the MQTT session right after a status query to %s %d times; "
+            "leaving that device out of the status re-query until the integration reloads. "
+            "Other devices keep being queried and real-time updates stay up; please report "
+            "the model at https://github.com/lasswellt/govee-homeassistant/issues/195",
+            label,
+            strikes,
+        )
 
     def _schedule_bff_leak_poll(self) -> None:
         """Run one BFF leak-state poll, coalescing bursts.
@@ -3513,17 +3476,16 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             last_error,
         )
 
+        async_create_mqtt_issue(
+            self.hass,
+            self._config_entry,
+            f"{attempts} reconnect attempts failed: {last_error}",
+        )
+
         async def _surface() -> None:
-            await async_create_mqtt_issue(
-                self.hass,
-                self._config_entry,
-                f"{attempts} reconnect attempts failed: {last_error}",
-            )
             await self._async_refresh_iot_credentials()
 
-        self._config_entry.async_create_background_task(
-            self.hass, _surface(), name="govee_mqtt_give_up_issue"
-        )
+        self._config_entry.async_create_background_task(self.hass, _surface(), name="govee_mqtt_give_up_issue")
 
     async def _async_update_data(self) -> dict[str, GoveeDeviceState]:
         """Fetch state for all devices (parallel).
@@ -3547,15 +3509,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # another protocol, that is the largest slice of the daily API budget.
         fully_disabled = self._devices_with_all_entities_disabled()
         pollable = {
-            device_id: device
-            for device_id, device in self._devices.items()
-            if device_id not in fully_disabled
+            device_id: device for device_id, device in self._devices.items() if device_id not in fully_disabled
         }
         skipped = len(self._devices) - len(pollable)
         if skipped:
-            _LOGGER.debug(
-                "Skipping %d device(s) with all entities disabled", skipped
-            )
+            _LOGGER.debug("Skipping %d device(s) with all entities disabled", skipped)
 
         if not pollable:
             return self._states
@@ -3564,21 +3522,18 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # deadline: a single timeout around the whole gather discarded every
         # device's result as soon as one device was slow, so one unreachable
         # bulb held the entire house's state hostage for that cycle.
-        tasks = [
-            self._fetch_device_state_bounded(device_id, device)
-            for device_id, device in pollable.items()
-        ]
+        tasks = [self._fetch_device_state_bounded(device_id, device) for device_id, device in pollable.items()]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # Process results
         successful_updates = 0
+        outage_errors: list[Exception] = []
         for device_id, result in zip(pollable.keys(), results):
             if isinstance(result, GoveeDeviceState):
                 self._states[device_id] = result
                 successful_updates += 1
             elif isinstance(result, GoveeAuthError):
-                await async_create_auth_issue(self.hass, self._config_entry)
                 raise ConfigEntryAuthFailed("Invalid API key") from result
             elif isinstance(result, Exception):
                 _LOGGER.debug(
@@ -3587,6 +3542,17 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     result,
                 )
                 # Keep previous state on error
+                if _is_outage_error(result):
+                    outage_errors.append(result)
+
+        # Every cloud read failed to reach Govee: raise so the coordinator marks
+        # entities unavailable and logs the outage once (and the recovery once)
+        # instead of serving stale state in silence. A partial failure keeps
+        # per-device isolation above.
+        if successful_updates == 0 and len(outage_errors) == len(results):
+            raise UpdateFailed(
+                f"Govee cloud API unreachable for all {len(results)} device(s): " f"{outage_errors[0]}"
+            ) from outage_errors[0]
 
         # Clear rate limit issue and restore poll interval if we got successful updates
         if successful_updates > 0 and self._rate_limited:
@@ -3596,7 +3562,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 "Rate limit cleared, restoring poll interval to %s",
                 self._original_update_interval,
             )
-            await async_delete_rate_limit_issue(self.hass, self._config_entry)
+            async_delete_rate_limit_issue(self.hass, self._config_entry)
 
         # Refresh transport-health snapshots tied to coordinator cadence.
         self._refresh_mqtt_health()
@@ -3666,9 +3632,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         """
         try:
             registry = er.async_get(self.hass)
-            entries = er.async_entries_for_config_entry(
-                registry, self._config_entry.entry_id
-            )
+            entries = er.async_entries_for_config_entry(registry, self._config_entry.entry_id)
         except Exception as err:  # noqa: BLE001 - registry must never fail a poll
             _LOGGER.debug("Entity registry unavailable, polling every device: %s", err)
             return set()
@@ -3754,17 +3718,13 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # (_poll_water_detectors); a developer poll here would clobber it every
         # cycle. Preserve the BFF-managed state and skip the call (issue #62).
         if device.supports_water_leak_event:
-            return self._states.get(device_id) or GoveeDeviceState.create_empty(
-                device_id
-            )
+            return self._states.get(device_id) or GoveeDeviceState.create_empty(device_id)
 
         # BFF-discovered thermo-hygrometers (H5301) are absent from the Developer
         # API, so /device/state would 400/return empty and clobber the
         # BFF-managed reading. State is owned by _refresh_bff_thermometers (#86).
         if device_id in self._bff_thermometer_ids:
-            return self._states.get(device_id) or GoveeDeviceState.create_empty(
-                device_id
-            )
+            return self._states.get(device_id) or GoveeDeviceState.create_empty(device_id)
 
         try:
             state = await self._api_client.get_device_state(device_id, device.sku)
@@ -3782,13 +3742,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 # the optimistic power/brightness for a short window instead
                 # of flipflopping the UI. MQTT pushes clear the window early.
                 # The grace test is shared with the LAN read path (#57).
-                if (
-                    self._in_optimistic_grace(existing_state)
-                    and existing_state.power_state != state.power_state
-                ):
+                if self._in_optimistic_grace(existing_state) and existing_state.power_state != state.power_state:
                     _LOGGER.debug(
-                        "Preserving optimistic power for %s during grace "
-                        "(API=%s optimistic=%s)",
+                        "Preserving optimistic power for %s during grace " "(API=%s optimistic=%s)",
                         device_id,
                         state.power_state,
                         existing_state.power_state,
@@ -3850,13 +3806,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     state.heater_temperature = existing_state.heater_temperature
                 if existing_state.heater_auto_stop is not None:
                     state.heater_auto_stop = existing_state.heater_auto_stop
-                if (
-                    existing_state.device_temperature_unit is not None
-                    and state.device_temperature_unit is None
-                ):
-                    state.device_temperature_unit = (
-                        existing_state.device_temperature_unit
-                    )
+                if existing_state.device_temperature_unit is not None and state.device_temperature_unit is None:
+                    state.device_temperature_unit = existing_state.device_temperature_unit
 
                 # Stand-alone thermometer/hygrometer readings (H5179, H5109,
                 # H5110, HS5108, HS5106): battery-powered sensors push to the
@@ -3864,15 +3815,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 # the value or return null between device-side updates. Without
                 # preservation the entity flips to "unknown" after the first
                 # poll. (#78 follow-up: temperature stops updating until restart.)
-                if (
-                    existing_state.sensor_temperature is not None
-                    and state.sensor_temperature is None
-                ):
+                if existing_state.sensor_temperature is not None and state.sensor_temperature is None:
                     state.sensor_temperature = existing_state.sensor_temperature
-                if (
-                    existing_state.sensor_humidity is not None
-                    and state.sensor_humidity is None
-                ):
+                if existing_state.sensor_humidity is not None and state.sensor_humidity is None:
                     state.sensor_humidity = existing_state.sensor_humidity
 
                 # Battery and water-tank-full are owned by the BFF poll — the
@@ -3923,9 +3868,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 # preserved-unchanged value does not count as a change).
                 self._note_sensor_reading_change(device_id, state, existing_state)
 
-                self._preserve_optimistic_field(
-                    existing_state, state, device_id, "dreamview_enabled", "DreamView"
-                )
+                self._preserve_optimistic_field(existing_state, state, device_id, "dreamview_enabled", "DreamView")
                 # Music mode has extra fields to preserve alongside the flag
                 if existing_state.music_mode_enabled:
                     if state.power_state:
@@ -3943,9 +3886,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         except GoveeDeviceNotFoundError:
             # Expected for group devices - use existing/optimistic state
-            _LOGGER.debug(
-                "State query failed for group device %s [expected]", device_id
-            )
+            _LOGGER.debug("State query failed for group device %s [expected]", device_id)
             existing = self._states.get(device_id)
             if existing:
                 existing.online = True  # Group devices are always "available"
@@ -3967,15 +3908,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 )
                 if err.retry_after:
                     reset_time = f"{int(err.retry_after)} seconds"
-                self._config_entry.async_create_background_task(
-                    self.hass,
-                    async_create_rate_limit_issue(
-                        self.hass,
-                        self._config_entry,
-                        reset_time,
-                    ),
-                    name="govee_rate_limit_issue",
-                )
+                async_create_rate_limit_issue(self.hass, self._config_entry, reset_time)
             existing = self._states.get(device_id)
             return existing if existing else GoveeDeviceState.create_empty(device_id)
 
@@ -4055,9 +3988,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         self.async_set_updated_data(self._states)
         return True
 
-    async def async_send_fan_oscillation(
-        self, device_id: str, enabled: bool
-    ) -> bool:
+    async def async_send_fan_oscillation(self, device_id: str, enabled: bool) -> bool:
         """Send a Tower-Fan oscillation on/off frame over MQTT.
 
         Reverse-engineered path for the SKUs in ``MQTT_OSCILLATION_SKUS``,
@@ -4072,14 +4003,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         device = self._devices.get(device_id)
         if not device:
             return False
-        tail = (
-            self._mqtt_client.fan_swing_tail(device_id)
-            if self._mqtt_client
-            else None
-        )
-        ok = await self._ble_manager.async_send_fan_oscillation(
-            device_id, device.sku, enabled, tail
-        )
+        tail = self._mqtt_client.fan_swing_tail(device_id) if self._mqtt_client else None
+        ok = await self._ble_manager.async_send_fan_oscillation(device_id, device.sku, enabled, tail)
         self._record_local_command(
             device_id,
             device.sku,
@@ -4158,11 +4083,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # power/brightness/color over the AWS IoT channel (~50ms) instead
             # of the REST cloud API (~500ms). Group devices and non-capable
             # commands (color temp, scenes, segments) fall through to REST.
-            if (
-                self._enable_mqtt_control
-                and self.mqtt_connected
-                and not device.is_group
-            ):
+            if self._enable_mqtt_control and self.mqtt_connected and not device.is_group:
                 if await self._try_mqtt_command(device_id, device.sku, command):
                     self._record_transport_send(device_id, "mqtt")
                     self._apply_optimistic_update(device_id, command)
@@ -4179,9 +4100,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             if isinstance(command, SegmentColorCommand):
                 self._apply_optimistic_update(device_id, command)
                 self.async_set_updated_data(self._states)
-                success = await self._dispatch_segment_command(
-                    device_id, device.sku, command
-                )
+                success = await self._dispatch_segment_command(device_id, device.sku, command)
                 return success
 
             success = await self._api_client.control_device(
@@ -4200,9 +4119,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 self.async_set_updated_data(self._states)
                 self._maybe_schedule_humidity_verification(device_id, device, command)
             else:
-                self._record_transport_failure(
-                    device_id, "cloud_api", "control_returned_false"
-                )
+                self._record_transport_failure(device_id, "cloud_api", "control_returned_false")
 
             return success
 
@@ -4228,11 +4145,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         "sent X -> Govee reports Y, N seconds later" pair, instead of relying
         on whatever the next unrelated coordinator poll cycle happens to see.
         """
-        is_humidity_write = (
-            isinstance(command, WorkModeCommand) and device.is_humidifier
-        ) or (
-            isinstance(command, RangeCommand)
-            and command.range_instance == INSTANCE_HUMIDITY
+        is_humidity_write = (isinstance(command, WorkModeCommand) and device.is_humidifier) or (
+            isinstance(command, RangeCommand) and command.range_instance == INSTANCE_HUMIDITY
         )
         if not is_humidity_write:
             return
@@ -4245,9 +4159,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             name="govee_verify_humidity_command",
         )
 
-    async def _verify_humidity_command(
-        self, device_id: str, sku: str, record: dict[str, Any]
-    ) -> None:
+    async def _verify_humidity_command(self, device_id: str, sku: str, record: dict[str, Any]) -> None:
         """Re-poll device state and attach it to a recent_commands record."""
         await asyncio.sleep(HUMIDITY_VERIFICATION_DELAY_SECONDS)
         try:
@@ -4293,9 +4205,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 self._record_transport_send(device_id, "cloud_api")
                 self._record_transport_success(device_id, "cloud_api")
             else:
-                self._record_transport_failure(
-                    device_id, "cloud_api", "segment_returned_false"
-                )
+                self._record_transport_failure(device_id, "cloud_api", "segment_returned_false")
 
             # Pace the next acquire so bursts don't trip silent rate limiting.
             await asyncio.sleep(SEGMENT_COMMAND_PACING_SECONDS)
@@ -4523,24 +4433,17 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if isinstance(command, BrightnessCommand):
             if reply.brightness_0_100 is None:
                 return False
-            native = lan_brightness_to_device(
-                reply.brightness_0_100, device.brightness_range
-            )
+            native = lan_brightness_to_device(reply.brightness_0_100, device.brightness_range)
             return abs(native - command.brightness) <= LAN_BRIGHTNESS_CONFIRM_TOLERANCE
         if isinstance(command, ColorCommand):
             return reply.color == command.color
         if isinstance(command, ColorTempCommand):
             if reply.color_temp_kelvin is None:
                 return False
-            return (
-                abs(reply.color_temp_kelvin - command.kelvin)
-                <= LAN_COLOR_TEMP_CONFIRM_TOLERANCE
-            )
+            return abs(reply.color_temp_kelvin - command.kelvin) <= LAN_COLOR_TEMP_CONFIRM_TOLERANCE
         return False
 
-    async def _try_mqtt_command(
-        self, device_id: str, sku: str, command: DeviceCommand
-    ) -> bool:
+    async def _try_mqtt_command(self, device_id: str, sku: str, command: DeviceCommand) -> bool:
         """Attempt to send a command via native MQTT. Returns True on success.
 
         Only power, brightness, and RGB color map to native MQTT commands;
@@ -4548,7 +4451,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         is recorded only when a publish was actually attempted and failed
         (not when the command simply has no MQTT representation).
         """
-        mapped = command_to_mqtt(command, sku)
+        device = self._devices.get(device_id)
+        brightness_range = device.brightness_range if device is not None else (0, 100)
+        mapped = command_to_mqtt(command, sku, brightness_range)
         if mapped is None:
             return False  # Not MQTT-capable — silent fall-through to REST.
 
@@ -4560,9 +4465,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             return False
 
         cmd, data, cmd_version = mapped
-        success = await self._mqtt_client.async_publish_command(
-            topic, cmd, data, cmd_version=cmd_version
-        )
+        success = await self._mqtt_client.async_publish_command(topic, cmd, data, cmd_version=cmd_version)
         if not success:
             self._record_transport_failure(device_id, "mqtt", "publish_failed")
             return False
@@ -4574,9 +4477,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         followup = color_legacy_followup(command)
         if followup is not None:
             legacy_cmd, legacy_data, legacy_version = followup
-            await self._mqtt_client.async_publish_command(
-                topic, legacy_cmd, legacy_data, cmd_version=legacy_version
-            )
+            await self._mqtt_client.async_publish_command(topic, legacy_cmd, legacy_data, cmd_version=legacy_version)
 
         self._record_local_command(device_id, sku, "mqtt", command, delivered=True)
         return True
@@ -4617,9 +4518,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             self._record_transport_failure(device_id, "ble", str(err))
             return False
         else:
-            _LOGGER.debug(
-                "BLE command succeeded for %s: %s", device_id, type(command).__name__
-            )
+            _LOGGER.debug("BLE command succeeded for %s: %s", device_id, type(command).__name__)
             self._record_transport_success(device_id, "ble")
             # A successful BLE write reaches the device directly — flip
             # `online` back True if a stale `online: false` from the cloud
@@ -4690,9 +4589,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     )
                     success = await self.async_control_device(device_id, command)
                     if success:
-                        _LOGGER.debug(
-                            "Sent music mode ON to %s via REST API", device.name
-                        )
+                        _LOGGER.debug("Sent music mode ON to %s via REST API", device.name)
                         return True
                 except ConfigEntryAuthFailed:
                     raise
@@ -4704,9 +4601,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     )
             else:
                 # Disable music mode via REST: restore last scene or send brightness
-                success = await self._rest_disable_music_mode(
-                    device_id, last_scene_id, last_scene_name
-                )
+                success = await self._rest_disable_music_mode(device_id, last_scene_id, last_scene_name)
                 if success:
                     return True
 
@@ -4718,9 +4613,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             )
             return False
 
-        success = await self._ble_manager.async_send_music_mode(
-            device_id, device.sku, enabled, sensitivity
-        )
+        success = await self._ble_manager.async_send_music_mode(device_id, device.sku, enabled, sensitivity)
 
         if success:
             # Apply optimistic update to state
@@ -4777,9 +4670,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # to cleanly exit music mode via REST (avoids visible power cycle)
             state = self._states.get(device_id)
             brightness = state.brightness if state and state.brightness else 100
-            success = await self.async_control_device(
-                device_id, BrightnessCommand(brightness=brightness)
-            )
+            success = await self.async_control_device(device_id, BrightnessCommand(brightness=brightness))
             _LOGGER.debug(
                 "Sent brightness command to %s to exit music mode (brightness=%d)",
                 device.name if device else device_id,
@@ -4808,9 +4699,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         # Try REST API first (works for HTTP-capable devices like H6097)
         try:
-            success = await self.async_control_device(
-                device_id, create_dreamview_command(enabled)
-            )
+            success = await self.async_control_device(device_id, create_dreamview_command(enabled))
             if success:
                 _LOGGER.debug(
                     "Sent DreamView %s to %s via REST API",
@@ -4920,9 +4809,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             )
             return False
 
-        success = await self._ble_manager.async_send_diy_scene(
-            device_id, device.sku, scene_id
-        )
+        success = await self._ble_manager.async_send_diy_scene(device_id, device.sku, scene_id)
 
         if success:
             state = self._states.get(device_id)
@@ -4935,46 +4822,6 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             )
 
         return success
-
-    async def async_send_diy_style(
-        self, device_id: str, style: str, speed: int = 50
-    ) -> bool:
-        """Send DIY style command via BLE passthrough.
-
-        Note: DIY style changes require complex multi-packet BLE sequences.
-        This is a placeholder that applies optimistic state only.
-        Full BLE packet implementation is not yet available.
-
-        Args:
-            device_id: Device identifier.
-            style: DIY style name (Fade, Jumping, Flicker, Marquee, Music).
-            speed: Animation speed 0-100 (default 50).
-
-        Returns:
-            True if optimistic state was applied.
-        """
-        device = self._devices.get(device_id)
-        if not device:
-            _LOGGER.error("Unknown device for DIY style: %s", device_id)
-            return False
-
-        style_value = DIY_STYLE_NAMES.get(style)
-        if style_value is None:
-            _LOGGER.warning("Unknown DIY style: %s", style)
-            return False
-
-        _LOGGER.debug(
-            "DIY style command for %s is optimistic only - no device command sent. "
-            "Full BLE packet implementation is not yet available",
-            device.name,
-        )
-
-        # Apply optimistic state update
-        state = self._states.get(device_id)
-        if state:
-            state.apply_optimistic_diy_style(style, style_value)
-
-        return False
 
     @staticmethod
     def _preserve_optimistic_field(
@@ -4993,9 +4840,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             if new.power_state:
                 setattr(new, field, getattr(existing, field))
             else:
-                _LOGGER.debug(
-                    "Clearing %s for %s (device turned off)", label, device_id
-                )
+                _LOGGER.debug("Clearing %s for %s (device turned off)", label, device_id)
 
     def _apply_optimistic_update(
         self,
@@ -5157,19 +5002,13 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         success = False
         if color and device.supports_rgb:
-            success = await self.async_control_device(
-                device_id, ColorCommand(color=color)
-            )
+            success = await self.async_control_device(device_id, ColorCommand(color=color))
         elif color_temp and device.supports_color_temp:
-            success = await self.async_control_device(
-                device_id, ColorTempCommand(kelvin=color_temp)
-            )
+            success = await self.async_control_device(device_id, ColorTempCommand(kelvin=color_temp))
         elif device.supports_rgb:
             # Prefer RGB white — Govee API reflects this value reliably
             # (colorRgb=16777215), unlike color_temp which may return 0.
-            success = await self.async_control_device(
-                device_id, ColorCommand(color=RGBColor(255, 255, 255))
-            )
+            success = await self.async_control_device(device_id, ColorCommand(color=RGBColor(255, 255, 255)))
         elif device.supports_color_temp:
             # Fallback for color-temp-only devices
             ct_range = device.color_temp_range
@@ -5177,9 +5016,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 midpoint = (ct_range.min_kelvin + ct_range.max_kelvin) // 2
             else:
                 midpoint = 4000
-            success = await self.async_control_device(
-                device_id, ColorTempCommand(kelvin=midpoint)
-            )
+            success = await self.async_control_device(device_id, ColorTempCommand(kelvin=midpoint))
 
         if success:
             # ColorCommand/ColorTempCommand already clear active_scene via optimistic handlers,
@@ -5209,9 +5046,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             state.music_mode_enabled = False
             state.source = "optimistic"
 
-    def restore_group_state(
-        self, device_id: str, power: bool, brightness: int | None = None
-    ) -> None:
+    def restore_group_state(self, device_id: str, power: bool, brightness: int | None = None) -> None:
         """Restore state for a group device from HA state machine."""
         state = self._states.get(device_id)
         if state:
@@ -5266,3 +5101,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # Let DataUpdateCoordinator cancel its scheduled refresh and debouncer
         # (it is idempotent; HA also calls this on unload / HA stop).
         await super().async_shutdown()
+
+
+# Typed config entry for this integration; ``entry.runtime_data`` is the
+# coordinator (quality-scale rules ``runtime-data`` and ``strict-typing``).
+type GoveeConfigEntry = ConfigEntry[GoveeCoordinator]

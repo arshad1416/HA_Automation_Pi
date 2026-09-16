@@ -27,8 +27,9 @@ import json
 import logging
 import ssl
 from collections import deque
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import Any, Callable
+from typing import Any
 
 try:
     import aiomqtt
@@ -70,6 +71,8 @@ class GoveeOpenApiEventClient:
         self._on_event = on_event
         self._running = False
         self._connected = False
+        # Warn once per failure streak rather than on every retry.
+        self._failure_logged = False
         self._task: asyncio.Task[None] | None = None
         self._recent_events: deque[dict[str, Any]] = deque(maxlen=EVENT_BUFFER_SIZE)
 
@@ -126,9 +129,7 @@ class GoveeOpenApiEventClient:
         while self._running:
             try:
                 loop = asyncio.get_running_loop()
-                ssl_context = await loop.run_in_executor(
-                    None, self._create_ssl_context_sync
-                )
+                ssl_context = await loop.run_in_executor(None, self._create_ssl_context_sync)
 
                 _LOGGER.debug(
                     "Connecting to Govee OpenAPI event broker %s:%d",
@@ -145,15 +146,17 @@ class GoveeOpenApiEventClient:
                     keepalive=OPENAPI_KEEPALIVE,
                     timeout=CONNECTION_TIMEOUT,
                 ) as client:
-                    self._connected = True
-                    reconnect_interval = RECONNECT_BASE
-
+                    # Only a confirmed subscription counts as connected; a
+                    # refused topic would otherwise leave the client looking
+                    # healthy while it receives nothing.
                     topic = f"GA/{self._api_key}"
                     await client.subscribe(topic, qos=1)
-                    _LOGGER.info(
-                        "Subscribed to Govee OpenAPI event channel (waterFullEvent, "
-                        "lackWaterEvent, bodyAppearedEvent, ...)"
-                    )
+                    self._connected = True
+                    if self._failure_logged:
+                        _LOGGER.info("Govee OpenAPI event channel reconnected")
+                    self._failure_logged = False
+                    reconnect_interval = RECONNECT_BASE
+                    _LOGGER.debug("Subscribed to Govee OpenAPI event channel")
 
                     async for message in client.messages:
                         if not self._running:
@@ -164,11 +167,13 @@ class GoveeOpenApiEventClient:
                 _LOGGER.debug("OpenAPI event loop cancelled")
                 raise
 
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - keep the listener alive
                 self._connected = False
                 if self._running:
-                    _LOGGER.debug(
-                        "OpenAPI event connection error (%s): %s — retrying in %ds",
+                    log = _LOGGER.debug if self._failure_logged else _LOGGER.warning
+                    self._failure_logged = True
+                    log(
+                        "OpenAPI event connection error (%s): %s; retrying in %ds",
                         type(err).__name__,
                         err,
                         reconnect_interval,
@@ -231,7 +236,7 @@ class GoveeOpenApiEventClient:
             instance = cap.get("instance", "")
             state = cap.get("state")
             state_list = state if isinstance(state, list) else []
-            _LOGGER.info(
+            _LOGGER.debug(
                 "Govee event push: %s (%s) %s -> %s",
                 device_id,
                 sku,

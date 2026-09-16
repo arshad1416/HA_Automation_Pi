@@ -89,6 +89,11 @@ CONF_API_TEMPERATURE_UNIT: Final = "api_temperature_unit"
 #     its location. Developer-API path; the SKU is not in the BFF thermo sets,
 #     so the account's fahOpen preference is never recorded for it and this
 #     entry is the only signal (issue #173).
+#   H5171 (WiFi thermo-hygrometer): same shape as the H5053 — the Developer
+#     API returned `sensorTemperature: 71.06` with no unit field and HA showed
+#     158.6°F, i.e. the °F reading converted a second time. Same path, same
+#     gap: not in the BFF thermo sets, so the model list is its only signal
+#     (issue #173 follow-up).
 FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
     {
         "H5179",
@@ -97,6 +102,7 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
         "H5110",
         "H5111",
         "H5053",
+        "H5171",
         "HS5108",
         "HS5106",
         "H717A",
@@ -155,9 +161,7 @@ SKU_SEGMENT_OVERRIDES: Final = {
 }
 
 
-def resolve_fahrenheit_conversion(
-    sku: str, api_unit: str, device_unit_hint: str | None = None
-) -> bool:
+def resolve_fahrenheit_conversion(sku: str, api_unit: str, device_unit_hint: str | None = None) -> bool:
     """Whether a Developer-API ``sensor_temperature`` should be treated as °F.
 
     Shared by the sensor entity (which converts °F→°C for display) and the
@@ -181,6 +185,11 @@ def resolve_fahrenheit_conversion(
 
 # Defaults
 DEFAULT_POLL_INTERVAL: Final = 60  # seconds
+# Bounds for the cloud polling interval (seconds). The lower bound keeps a
+# large install inside Govee's 100/min budget; the upper bound keeps state
+# reasonably fresh for devices without a push channel.
+MIN_POLL_INTERVAL: Final = 30
+MAX_POLL_INTERVAL: Final = 300
 DEFAULT_ENABLE_GROUPS: Final = False
 DEFAULT_ENABLE_SCENES: Final = True
 DEFAULT_ENABLE_DIY_SCENES: Final = True
@@ -220,6 +229,34 @@ MAX_MQTT_STATUS_INTERVAL: Final = 3600
 # Setting the option to this turns the re-query off entirely: no timer, no
 # connect-time sweep, state comes only from what devices push on their own.
 MQTT_STATUS_POLL_OFF: Final = 0
+# Gap (seconds) between two devices' status queries in one sweep. AWS IoT
+# answers a publish it refuses (an unauthorised topic, for instance) by closing
+# the whole session, so a burst of queries to every device could not say which
+# one caused it (issue #195). Paced one per second, a session that drops inside
+# this gap is attributable to the device just queried; a typical round-trip is
+# well under a fifth of that.
+MQTT_STATUS_QUERY_SPACING: Final = 1.0
+# How many times the session has to drop right after querying the same device
+# before that device is quarantined from the sweep. Two, so a coincidental
+# network drop during a sweep does not cost a device its status queries.
+MQTT_STATUS_QUERY_QUARANTINE_STRIKES: Final = 2
+# SKUs left out of the sweep outright, rather than learning the hard way via
+# the quarantine above. Every one here is a BLE/LoRa gateway-bridged sensor
+# (see FAHRENHEIT_REPORTING_SKUS): it has an AWS IoT topic on the account but
+# never answers a direct status-query publish to it, so AWS closes the
+# session every single time.
+#   H5110 (thermo-hygrometer via H5044/H5151): confirmed on real hardware
+#     with three units on one account, each independently burning through
+#     the quarantine strikes on its own reconnect cycle before the session
+#     stabilized (issue #195).
+#   H5220 (thermo-hygrometer, same gateway family): confirmed via diagnostics
+#     with three units on one account, all quarantined, still delaying
+#     stabilization after H5110 alone was excluded (issue #195 follow-up).
+#   H5111 (fridge/freezer thermometer, same BLE-bridged read path as H5110
+#     per its FAHRENHEIT_REPORTING_SKUS entry above): confirmed via
+#     diagnostics showing the identical quarantine signature (issue #197
+#     follow-up).
+MQTT_STATUS_QUERY_EXCLUDED_SKUS: Final = frozenset({"H5110", "H5220", "H5111"})
 
 # Optimistic state handling
 # Grace window (seconds) during which API polls do NOT overwrite optimistic
@@ -302,6 +339,13 @@ MAIN_LIGHT_TOGGLE_SKUS: Final = frozenset({"H1270"})
 # remain unverified and are omitted until observed in the wild.
 GOVEE_BLE_MANUFACTURER_IDS: Final = (0x8803,)  # 34819
 
+# Options key holding the per-device segment mode map ({device_id: mode}).
+CONF_SEGMENT_MODE_BY_DEVICE: Final = "segment_mode_by_device"
+
+# Identifier of the integration-level "Govee Integration" device that carries
+# the hub-wide diagnostics (rate limit, MQTT status).
+HUB_DEVICE_IDENTIFIER: Final = "hub"
+
 # Segment mode options
 SEGMENT_MODE_DISABLED: Final = "disabled"
 SEGMENT_MODE_GROUPED: Final = "grouped"
@@ -317,7 +361,6 @@ SEGMENT_MODE_BOTH: Final = "both"
 # moved from hass.data[DOMAIN] to entry.data (see async_migrate_entry).
 CONFIG_VERSION: Final = 2
 
-# Keys for storing cached data in hass.data[DOMAIN]
 # Minimum gap between account re-login attempts after the BFF rejects the
 # stored token (issue #132). Repeated logins are what trips Govee's own 2FA
 # hardening, so a persistently failing account must back off rather than retry
@@ -349,6 +392,7 @@ SUFFIX_MAIN_LIGHT: Final = "_main_light"
 SUFFIX_MAIN_LIGHT_TOGGLE: Final = "_main_light_toggle"
 SUFFIX_BACKGROUND_LIGHT: Final = "_background_light"
 SUFFIX_NEBULA_LIGHT: Final = "_nebula_light"
+SUFFIX_RIPPLE_LIGHT: Final = "_ripple_light"
 SUFFIX_SIDE_LIGHT: Final = "_side_light"
 SUFFIX_BOTTOM_LIGHT: Final = "_bottom_light"
 SUFFIX_MUSIC_MODE: Final = "_music_mode"

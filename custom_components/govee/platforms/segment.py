@@ -68,12 +68,9 @@ class GoveeSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         # Unique ID combines device and segment
         self._attr_unique_id = f"{device.device_id}{SUFFIX_SEGMENT}{segment_index}"
 
-        # Segment name with 1-based index for user display
-        self._attr_name = f"Segment {segment_index + 1}"
-
-        # Translation placeholders
+        # Name comes from the ``govee_segment`` translation; the placeholder
+        # carries the 1-based index users see on the strip.
         self._attr_translation_placeholders = {
-            "device_name": device.name,
             "segment_index": str(segment_index + 1),
         }
 
@@ -81,15 +78,6 @@ class GoveeSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         self._is_on = True
         self._brightness = 255
         self._rgb_color: tuple[int, int, int] = (255, 255, 255)
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available.
-
-        Segments don't depend on coordinator state updates.
-        Just check the coordinator is healthy.
-        """
-        return self.coordinator.last_update_success
 
     @property
     def is_on(self) -> bool:
@@ -120,15 +108,7 @@ class GoveeSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         r, g, b = self._rgb_color
         color = RGBColor(r=r, g=g, b=b)
 
-        command = SegmentColorCommand(
-            segment_indices=(self._segment_index,),
-            color=color,
-        )
-
-        await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
+        await self._async_send_command(SegmentColorCommand(segment_indices=(self._segment_index,), color=color))
 
         self._is_on = True
         self.async_write_ha_state()
@@ -150,11 +130,12 @@ class GoveeSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         power_off_pending = self.coordinator.is_power_off_pending(self._device_id)
 
         if not device_already_off and not power_off_pending:
-            command = SegmentColorCommand(
-                segment_indices=(self._segment_index,),
-                color=RGBColor(r=0, g=0, b=0),
+            await self._async_send_command(
+                SegmentColorCommand(
+                    segment_indices=(self._segment_index,),
+                    color=RGBColor(r=0, g=0, b=0),
+                )
             )
-            await self.coordinator.async_control_device(self._device_id, command)
         else:
             _LOGGER.debug(
                 "Skipping segment %d turn_off for %s (power_off_pending=%s, device_already_off=%s)",
@@ -171,9 +152,7 @@ class GoveeSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         # taking the device dark — and leaving the previous colour in the
         # coordinator's tracking would make a later whole-device write replay
         # it, relighting a ring the user had switched off (issue #131).
-        self.coordinator.record_segment_color(
-            self._device_id, self._segment_index, (0, 0, 0)
-        )
+        self.coordinator.record_segment_color(self._device_id, self._segment_index, (0, 0, 0))
         self.async_write_ha_state()
 
     async def async_added_to_hass(self) -> None:

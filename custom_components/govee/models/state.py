@@ -250,9 +250,7 @@ class GoveeDeviceState:
     device_temperature_unit: str | None = None
 
     # Purifier state
-    purifier_mode: int | None = (
-        None  # Purifier mode value (1=Sleep, 2=Low, 3=High, etc.)
-    )
+    purifier_mode: int | None = None  # Purifier mode value (1=Sleep, 2=Low, 3=High, etc.)
 
     # Humidifier / dehumidifier state.
     # Target humidity (Auto mode) and manual speed are both carried in
@@ -298,9 +296,7 @@ class GoveeDeviceState:
 
     # Read-only sensor properties (devices.capabilities.property) for
     # stand-alone sensors like H5109/H5179. None until first poll lands.
-    sensor_temperature: float | None = (
-        None  # Raw from API (°C or °F; entity may normalize)
-    )
+    sensor_temperature: float | None = None  # Raw from API (°C or °F; entity may normalize)
     # Second temperature probe on dual-probe SKUs (H5112, issue #150). Set
     # only from the BFF ``tem2`` field — the Developer API exposes a single
     # sensorTemperature and has no concept of a second probe. Independent of
@@ -371,7 +367,8 @@ class GoveeDeviceState:
         self.source = "api"
 
         # Parse capabilities array for state values
-        capabilities = data.get("capabilities", [])
+        # ``or []``: Govee has returned a null list for offline devices.
+        capabilities = data.get("capabilities") or []
         for cap in capabilities:
             cap_type = cap.get("type", "")
             instance = cap.get("instance", "")
@@ -388,9 +385,7 @@ class GoveeDeviceState:
             elif cap_type == "devices.capabilities.range":
                 if instance == "brightness":
                     parsed_brightness = _coerce_int(value)
-                    self.brightness = (
-                        parsed_brightness if parsed_brightness is not None else 100
-                    )
+                    self.brightness = parsed_brightness if parsed_brightness is not None else 100
                 elif instance == "humidity":
                     # Dehumidifier configured setpoint (H7152, issue #114).
                     parsed_humidity = _coerce_int(value)
@@ -404,7 +399,7 @@ class GoveeDeviceState:
                     elif isinstance(value, dict):
                         self.color = RGBColor.from_dict(value)
                 elif instance == "colorTemperatureK":
-                    self.color_temp_kelvin = int(value) if value else None
+                    self.color_temp_kelvin = _coerce_int(value) or None
 
             elif cap_type == "devices.capabilities.toggle":
                 if instance == "oscillationToggle":
@@ -442,9 +437,7 @@ class GoveeDeviceState:
                 # STRUCT. Accept both, plus the legacy "currentX" field
                 # naming used by older WiFi sensors.
                 if instance == "sensorTemperature":
-                    parsed = _coerce_sensor_value(
-                        value, _SENSOR_TEMPERATURE_STRUCT_KEYS
-                    )
+                    parsed = _coerce_sensor_value(value, _SENSOR_TEMPERATURE_STRUCT_KEYS)
                     if parsed is not None:
                         self.sensor_temperature = parsed
                 elif instance == "sensorHumidity":
@@ -495,11 +488,7 @@ class GoveeDeviceState:
                     # A device is only ever a leak OR a presence sensor, so
                     # populating both fields never conflicts — the right entity
                     # reads the right field.
-                    raw_ev = (
-                        value.get("value", value.get("state"))
-                        if isinstance(value, dict)
-                        else value
-                    )
+                    raw_ev = value.get("value", value.get("state")) if isinstance(value, dict) else value
                     num_ev = _coerce_int(raw_ev)
                     if num_ev in (1, 2):
                         self.presence = num_ev == 1
@@ -539,10 +528,7 @@ class GoveeDeviceState:
                             # heater_temperature is canonical °C (commands are
                             # always sent with unit=Celsius) — normalize a
                             # Fahrenheit-reporting device on read (issue #129).
-                            if (
-                                isinstance(unit, str)
-                                and unit.lower() == "fahrenheit"
-                            ):
+                            if isinstance(unit, str) and unit.lower() == "fahrenheit":
                                 temp_int = round((temp_int - 32) * 5 / 9)
                             self.heater_temperature = temp_int
                     auto_stop = value.get("autoStop")
@@ -594,7 +580,7 @@ class GoveeDeviceState:
 
         if "colorTemInKelvin" in data:
             temp = data["colorTemInKelvin"]
-            self.color_temp_kelvin = int(temp) if temp else None
+            self.color_temp_kelvin = _coerce_int(temp) or None
 
         # Stand-alone thermometer/hygrometer readings (H5179, H5109, H5110,
         # HS5108, HS5106). The mqtt.py docstring notes AWS IoT pushes carry
@@ -603,9 +589,7 @@ class GoveeDeviceState:
         # dropped and the entity only ever showed its first REST read (#83).
         for key in _SENSOR_TEMPERATURE_MQTT_KEYS:
             if key in data:
-                parsed = _coerce_sensor_value(
-                    data[key], _SENSOR_TEMPERATURE_STRUCT_KEYS
-                )
+                parsed = _coerce_sensor_value(data[key], _SENSOR_TEMPERATURE_STRUCT_KEYS)
                 if parsed is not None:
                     self.sensor_temperature = parsed
                     break
@@ -679,9 +663,7 @@ class GoveeDeviceState:
             elif opcode == 0x36 and len(raw) >= 4:
                 main = raw[2] == 0x01
                 background = raw[3] == 0x01
-                self._apply_ceiling_fan_lights(
-                    main=main, background=background, any_lit=main or background
-                )
+                self._apply_ceiling_fan_lights(main=main, background=background, any_lit=main or background)
                 recognised = True
         return recognised
 
@@ -739,9 +721,7 @@ class GoveeDeviceState:
                 return True
         return False
 
-    def update_from_lan(
-        self, data: LanDevStatusLike, *, skip_power_brightness: bool = False
-    ) -> None:
+    def update_from_lan(self, data: LanDevStatusLike, *, skip_power_brightness: bool = False) -> None:
         """Overlay a Govee LAN ``devStatus`` reply onto the existing state.
 
         A hardened sibling of :meth:`update_from_mqtt`. The Govee LAN protocol
@@ -796,10 +776,7 @@ class GoveeDeviceState:
         # color/brightness no longer describe a static state — only power stays
         # meaningful, so skip the rest to avoid per-poll churn.
         in_effect = bool(
-            self.active_scene
-            or self.active_diy_scene
-            or self.music_mode_enabled
-            or self.dreamview_enabled
+            self.active_scene or self.active_diy_scene or self.music_mode_enabled or self.dreamview_enabled
         )
 
         if not skip_power_brightness:
@@ -860,9 +837,7 @@ class GoveeDeviceState:
         self.active_scene = None
         self.active_scene_name = None
 
-    def apply_optimistic_scene(
-        self, scene_id: str, scene_name: str | None = None
-    ) -> None:
+    def apply_optimistic_scene(self, scene_id: str, scene_name: str | None = None) -> None:
         """Apply optimistic scene activation.
 
         Scenes, Music Mode, and DreamView are mutually exclusive.
@@ -916,9 +891,7 @@ class GoveeDeviceState:
         self.active_scene = None
         self.active_scene_name = None
 
-    def apply_optimistic_diy_style(
-        self, style: str, style_value: int | None = None
-    ) -> None:
+    def apply_optimistic_diy_style(self, style: str, style_value: int | None = None) -> None:
         """Apply optimistic DIY style update.
 
         Args:

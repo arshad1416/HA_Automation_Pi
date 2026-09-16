@@ -89,27 +89,12 @@ class GoveeGroupedSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         # Unique ID for grouped segments
         self._attr_unique_id = f"{device.device_id}{SUFFIX_GROUPED_SEGMENT}"
 
-        # Name for grouped segment control
-        self._attr_name = "Segments"
-
-        # Translation placeholders
-        self._attr_translation_placeholders = {
-            "device_name": device.name,
-        }
+        # Name comes from the ``govee_grouped_segment`` translation.
 
         # Optimistic state (API doesn't return per-segment state)
         self._is_on = True
         self._brightness = 255
         self._rgb_color: tuple[int, int, int] = (255, 255, 255)
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available.
-
-        Grouped segments don't depend on coordinator state updates.
-        Just check the coordinator is healthy.
-        """
-        return self.coordinator.last_update_success
 
     @property
     def is_on(self) -> bool:
@@ -140,15 +125,7 @@ class GoveeGroupedSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         r, g, b = self._rgb_color
         color = RGBColor(r=r, g=g, b=b)
 
-        command = SegmentColorCommand(
-            segment_indices=self._segment_indices,
-            color=color,
-        )
-
-        await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
+        await self._async_send_command(SegmentColorCommand(segment_indices=self._segment_indices, color=color))
 
         self._is_on = True
         self.async_write_ha_state()
@@ -177,11 +154,12 @@ class GoveeGroupedSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         power_off_pending = self.coordinator.is_power_off_pending(self._device_id)
 
         if not device_already_off and not power_off_pending:
-            command = SegmentColorCommand(
-                segment_indices=self._segment_indices,
-                color=RGBColor(r=0, g=0, b=0),
+            await self._async_send_command(
+                SegmentColorCommand(
+                    segment_indices=self._segment_indices,
+                    color=RGBColor(r=0, g=0, b=0),
+                )
             )
-            await self.coordinator.async_control_device(self._device_id, command)
         else:
             _LOGGER.debug(
                 "Skipping grouped segments turn_off for %s (power_off_pending=%s, device_already_off=%s)",
@@ -195,9 +173,7 @@ class GoveeGroupedSegmentEntity(GoveeEntity, LightEntity, RestoreEntity):
         # Record black even when the write was skipped above — see the same
         # block in segment.py for why (issue #131).
         for segment_index in self._segment_indices:
-            self.coordinator.record_segment_color(
-                self._device_id, segment_index, (0, 0, 0)
-            )
+            self.coordinator.record_segment_color(self._device_id, segment_index, (0, 0, 0))
         self.async_write_ha_state()
         async_dispatcher_send(
             self.hass,

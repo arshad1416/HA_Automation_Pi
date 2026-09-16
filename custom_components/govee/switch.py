@@ -11,7 +11,6 @@ import logging
 from typing import Any
 
 from homeassistant.components.switch import SwitchDeviceClass, SwitchEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import STATE_ON, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
@@ -27,11 +26,12 @@ from .const import (
     SUFFIX_MUSIC_MODE,
     SUFFIX_NEBULA_LIGHT,
     SUFFIX_NIGHT_LIGHT,
+    SUFFIX_RIPPLE_LIGHT,
     SUFFIX_SIDE_LIGHT,
     SUFFIX_MQTT_OUTLET,
     SUFFIX_SOCKET,
 )
-from .coordinator import GoveeCoordinator
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
 from .models import (
     GoveeDevice,
@@ -51,43 +51,26 @@ _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
-# Named per-part light toggles (issues #114, #126): capability instance ->
-# (translation_key, unique_id suffix, icon). Devices covered so far: ceiling-fan
-# lights (H1310/H1370: main/background) and the H60B3 uplighter floor lamp
-# (nebula/side/bottom). Unknown ``<name>LightToggle`` instances are logged and
-# skipped so a new SKU surfaces in debug logs instead of silently missing.
-NAMED_LIGHT_TOGGLE_SPECS: dict[str, tuple[str, str, str]] = {
-    INSTANCE_MAIN_LIGHT_TOGGLE: (
-        "govee_main_light",
-        SUFFIX_MAIN_LIGHT,
-        "mdi:ceiling-light",
-    ),
-    INSTANCE_BACKGROUND_LIGHT_TOGGLE: (
-        "govee_background_light",
-        SUFFIX_BACKGROUND_LIGHT,
-        "mdi:wall-sconce-flat",
-    ),
-    "nebulaLightToggle": (
-        "govee_nebula_light",
-        SUFFIX_NEBULA_LIGHT,
-        "mdi:shimmer",
-    ),
-    "sideLightToggle": (
-        "govee_side_light",
-        SUFFIX_SIDE_LIGHT,
-        "mdi:wall-sconce",
-    ),
-    "bottomLightToggle": (
-        "govee_bottom_light",
-        SUFFIX_BOTTOM_LIGHT,
-        "mdi:floor-lamp",
-    ),
+# Named per-part light toggles (issues #114, #126, #196): capability instance
+# -> (translation_key, unique_id suffix). Icons live in icons.json under the
+# translation key. Devices covered so far: ceiling-fan lights (H1310/H1370:
+# main/background) and the uplighter floor lamps — the H60B3 calls its upper
+# effect ``nebulaLightToggle``, the H60B0 ``rippleLightToggle`` (side/bottom
+# are shared). Unknown ``<name>LightToggle`` instances are logged and skipped
+# so a new SKU surfaces in debug logs instead of silently missing.
+NAMED_LIGHT_TOGGLE_SPECS: dict[str, tuple[str, str]] = {
+    INSTANCE_MAIN_LIGHT_TOGGLE: ("govee_main_light", SUFFIX_MAIN_LIGHT),
+    INSTANCE_BACKGROUND_LIGHT_TOGGLE: ("govee_background_light", SUFFIX_BACKGROUND_LIGHT),
+    "nebulaLightToggle": ("govee_nebula_light", SUFFIX_NEBULA_LIGHT),
+    "rippleLightToggle": ("govee_ripple_light", SUFFIX_RIPPLE_LIGHT),
+    "sideLightToggle": ("govee_side_light", SUFFIX_SIDE_LIGHT),
+    "bottomLightToggle": ("govee_bottom_light", SUFFIX_BOTTOM_LIGHT),
 }
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee switches from a config entry."""
@@ -119,21 +102,16 @@ async def async_setup_entry(
         # Skip for group devices - groups don't support music mode (no MQTT topic)
         if device.is_group:
             _LOGGER.debug(
-                "Skipping music mode/DreamView switches for group device %s "
-                "(groups don't support these features)",
+                "Skipping music mode/DreamView switches for group device %s " "(groups don't support these features)",
                 device.name,
             )
         elif device.has_struct_music_mode:
             # STRUCT-based music mode - uses REST API, no MQTT required
-            entities.append(
-                GoveeMusicModeSwitchEntity(coordinator, device, use_rest_api=True)
-            )
+            entities.append(GoveeMusicModeSwitchEntity(coordinator, device, use_rest_api=True))
             _LOGGER.debug("Created STRUCT music mode switch entity for %s", device.name)
         elif device.supports_music_mode:
             # Legacy BLE-based music mode - availability gated on MQTT at runtime
-            entities.append(
-                GoveeMusicModeSwitchEntity(coordinator, device, use_rest_api=False)
-            )
+            entities.append(GoveeMusicModeSwitchEntity(coordinator, device, use_rest_api=False))
             _LOGGER.debug("Created BLE music mode switch entity for %s", device.name)
 
         # Create switch for heater auto-stop toggle. Two shapes exist:
@@ -142,10 +120,7 @@ async def async_setup_entry(
         #    ``targetTemperature`` STRUCT. Both get the same switch entity;
         #    the entity picks the right command at turn_on/off time
         #    (issue #29).
-        if (
-            device.supports_thermostat_toggle
-            or device.supports_temperature_setting_auto_stop
-        ):
+        if device.supports_thermostat_toggle or device.supports_temperature_setting_auto_stop:
             entities.append(GoveeAutoStopSwitchEntity(coordinator, device))
             _LOGGER.debug("Created auto-stop switch entity for %s", device.name)
 
@@ -175,11 +150,7 @@ async def async_setup_entry(
         # segments, which the segment platform owns.
         if not device.is_group:
             for zone_index, instance in enumerate(device.light_toggle_instances):
-                entities.append(
-                    GoveeLightZoneSwitchEntity(
-                        coordinator, device, instance, zone_index
-                    )
-                )
+                entities.append(GoveeLightZoneSwitchEntity(coordinator, device, instance, zone_index))
                 _LOGGER.debug(
                     "Created light zone switch %d (%s) for %s",
                     zone_index + 1,
@@ -191,11 +162,7 @@ async def async_setup_entry(
             # socketToggle{N} outlets). These return live state on poll, unlike
             # the optimistic light zones (issue #114).
             for socket_index, instance in enumerate(device.socket_toggle_instances):
-                entities.append(
-                    GoveeSocketSwitchEntity(
-                        coordinator, device, instance, socket_index
-                    )
-                )
+                entities.append(GoveeSocketSwitchEntity(coordinator, device, instance, socket_index))
                 _LOGGER.debug(
                     "Created outlet switch %d (%s) for %s",
                     socket_index + 1,
@@ -207,14 +174,13 @@ async def async_setup_entry(
             # AWS IoT `turn` bitmask can drive (H5160/H5161, issue #184).
             for outlet_index in range(device.mqtt_outlet_count):
                 entities.append(GoveeMqttOutletSwitchEntity(coordinator, device, outlet_index))
-                _LOGGER.debug(
-                    "Created MQTT outlet switch %d for %s", outlet_index + 1, device.name
-                )
+                _LOGGER.debug("Created MQTT outlet switch %d for %s", outlet_index + 1, device.name)
 
             # Named per-part light toggles — main/background on ceiling-fan
             # lights (H1310/H1370, issue #114), nebula/side/bottom on the
-            # H60B3 uplighter (issue #126). Govee returns "" for these on
-            # poll, so they are optimistic + RestoreEntity like the zones.
+            # H60B3 uplighter (issue #126) and ripple/side/bottom on the
+            # H60B0 (issue #196). Govee returns "" for these on poll, so
+            # they are optimistic + RestoreEntity like the zones.
             for instance in device.named_light_toggle_instances:
                 spec = NAMED_LIGHT_TOGGLE_SPECS.get(instance)
                 if spec is None:
@@ -225,15 +191,9 @@ async def async_setup_entry(
                         device.sku,
                     )
                     continue
-                translation_key, suffix, icon = spec
-                entities.append(
-                    GoveeNamedLightSwitchEntity(
-                        coordinator, device, instance, translation_key, suffix, icon
-                    )
-                )
-                _LOGGER.debug(
-                    "Created named light switch %s for %s", instance, device.name
-                )
+                translation_key, suffix = spec
+                entities.append(GoveeNamedLightSwitchEntity(coordinator, device, instance, translation_key, suffix))
+                _LOGGER.debug("Created named light switch %s for %s", instance, device.name)
 
     async_add_entities(entities)
     _LOGGER.debug("Set up %d Govee switch entities", len(entities))
@@ -315,17 +275,11 @@ class GoveePlugSwitchEntity(GoveeEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the plug on."""
-        await self.coordinator.async_control_device(
-            self._device_id,
-            PowerCommand(power_on=True),
-        )
+        await self._async_send_command(PowerCommand(power_on=True))
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the plug off."""
-        await self.coordinator.async_control_device(
-            self._device_id,
-            PowerCommand(power_on=False),
-        )
+        await self._async_send_command(PowerCommand(power_on=False))
 
 
 class GoveeNightLightSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
@@ -366,23 +320,15 @@ class GoveeNightLightSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn night light on."""
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            create_night_light_command(enabled=True),
-        )
-        if success:
-            self._is_on = True
-            self.async_write_ha_state()
+        await self._async_send_command(create_night_light_command(enabled=True))
+        self._is_on = True
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn night light off."""
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            create_night_light_command(enabled=False),
-        )
-        if success:
-            self._is_on = False
-            self.async_write_ha_state()
+        await self._async_send_command(create_night_light_command(enabled=False))
+        self._is_on = False
+        self.async_write_ha_state()
 
 
 class GoveeLightZoneSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
@@ -395,7 +341,6 @@ class GoveeLightZoneSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
     """
 
     _attr_translation_key = "govee_light_zone"
-    _attr_icon = "mdi:lightbulb-multiple"
 
     def __init__(
         self,
@@ -436,23 +381,19 @@ class GoveeLightZoneSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light zone on."""
-        success = await self.coordinator.async_control_device(
-            self._device_id,
+        await self._async_send_command(
             ToggleCommand(toggle_instance=self._toggle_instance, enabled=True),
         )
-        if success:
-            self._is_on = True
-            self.async_write_ha_state()
+        self._is_on = True
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light zone off."""
-        success = await self.coordinator.async_control_device(
-            self._device_id,
+        await self._async_send_command(
             ToggleCommand(toggle_instance=self._toggle_instance, enabled=False),
         )
-        if success:
-            self._is_on = False
-            self.async_write_ha_state()
+        self._is_on = False
+        self.async_write_ha_state()
 
 
 class GoveeSocketSwitchEntity(GoveeEntity, SwitchEntity):
@@ -496,15 +437,14 @@ class GoveeSocketSwitchEntity(GoveeEntity, SwitchEntity):
         return state.toggles.get(self._toggle_instance) if state else None
 
     async def _set(self, enabled: bool) -> None:
-        success = await self.coordinator.async_control_device(
-            self._device_id,
+        """Switch the outlet; raise if the command is not accepted."""
+        await self._async_send_command(
             ToggleCommand(toggle_instance=self._toggle_instance, enabled=enabled),
         )
-        if success:
-            state = self.device_state
-            if state is not None:
-                state.toggles[self._toggle_instance] = enabled
-            self.async_write_ha_state()
+        state = self.device_state
+        if state is not None:
+            state.toggles[self._toggle_instance] = enabled
+        self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the outlet on."""
@@ -568,9 +508,11 @@ class GoveeMqttOutletSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
         return self._is_on
 
     async def _set(self, enabled: bool) -> None:
-        if await self.coordinator.async_set_mqtt_outlet(self._device_id, self._outlet_index, enabled):
-            self._is_on = enabled
-            self.async_write_ha_state()
+        """Switch the outlet over AWS IoT; raise if the command is not accepted."""
+        if not await self.coordinator.async_set_mqtt_outlet(self._device_id, self._outlet_index, enabled):
+            raise self._command_failed()
+        self._is_on = enabled
+        self.async_write_ha_state()
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the outlet on."""
@@ -598,7 +540,6 @@ class GoveeNamedLightSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
         toggle_instance: str,
         translation_key: str,
         unique_suffix: str,
-        icon: str,
     ) -> None:
         """Initialize the named light toggle switch entity."""
         super().__init__(coordinator, device)
@@ -606,7 +547,6 @@ class GoveeNamedLightSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
         self._toggle_instance = toggle_instance
         self._attr_translation_key = translation_key
         self._attr_unique_id = f"{device.device_id}{unique_suffix}"
-        self._attr_icon = icon
 
         # Optimistic state — Govee does not report these toggles on poll.
         self._is_on = False
@@ -636,23 +576,19 @@ class GoveeNamedLightSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the light zone on."""
-        success = await self.coordinator.async_control_device(
-            self._device_id,
+        await self._async_send_command(
             ToggleCommand(toggle_instance=self._toggle_instance, enabled=True),
         )
-        if success:
-            self._is_on = True
-            self.async_write_ha_state()
+        self._is_on = True
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the light zone off."""
-        success = await self.coordinator.async_control_device(
-            self._device_id,
+        await self._async_send_command(
             ToggleCommand(toggle_instance=self._toggle_instance, enabled=False),
         )
-        if success:
-            self._is_on = False
-            self.async_write_ha_state()
+        self._is_on = False
+        self.async_write_ha_state()
 
 
 class GoveeMusicModeSwitchEntity(GoveeEntity, SwitchEntity):
@@ -674,7 +610,6 @@ class GoveeMusicModeSwitchEntity(GoveeEntity, SwitchEntity):
     """
 
     _attr_translation_key = "govee_music_mode"
-    _attr_icon = "mdi:music"
 
     def __init__(
         self,
@@ -730,17 +665,13 @@ class GoveeMusicModeSwitchEntity(GoveeEntity, SwitchEntity):
             # every SKU — the H6022 offers 3/4/5/6 and rejects 1 with
             # "Parameter value out of range" (issue #186).
             valid_modes = [
-                int(opt["value"])
-                for opt in self._device.get_music_mode_options()
-                if isinstance(opt.get("value"), int)
+                int(opt["value"]) for opt in self._device.get_music_mode_options() if isinstance(opt.get("value"), int)
             ]
             music_mode = valid_modes[0] if valid_modes else 1
             if state:
                 if state.music_sensitivity is not None:
                     sensitivity = state.music_sensitivity
-                if state.music_mode_value is not None and (
-                    not valid_modes or state.music_mode_value in valid_modes
-                ):
+                if state.music_mode_value is not None and (not valid_modes or state.music_mode_value in valid_modes):
                     music_mode = state.music_mode_value
 
             command = MusicModeCommand(
@@ -759,9 +690,10 @@ class GoveeMusicModeSwitchEntity(GoveeEntity, SwitchEntity):
                 enabled=True,
             )
 
-        if success:
-            self._is_on = True
-            self.async_write_ha_state()
+        if not success:
+            raise self._command_failed()
+        self._is_on = True
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn music mode off.
@@ -778,9 +710,10 @@ class GoveeMusicModeSwitchEntity(GoveeEntity, SwitchEntity):
             last_scene_id=state.last_scene_id if state else None,
             last_scene_name=state.last_scene_name if state else None,
         )
-        if success:
-            self._is_on = False
-            self.async_write_ha_state()
+        if not success:
+            raise self._command_failed()
+        self._is_on = False
+        self.async_write_ha_state()
 
 
 class GoveeDreamViewSwitchEntity(GoveeEntity, SwitchEntity):
@@ -795,7 +728,6 @@ class GoveeDreamViewSwitchEntity(GoveeEntity, SwitchEntity):
     """
 
     _attr_translation_key = "govee_dreamview"
-    _attr_icon = "mdi:movie-open"
 
     def __init__(
         self,
@@ -833,21 +765,21 @@ class GoveeDreamViewSwitchEntity(GoveeEntity, SwitchEntity):
 
         This clears music mode and scene states due to mutual exclusion.
         """
-        success = await self.coordinator.async_send_dreamview(
+        if not await self.coordinator.async_send_dreamview(
             self._device_id,
             enabled=True,
-        )
-        if success:
-            self.async_write_ha_state()
+        ):
+            raise self._command_failed()
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn DreamView off via BLE passthrough."""
-        success = await self.coordinator.async_send_dreamview(
+        if not await self.coordinator.async_send_dreamview(
             self._device_id,
             enabled=False,
-        )
-        if success:
-            self.async_write_ha_state()
+        ):
+            raise self._command_failed()
+        self.async_write_ha_state()
 
 
 class GoveeAutoStopSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
@@ -859,6 +791,7 @@ class GoveeAutoStopSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
     """
 
     _attr_translation_key = "govee_heater_auto_stop"
+    _attr_entity_category = EntityCategory.CONFIG
 
     def __init__(
         self,
@@ -898,17 +831,11 @@ class GoveeAutoStopSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
         if self._device.supports_thermostat_toggle:
             return await self.coordinator.async_control_device(
                 self._device_id,
-                ToggleCommand(
-                    toggle_instance=INSTANCE_THERMOSTAT_TOGGLE, enabled=enabled
-                ),
+                ToggleCommand(toggle_instance=INSTANCE_THERMOSTAT_TOGGLE, enabled=enabled),
             )
 
         state = self.coordinator.get_state(self._device_id)
-        current_temp = (
-            state.heater_temperature
-            if state and state.heater_temperature is not None
-            else 20
-        )
+        current_temp = state.heater_temperature if state and state.heater_temperature is not None else 20
         return await self.coordinator.async_control_device(
             self._device_id,
             TemperatureSettingCommand(
@@ -919,15 +846,17 @@ class GoveeAutoStopSwitchEntity(GoveeEntity, SwitchEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn auto-stop on."""
-        if await self._send_auto_stop(True):
-            self._is_on = True
-            self.async_write_ha_state()
+        if not await self._send_auto_stop(True):
+            raise self._command_failed()
+        self._is_on = True
+        self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn auto-stop off."""
-        if await self._send_auto_stop(False):
-            self._is_on = False
-            self.async_write_ha_state()
+        if not await self._send_auto_stop(False):
+            raise self._command_failed()
+        self._is_on = False
+        self.async_write_ha_state()
 
 
 class GoveeAppliancePowerSwitchEntity(GoveeEntity, SwitchEntity):
@@ -959,14 +888,8 @@ class GoveeAppliancePowerSwitchEntity(GoveeEntity, SwitchEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the appliance on."""
-        await self.coordinator.async_control_device(
-            self._device_id,
-            PowerCommand(power_on=True),
-        )
+        await self._async_send_command(PowerCommand(power_on=True))
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the appliance off."""
-        await self.coordinator.async_control_device(
-            self._device_id,
-            PowerCommand(power_on=False),
-        )
+        await self._async_send_command(PowerCommand(power_on=False))

@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "Clave de API de Govee",
@@ -53,6 +54,10 @@
           "email": "Correo de la app móvil de Govee (déjalo vacío para desactivar MQTT)",
           "password": "Contraseña de la app móvil de Govee (déjala vacía para conservar la actual)"
         }
+      },
+      "bluetooth_confirm": {
+        "title": "Dispositivo Govee encontrado cerca",
+        "description": "Se ha encontrado {name} por Bluetooth. Los dispositivos Govee se controlan mediante tu cuenta en la nube de Govee, así que el siguiente paso pide tu clave de API de Govee."
       }
     },
     "error": {
@@ -69,7 +74,8 @@
     },
     "abort": {
       "reauth_successful": "La reautenticación fue correcta",
-      "reconfigure_successful": "La reconfiguración fue correcta"
+      "reconfigure_successful": "La reconfiguración fue correcta",
+      "already_in_progress": "Ya hay una configuración de Govee en curso."
     }
   },
   "options": {
@@ -89,11 +95,11 @@
           "lan_targets": "Direcciones IP o subredes LAN de dispositivos (avanzado)"
         },
         "data_description": {
-          "api_temperature_unit": "«Auto» (predeterminado) convierte automáticamente los termómetros conocidos que notifican en Fahrenheit (p. ej. H5179, H5109, H5111, H5075, H5100). Elige Fahrenheit si otro termómetro marca aproximadamente 1,8× más de lo esperado (p. ej. 74 en lugar de 23), o Celsius para forzar la no conversión. La API de Govee omite los metadatos de unidad, por lo que el valor no siempre se puede autodetectar.",
+          "api_temperature_unit": "Auto (predeterminado) usa primero la unidad de temperatura que tu cuenta de Govee indica para el dispositivo, después convierte los termómetros que se sabe que informan en Fahrenheit (por ejemplo H5179, H5109, H5110, H5111, H5053, H5075, H5100) y confía en el resto. Elige Fahrenheit si una lectura sigue pareciendo aproximadamente 1,8 veces demasiado alta (por ejemplo 74 en lugar de 23), o Celsius para no convertir nunca. La API de Govee omite la unidad, así que no siempre se puede detectar automáticamente.",
           "water_detector_poll_interval": "Cada cuánto se consultan los detectores de agua o fugas autónomos de Govee (p. ej. H5054) para ver si hay una fuga. Estos sensores solo RF no tienen canal de envío, por lo que una fuga puede tardar hasta ese intervalo en aparecer. Un valor menor reacciona antes, pero hace más llamadas a la API de la cuenta; súbelo si tienes muchos detectores. Rango: 60–3600 segundos, valor predeterminado: 120. Requiere inicio de sesión con correo y contraseña; se ignora si no tienes detectores de este tipo.",
           "enable_groups": "Muestra los grupos de dispositivos que creaste en la app de Govee como entidades de luz únicas. Un comando al grupo se envía una sola vez y la nube de Govee lo sincroniza con todos los miembros, así que se sincroniza mejor que agrupar las luces con helpers de Home Assistant. El estado es aproximado (los grupos no se pueden sondear) y las luces en grupo solo admiten encendido, brillo y color.",
           "enable_mqtt_control": "Envía los comandos de encendido, brillo y color por el canal MQTT de Govee en lugar de la API REST en la nube, lo que reduce la latencia y evita los límites de velocidad de REST. Requiere inicio de sesión con correo y contraseña (credenciales MQTT). Si MQTT no está disponible, vuelve automáticamente a REST. Experimental: usa un canal no documentado; desactívalo si los comandos se comportan de forma inesperada.",
-          "lan_targets": "Solo es necesario cuando los dispositivos Govee compatibles con LAN están en una subred o VLAN distinta a la de Home Assistant, de modo que el escaneo de descubrimiento local no llega a ellos. Introduce una lista separada por comas con IPs de dispositivos (10.20.0.51), direcciones de difusión (10.20.0.255) o subredes en CIDR (10.20.0.0/24, /24 o más específico). Las subredes se escanean dispositivo por dispositivo, ya que la mayoría de los routers descartan los broadcasts entre VLAN. Déjalo en blanco si todos los dispositivos comparten la red de Home Assistant. Avanzado: si un dispositivo sigue sin encontrarse porque su respuesta de escaneo no puede cruzar la VLAN, fíjalo con device_id=ip (AA:BB:CC:DD:EE:FF:00:11=10.20.0.51) para omitir el descubrimiento para ese dispositivo. Añade un ! final (=10.20.0.51!) solo para firmware que acepta comandos LAN pero nunca responde a una lectura de estado — esto desactiva todas las comprobaciones de estado LAN del dispositivo, de modo que una IP incorrecta parecerá que funciona mientras el dispositivo nunca responde."
+          "lan_targets": "Solo es necesario cuando los dispositivos Govee compatibles con LAN están en una subred o VLAN distinta a la de Home Assistant, de modo que el escaneo de descubrimiento local no llega a ellos. Introduce una lista separada por comas con IPs de dispositivos (10.20.0.51), direcciones de difusión (10.20.0.255) o subredes en CIDR (10.20.0.0/24, /24 o más específico). Las subredes se escanean dispositivo por dispositivo, ya que la mayoría de los routers descartan los broadcasts entre VLAN. Déjalo en blanco si todos los dispositivos comparten la red de Home Assistant. Avanzado: si un dispositivo sigue sin encontrarse porque su respuesta de escaneo no puede cruzar la VLAN, fíjalo con device_id=ip (AA:BB:CC:DD:EE:FF:00:11=10.20.0.51) para omitir el descubrimiento para ese dispositivo. Añade un ! final (=10.20.0.51!) solo para firmware que acepta comandos LAN pero nunca responde a una lectura de estado — esto desactiva todas las comprobaciones de estado LAN del dispositivo, de modo que una IP incorrecta parecerá que funciona mientras el dispositivo nunca responde. Introduce off para desactivar por completo la detección LAN y el control local."
         }
       },
       "select_segment_devices": {
@@ -101,6 +107,9 @@
         "description": "Elige para qué dispositivos RGBIC quieres configurar los modos de segmento.",
         "data": {
           "devices": "Dispositivos a configurar"
+        },
+        "data_description": {
+          "devices": "Dispositivos para los que establecer un modo de segmentos. Los que no selecciones conservan su modo actual."
         }
       },
       "configure_device_mode": {
@@ -118,14 +127,11 @@
   },
   "entity": {
     "light": {
-      "govee_light": {
-        "name": "{device_name}"
-      },
       "govee_nightlight": {
         "name": "Luz nocturna"
       },
       "govee_segment": {
-        "name": "Segmento {segment_index} de {device_name}"
+        "name": "Segmento {segment_index}"
       },
       "govee_grouped_segment": {
         "name": "Segmentos de {device_name}"
@@ -145,9 +151,6 @@
       },
       "govee_diy_scene_select": {
         "name": "Escena DIY"
-      },
-      "govee_diy_style_select": {
-        "name": "Estilo DIY"
       },
       "govee_hdmi_source_select": {
         "name": "Fuente HDMI"
@@ -195,6 +198,9 @@
       },
       "govee_nebula_light": {
         "name": "Luz nebulosa"
+      },
+      "govee_ripple_light": {
+        "name": "Luz ondulante"
       },
       "govee_side_light": {
         "name": "Luz lateral"
@@ -373,17 +379,33 @@
     }
   },
   "issues": {
-    "auth_failed": {
-      "title": "Falló la autenticación con Govee",
-      "description": "La clave de API de {entry_title} ya no es válida. La integración no podrá comunicarse con Govee hasta que vuelvas a autenticarte."
-    },
     "rate_limited": {
-      "title": "API de Govee limitada por frecuencia",
-      "description": "La API de Govee ha limitado la frecuencia de solicitudes para {entry_title}. El funcionamiento normal se reanudará en aproximadamente {reset_time}. Considera aumentar el intervalo de sondeo en las opciones de la integración para reducir las llamadas a la API."
+      "title": "API de Govee limitada por frecuencia para {entry_title}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Aumentar el intervalo de sondeo",
+            "description": "La API de Govee ha limitado las solicitudes para {entry_title}; el funcionamiento normal se reanudará en aproximadamente {reset_time}. El intervalo de sondeo es de {current} segundos. Al enviar, se fijará en {proposed} segundos y se recargará la integración para que se mantenga dentro del límite de solicitudes de Govee. Puedes cambiarlo de nuevo más tarde en Configurar."
+          }
+        },
+        "abort": {
+          "entry_not_found": "La entrada de Govee ya no existe."
+        }
+      }
     },
     "mqtt_disconnected": {
-      "title": "MQTT de Govee desconectado",
-      "description": "Las actualizaciones en tiempo real de {entry_title} no están disponibles. Motivo: {reason}. La integración seguirá funcionando mediante sondeo. Si el problema persiste, revisa las credenciales de tu cuenta de Govee."
+      "title": "Actualizaciones en tiempo real de Govee no disponibles para {entry_title}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Reintentar la conexión de la cuenta de Govee",
+            "description": "Las actualizaciones en tiempo real de {entry_title} no están disponibles ({reason}); todo sigue funcionando mediante sondeo. Al enviar, se borra el fallo de inicio de sesión guardado y se recarga la integración para que vuelva a iniciar sesión y se reconecte al canal en tiempo real de Govee. Si la cuenta ahora requiere verificación por correo electrónico o una contraseña nueva, otra reparación te pedirá que la reconfigures."
+          }
+        },
+        "abort": {
+          "entry_not_found": "La entrada de Govee ya no existe."
+        }
+      }
     },
     "mqtt_2fa_required": {
       "title": "La cuenta de Govee requiere verificación",

@@ -18,7 +18,6 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorStateClass,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     PERCENTAGE,
     EntityCategory,
@@ -30,15 +29,16 @@ from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api.probe_thermometer import PROBES
+from .api.probe_thermometer import probes_for_sku
 from .const import (
     CONF_API_TEMPERATURE_UNIT,
     DEFAULT_API_TEMPERATURE_UNIT,
     DOMAIN,
     GOVEE_DAILY_REQUEST_LIMIT,
+    HUB_DEVICE_IDENTIFIER,
     resolve_fahrenheit_conversion,
 )
-from .coordinator import GoveeCoordinator
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
 from .models import GoveeDevice, TransportHealth, TransportKind
 from .models.device import GoveeLeakSensor, leak_sensor_device_info
@@ -57,13 +57,14 @@ _LOGGER = logging.getLogger(__name__)
 PARALLEL_UPDATES = 0
 
 _PRIORITY_ORDER: tuple[TransportKind, ...] = ("ble", "lan", "mqtt", "cloud_api")
-_ICON_BY_VALUE: dict[str, str] = {
-    "lan": "mdi:lan",
-    "mqtt": "mdi:cloud-sync",
-    "cloud_api": "mdi:cloud",
-    "ble": "mdi:bluetooth",
-    "unavailable": "mdi:lan-pending",
-}
+
+# Device info shared by the hub-level diagnostic sensors.
+_HUB_DEVICE_INFO = DeviceInfo(
+    identifiers={(DOMAIN, HUB_DEVICE_IDENTIFIER)},
+    name="Govee Integration",
+    manufacturer="Govee",
+    model="Cloud API",
+)
 
 
 def _is_delivering(health: TransportHealth | None) -> bool:
@@ -78,7 +79,7 @@ def _is_delivering(health: TransportHealth | None) -> bool:
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee sensors from a config entry."""
@@ -116,13 +117,9 @@ async def async_setup_entry(
         # generic temperature sensor: one reading per probe and channel
         # cannot be expressed by a single sensorTemperature value.
         if device.is_probe_thermometer:
-            for probe in PROBES:
+            for probe in probes_for_sku(device.sku):
                 for channel in ("core", "ambient"):
-                    entities.append(
-                        GoveeProbeTemperatureSensor(
-                            coordinator, device, probe, channel
-                        )
-                    )
+                    entities.append(GoveeProbeTemperatureSensor(coordinator, device, probe, channel))
             continue
 
         if device.supports_temperature_sensor:
@@ -171,11 +168,7 @@ async def async_setup_entry(
         # standalone H5054 shares the leak SKUs but is never in it, and gets its
         # battery from the water-detector poll through this entity.
         state = coordinator.get_state(device.device_id)
-        if (
-            state is not None
-            and state.battery is not None
-            and not coordinator.is_bff_leak_sensor(device.device_id)
-        ):
+        if state is not None and state.battery is not None and not coordinator.is_bff_leak_sensor(device.device_id):
             entities.append(GoveeThermoBatterySensor(coordinator, device))
 
     # Register gateway hubs (leak + thermo) before async_add_entities so the
@@ -204,11 +197,11 @@ class GoveeRateLimitSensor(CoordinatorEntity["GoveeCoordinator"], SensorEntity):
     """
 
     _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
     _attr_translation_key = "rate_limit_remaining"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "requests"
-    _attr_icon = "mdi:speedometer"
 
     def __init__(
         self,
@@ -223,12 +216,7 @@ class GoveeRateLimitSensor(CoordinatorEntity["GoveeCoordinator"], SensorEntity):
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for the integration hub."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, "hub")},
-            name="Govee Integration",
-            manufacturer="Govee",
-            model="Cloud API",
-        )
+        return _HUB_DEVICE_INFO
 
     @property
     def native_value(self) -> int:
@@ -276,7 +264,6 @@ class GoveeMqttStatusSensor(CoordinatorEntity["GoveeCoordinator"], SensorEntity)
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["connected", "disconnected", "unavailable"]
-    _attr_icon = "mdi:cloud-sync"
 
     def __init__(
         self,
@@ -291,12 +278,7 @@ class GoveeMqttStatusSensor(CoordinatorEntity["GoveeCoordinator"], SensorEntity)
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for the integration hub."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, "hub")},
-            name="Govee Integration",
-            manufacturer="Govee",
-            model="Cloud API",
-        )
+        return _HUB_DEVICE_INFO
 
     @property
     def native_value(self) -> str:
@@ -315,10 +297,10 @@ class GoveeMqttLastReceivedSensor(CoordinatorEntity["GoveeCoordinator"], SensorE
     """
 
     _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
     _attr_translation_key = "mqtt_last_received"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_device_class = SensorDeviceClass.TIMESTAMP
-    _attr_icon = "mdi:cloud-sync-outline"
 
     def __init__(
         self,
@@ -332,12 +314,7 @@ class GoveeMqttLastReceivedSensor(CoordinatorEntity["GoveeCoordinator"], SensorE
     @property
     def device_info(self) -> DeviceInfo:
         """Return device info for the integration hub."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, "hub")},
-            name="Govee Integration",
-            manufacturer="Govee",
-            model="Cloud API",
-        )
+        return _HUB_DEVICE_INFO
 
     @property
     def native_value(self) -> datetime | None:
@@ -362,12 +339,8 @@ class _BffThermometerAvailabilityMixin(GoveeEntity):
         # online: false at poll time, same as the BFF thermometers — gate their
         # battery sensor on coordinator success, not online, or it would show
         # permanently unavailable (issues #97, #145).
-        if self.coordinator.is_bff_thermometer(
-            self._device_id
-        ) or self.coordinator.is_water_detector(self._device_id):
-            return self.coordinator.last_update_success and (
-                self.device_state is not None
-            )
+        if self.coordinator.is_bff_thermometer(self._device_id) or self.coordinator.is_water_detector(self._device_id):
+            return self.coordinator.last_update_success and (self.device_state is not None)
         return super().available
 
 
@@ -462,7 +435,6 @@ class GoveeDehumidifierModeSensor(GoveeEntity, SensorEntity):
     _attr_translation_key = "govee_dehumidifier_mode"
     _attr_device_class = SensorDeviceClass.ENUM
     _attr_options = ["pump", "tank"]
-    _attr_icon = "mdi:pump"
 
     def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
         """Initialize the dehumidifier-mode sensor."""
@@ -618,7 +590,6 @@ class GoveeFilterLifeSensor(GoveeEntity, SensorEntity):
     _attr_translation_key = "sensor_filter_life"
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = PERCENTAGE
-    _attr_icon = "mdi:air-filter"
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
@@ -725,10 +696,10 @@ class GoveeAllDataLastUpdatedSensor(GoveeEntity, SensorEntity):
     """
 
     _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
     _attr_translation_key = "all_data_last_updated"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:database-clock"
 
     def __init__(
         self,
@@ -752,10 +723,10 @@ class GoveeLastCommandSentSensor(GoveeEntity, SensorEntity):
     """
 
     _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
     _attr_translation_key = "last_command_sent"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:send-clock"
 
     def __init__(
         self,
@@ -782,10 +753,10 @@ class GoveeMqttLastReceivedPerDeviceSensor(GoveeEntity, SensorEntity):
     """
 
     _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
     _attr_translation_key = "mqtt_last_received_device"
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_entity_category = EntityCategory.DIAGNOSTIC
-    _attr_icon = "mdi:cloud-sync-outline"
 
     def __init__(
         self,
@@ -826,9 +797,7 @@ class GoveeConnectionModeSensor(GoveeEntity, SensorEntity):
         that need to look the transport back up keep the narrow type.
         """
         if self._device.is_group:
-            health = self.coordinator.get_transport_health(
-                self._device_id, "cloud_api"
-            )
+            health = self.coordinator.get_transport_health(self._device_id, "cloud_api")
             return "cloud_api" if _is_delivering(health) else None
 
         for kind in _PRIORITY_ORDER:
@@ -840,11 +809,6 @@ class GoveeConnectionModeSensor(GoveeEntity, SensorEntity):
     def native_value(self) -> str:
         """Return the current connection mode, or ``unavailable``."""
         return self._active_transport() or "unavailable"
-
-    @property
-    def icon(self) -> str:
-        """Return the icon for the current connection mode."""
-        return _ICON_BY_VALUE[self.native_value]
 
     @property
     def available(self) -> bool:
@@ -891,6 +855,7 @@ class GoveeLeakBatterySensor(SensorEntity):
     """
 
     _attr_has_entity_name = True
+    _attr_should_poll = False
     _attr_device_class = SensorDeviceClass.BATTERY
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = PERCENTAGE
@@ -912,11 +877,7 @@ class GoveeLeakBatterySensor(SensorEntity):
         return state.battery if state else None
 
     async def async_added_to_hass(self) -> None:
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update
-            )
-        )
+        self.async_on_remove(async_dispatcher_connect(self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update))
 
     @callback
     def _handle_leak_update(self) -> None:
@@ -927,6 +888,7 @@ class GoveeLeakLastWetSensor(SensorEntity):
     """Sensor showing when the last leak was detected."""
 
     _attr_has_entity_name = True
+    _attr_should_poll = False
     _attr_device_class = SensorDeviceClass.TIMESTAMP
     _attr_translation_key = "leak_last_wet"
 
@@ -947,11 +909,7 @@ class GoveeLeakLastWetSensor(SensorEntity):
         return None
 
     async def async_added_to_hass(self) -> None:
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update
-            )
-        )
+        self.async_on_remove(async_dispatcher_connect(self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update))
 
     @callback
     def _handle_leak_update(self) -> None:
@@ -962,9 +920,9 @@ class GoveeLeakAlertStatusSensor(SensorEntity):
     """Sensor showing leak alert acknowledgment status."""
 
     _attr_has_entity_name = True
+    _attr_should_poll = False
     _attr_device_class = SensorDeviceClass.ENUM
-    _attr_options = ["Pending", "Acknowledged"]
-    _attr_icon = "mdi:bell-alert"
+    _attr_options = ["pending", "acknowledged"]
     _attr_translation_key = "leak_alert_status"
 
     def __init__(self, coordinator: GoveeCoordinator, sensor: GoveeLeakSensor) -> None:
@@ -981,14 +939,10 @@ class GoveeLeakAlertStatusSensor(SensorEntity):
         state = self._coordinator.leak_states.get(self._sensor.device_id)
         if state is None:
             return None
-        return "Acknowledged" if state.read else "Pending"
+        return "acknowledged" if state.read else "pending"
 
     async def async_added_to_hass(self) -> None:
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update
-            )
-        )
+        self.async_on_remove(async_dispatcher_connect(self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update))
 
     @callback
     def _handle_leak_update(self) -> None:
@@ -1005,9 +959,10 @@ class GoveeLeakDeviceAddressSensor(SensorEntity):
     """
 
     _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
+    _attr_should_poll = False
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "ieee_address"
-    _attr_icon = "mdi:identifier"
 
     def __init__(self, sensor: GoveeLeakSensor) -> None:
         self._sensor = sensor
@@ -1023,9 +978,10 @@ class GoveeLeakHubAddressSensor(SensorEntity):
     """Diagnostic sensor exposing the hub's IEEE EUI-64 address."""
 
     _attr_has_entity_name = True
+    _attr_entity_registry_enabled_default = False
+    _attr_should_poll = False
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_translation_key = "ieee_address"
-    _attr_icon = "mdi:identifier"
 
     def __init__(self, hub_device_id: str) -> None:
         self._hub_device_id = hub_device_id

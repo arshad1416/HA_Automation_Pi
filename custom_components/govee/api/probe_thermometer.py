@@ -38,7 +38,13 @@ is carried as the sentinel, which the device both reports and accepts.
 Byte 11 of a ``0x12`` frame is a flag for whether the probe has any limit at
 all: ``0xFF`` when all four are unset, ``0xEE`` as soon as one is set. It does
 not encode which limit or how many — captured across all four states on an
-H5192 with firmware 1.00.81. Bytes 12-13 stayed ``FF FF`` throughout.
+H5192 with firmware 1.00.81. Bytes 12-13 stayed ``FF FF`` throughout. The
+``0xEE`` "any set" write confirmed unmodified on real H5194 hardware (issue
+#197 follow-up: a written limit round-tripped with byte 11 flipping to
+``0xEE`` exactly as on the H5192). The H5194's "none set" byte 11 differs at
+rest (``0x06`` rather than ``0xFF``) — but since ``decode_limits`` never reads
+byte 11, and only the H5192's ``0xFF`` is ever written by this module, that
+difference does not affect either a read or a write.
 
 All temperatures are signed int16, big-endian, in hundredths of a degree
 Celsius. ``0xFFFF`` is the "not present" sentinel, returned both by an unplugged
@@ -47,15 +53,22 @@ conversion, otherwise it would decode to -0.01 degC.
 
 Two inbound frame shapes carry readings:
 
-* ``cmd: "status"``, byte 1 ``0x0F`` — both probes, six values each. The device
-  sends this unprompted on power-on and when an app session opens; no request
-  was found that triggers it.
+* ``cmd: "status"``, byte 1 ``0x0F`` — every probe, six values each on a
+  16-byte stride starting at offset 10 (see ``_STATUS_PROBE_OFFSETS``). The
+  device sends this unprompted on power-on and when an app session opens; no
+  request was found that triggers it.
 * ``cmd: "ptReal"``, byte 1 ``0x24`` — one probe's core and ambient temperature
   plus a history buffer, newest first. Byte 0 is ``0x33`` when the device
   volunteers it and ``0xAA`` when it answers a read.
 
-Byte 0 of the status frame varies (``0x40``, ``0x42``, ``0x44``, ``0x45`` and
-``0x47`` all observed on one device), so **only byte 1 identifies a frame**.
+Byte 0 of the status frame varies (``0x40``, ``0x42``, ``0x44``, ``0x45``,
+``0x47`` and, on the 4-probe H5194, ``0x64`` all observed), so **only byte 1
+identifies a frame**. The H5194's status frame confirmed the stride holds for
+probes 3 and 4 too (offsets 42 and 58): a real capture with only probe 3
+seated read 24.00 degC in both the core and ambient slots at offset 42,
+matching that probe's live ``0x24`` reading at the same moment, with probes
+1/2/4 all-sentinel (issue #197 follow-up). That capture's header byte 7 (its
+probe count?) was ``0x04``, untested against an H5192's.
 
 The byte that looks like a battery percentage is a counter of buffered history
 points: it dropped from ``0x29`` to ``0x01`` on a probe swap while the battery
@@ -82,10 +95,27 @@ REGISTER_STATUS = 0x0F
 SENTINEL = 0xFFFF
 SCALE = 100.0
 
-PROBES = (1, 2)
+# Probe count by SKU. H5192 is 2-probe; H5194 is its 4-probe sibling on the
+# same transport, registers, and checksum (issue #197). ``PROBES`` stays the
+# union of every supported model — the decoders below use it only as a loose
+# validity bound on the probe number a frame claims, which is harmless to
+# leave wide. Entity creation and polling use :func:`probes_for_sku` instead,
+# so a 2-probe H5192 is never queried for, or given entities for, probes it
+# does not have.
+PROBE_COUNT_BY_SKU = {"H5192": 2, "H5194": 4}
+DEFAULT_PROBE_COUNT = 2
+PROBES = tuple(range(1, max(PROBE_COUNT_BY_SKU.values()) + 1))
 
-# Status frame (byte 1 == 0x0F): six int16 per probe, 16 bytes apart.
-_STATUS_PROBE_OFFSETS = {1: 10, 2: 26}
+
+def probes_for_sku(sku: str) -> tuple[int, ...]:
+    """Probe numbers (1-indexed) an SKU actually has."""
+    return tuple(range(1, PROBE_COUNT_BY_SKU.get(sku, DEFAULT_PROBE_COUNT) + 1))
+
+
+# Status frame (byte 1 == 0x0F): six int16 per probe, 16 bytes apart. Probes
+# 3 and 4 confirmed on a real H5194 capture (issue #197 follow-up); harmless
+# on a 2-probe H5192's shorter frame, since _read_temperature bounds-checks.
+_STATUS_PROBE_OFFSETS = {1: 10, 2: 26, 3: 42, 4: 58}
 _STATUS_FIELDS = (
     "core",
     "core_max",
@@ -165,10 +195,7 @@ def decode_status_frame(raw: bytes) -> dict[int, dict[str, float | None]] | None
 
     result: dict[int, dict[str, float | None]] = {}
     for probe, base in _STATUS_PROBE_OFFSETS.items():
-        result[probe] = {
-            field: _read_temperature(raw, base + 2 * index)
-            for index, field in enumerate(_STATUS_FIELDS)
-        }
+        result[probe] = {field: _read_temperature(raw, base + 2 * index) for index, field in enumerate(_STATUS_FIELDS)}
     return result
 
 
@@ -201,10 +228,7 @@ def decode_limits(raw: bytes) -> tuple[int, ProbeLimits] | None:
     if probe not in PROBES:
         return None
 
-    values = {
-        field: _read_temperature(raw, _LIMITS_FIRST + 2 * index)
-        for index, field in enumerate(_LIMITS_FIELDS)
-    }
+    values = {field: _read_temperature(raw, _LIMITS_FIRST + 2 * index) for index, field in enumerate(_LIMITS_FIELDS)}
     return probe, ProbeLimits(**values)
 
 

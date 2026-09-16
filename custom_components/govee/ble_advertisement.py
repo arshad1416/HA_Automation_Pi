@@ -155,9 +155,7 @@ class BleAdvertisementHandler:
             if address is None:
                 continue
             try:
-                info = bt_component.async_last_service_info(
-                    coord.hass, address, connectable=True
-                )
+                info = bt_component.async_last_service_info(coord.hass, address, connectable=True)
             except Exception as err:  # noqa: BLE001 — runs inside the poll
                 # Never let a Bluetooth hiccup fail the whole state refresh.
                 _LOGGER.debug("BLE cache lookup failed for %s: %s", address, err)
@@ -179,21 +177,17 @@ class BleAdvertisementHandler:
           1. Extract SKU from the advertising name.
           2. Find cloud devices with that SKU (ignoring group devices).
           3. If exactly one match → unambiguous correlation.
-          4. If multiple same-SKU → MAC-prefix tiebreaker.
+          4. If multiple same-SKU → MAC tiebreaker: the cloud ID's last six
+             octets are the BLE MAC (see ``ble_address_from_device_id``).
           5. If no match or ambiguous → skip.
         """
         coord = self._coord
-        from .models.state import GoveeDeviceState  # noqa — avoid module cycle
 
         ble_sku = sku_from_ble_name(service_info.name)
         if not ble_sku:
             return
 
-        candidates = [
-            (did, dev)
-            for did, dev in coord._devices.items()
-            if dev.sku == ble_sku and not dev.is_group
-        ]
+        candidates = [(did, dev) for did, dev in coord._devices.items() if dev.sku == ble_sku and not dev.is_group]
 
         matched_id: str | None = None
         if len(candidates) == 1:
@@ -201,7 +195,7 @@ class BleAdvertisementHandler:
         elif len(candidates) > 1:
             ble_mac = service_info.address.upper()
             for did, _dev in candidates:
-                if did.upper().startswith(ble_mac):
+                if ble_address_from_device_id(did) == ble_mac:
                     matched_id = did
                     break
 
@@ -222,6 +216,12 @@ class BleAdvertisementHandler:
                     ble_sku,
                 )
             return
+
+        # Only wake entities when something actually changed: advertisements
+        # arrive unthrottled (often every second per device), so notifying on
+        # each one would make every entity of every device write state per
+        # frame, and rescheduling the poll from here would starve it entirely.
+        changed = False
 
         # Don't enroll BLE without a connectable adapter (issue #59 follow-up).
         if matched_id not in coord._ble_devices:
@@ -244,11 +244,11 @@ class BleAdvertisementHandler:
                 service_info.device,
                 segmented=ble_sku in SEGMENTED_MODELS,
             )
+            changed = True
             _LOGGER.info(
-                "BLE transport available for %s (SKU=%s, BLE=%s)",
+                "BLE transport available for %s (SKU=%s)",
                 coord._devices[matched_id].name,
                 ble_sku,
-                service_info.address,
             )
         else:
             coord._ble_devices[matched_id].set_ble_device_and_advertisement_data(
@@ -265,15 +265,21 @@ class BleAdvertisementHandler:
         # change (audit H2).
         existing_state = coord._states.get(matched_id)
         if existing_state is not None and not existing_state.online:
-            _LOGGER.info(
+            _LOGGER.debug(
                 "BLE advertisement restored online status for %s (was offline per cloud)",
                 coord._devices[matched_id].name,
             )
             coord._states[matched_id] = dataclasses.replace(existing_state, online=True)
+            changed = True
 
+        if not changed:
+            return
+
+        # Notify listeners without touching the poll schedule
+        # (``async_set_updated_data`` would re-arm the refresh timer).
         # Guard for tests that instantiate the coordinator via object.__new__().
         try:
             if coord.data is not None:
-                coord.async_set_updated_data(coord._states)
+                coord.async_update_listeners()
         except AttributeError:
             pass

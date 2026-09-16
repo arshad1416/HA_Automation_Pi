@@ -1,81 +1,92 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
-        "title": "Govee API Key",
-        "description": "Enter your Govee Developer API key from {api_url}\n\nThis is NOT your Govee account password - it's a separate developer key.",
+        "title": "Govee API key",
+        "description": "Enter your Govee Developer API key from {api_url}.\n\nThis is not your Govee account password. It is a separate developer key.",
         "data": {
-          "api_key": "API Key"
+          "api_key": "API key"
         },
         "data_description": {
-          "api_key": "The API key from your Govee Developer account (a long string of letters and numbers)"
+          "api_key": "The API key from your Govee Developer account (a long string of letters and numbers)."
         }
       },
       "account": {
-        "title": "Govee Account (Optional)",
-        "description": "For real-time updates, enter your Govee mobile app credentials below.\n\n**Important:** Use the email and password from the Govee mobile app. The app password may be different from the Govee website password.\n\nTo skip this step, leave both fields empty and submit.",
+        "title": "Govee account (optional)",
+        "description": "For real-time updates, enter your Govee mobile app credentials below.\n\n**Important:** Use the email and password from the Govee mobile app. The app password may differ from the Govee website password.\n\nTo skip this step, leave both fields empty and submit.",
         "data": {
-          "email": "Govee App Email",
-          "password": "Govee App Password"
+          "email": "Govee app email",
+          "password": "Govee app password"
         },
         "data_description": {
-          "email": "The email address you use to sign into the Govee mobile app",
-          "password": "The password you use to sign into the Govee mobile app (not the website)"
+          "email": "The email address you use to sign in to the Govee mobile app.",
+          "password": "The password you use to sign in to the Govee mobile app (not the website)."
         }
       },
       "reauth_confirm": {
         "title": "Re-authenticate Govee",
-        "description": "Your API key is invalid. Please enter a new one.",
+        "description": "Your API key is no longer valid. Enter a new one.",
         "data": {
-          "api_key": "API Key"
+          "api_key": "API key"
+        },
+        "data_description": {
+          "api_key": "A current API key from the Govee Developer account this integration was set up with."
         }
       },
       "verification_code": {
-        "title": "Govee Verification Code",
+        "title": "Govee verification code",
         "description": "A verification code has been sent to **{email}**. Enter the code below. The code expires in approximately 15 minutes.",
         "data": {
           "verification_code": "Verification code"
         },
         "data_description": {
-          "verification_code": "Check your email for a code from Govee"
+          "verification_code": "Check your email for a code from Govee."
         }
       },
       "reconfigure": {
         "title": "Reconfigure Govee",
         "description": "Update your credentials. Current email: {current_email}",
         "data": {
-          "api_key": "API Key",
-          "email": "Govee App Email (optional)",
-          "password": "Govee App Password (optional)"
+          "api_key": "API key",
+          "email": "Govee app email (optional)",
+          "password": "Govee app password (optional)"
         },
         "data_description": {
-          "api_key": "Your Govee Developer API key from developer.govee.com",
-          "email": "Email for Govee mobile app (leave empty to remove MQTT)",
-          "password": "Password for Govee mobile app (leave empty to keep existing)"
+          "api_key": "Your Govee Developer API key from developer.govee.com.",
+          "email": "Email for the Govee mobile app. Leave empty to remove real-time updates.",
+          "password": "Password for the Govee mobile app. Leave empty to keep the existing password."
         }
+      },
+      "bluetooth_confirm": {
+        "title": "Govee device found nearby",
+        "description": "{name} was found over Bluetooth. Govee devices are controlled through your Govee cloud account, so the next step asks for your Govee API key."
       }
     },
     "error": {
-      "invalid_auth": "Invalid API key. Check that you're using the developer key from developer.govee.com, not your account password.",
-      "invalid_account": "Invalid Govee app credentials. Make sure you're using the password from the Govee mobile app (not the website).",
-      "invalid_api_key_format": "API key appears invalid. It should be a long string (36+ characters) from developer.govee.com.",
-      "invalid_email_format": "Please enter a valid email address.",
-      "password_without_email": "Please enter both email and password, or leave both empty to skip.",
-      "email_without_password": "Please enter both email and password, or leave both empty to skip.",
-      "cannot_connect": "Failed to connect to Govee API. Check your internet connection.",
-      "invalid_verification_code": "Invalid or expired verification code. Please check your email and try again.",
-      "login_rejected": "Govee rejected the login request. This may indicate a temporary server issue — please try again later.",
+      "invalid_auth": "Invalid API key. Check that you are using the developer key from developer.govee.com, not your account password.",
+      "invalid_account": "Invalid Govee app credentials. Make sure you are using the password from the Govee mobile app (not the website).",
+      "invalid_api_key_format": "The API key looks invalid. It should be a long string (36 or more characters) from developer.govee.com.",
+      "invalid_email_format": "Enter a valid email address.",
+      "password_without_email": "Enter both email and password, or leave both empty to skip.",
+      "email_without_password": "Enter both email and password, or leave both empty to skip.",
+      "cannot_connect": "Failed to connect to the Govee API. Check your internet connection.",
+      "invalid_verification_code": "Invalid or expired verification code. Check your email and try again.",
+      "login_rejected": "Govee rejected the login request. This may be a temporary server issue; try again later.",
       "unknown": "Unexpected error occurred"
     },
     "abort": {
+      "already_configured": "This Govee API key is already configured",
+      "missing_credentials": "The account email and password were not provided",
       "reauth_successful": "Re-authentication was successful",
-      "reconfigure_successful": "Reconfiguration was successful"
+      "reconfigure_successful": "Reconfiguration was successful",
+      "already_in_progress": "A Govee set-up is already in progress."
     }
   },
   "options": {
     "step": {
       "init": {
-        "title": "Govee Options",
+        "title": "Govee options",
         "description": "If you have RGBIC devices, per-device segment settings will appear after submitting.",
         "data": {
           "poll_interval": "Polling interval (seconds)",
@@ -87,52 +98,76 @@
           "enable_scenes": "Enable scene selector",
           "enable_diy_scenes": "Enable DIY scene selector",
           "expose_transport_entities": "Expose per-device transport connectivity sensors",
-          "enable_mqtt_control": "Send power/brightness/color over MQTT (faster, experimental)",
-          "lan_targets": "LAN device addresses / subnets (advanced)"
+          "enable_mqtt_control": "Send power, brightness, and color over MQTT (faster, experimental)",
+          "lan_targets": "LAN device addresses and subnets (advanced)"
         },
         "data_description": {
-          "api_temperature_unit": "Auto (default) converts known Fahrenheit-reporting thermometers (e.g. H5179, H5109, H5110, H5111, H5053, H5075, H5100) automatically. Choose Fahrenheit if another thermometer reads about 1.8× too high (e.g. 74 instead of 23), or Celsius to force no conversion. Govee's API omits unit metadata, so the value can't always be auto-detected.",
-          "water_detector_poll_interval": "How often standalone Govee water/leak detectors (e.g. H5054) are checked for a leak. These RF-only sensors have no push channel, so a leak surfaces with up to this much delay. Lower reacts faster but makes more account API calls; raise it if you have many detectors. Range 60–3600 seconds, default 120. Requires email/password login; ignored if you have no such detectors.",
-          "probe_poll_interval": "How often an armed probe (cooking) thermometer such as the H5192 is read over AWS IoT while its Live polling switch is on. These devices never volunteer a reading, so this interval is the update rate. Costs battery rather than API quota. Range 10–600 seconds, default 30. Requires email/password login.",
-          "mqtt_status_interval": "How often every MQTT-connected device is asked for its current status over AWS IoT. Devices are largely poll-triggered responders, not autonomous pushers — this mirrors what the Govee app itself does while its device list is on screen, so state keeps updating without the app open. Lower reacts faster but publishes more per device; raise it if you have many devices. Range 60–3600 seconds, default 300; set 0 to turn the re-query off and rely on what devices push on their own. Requires email/password login (MQTT credentials); ignored when MQTT is unavailable.",
-          "enable_groups": "Surfaces the device groups you created in the Govee app as single light entities. A command to a group is sent once and synced to all members by Govee's cloud, so it syncs better than grouping the lights with Home Assistant helpers. State is best-effort (groups can't be polled), and group lights only support power/brightness/color.",
-          "enable_mqtt_control": "Routes power/brightness/color commands through Govee's MQTT channel instead of the REST cloud API, reducing latency and bypassing REST rate limits. Requires email/password login (MQTT credentials). Falls back to REST automatically when MQTT is unavailable. Experimental — uses an undocumented channel; leave off if commands behave unexpectedly.",
-          "lan_targets": "Only needed when LAN-enabled Govee devices are on a different subnet/VLAN than Home Assistant, so the local discovery scan can't reach them. Enter a comma-separated list of device IPs (10.20.0.51), broadcast addresses (10.20.0.255), and/or subnets in CIDR (10.20.0.0/24, /24 or smaller). Subnets are scanned device-by-device since most routers drop cross-VLAN broadcasts. Leave blank if all devices share Home Assistant's network. Advanced: if a device still isn't found because its scan reply can't cross the VLAN, pin it with device_id=ip (AA:BB:CC:DD:EE:FF:00:11=10.20.0.51) to skip discovery for that device. Add a trailing ! (=10.20.0.51!) only for firmware that accepts LAN commands but never answers a status read — that turns off every LAN health check for the device, so a wrong IP will look like it is working while the device never responds."
+          "poll_interval": "How often every device is polled over the Govee cloud API for its state. Real-time updates over MQTT and LAN arrive between polls. Range 30 to 300 seconds, default 60. Each poll spends one request per device against Govee's limit of 100 per minute and 10,000 per day.",
+          "api_temperature_unit": "Auto (default) first uses the temperature unit your Govee account reports for the device, then falls back to converting the thermometers known to report Fahrenheit (for example H5179, H5109, H5110, H5111, H5053, H5075, H5100), and trusts the rest. Choose Fahrenheit if a reading still looks about 1.8 times too high (for example 74 instead of 23), or Celsius to force no conversion. Govee's API omits unit metadata, so the value cannot always be auto-detected.",
+          "water_detector_poll_interval": "How often standalone Govee water and leak detectors (for example H5054) are checked for a leak. These RF-only sensors have no push channel, so a leak surfaces with up to this much delay. Lower reacts faster but makes more account API calls; raise it if you have many detectors. Range 60 to 3600 seconds, default 120. Requires email and password login; ignored if you have no such detectors.",
+          "probe_poll_interval": "How often an armed probe (cooking) thermometer such as the H5192 is read over AWS IoT while its Live polling switch is on. These devices never volunteer a reading, so this interval is the update rate. Costs battery rather than API quota. Range 10 to 600 seconds, default 30. Requires email and password login.",
+          "mqtt_status_interval": "How often every MQTT-connected device is asked for its current status over AWS IoT. Devices are largely poll-triggered responders, not autonomous pushers; this mirrors what the Govee app itself does while its device list is on screen, so state keeps updating without the app open. Lower reacts faster but publishes more per device; raise it if you have many devices. Range 60 to 3600 seconds, default 300. Set 0 to turn the re-query off and rely on what devices push on their own. Queries go out one device per second; a device whose query makes AWS IoT close the session twice is left out until the next reload (a warning names it). Requires email and password login (MQTT credentials); ignored when MQTT is unavailable.",
+          "enable_groups": "Surfaces the device groups you created in the Govee app as single light entities. A command to a group is sent once and synced to all members by Govee's cloud, so it syncs better than grouping the lights with Home Assistant helpers. State is best-effort (groups cannot be polled), and group lights only support power, brightness, and color.",
+          "enable_scenes": "Creates a scene dropdown per device that has scenes, and exposes the scenes as light effects. Turn off to save one API request per device at startup.",
+          "enable_diy_scenes": "Creates a DIY scene dropdown per device that has DIY scenes created in the Govee app.",
+          "expose_transport_entities": "Adds one connectivity binary sensor per transport (cloud API, MQTT, Bluetooth, LAN) for every device. Off by default because it creates four extra diagnostic entities per device.",
+          "enable_mqtt_control": "Routes power, brightness, and color commands through Govee's MQTT channel instead of the REST cloud API, reducing latency and bypassing REST rate limits. Requires email and password login (MQTT credentials). Falls back to REST automatically when MQTT is unavailable. Experimental: it uses an undocumented channel, so leave it off if commands behave unexpectedly.",
+          "lan_targets": "Only needed when LAN-enabled Govee devices are on a different subnet or VLAN than Home Assistant, so the local discovery scan cannot reach them. Enter a comma-separated list of device IPs (10.20.0.51), broadcast addresses (10.20.0.255), and subnets in CIDR notation (10.20.0.0/24, /24 or smaller). Subnets are scanned device by device, since most routers drop cross-VLAN broadcasts. Leave blank if all devices share Home Assistant's network. Advanced: if a device still is not found because its scan reply cannot cross the VLAN, pin it with device_id=ip (AA:BB:CC:DD:EE:FF:00:11=10.20.0.51) to skip discovery for that device. Add a trailing ! (=10.20.0.51!) only for firmware that accepts LAN commands but never answers a status read. That turns off every LAN health check for the device, so a wrong IP will look like it is working while the device never responds. Enter off to turn LAN discovery and local control off entirely."
         }
       },
       "select_segment_devices": {
-        "title": "Select Segment Devices",
+        "title": "Select segment devices",
         "description": "Choose which RGBIC devices to configure segment modes for.",
         "data": {
           "devices": "Devices to configure"
+        },
+        "data_description": {
+          "devices": "Devices to set a segment mode for. Devices you leave out keep their current mode."
         }
       },
       "configure_device_mode": {
-        "title": "Segment Mode: {device_name}",
-        "description": "Choose how segments are created for **{device_name}** (`{device_id}`): **disabled** creates no segment entities, **grouped** creates a single entity for all segments, **individual** creates a separate entity per segment.",
+        "title": "Segment mode: {device_name}",
+        "description": "Choose how segments are created for **{device_name}** (`{device_id}`).",
         "data": {
           "segment_mode": "Segment mode"
+        },
+        "data_description": {
+          "segment_mode": "Disabled creates no segment entities, grouped creates one entity for all segments, individual creates one entity per segment, and both creates the grouped entity alongside the individual ones."
         }
       }
     },
     "error": {
       "invalid_lan_targets": "One of the LAN device addresses is not a valid IP, broadcast address, subnet (/24 or smaller), or device_id=ip override. Example: 10.20.0.51, 10.20.0.255, 10.20.0.0/24, AA:BB:CC:DD:EE:FF:00:11=10.20.0.51",
-      "unknown_lan_device": "A device_id=ip override names a device that isn't on this Govee account. Copy the device ID exactly as it appears in the device's diagnostics (for example AA:BB:CC:DD:EE:FF:00:11)."
+      "unknown_lan_device": "A device_id=ip override names a device that is not on this Govee account. Copy the device ID exactly as it appears in the device's diagnostics (for example AA:BB:CC:DD:EE:FF:00:11)."
+    }
+  },
+  "selector": {
+    "api_temperature_unit": {
+      "options": {
+        "auto": "Auto (convert known Fahrenheit-reporting models)",
+        "celsius": "Celsius (never convert)",
+        "fahrenheit": "Fahrenheit (always convert)"
+      }
+    },
+    "segment_mode": {
+      "options": {
+        "disabled": "Disabled (no segment entities)",
+        "grouped": "Grouped (one entity for all segments)",
+        "individual": "Individual (one entity per segment)",
+        "both": "Both (grouped and individual entities)"
+      }
     }
   },
   "entity": {
     "light": {
-      "govee_light": {
-        "name": "{device_name}"
-      },
       "govee_nightlight": {
-        "name": "Night Light"
+        "name": "Night light"
       },
       "govee_segment": {
-        "name": "{device_name} Segment {segment_index}"
+        "name": "Segment {segment_index}"
       },
       "govee_grouped_segment": {
-        "name": "{device_name} Segments"
+        "name": "Segments"
       },
       "govee_main_light_panel": {
         "name": "Main light"
@@ -152,7 +187,10 @@
         "name": "Probe {probe} ambient min"
       },
       "govee_music_sensitivity": {
-        "name": "Music Sensitivity"
+        "name": "Music sensitivity"
+      },
+      "govee_heater_temperature": {
+        "name": "Target temperature"
       }
     },
     "select": {
@@ -163,22 +201,25 @@
         "name": "Snapshot"
       },
       "govee_diy_scene_select": {
-        "name": "DIY Scene"
-      },
-      "govee_diy_style_select": {
-        "name": "DIY Style"
+        "name": "DIY scene"
       },
       "govee_hdmi_source_select": {
-        "name": "HDMI Source"
+        "name": "HDMI source"
       },
       "govee_music_mode_select": {
-        "name": "Music Mode"
+        "name": "Music mode"
+      },
+      "govee_fan_speed_select": {
+        "name": "Fan speed"
+      },
+      "govee_purifier_mode_select": {
+        "name": "Mode"
       },
       "govee_preset_scene_select": {
         "name": "Scene"
       },
       "govee_nightlight_scene_select": {
-        "name": "Night Light Scene"
+        "name": "Night light scene"
       }
     },
     "switch": {
@@ -186,43 +227,46 @@
         "name": "Live polling"
       },
       "govee_plug": {
-        "name": "{device_name}"
+        "name": "Plug"
       },
       "govee_night_light": {
-        "name": "Night Light"
+        "name": "Night light"
       },
       "govee_music_mode": {
-        "name": "Music Mode"
+        "name": "Music mode"
       },
       "govee_dreamview": {
         "name": "DreamView"
       },
       "govee_heater_auto_stop": {
-        "name": "Auto Stop"
+        "name": "Auto stop"
       },
       "govee_appliance_power": {
-        "name": "{device_name}"
+        "name": "Power"
       },
       "govee_light_zone": {
-        "name": "Light Zone {zone}"
+        "name": "Light zone {zone}"
       },
       "govee_socket": {
         "name": "Outlet {socket}"
       },
       "govee_main_light": {
-        "name": "Main Light"
+        "name": "Main light"
       },
       "govee_background_light": {
-        "name": "Background Light"
+        "name": "Background light"
       },
       "govee_nebula_light": {
-        "name": "Nebula Light"
+        "name": "Nebula light"
+      },
+      "govee_ripple_light": {
+        "name": "Ripple light"
       },
       "govee_side_light": {
-        "name": "Side Light"
+        "name": "Side light"
       },
       "govee_bottom_light": {
-        "name": "Bottom Light"
+        "name": "Bottom light"
       }
     },
     "sensor": {
@@ -233,13 +277,18 @@
         "name": "Probe {probe} ambient"
       },
       "rate_limit_remaining": {
-        "name": "API Rate Limit Remaining"
+        "name": "API rate limit remaining"
       },
       "mqtt_status": {
-        "name": "MQTT Status"
+        "name": "MQTT status",
+        "state": {
+          "connected": "Connected",
+          "disconnected": "Disconnected",
+          "unavailable": "Not configured"
+        }
       },
       "mqtt_last_received": {
-        "name": "Last MQTT Received"
+        "name": "Last MQTT received"
       },
       "sensor_temperature": {
         "name": "Temperature"
@@ -248,7 +297,7 @@
         "name": "Mode",
         "state": {
           "pump": "Pump",
-          "tank": "Water Tank"
+          "tank": "Water tank"
         }
       },
       "sensor_temperature_2": {
@@ -258,40 +307,44 @@
         "name": "Humidity"
       },
       "sensor_air_quality": {
-        "name": "Air Quality"
+        "name": "Air quality"
       },
       "sensor_co2": {
         "name": "CO2"
       },
       "sensor_filter_life": {
-        "name": "Filter Life"
+        "name": "Filter life"
       },
       "sensor_battery": {
         "name": "Battery"
       },
       "sensor_reading_changed": {
-        "name": "Last Changed"
+        "name": "Last changed"
       },
       "all_data_last_updated": {
-        "name": "Last Update Received"
+        "name": "Last update received"
       },
       "last_command_sent": {
-        "name": "Last Command Sent"
+        "name": "Last command sent"
       },
       "mqtt_last_received_device": {
-        "name": "Last MQTT Received"
+        "name": "Last MQTT received"
       },
       "leak_battery": {
         "name": "Battery"
       },
       "leak_last_wet": {
-        "name": "Last Leak Detected"
+        "name": "Last leak detected"
       },
       "leak_alert_status": {
-        "name": "Alert Status"
+        "name": "Alert status",
+        "state": {
+          "pending": "Pending",
+          "acknowledged": "Acknowledged"
+        }
       },
       "connection_mode": {
-        "name": "Connection Mode",
+        "name": "Connection mode",
         "state": {
           "lan": "LAN",
           "mqtt": "MQTT",
@@ -301,7 +354,7 @@
         }
       },
       "ieee_address": {
-        "name": "IEEE Address"
+        "name": "IEEE address"
       }
     },
     "binary_sensor": {
@@ -321,13 +374,13 @@
         "name": "LAN"
       },
       "govee_water_full": {
-        "name": "Water Tank Full"
+        "name": "Water tank full"
       },
       "govee_pump_state": {
-        "name": "Pump State"
+        "name": "Pump state"
       },
       "govee_water_leak": {
-        "name": "Water Leak"
+        "name": "Water leak"
       },
       "govee_occupancy": {
         "name": "Occupancy"
@@ -341,7 +394,7 @@
     },
     "fan": {
       "govee_fan": {
-        "name": "{device_name}",
+        "name": "Fan",
         "state_attributes": {
           "preset_mode": {
             "state": {
@@ -354,11 +407,14 @@
             }
           }
         }
+      },
+      "govee_ceiling_fan": {
+        "name": "Fan"
       }
     },
     "humidifier": {
       "govee_humidifier": {
-        "name": "{device_name}",
+        "name": "Humidifier",
         "state_attributes": {
           "mode": {
             "state": {
@@ -374,10 +430,10 @@
     },
     "button": {
       "refresh_scenes": {
-        "name": "Refresh Scenes"
+        "name": "Refresh scenes"
       },
       "clear_water_full": {
-        "name": "Clear Water Alert"
+        "name": "Clear water alert"
       }
     },
     "event": {
@@ -395,46 +451,88 @@
   },
   "services": {
     "refresh_scenes": {
-      "name": "Refresh Scenes",
-      "description": "Refresh available scenes from the Govee API",
+      "name": "Refresh scenes",
+      "description": "Refreshes the available scenes from the Govee API.",
       "fields": {
         "device_id": {
-          "name": "Device ID",
-          "description": "Specific device to refresh (optional)"
+          "name": "Device",
+          "description": "The device to refresh. Leave empty to refresh every device. Accepts a Home Assistant device or a Govee device ID."
         }
       }
     },
     "set_segment_color": {
-      "name": "Set Segment Color",
-      "description": "Set color for specific segments on RGBIC devices",
+      "name": "Set segment color",
+      "description": "Sets the color of specific segments on an RGBIC light.",
       "fields": {
         "device_id": {
-          "name": "Device ID",
-          "description": "Device ID of the RGBIC light"
+          "name": "Device",
+          "description": "The RGBIC light. Accepts a Home Assistant device or a Govee device ID."
         },
         "segments": {
           "name": "Segments",
-          "description": "List of segment indices (0-based)"
+          "description": "List of segment indices, starting at 0."
         },
         "rgb_color": {
-          "name": "RGB Color",
-          "description": "Color as [R, G, B] values"
+          "name": "RGB color",
+          "description": "Color as [R, G, B] values from 0 to 255."
         }
       }
     }
   },
-  "issues": {
-    "auth_failed": {
-      "title": "Govee authentication failed",
-      "description": "The API key for {entry_title} is no longer valid. The integration cannot communicate with Govee until you re-authenticate."
+  "exceptions": {
+    "command_failed": {
+      "message": "Govee did not accept the command for {device}. Check the device's connectivity and the API rate limit, then try again."
     },
+    "device_not_found": {
+      "message": "No loaded Govee device matches {device_id}."
+    },
+    "segment_out_of_range": {
+      "message": "Segment indices {indices} are out of range for {device}, which has {count} segments."
+    },
+    "not_loaded": {
+      "message": "The Govee integration is not loaded."
+    },
+    "unknown_option": {
+      "message": "{option} is not an option of {device}."
+    },
+    "unknown_effect": {
+      "message": "{effect} is not a scene of {device}."
+    },
+    "unsupported_mode": {
+      "message": "{device} does not support the {mode} mode."
+    },
+    "unsupported_target_humidity": {
+      "message": "{device} does not support a target humidity."
+    }
+  },
+  "issues": {
     "rate_limited": {
-      "title": "Govee API rate limited",
-      "description": "The Govee API has rate limited requests for {entry_title}. Normal operation will resume in approximately {reset_time}. Consider increasing the poll interval in the integration options to reduce API calls."
+      "title": "Govee API rate limited for {entry_title}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Raise the polling interval",
+            "description": "The Govee API has rate limited requests for {entry_title}; normal operation resumes in approximately {reset_time}. The polling interval is {current} seconds. Submitting sets it to {proposed} seconds and reloads the integration so it stays inside Govee's request budget. You can change it again later under Configure."
+          }
+        },
+        "abort": {
+          "entry_not_found": "The Govee entry no longer exists."
+        }
+      }
     },
     "mqtt_disconnected": {
-      "title": "Govee MQTT disconnected",
-      "description": "Real-time updates for {entry_title} are unavailable ({reason}). Everything keeps working over polling, and the integration keeps retrying the connection on its own — this clears itself when the connection comes back. If it stays open for more than a few minutes, reload the integration (Settings → Devices & services → Govee → ⋮ → Reload). If it comes straight back after a reload, use Reconfigure to refresh the account sign-in."
+      "title": "Govee real-time updates unavailable for {entry_title}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Retry the Govee account connection",
+            "description": "Real-time updates for {entry_title} are unavailable ({reason}); everything keeps working over polling. Submitting clears the stored sign-in failure and reloads the integration so it signs in and reconnects to Govee's real-time channel. If the account now needs email verification or a new password, a separate repair will ask you to reconfigure."
+          }
+        },
+        "abort": {
+          "entry_not_found": "The Govee entry no longer exists."
+        }
+      }
     },
     "mqtt_2fa_required": {
       "title": "Govee account requires verification",
@@ -442,7 +540,7 @@
     },
     "mqtt_token_expired": {
       "title": "Govee account sign-in expired",
-      "description": "The saved Govee account sign-in for {entry_title} has expired, and signing in again was rejected — usually because the account password changed.\n\nWhile it is expired, battery levels and readings for sensors that reach Govee through a gateway (for example an H5310 or H5112 behind an H5044) stop updating. Lights and everything using the API key are unaffected.\n\nGo to the integration page and select **Reconfigure** to enter the current account password."
+      "description": "The saved Govee account sign-in for {entry_title} has expired, and signing in again was rejected, usually because the account password changed.\n\nWhile it is expired, battery levels and readings for sensors that reach Govee through a gateway (for example an H5310 or H5112 behind an H5044) stop updating. Lights and everything using the API key are unaffected.\n\nGo to the integration page and select **Reconfigure** to enter the current account password."
     }
   }
 }

@@ -1,5 +1,6 @@
 {
   "config": {
+    "flow_title": "{name}",
     "step": {
       "user": {
         "title": "Clau de l'API de Govee",
@@ -53,6 +54,10 @@
           "email": "Correu de l'aplicació mòbil de Govee (deixa'l buit per desactivar MQTT)",
           "password": "Contrasenya de l'aplicació mòbil de Govee (deixa-la buida per conservar l'actual)"
         }
+      },
+      "bluetooth_confirm": {
+        "title": "S'ha trobat un dispositiu Govee a prop",
+        "description": "S'ha trobat {name} per Bluetooth. Els dispositius Govee es controlen mitjançant el teu compte al núvol de Govee, així que el pas següent demana la clau d'API de Govee."
       }
     },
     "error": {
@@ -69,7 +74,8 @@
     },
     "abort": {
       "reauth_successful": "La reautenticació ha estat correcta",
-      "reconfigure_successful": "La reconfiguració ha estat correcta"
+      "reconfigure_successful": "La reconfiguració ha estat correcta",
+      "already_in_progress": "Ja hi ha una configuració de Govee en curs."
     }
   },
   "options": {
@@ -89,11 +95,11 @@
           "lan_targets": "Adreces IP o subxarxes LAN dels dispositius (avançat)"
         },
         "data_description": {
-          "api_temperature_unit": "«Auto» (predeterminat) converteix automàticament els termòmetres coneguts que notifiquen en graus Fahrenheit (p. ex. H5179, H5109, H5111, H5075, H5100). Tria Fahrenheit si un altre termòmetre marca aproximadament 1,8× més del que toca (p. ex. 74 en lloc de 23), o Celsius per forçar la no conversió. L'API de Govee omet les metadades d'unitat, de manera que el valor no sempre es pot autodetectar.",
+          "api_temperature_unit": "Auto (per defecte) utilitza primer la unitat de temperatura que el teu compte de Govee indica per al dispositiu, després converteix els termòmetres coneguts per informar en Fahrenheit (per exemple H5179, H5109, H5110, H5111, H5053, H5075, H5100) i confia en la resta. Tria Fahrenheit si una lectura encara sembla aproximadament 1,8 vegades massa alta (per exemple 74 en lloc de 23), o Celsius per no convertir mai. L'API de Govee no inclou la unitat, així que no sempre es pot detectar automàticament.",
           "water_detector_poll_interval": "Cada quan es consulten els detectors d'aigua o fuites autònoms de Govee (p. ex. H5054) per comprovar si hi ha una fuita. Aquests sensors, que només utilitzen RF, no tenen canal d'enviament, de manera que una fuita pot trigar fins a aquest interval a aparèixer. Un valor més baix reacciona més ràpid, però fa més crides a l'API del compte; apuja'l si tens molts detectors. Rang: 60–3600 segons, valor predeterminat: 120. Requereix inici de sessió amb correu i contrasenya; s'ignora si no tens detectors d'aquest tipus.",
           "enable_groups": "Mostra els grups de dispositius que has creat a l'aplicació de Govee com a entitats de llum úniques. Una ordre a un grup s'envia una sola vegada i el núvol de Govee la sincronitza amb tots els membres, de manera que es sincronitza millor que agrupar les llums amb helpers de Home Assistant. L'estat és aproximat (els grups no es poden sondejar) i les llums en grup només admeten encesa, brillantor i color.",
           "enable_mqtt_control": "Envia les ordres d'encesa, brillantor i color pel canal MQTT de Govee en lloc de l'API REST al núvol, cosa que redueix la latència i evita els límits de freqüència de REST. Requereix inici de sessió amb correu i contrasenya (credencials MQTT). Si MQTT no està disponible, torna automàticament a REST. Experimental: utilitza un canal no documentat; desactiva'l si les ordres es comporten de manera inesperada.",
-          "lan_targets": "Només cal quan els dispositius Govee compatibles amb LAN estan en una subxarxa o VLAN diferent de la de Home Assistant, de manera que l'escaneig de descoberta local no hi arriba. Introdueix una llista separada per comes amb adreces IP de dispositius (10.20.0.51), adreces de difusió (10.20.0.255) o subxarxes en CIDR (10.20.0.0/24, /24 o més específic). Les subxarxes s'escanegen dispositiu per dispositiu, ja que la majoria dels encaminadors descarten els broadcasts entre VLAN. Deixa-ho en blanc si tots els dispositius comparteixen la xarxa de Home Assistant. Avançat: si un dispositiu segueix sense trobar-se perquè la seva resposta d'escaneig no pot creuar la VLAN, fixa'l amb device_id=ip (AA:BB:CC:DD:EE:FF:00:11=10.20.0.51) per ometre el descobriment per a aquest dispositiu. Afegeix un ! al final (=10.20.0.51!) només per a firmware que accepta ordres LAN però mai respon a una lectura d'estat — això desactiva totes les comprovacions d'estat LAN del dispositiu, de manera que una IP incorrecta semblarà que funciona mentre el dispositiu mai respon."
+          "lan_targets": "Només cal quan els dispositius Govee compatibles amb LAN estan en una subxarxa o VLAN diferent de la de Home Assistant, de manera que l'escaneig de descoberta local no hi arriba. Introdueix una llista separada per comes amb adreces IP de dispositius (10.20.0.51), adreces de difusió (10.20.0.255) o subxarxes en CIDR (10.20.0.0/24, /24 o més específic). Les subxarxes s'escanegen dispositiu per dispositiu, ja que la majoria dels encaminadors descarten els broadcasts entre VLAN. Deixa-ho en blanc si tots els dispositius comparteixen la xarxa de Home Assistant. Avançat: si un dispositiu segueix sense trobar-se perquè la seva resposta d'escaneig no pot creuar la VLAN, fixa'l amb device_id=ip (AA:BB:CC:DD:EE:FF:00:11=10.20.0.51) per ometre el descobriment per a aquest dispositiu. Afegeix un ! al final (=10.20.0.51!) només per a firmware que accepta ordres LAN però mai respon a una lectura d'estat — això desactiva totes les comprovacions d'estat LAN del dispositiu, de manera que una IP incorrecta semblarà que funciona mentre el dispositiu mai respon. Introdueix off per desactivar completament la descoberta LAN i el control local."
         }
       },
       "select_segment_devices": {
@@ -101,6 +107,9 @@
         "description": "Tria per a quins dispositius RGBIC vols configurar els modes de segment.",
         "data": {
           "devices": "Dispositius a configurar"
+        },
+        "data_description": {
+          "devices": "Dispositius per als quals establir un mode de segments. Els que no seleccionis conserven el mode actual."
         }
       },
       "configure_device_mode": {
@@ -118,14 +127,11 @@
   },
   "entity": {
     "light": {
-      "govee_light": {
-        "name": "{device_name}"
-      },
       "govee_nightlight": {
         "name": "Llum nocturna"
       },
       "govee_segment": {
-        "name": "Segment {segment_index} de {device_name}"
+        "name": "Segment {segment_index}"
       },
       "govee_grouped_segment": {
         "name": "Segments de {device_name}"
@@ -145,9 +151,6 @@
       },
       "govee_diy_scene_select": {
         "name": "Escena DIY"
-      },
-      "govee_diy_style_select": {
-        "name": "Estil DIY"
       },
       "govee_hdmi_source_select": {
         "name": "Font HDMI"
@@ -195,6 +198,9 @@
       },
       "govee_nebula_light": {
         "name": "Llum nebulosa"
+      },
+      "govee_ripple_light": {
+        "name": "Llum ondulant"
       },
       "govee_side_light": {
         "name": "Llum lateral"
@@ -373,17 +379,33 @@
     }
   },
   "issues": {
-    "auth_failed": {
-      "title": "Ha fallat l'autenticació amb Govee",
-      "description": "La clau d'API de {entry_title} ja no és vàlida. La integració no podrà comunicar-se amb Govee fins que tornis a autenticar-te."
-    },
     "rate_limited": {
-      "title": "API de Govee limitada per freqüència",
-      "description": "L'API de Govee ha limitat la freqüència de sol·licituds per a {entry_title}. El funcionament normal es reprendrà aproximadament a {reset_time}. Considera augmentar l'interval de sondeig a les opcions de la integració per reduir les crides a l'API."
+      "title": "API de Govee limitada per freqüència per a {entry_title}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Augmenta l'interval de sondeig",
+            "description": "L'API de Govee ha limitat les sol·licituds per a {entry_title}; el funcionament normal es reprendrà en aproximadament {reset_time}. L'interval de sondeig és de {current} segons. En enviar, es fixarà a {proposed} segons i es recarregarà la integració perquè es mantingui dins del límit de sol·licituds de Govee. Pots tornar-lo a canviar més tard a Configura."
+          }
+        },
+        "abort": {
+          "entry_not_found": "L'entrada de Govee ja no existeix."
+        }
+      }
     },
     "mqtt_disconnected": {
-      "title": "MQTT de Govee desconnectat",
-      "description": "Les actualitzacions en temps real de {entry_title} no estan disponibles. Motiu: {reason}. La integració continuarà funcionant mitjançant sondeig. Si el problema persisteix, revisa les credencials del teu compte de Govee."
+      "title": "Actualitzacions en temps real de Govee no disponibles per a {entry_title}",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Torna a provar la connexió del compte de Govee",
+            "description": "Les actualitzacions en temps real de {entry_title} no estan disponibles ({reason}); tot continua funcionant mitjançant sondeig. En enviar, s'esborra l'error d'inici de sessió desat i es recarrega la integració perquè torni a iniciar sessió i es reconnecti al canal en temps real de Govee. Si el compte ara requereix verificació per correu electrònic o una contrasenya nova, una altra reparació et demanarà que reconfiguris."
+          }
+        },
+        "abort": {
+          "entry_not_found": "L'entrada de Govee ja no existeix."
+        }
+      }
     },
     "mqtt_2fa_required": {
       "title": "El compte de Govee requereix verificació",

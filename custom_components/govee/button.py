@@ -11,13 +11,12 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import SUFFIX_REFRESH_SCENES
-from .coordinator import GoveeCoordinator
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
 from .models import GoveeDevice
 
@@ -28,7 +27,7 @@ PARALLEL_UPDATES = 0
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee buttons from a config entry."""
@@ -57,7 +56,6 @@ class GoveeRefreshScenesButton(GoveeEntity, ButtonEntity):
 
     _attr_entity_category = EntityCategory.CONFIG
     _attr_translation_key = "refresh_scenes"
-    _attr_icon = "mdi:refresh"
 
     def __init__(
         self,
@@ -68,7 +66,6 @@ class GoveeRefreshScenesButton(GoveeEntity, ButtonEntity):
         super().__init__(coordinator, device)
 
         self._attr_unique_id = f"{device.device_id}{SUFFIX_REFRESH_SCENES}"
-        self._attr_name = "Refresh Scenes"
 
     async def async_press(self) -> None:
         """Handle the button press - refresh scenes."""
@@ -80,7 +77,7 @@ class GoveeRefreshScenesButton(GoveeEntity, ButtonEntity):
             refresh=True,
         )
 
-        _LOGGER.info("Scenes refreshed for %s", self._device.name)
+        _LOGGER.debug("Scenes refreshed for %s", self._device.name)
 
 
 class GoveeClearWaterFullButton(GoveeEntity, ButtonEntity):
@@ -94,7 +91,6 @@ class GoveeClearWaterFullButton(GoveeEntity, ButtonEntity):
     """
 
     _attr_translation_key = "clear_water_full"
-    _attr_icon = "mdi:water-check"
 
     def __init__(
         self,

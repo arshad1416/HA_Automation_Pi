@@ -18,9 +18,7 @@ class GoveeApiError(Exception):
 class GoveeAuthError(GoveeApiError):
     """Authentication failed - invalid API key or credentials."""
 
-    def __init__(
-        self, message: str = "Invalid API key", code: int | None = None
-    ) -> None:
+    def __init__(self, message: str = "Invalid API key", code: int | None = None) -> None:
         super().__init__(message, code=code if code is not None else 401)
 
 

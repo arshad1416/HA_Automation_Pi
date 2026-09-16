@@ -9,22 +9,24 @@ from __future__ import annotations
 import logging
 
 from homeassistant.components.event import EventDeviceClass, EventEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.dispatcher import async_dispatcher_connect
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
-from .coordinator import GoveeCoordinator
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .models.device import GoveeLeakSensor, leak_sensor_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
+# Push-only entities: the coordinator's dispatcher signal drives updates.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee event entities from a config entry."""
@@ -51,6 +53,7 @@ class GoveeLeakButtonEvent(EventEntity):
     """
 
     _attr_has_entity_name = True
+    _attr_should_poll = False
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["press"]
     _attr_translation_key = "leak_button"
@@ -72,11 +75,7 @@ class GoveeLeakButtonEvent(EventEntity):
 
     async def async_added_to_hass(self) -> None:
         """Subscribe to leak-specific dispatcher signal."""
-        self.async_on_remove(
-            async_dispatcher_connect(
-                self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update
-            )
-        )
+        self.async_on_remove(async_dispatcher_connect(self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update))
 
     @callback
     def _handle_leak_update(self) -> None:

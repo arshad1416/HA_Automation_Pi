@@ -13,17 +13,14 @@ from homeassistant.components.number import (
     NumberEntity,
     NumberMode,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .api.probe_thermometer import PROBES
-from .const import DOMAIN, SUFFIX_HEATER_TEMPERATURE, SUFFIX_MUSIC_SENSITIVITY
-from .coordinator import GoveeCoordinator
+from .api.probe_thermometer import probes_for_sku
+from .const import SUFFIX_HEATER_TEMPERATURE, SUFFIX_MUSIC_SENSITIVITY
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
 from .models import GoveeDevice, MusicModeCommand, TemperatureSettingCommand
 
@@ -34,7 +31,7 @@ PARALLEL_UPDATES = 0
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee number entities from a config entry."""
@@ -45,16 +42,14 @@ async def async_setup_entry(
     for device in coordinator.devices.values():
         # Probe thermometer alarm limits: four per probe.
         if device.is_probe_thermometer:
-            for probe in PROBES:
+            for probe in probes_for_sku(device.sku):
                 for limit in (
                     "core_max",
                     "core_min",
                     "ambient_max",
                     "ambient_min",
                 ):
-                    entities.append(
-                        GoveeProbeLimitNumber(coordinator, device, probe, limit)
-                    )
+                    entities.append(GoveeProbeLimitNumber(coordinator, device, probe, limit))
             continue
 
         # Music sensitivity control for devices with STRUCT-based music mode
@@ -135,9 +130,7 @@ class GoveeProbeLimitNumber(GoveeEntity, NumberEntity):
     @property
     def available(self) -> bool:
         """Available as soon as the coordinator holds state for the device."""
-        return self.coordinator.last_update_success and (
-            self.device_state is not None
-        )
+        return self.coordinator.last_update_success and (self.device_state is not None)
 
     @property
     def native_value(self) -> float | None:
@@ -152,17 +145,12 @@ class GoveeProbeLimitNumber(GoveeEntity, NumberEntity):
         return float(value) if value is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
-        """Write the limit to the device."""
-        await self.coordinator.async_set_probe_limits(
-            self._device_id, self._probe, **{self._limit: value}
-        )
+        """Write the limit to the device; raise if the frame did not go out."""
+        if not await self.coordinator.async_set_probe_limits(self._device_id, self._probe, **{self._limit: value}):
+            raise self._command_failed()
 
 
-class GoveeMusicSensitivityNumber(
-    CoordinatorEntity["GoveeCoordinator"],
-    RestoreEntity,
-    NumberEntity,
-):
+class GoveeMusicSensitivityNumber(GoveeEntity, RestoreEntity, NumberEntity):
     """Govee music sensitivity control entity.
 
     Controls the microphone sensitivity for music reactive modes (0-100).
@@ -175,9 +163,8 @@ class GoveeMusicSensitivityNumber(
     since the API doesn't return the current sensitivity value.
     """
 
-    _attr_has_entity_name = True
     _attr_translation_key = "govee_music_sensitivity"
-    _attr_icon = "mdi:microphone"
+    _attr_entity_category = EntityCategory.CONFIG
     _attr_mode = NumberMode.SLIDER
 
     def __init__(
@@ -193,10 +180,7 @@ class GoveeMusicSensitivityNumber(
             device: Device this entity controls.
             sensitivity_range: Optional (min, max) sensitivity range.
         """
-        super().__init__(coordinator)
-
-        self._device = device
-        self._device_id = device.device_id
+        super().__init__(coordinator, device)
 
         # Set sensitivity range (default 0-100)
         min_sens, max_sens = sensitivity_range or (0, 100)
@@ -207,27 +191,6 @@ class GoveeMusicSensitivityNumber(
 
         # Unique ID
         self._attr_unique_id = f"{device.device_id}{SUFFIX_MUSIC_SENSITIVITY}"
-
-        # Entity name
-        self._attr_name = "Music Sensitivity"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._device.device_id)},
-            name=self._device.name,
-            manufacturer="Govee",
-            model=self._device.sku,
-        )
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        state = self.coordinator.get_state(self._device_id)
-        if state is None:
-            return False
-        return state.online or self._device.is_group
 
     async def async_added_to_hass(self) -> None:
         """Restore state when entity is added to Home Assistant."""
@@ -275,39 +238,24 @@ class GoveeMusicSensitivityNumber(
         if state and state.music_mode_value is not None and (not valid_modes or state.music_mode_value in valid_modes):
             music_mode = state.music_mode_value
 
-        command = MusicModeCommand(
-            music_mode=music_mode,
-            sensitivity=sensitivity,
-            auto_color=1,  # Use automatic colors
+        await self._async_send_command(
+            MusicModeCommand(
+                music_mode=music_mode,
+                sensitivity=sensitivity,
+                auto_color=1,  # Use automatic colors
+            )
+        )
+        self._attr_native_value = float(sensitivity)
+        self.async_write_ha_state()
+        _LOGGER.debug(
+            "Set music sensitivity to %d (mode=%d) on %s",
+            sensitivity,
+            music_mode,
+            self._device.name,
         )
 
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
 
-        if success:
-            self._attr_native_value = float(sensitivity)
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set music sensitivity to %d (mode=%d) on %s",
-                sensitivity,
-                music_mode,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set music sensitivity to %d on %s",
-                sensitivity,
-                self._device.name,
-            )
-
-
-class GoveeHeaterTemperatureNumber(
-    CoordinatorEntity["GoveeCoordinator"],
-    RestoreEntity,
-    NumberEntity,
-):
+class GoveeHeaterTemperatureNumber(GoveeEntity, RestoreEntity, NumberEntity):
     """Govee heater temperature control entity.
 
     Controls the target temperature for heater devices (typically 16-35°C).
@@ -315,11 +263,10 @@ class GoveeHeaterTemperatureNumber(
     since the API may not reliably return the current temperature target.
     """
 
-    _attr_has_entity_name = True
     _attr_translation_key = "govee_heater_temperature"
-    _attr_icon = "mdi:thermometer"
+    _attr_device_class = NumberDeviceClass.TEMPERATURE
     _attr_mode = NumberMode.SLIDER
-    _attr_native_unit_of_measurement = "°C"
+    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
 
     def __init__(
         self,
@@ -334,10 +281,7 @@ class GoveeHeaterTemperatureNumber(
             device: Device this entity controls.
             temp_range: Optional (min, max) temperature range in Celsius.
         """
-        super().__init__(coordinator)
-
-        self._device = device
-        self._device_id = device.device_id
+        super().__init__(coordinator, device)
 
         # Set temperature range (default 16-35°C)
         min_temp, max_temp = temp_range or (16, 35)
@@ -348,27 +292,6 @@ class GoveeHeaterTemperatureNumber(
 
         # Unique ID
         self._attr_unique_id = f"{device.device_id}{SUFFIX_HEATER_TEMPERATURE}"
-
-        # Entity name
-        self._attr_name = "Target Temperature"
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        """Return device information."""
-        return DeviceInfo(
-            identifiers={(DOMAIN, self._device.device_id)},
-            name=self._device.name,
-            manufacturer="Govee",
-            model=self._device.sku,
-        )
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available."""
-        state = self.coordinator.get_state(self._device_id)
-        if state is None:
-            return False
-        return state.online
 
     async def async_added_to_hass(self) -> None:
         """Restore state when entity is added to Home Assistant."""
@@ -405,27 +328,11 @@ class GoveeHeaterTemperatureNumber(
         if state and state.heater_auto_stop is not None:
             auto_stop = state.heater_auto_stop
 
-        command = TemperatureSettingCommand(
-            temperature=temperature,
-            auto_stop=auto_stop,
+        await self._async_send_command(TemperatureSettingCommand(temperature=temperature, auto_stop=auto_stop))
+        self._attr_native_value = float(temperature)
+        self.async_write_ha_state()
+        _LOGGER.debug(
+            "Set heater temperature to %d°C on %s",
+            temperature,
+            self._device.name,
         )
-
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
-
-        if success:
-            self._attr_native_value = float(temperature)
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set heater temperature to %d°C on %s",
-                temperature,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set heater temperature to %d°C on %s",
-                temperature,
-                self._device.name,
-            )

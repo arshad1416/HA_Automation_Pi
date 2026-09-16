@@ -1,7 +1,6 @@
 """Govee REST API client with automatic retry support.
 
 Uses aiohttp-retry for exponential backoff on transient failures.
-Implements IApiClient protocol.
 """
 
 from __future__ import annotations
@@ -15,6 +14,7 @@ from typing import TYPE_CHECKING, Any
 
 import aiohttp
 from aiohttp_retry import ExponentialRetry, RetryClient
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from ..models.device import GoveeDevice
 from ..models.state import GoveeDeviceState
@@ -55,6 +55,11 @@ RETRY_FACTOR = 2.0  # Exponential factor
 # Retryable server error status codes
 RETRY_STATUSES = {500, 502, 503, 504}
 
+# Per-request deadline. Home Assistant's shared session has no default
+# timeout, so without this a stalled connection would hold a service call for
+# aiohttp's default of five minutes.
+REQUEST_TIMEOUT = aiohttp.ClientTimeout(total=30)
+
 # Ring-buffer size for the control-command history kept for diagnostics.
 COMMAND_BUFFER_SIZE = 30
 
@@ -94,8 +99,6 @@ class GoveeApiClient:
         self._retry_client: RetryClient | None = None
 
         if session is None and hass is not None:
-            from homeassistant.helpers.aiohttp_client import async_get_clientsession
-
             self._session = async_get_clientsession(hass)
             self._owns_session = False
 
@@ -306,9 +309,9 @@ class GoveeApiClient:
 
         try:
             data: dict[str, Any] = await response.json()
-        except aiohttp.ContentTypeError:
+        except aiohttp.ContentTypeError as err:
             text = await response.text()
-            raise GoveeApiError(f"Invalid JSON response: {text[:200]}")
+            raise GoveeApiError(f"Invalid JSON response: {text[:200]}") from err
 
         # Check HTTP status
         if response.status == 401:
@@ -361,6 +364,7 @@ class GoveeApiClient:
             async with client.get(
                 ENDPOINT_DEVICES,
                 headers=self._get_headers(),
+                timeout=REQUEST_TIMEOUT,
             ) as response:
                 data = await self._handle_response(response)
 
@@ -415,6 +419,7 @@ class GoveeApiClient:
             async with client.post(
                 ENDPOINT_STATE,
                 headers=self._get_headers(),
+                timeout=REQUEST_TIMEOUT,
                 json=payload,
             ) as response:
                 data = await self._handle_response(response)
@@ -428,8 +433,7 @@ class GoveeApiClient:
                 # shows whether the developer device-state endpoint ever returns
                 # the bodyAppearedEvent trip — earlier dumps showed only `online`.
                 if any(
-                    cap.get("type") == "devices.capabilities.event"
-                    for cap in payload_data.get("capabilities", [])
+                    cap.get("type") == "devices.capabilities.event" for cap in payload_data.get("capabilities", [])
                 ):
                     _LOGGER.debug(
                         "Event-sensor poll for %s (%s) raw=%s",
@@ -566,6 +570,7 @@ class GoveeApiClient:
             async with client.post(
                 ENDPOINT_CONTROL,
                 headers=self._get_headers(),
+                timeout=REQUEST_TIMEOUT,
                 json=payload,
             ) as response:
                 record["http_status"] = response.status
@@ -630,6 +635,7 @@ class GoveeApiClient:
             async with client.post(
                 ENDPOINT_SCENES,
                 headers=self._get_headers(),
+                timeout=REQUEST_TIMEOUT,
                 json=payload,
             ) as response:
                 data = await self._handle_response(response)
@@ -683,6 +689,7 @@ class GoveeApiClient:
             async with client.post(
                 ENDPOINT_DIY_SCENES,
                 headers=self._get_headers(),
+                timeout=REQUEST_TIMEOUT,
                 json=payload,
             ) as response:
                 data = await self._handle_response(response)

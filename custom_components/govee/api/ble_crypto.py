@@ -96,9 +96,7 @@ class GoveeBLESession:
         """Encrypt one plaintext command frame for transmission."""
         self._tx_counter += 1
         counter = _counter_bytes(self._tx_counter)
-        sealed = AESGCM(self.device_key).encrypt(
-            self.tx_iv_key + counter, frame, counter
-        )
+        sealed = AESGCM(self.device_key).encrypt(self.tx_iv_key + counter, frame, counter)
         return counter + sealed
 
     def unwrap(self, packet: bytes) -> bytes:
@@ -108,11 +106,7 @@ class GoveeBLESession:
         decrypted without tracking receive state.
         """
         counter = packet[:_COUNTER_LEN]
-        return bytes(
-            AESGCM(self.device_key).decrypt(
-                self.rx_iv_key + counter, packet[_COUNTER_LEN:], counter
-            )
-        )
+        return bytes(AESGCM(self.device_key).decrypt(self.rx_iv_key + counter, packet[_COUNTER_LEN:], counter))
 
 
 def parse_handshake_response(response: bytes, handshake_key: bytes) -> tuple[bytes, bytes]:
@@ -170,9 +164,7 @@ async def async_supports_encryption(client: BleakClient) -> bool:
         _LOGGER.debug("No BLE version characteristic on %s", client.address)
         return False
     info = await client.read_gatt_char(VERSION_CHARACTERISTIC_UUID)
-    return (
-        len(info) > _VERSION_BYTE_INDEX and info[_VERSION_BYTE_INDEX] == _PROTOCOL_V2
-    )
+    return len(info) > _VERSION_BYTE_INDEX and info[_VERSION_BYTE_INDEX] == _PROTOCOL_V2
 
 
 async def async_establish_session(
@@ -217,9 +209,7 @@ async def async_establish_session(
     try:
         iv = os.urandom(_IV_LEN)
         tx_iv_key = os.urandom(_IV_KEY_LEN)
-        await client.write_gatt_char(
-            write_uuid, build_handshake_request(iv, tx_iv_key), response=False
-        )
+        await client.write_gatt_char(write_uuid, build_handshake_request(iv, tx_iv_key), response=False)
 
         async with asyncio.timeout(timeout):
             response = await reply

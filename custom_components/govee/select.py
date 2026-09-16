@@ -10,18 +10,17 @@ import logging
 from typing import Any
 
 from homeassistant.components.select import SelectEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .api.ble_packet import DIY_STYLE_NAMES
 from .const import (
     CONF_ENABLE_DIY_SCENES,
     CONF_ENABLE_SCENES,
     DEFAULT_ENABLE_DIY_SCENES,
     DEFAULT_ENABLE_SCENES,
+    DOMAIN,
     SUFFIX_DIY_SCENE_SELECT,
-    SUFFIX_DIY_STYLE_SELECT,
     SUFFIX_HDMI_SOURCE_SELECT,
     SUFFIX_HEATER_FAN_SPEED,
     SUFFIX_MUSIC_MODE_SELECT,
@@ -31,7 +30,7 @@ from .const import (
     SUFFIX_SCENE_SELECT,
     SUFFIX_SNAPSHOT_SELECT,
 )
-from .coordinator import GoveeCoordinator
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
 from .models import (
     GoveeDevice,
@@ -48,9 +47,6 @@ from .models.device import (
     INSTANCE_PURIFIER_MODE,
 )
 
-# DIY Style options for select entity
-DIY_STYLE_OPTIONS = list(DIY_STYLE_NAMES.keys())
-
 _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
@@ -59,9 +55,21 @@ PARALLEL_UPDATES = 0
 SCENE_NONE = "None"
 
 
+class _GoveeSelectBase(GoveeEntity, SelectEntity):
+    """Shared behaviour for the Govee select entities."""
+
+    def _unknown_option(self, option: str) -> ServiceValidationError:
+        """Error for an option that is not in this entity's option list."""
+        return ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="unknown_option",
+            translation_placeholders={"option": option, "device": self._device.name},
+        )
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee scene selects from a config entry."""
@@ -71,9 +79,7 @@ async def async_setup_entry(
 
     # Check if scenes are enabled
     enable_scenes = entry.options.get(CONF_ENABLE_SCENES, DEFAULT_ENABLE_SCENES)
-    enable_diy_scenes = entry.options.get(
-        CONF_ENABLE_DIY_SCENES, DEFAULT_ENABLE_DIY_SCENES
-    )
+    enable_diy_scenes = entry.options.get(CONF_ENABLE_DIY_SCENES, DEFAULT_ENABLE_DIY_SCENES)
 
     _LOGGER.debug(
         "Scene entity setup: enable_scenes=%s enable_diy_scenes=%s",
@@ -95,8 +101,7 @@ async def async_setup_entry(
         # via the API - they only support basic power/brightness/color control
         if device.is_group:
             _LOGGER.debug(
-                "Skipping scene/DIY/music entities for group device %s "
-                "(groups don't support these features)",
+                "Skipping scene/DIY/music entities for group device %s " "(groups don't support these features)",
                 device.name,
             )
             continue
@@ -133,8 +138,7 @@ async def async_setup_entry(
                     len(snapshot_options),
                 )
 
-        # DIY scenes and DIY style selector
-        # Availability gated on MQTT at runtime (no REST endpoint for DIY)
+        # DIY scenes (REST first, BLE passthrough fallback)
         if enable_diy_scenes and device.supports_diy_scenes:
             diy_scenes = await coordinator.async_get_diy_scenes(device.device_id)
             _LOGGER.debug("Fetched %d DIY scenes for %s", len(diy_scenes), device.name)
@@ -147,15 +151,6 @@ async def async_setup_entry(
                     )
                 )
                 _LOGGER.debug("Created DIY scene select entity for %s", device.name)
-
-            # DIY style selector - availability gated on MQTT at runtime
-            entities.append(
-                GoveeDIYStyleSelectEntity(
-                    coordinator=coordinator,
-                    device=device,
-                )
-            )
-            _LOGGER.debug("Created DIY style select entity for %s", device.name)
 
         # HDMI source selector (for devices like AI Sync Box H6604)
         if device.supports_hdmi_source:
@@ -260,7 +255,7 @@ async def async_setup_entry(
     _LOGGER.debug("Set up %d Govee scene select entities", len(entities))
 
 
-class GoveeSceneSelectEntity(GoveeEntity, SelectEntity):
+class GoveeSceneSelectEntity(_GoveeSelectBase):
     """Govee scene select entity.
 
     Provides a dropdown to select and activate scenes on a device.
@@ -271,7 +266,6 @@ class GoveeSceneSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_scene_select"
-    _attr_icon = "mdi:palette"
 
     def __init__(
         self,
@@ -342,38 +336,16 @@ class GoveeSceneSelectEntity(GoveeEntity, SelectEntity):
 
         scene_info = self._scene_map.get(option)
         if not scene_info:
-            _LOGGER.warning("Unknown scene option: %s", option)
-            return
+            raise self._unknown_option(option)
 
         scene_id, scene_name = scene_info
-
-        command = SceneCommand(
-            scene_id=scene_id,
-            scene_name=scene_name,
-        )
-
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
-
-        if success:
-            # State update with mutual exclusion is handled in coordinator
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Activated scene '%s' on %s",
-                scene_name,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to activate scene '%s' on %s",
-                scene_name,
-                self._device.name,
-            )
+        await self._async_send_command(SceneCommand(scene_id=scene_id, scene_name=scene_name))
+        # State update with mutual exclusion is handled in coordinator
+        self.async_write_ha_state()
+        _LOGGER.debug("Activated scene '%s' on %s", scene_name, self._device.name)
 
 
-class GoveeDIYSceneSelectEntity(GoveeEntity, SelectEntity):
+class GoveeDIYSceneSelectEntity(_GoveeSelectBase):
     """Govee DIY scene select entity.
 
     Provides a dropdown to select and activate DIY scenes on a device.
@@ -384,7 +356,6 @@ class GoveeDIYSceneSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_diy_scene_select"
-    _attr_icon = "mdi:palette-advanced"
 
     def __init__(
         self,
@@ -461,135 +432,20 @@ class GoveeDIYSceneSelectEntity(GoveeEntity, SelectEntity):
 
         scene_info = self._scene_map.get(option)
         if not scene_info:
-            _LOGGER.warning("Unknown DIY scene option: %s", option)
-            return
+            raise self._unknown_option(option)
 
         scene_id, scene_name = scene_info
-
-        success = await self.coordinator.async_send_diy_scene(
+        if not await self.coordinator.async_send_diy_scene(
             self._device_id,
             scene_id=scene_id,
             scene_name=scene_name,
-        )
-
-        if success:
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Activated DIY scene '%s' on %s",
-                scene_name,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to activate DIY scene '%s' on %s",
-                scene_name,
-                self._device.name,
-            )
+        ):
+            raise self._command_failed()
+        self.async_write_ha_state()
+        _LOGGER.debug("Activated DIY scene '%s' on %s", scene_name, self._device.name)
 
 
-class GoveeDIYStyleSelectEntity(GoveeEntity, SelectEntity):
-    """Govee DIY style select entity.
-
-    Provides a dropdown to select the animation style for DIY scenes.
-    Requires MQTT connection for BLE passthrough commands.
-
-    This entity is critical for the DIY speed slider to work correctly:
-    the speed command must include the correct style byte, which is
-    tracked when this selector is used.
-    """
-
-    _attr_translation_key = "govee_diy_style_select"
-    _attr_icon = "mdi:animation-play"
-    _attr_entity_registry_enabled_default = False
-
-    def __init__(
-        self,
-        coordinator: GoveeCoordinator,
-        device: GoveeDevice,
-    ) -> None:
-        """Initialize the DIY style select entity.
-
-        Args:
-            coordinator: Govee data coordinator.
-            device: Device this select belongs to.
-        """
-        super().__init__(coordinator, device)
-
-        # Available style options
-        self._attr_options = DIY_STYLE_OPTIONS
-        self._attr_current_option = DIY_STYLE_OPTIONS[0]  # Default to Fade
-
-        # Unique ID
-        self._attr_unique_id = f"{device.device_id}{SUFFIX_DIY_STYLE_SELECT}"
-
-    async def async_added_to_hass(self) -> None:
-        """Initialize default DIY style in coordinator state when added to HA."""
-        await super().async_added_to_hass()
-
-        # Initialize the style value in state if not already set
-        # This ensures speed commands work even before user interacts with style selector
-        state = self.coordinator.get_state(self._device_id)
-        if state and state.diy_style_value is None:
-            # Set default style value (Fade = 0)
-            state.diy_style = DIY_STYLE_OPTIONS[0]
-            state.diy_style_value = DIY_STYLE_NAMES[DIY_STYLE_OPTIONS[0]]
-            _LOGGER.debug(
-                "Initialized DIY style for %s: %s (value=%d)",
-                self._device.name,
-                state.diy_style,
-                state.diy_style_value,
-            )
-
-    @property
-    def available(self) -> bool:
-        """Return True if entity is available.
-
-        Requires MQTT connection for BLE passthrough.
-        """
-        if not self.coordinator.mqtt_connected:
-            return False
-        return super().available
-
-    @property
-    def current_option(self) -> str | None:
-        """Return current selected option from state."""
-        state = self.coordinator.get_state(self._device_id)
-        if state and state.diy_style:
-            return state.diy_style
-        return self._attr_current_option
-
-    async def async_select_option(self, option: str) -> None:
-        """Handle style selection."""
-        if option not in DIY_STYLE_OPTIONS:
-            _LOGGER.warning("Unknown DIY style option: %s", option)
-            return
-
-        # Use default speed of 50 for DIY style animations
-        speed = 50
-
-        success = await self.coordinator.async_send_diy_style(
-            self._device_id,
-            option,
-            speed,
-        )
-
-        if success:
-            self._attr_current_option = option
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set DIY style '%s' on %s",
-                option,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set DIY style '%s' on %s",
-                option,
-                self._device.name,
-            )
-
-
-class GoveeHdmiSourceSelectEntity(GoveeEntity, SelectEntity):
+class GoveeHdmiSourceSelectEntity(_GoveeSelectBase):
     """Govee HDMI source select entity.
 
     Provides a dropdown to select HDMI input source on devices like
@@ -597,7 +453,6 @@ class GoveeHdmiSourceSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_hdmi_source_select"
-    _attr_icon = "mdi:hdmi-port"
 
     def __init__(
         self,
@@ -646,36 +501,14 @@ class GoveeHdmiSourceSelectEntity(GoveeEntity, SelectEntity):
         """Handle HDMI source selection."""
         value = self._option_map.get(option)
         if value is None:
-            _LOGGER.warning("Unknown HDMI source option: %s", option)
-            return
+            raise self._unknown_option(option)
 
-        command = ModeCommand(
-            mode_instance=INSTANCE_HDMI_SOURCE,
-            value=value,
-        )
-
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
-
-        if success:
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set HDMI source '%s' (value=%d) on %s",
-                option,
-                value,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set HDMI source '%s' on %s",
-                option,
-                self._device.name,
-            )
+        await self._async_send_command(ModeCommand(mode_instance=INSTANCE_HDMI_SOURCE, value=value))
+        self.async_write_ha_state()
+        _LOGGER.debug("Set HDMI source '%s' (value=%d) on %s", option, value, self._device.name)
 
 
-class GoveeNightlightSceneSelectEntity(GoveeEntity, SelectEntity):
+class GoveeNightlightSceneSelectEntity(_GoveeSelectBase):
     """Govee nightlight scene select entity (issue #114).
 
     Dropdown of the named ``nightlightScene`` modes (e.g. Forest, Ocean) on
@@ -684,7 +517,6 @@ class GoveeNightlightSceneSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_nightlight_scene_select"
-    _attr_icon = "mdi:weather-night"
 
     def __init__(
         self,
@@ -705,9 +537,7 @@ class GoveeNightlightSceneSelectEntity(GoveeEntity, SelectEntity):
                 option_names.append(name)
 
         self._attr_options = option_names
-        self._attr_unique_id = (
-            f"{device.device_id}{SUFFIX_NIGHTLIGHT_SCENE_SELECT}"
-        )
+        self._attr_unique_id = f"{device.device_id}{SUFFIX_NIGHTLIGHT_SCENE_SELECT}"
 
     @property
     def current_option(self) -> str | None:
@@ -723,21 +553,13 @@ class GoveeNightlightSceneSelectEntity(GoveeEntity, SelectEntity):
         """Handle nightlight scene selection."""
         value = self._option_map.get(option)
         if value is None:
-            _LOGGER.warning("Unknown nightlight scene option: %s", option)
-            return
+            raise self._unknown_option(option)
 
-        success = await self.coordinator.async_control_device(
-            self._device_id,
+        await self._async_send_command(
             ModeCommand(mode_instance=INSTANCE_NIGHTLIGHT_SCENE, value=value),
         )
-        if success:
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set nightlight scene '%s' (value=%d) on %s",
-                option,
-                value,
-                self._device.name,
-            )
+        self.async_write_ha_state()
+        _LOGGER.debug("Set nightlight scene '%s' (value=%d) on %s", option, value, self._device.name)
 
 
 def _snapshot_id(value: Any) -> int | None:
@@ -754,7 +576,7 @@ def _snapshot_id(value: Any) -> int | None:
         return None
 
 
-class GoveeSnapshotSelectEntity(GoveeEntity, SelectEntity):
+class GoveeSnapshotSelectEntity(_GoveeSelectBase):
     """Govee snapshot select entity (issue #114).
 
     Dropdown of saved device "snapshots" (e.g. the H1310's "Ambient Light w/
@@ -764,7 +586,6 @@ class GoveeSnapshotSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_snapshot_select"
-    _attr_icon = "mdi:camera-iris"
 
     def __init__(
         self,
@@ -800,25 +621,18 @@ class GoveeSnapshotSelectEntity(GoveeEntity, SelectEntity):
     async def async_select_option(self, option: str) -> None:
         """Recall the selected snapshot."""
         if option not in self._option_map:
-            _LOGGER.warning("Unknown snapshot option: %s", option)
-            return
+            raise self._unknown_option(option)
 
         value = self._option_map[option]
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            SnapshotCommand(snapshot_value=value),
-        )
-        if success:
-            state = self.coordinator.get_state(self._device_id)
-            if state is not None:
-                state.active_snapshot = _snapshot_id(value)
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Recalled snapshot '%s' on %s", option, self._device.name
-            )
+        await self._async_send_command(SnapshotCommand(snapshot_value=value))
+        state = self.coordinator.get_state(self._device_id)
+        if state is not None:
+            state.active_snapshot = _snapshot_id(value)
+        self.async_write_ha_state()
+        _LOGGER.debug("Recalled snapshot '%s' on %s", option, self._device.name)
 
 
-class GoveeMusicModeSelectEntity(GoveeEntity, SelectEntity):
+class GoveeMusicModeSelectEntity(_GoveeSelectBase):
     """Govee music mode select entity.
 
     Provides a dropdown to select music reactive mode on devices with
@@ -840,7 +654,6 @@ class GoveeMusicModeSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_music_mode_select"
-    _attr_icon = "mdi:music"
 
     def __init__(
         self,
@@ -888,8 +701,7 @@ class GoveeMusicModeSelectEntity(GoveeEntity, SelectEntity):
         """Handle music mode selection."""
         value = self._option_map.get(option)
         if value is None:
-            _LOGGER.warning("Unknown music mode option: %s", option)
-            return
+            raise self._unknown_option(option)
 
         # Get current sensitivity from state, default to 50
         state = self.coordinator.get_state(self._device_id)
@@ -897,35 +709,24 @@ class GoveeMusicModeSelectEntity(GoveeEntity, SelectEntity):
         if state and state.music_sensitivity is not None:
             sensitivity = state.music_sensitivity
 
-        command = MusicModeCommand(
-            music_mode=value,
-            sensitivity=sensitivity,
-            auto_color=1,  # Use automatic colors
+        await self._async_send_command(
+            MusicModeCommand(
+                music_mode=value,
+                sensitivity=sensitivity,
+                auto_color=1,  # Use automatic colors
+            )
+        )
+        self.async_write_ha_state()
+        _LOGGER.debug(
+            "Set music mode '%s' (value=%d, sensitivity=%d) on %s",
+            option,
+            value,
+            sensitivity,
+            self._device.name,
         )
 
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
 
-        if success:
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set music mode '%s' (value=%d, sensitivity=%d) on %s",
-                option,
-                value,
-                sensitivity,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set music mode '%s' on %s",
-                option,
-                self._device.name,
-            )
-
-
-class GoveeFanSpeedSelectEntity(GoveeEntity, SelectEntity):
+class GoveeFanSpeedSelectEntity(_GoveeSelectBase):
     """Govee heater fan speed select entity.
 
     Provides a dropdown to select fan speed mode on heater devices
@@ -933,7 +734,6 @@ class GoveeFanSpeedSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_fan_speed_select"
-    _attr_icon = "mdi:fan"
 
     def __init__(
         self,
@@ -988,38 +788,21 @@ class GoveeFanSpeedSelectEntity(GoveeEntity, SelectEntity):
         """Handle fan speed selection."""
         values = self._option_map.get(option)
         if values is None:
-            _LOGGER.warning("Unknown fan speed option: %s", option)
-            return
+            raise self._unknown_option(option)
 
         work_mode, mode_value = values
-        command = WorkModeCommand(
-            work_mode=work_mode,
-            mode_value=mode_value,
+        await self._async_send_command(WorkModeCommand(work_mode=work_mode, mode_value=mode_value))
+        self.async_write_ha_state()
+        _LOGGER.debug(
+            "Set fan speed '%s' (work_mode=%d, mode_value=%d) on %s",
+            option,
+            work_mode,
+            mode_value,
+            self._device.name,
         )
 
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
 
-        if success:
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set fan speed '%s' (work_mode=%d, mode_value=%d) on %s",
-                option,
-                work_mode,
-                mode_value,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set fan speed '%s' on %s",
-                option,
-                self._device.name,
-            )
-
-
-class GoveePurifierModeSelectEntity(GoveeEntity, SelectEntity):
+class GoveePurifierModeSelectEntity(_GoveeSelectBase):
     """Govee air purifier mode select entity.
 
     Provides a dropdown to select purifier mode on air purifier devices
@@ -1027,7 +810,6 @@ class GoveePurifierModeSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_purifier_mode_select"
-    _attr_icon = "mdi:air-purifier"
 
     def __init__(
         self,
@@ -1076,36 +858,14 @@ class GoveePurifierModeSelectEntity(GoveeEntity, SelectEntity):
         """Handle purifier mode selection."""
         value = self._option_map.get(option)
         if value is None:
-            _LOGGER.warning("Unknown purifier mode option: %s", option)
-            return
+            raise self._unknown_option(option)
 
-        command = ModeCommand(
-            mode_instance=INSTANCE_PURIFIER_MODE,
-            value=value,
-        )
-
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
-
-        if success:
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set purifier mode '%s' (value=%d) on %s",
-                option,
-                value,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set purifier mode '%s' on %s",
-                option,
-                self._device.name,
-            )
+        await self._async_send_command(ModeCommand(mode_instance=INSTANCE_PURIFIER_MODE, value=value))
+        self.async_write_ha_state()
+        _LOGGER.debug("Set purifier mode '%s' (value=%d) on %s", option, value, self._device.name)
 
 
-class GoveePresetSceneSelectEntity(GoveeEntity, SelectEntity):
+class GoveePresetSceneSelectEntity(_GoveeSelectBase):
     """Govee aroma diffuser preset scene select entity (H7161, issue #99).
 
     Provides a dropdown of the diffuser's named light+mist scenes (e.g. Bach,
@@ -1116,7 +876,6 @@ class GoveePresetSceneSelectEntity(GoveeEntity, SelectEntity):
     """
 
     _attr_translation_key = "govee_preset_scene_select"
-    _attr_icon = "mdi:scent"
 
     def __init__(
         self,
@@ -1163,30 +922,8 @@ class GoveePresetSceneSelectEntity(GoveeEntity, SelectEntity):
         """Handle preset scene selection."""
         value = self._option_map.get(option)
         if value is None:
-            _LOGGER.warning("Unknown preset scene option: %s", option)
-            return
+            raise self._unknown_option(option)
 
-        command = ModeCommand(
-            mode_instance=INSTANCE_PRESET_SCENE,
-            value=value,
-        )
-
-        success = await self.coordinator.async_control_device(
-            self._device_id,
-            command,
-        )
-
-        if success:
-            self.async_write_ha_state()
-            _LOGGER.debug(
-                "Set preset scene '%s' (value=%d) on %s",
-                option,
-                value,
-                self._device.name,
-            )
-        else:
-            _LOGGER.warning(
-                "Failed to set preset scene '%s' on %s",
-                option,
-                self._device.name,
-            )
+        await self._async_send_command(ModeCommand(mode_instance=INSTANCE_PRESET_SCENE, value=value))
+        self.async_write_ha_state()
+        _LOGGER.debug("Set preset scene '%s' (value=%d) on %s", option, value, self._device.name)

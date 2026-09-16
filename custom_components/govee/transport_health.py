@@ -44,9 +44,7 @@ class TransportHealthTracker:
         """Initialize transport-health entries for a device if missing."""
         if device_id in self._health:
             return
-        self._health[device_id] = {
-            kind: TransportHealth(transport=kind) for kind in TRANSPORT_KINDS
-        }
+        self._health[device_id] = {kind: TransportHealth(transport=kind) for kind in TRANSPORT_KINDS}
 
     def get(self, device_id: str, transport: TransportKind) -> TransportHealth | None:
         """Return health for (device, transport), or None if untracked."""
@@ -65,14 +63,10 @@ class TransportHealthTracker:
         self.ensure(device_id)
         self._health[device_id][transport].mark_send(datetime.now(timezone.utc))
 
-    def record_failure(
-        self, device_id: str, transport: TransportKind, reason: str
-    ) -> None:
+    def record_failure(self, device_id: str, transport: TransportKind, reason: str) -> None:
         """Stamp a failed transport use."""
         self.ensure(device_id)
-        self._health[device_id][transport].mark_failure(
-            datetime.now(timezone.utc), reason
-        )
+        self._health[device_id][transport].mark_failure(datetime.now(timezone.utc), reason)
 
     def refresh_mqtt_for_devices(
         self,

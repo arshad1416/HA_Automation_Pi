@@ -85,9 +85,7 @@ BLE_DISCOVERY_NAMES: tuple[str, ...] = ("Govee_", "ihoment_", "GBK_")
 # H1270 is not in that reference list but requires the segmented encoding:
 # field testing showed it silently discards the single-zone frame (the colour
 # read-back stays black) and only acts on mode 0x15.
-SEGMENTED_MODELS: frozenset[str] = frozenset(
-    {"H6053", "H6072", "H6102", "H6199", "H1270"}
-)
+SEGMENTED_MODELS: frozenset[str] = frozenset({"H6053", "H6072", "H6102", "H6199", "H1270"})
 
 # SKUs with verified BLE command support. BLE command dispatch is only
 # attempted for devices on this list — advertising over BLE is not
@@ -314,9 +312,7 @@ class GoveeBLEDevice:
         """
         self._ble_device = ble_device
 
-    def register_callback(
-        self, callback: Callable[[GoveeBLEState], None]
-    ) -> Callable[[], None]:
+    def register_callback(self, callback: Callable[[GoveeBLEState], None]) -> Callable[[], None]:
         """Register a state-change callback.
 
         Returns an unsubscribe callable (idempotent). The HA entity subscribes
@@ -343,8 +339,14 @@ class GoveeBLEDevice:
     # Connection management
     # ------------------------------------------------------------------ #
 
-    def _on_disconnected(self, _client: BleakClient) -> None:
-        """Callback fired by bleak when the GATT link drops."""
+    def _on_disconnected(self, client: BleakClient) -> None:
+        """Callback fired by bleak when the GATT link drops.
+
+        A late callback from a superseded client must not wipe the connection
+        that replaced it, so only the current client's drop is honoured.
+        """
+        if self._client is not None and client is not self._client:
+            return
         self._client = None
         # Frame counters restart at 1 on the next connection, so reusing this
         # session would encrypt with nonces the device has already seen.
@@ -416,9 +418,7 @@ class GoveeBLEDevice:
             client = await self._ensure_connected()
             if self._session is not None:
                 frame = self._session.wrap(frame)
-            await client.write_gatt_char(
-                WRITE_CHARACTERISTIC_UUID, frame, response=False
-            )
+            await client.write_gatt_char(WRITE_CHARACTERISTIC_UUID, frame, response=False)
 
     # ------------------------------------------------------------------ #
     # High-level command API

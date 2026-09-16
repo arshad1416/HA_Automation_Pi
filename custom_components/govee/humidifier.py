@@ -37,12 +37,13 @@ from homeassistant.components.humidifier import (
     HumidifierEntity,
 )
 from homeassistant.components.humidifier.const import HumidifierEntityFeature
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import ServiceValidationError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from .coordinator import GoveeCoordinator
+from .const import DOMAIN
+from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
 from .models import GoveeDevice, PowerCommand, RangeCommand, WorkModeCommand
 from .models.device import INSTANCE_HUMIDITY
@@ -77,7 +78,7 @@ _MODE_ALIASES: dict[str, tuple[str, int]] = {
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: GoveeConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Govee humidifier entities from a config entry."""
@@ -113,9 +114,7 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
         self._attr_name = None  # use device name (has_entity_name = True)
 
         self._attr_device_class = (
-            HumidifierDeviceClass.DEHUMIDIFIER
-            if device.is_dehumidifier
-            else HumidifierDeviceClass.HUMIDIFIER
+            HumidifierDeviceClass.DEHUMIDIFIER if device.is_dehumidifier else HumidifierDeviceClass.HUMIDIFIER
         )
 
         min_h, max_h = device.get_humidity_range()
@@ -180,9 +179,7 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
 
         # Final mode list, ordered for a consistent UI.
         ordered = [MODE_LOW, MODE_MEDIUM, MODE_HIGH, MODE_AUTO, MODE_DRYER]
-        self._attr_available_modes = [
-            m for m in ordered if m in self._mode_to_work_mode
-        ]
+        self._attr_available_modes = [m for m in ordered if m in self._mode_to_work_mode]
 
     async def async_added_to_hass(self) -> None:
         """Restore the last user-set target humidity on startup."""
@@ -220,9 +217,7 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
         if ha_mode is None:
             # gearMode — disambiguate by mode_value.
             for name, gear_val in self._gear_mode_values.items():
-                if state.mode_value == gear_val and (
-                    self._mode_to_work_mode.get(name) == state.work_mode
-                ):
+                if state.mode_value == gear_val and (self._mode_to_work_mode.get(name) == state.work_mode):
                     return name
         return ha_mode
 
@@ -266,21 +261,21 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Turn the humidifier on."""
-        await self.coordinator.async_control_device(
-            self._device_id, PowerCommand(power_on=True)
-        )
+        await self._async_send_command(PowerCommand(power_on=True))
 
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the humidifier off."""
-        await self.coordinator.async_control_device(
-            self._device_id, PowerCommand(power_on=False)
-        )
+        await self._async_send_command(PowerCommand(power_on=False))
 
     async def async_set_mode(self, mode: str) -> None:
         """Set the operating mode."""
         work_mode = self._mode_to_work_mode.get(mode)
         if work_mode is None:
-            raise ValueError(f"Unsupported mode for {self._device.sku}: {mode}")
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="unsupported_mode",
+                translation_placeholders={"device": self._device.name, "mode": mode},
+            )
 
         if mode == MODE_AUTO:
             # Preserve the current target humidity if one was set; fall back
@@ -295,8 +290,7 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
         else:
             mode_value = self._mode_to_mode_value.get(mode, 0)
 
-        await self.coordinator.async_control_device(
-            self._device_id,
+        await self._async_send_command(
             WorkModeCommand(work_mode=work_mode, mode_value=int(mode_value)),
         )
 
@@ -322,16 +316,17 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
         clamped = max(self._attr_min_humidity, min(self._attr_max_humidity, humidity))
 
         if not self._auto_modevalue_is_setpoint and self._has_humidity_range:
-            await self.coordinator.async_control_device(
-                self._device_id,
+            await self._async_send_command(
                 RangeCommand(range_instance=INSTANCE_HUMIDITY, value=int(clamped)),
             )
             return
 
         auto_work_mode = self._mode_to_work_mode.get(MODE_AUTO)
         if auto_work_mode is None:
-            raise ValueError(
-                f"{self._device.sku} does not support target-humidity (Auto) mode"
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="unsupported_target_humidity",
+                translation_placeholders={"device": self._device.name},
             )
 
         mode_ok = await self.coordinator.async_control_device(
@@ -352,7 +347,8 @@ class GoveeHumidifierEntity(GoveeEntity, HumidifierEntity, RestoreEntity):
             "ok" if mode_ok else "failed",
             ("ok" if range_ok else "failed") if self._has_humidity_range else "skipped",
         )
-        if mode_ok or range_ok:
-            # Remember the setpoint — the poll never reports it back (#118).
-            self._optimistic_target = int(clamped)
-            self.async_write_ha_state()
+        if not (mode_ok or range_ok):
+            raise self._command_failed()
+        # Remember the setpoint — the poll never reports it back (#118).
+        self._optimistic_target = int(clamped)
+        self.async_write_ha_state()
