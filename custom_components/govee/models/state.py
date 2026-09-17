@@ -46,6 +46,13 @@ _SENSOR_HUMIDITY_MQTT_KEYS = (
     "hum",
 )
 
+# Boilerplate/settings frame prefixes to skip when hunting for the H5106's
+# temperature/humidity/PM2.5 frame among an AWS IoT push's other op_frames —
+# ported from homebridge-govee's sensor-monitor.js, issue #200.
+_PM25_FRAME_IGNORED_PREFIXES = frozenset(
+    {"0000", "0003", "0100", "0101", "0102", "0103", "331a", "3315", "aa0d", "aa0e"}
+)
+
 
 def _coerce_int(value: Any) -> int | None:
     """int(value), or None when value is empty/None/non-numeric.
@@ -282,6 +289,17 @@ class GoveeDeviceState:
     # every single transition. See update_dehumidifier_mode_from_frames.
     dehumidifier_mode: str | None = None  # "pump" | "tank"
 
+    # Live power-monitoring readings for smart-outlet SKUs (H5086, issue
+    # #200). No capability advertises these — they only arrive in the AWS
+    # IoT push's ``op.command`` BLE-format frames, decoded in
+    # :meth:`update_power_monitoring_from_frames`. ``power_factor`` is a
+    # raw percent (0-100); the rest are already scaled to their SI unit.
+    voltage: float | None = None  # Volts
+    current: float | None = None  # Amps
+    power_draw: float | None = None  # Watts
+    energy_total: float | None = None  # kWh, cumulative since the device last reset it
+    power_factor: int | None = None  # Percent, 0-100
+
     # Standalone water-leak detector trip (H5054, issue #62). True when water
     # is detected. Arrives via the bodyAppearedEvent event capability — the
     # developer-API device-state poll only returns `online`, so the trip
@@ -309,6 +327,13 @@ class GoveeDeviceState:
     # monitors and air purifiers (H5106/H7124/H7126, issue #114).
     air_quality: int | None = None
     filter_life: int | None = None
+
+    # Live PM2.5 (micrograms/m3) for the H5106 AQI monitor, issue #200. The
+    # Developer API has no PM2.5 field at all for this SKU — only the coarse
+    # air_quality index above. Decoded from the same AWS IoT push frame that
+    # also refreshes sensor_temperature/sensor_humidity with a faster reading
+    # than the API poll — see update_pm25_from_frames.
+    pm25: int | None = None
 
     # Read-only CO₂ concentration in ppm (H5140 Smart CO₂ Monitor, issue #117).
     carbon_dioxide: int | None = None
@@ -1024,6 +1049,92 @@ class GoveeDeviceState:
             if len(raw) >= 10 and raw[0] == 0xAA and raw[1] == 0x19:
                 self.dehumidifier_mode = "pump" if raw[9] == 0x01 else "tank"
                 return True
+        return False
+
+    def update_power_monitoring_from_frames(self, frames: Iterable[bytes]) -> bool:
+        """Apply live power-monitoring readings from a smart outlet's (H5086)
+        AWS IoT ``aa 19`` status frame.
+
+        Register ``0x19`` is shared with the H7152's hose-connection mode
+        (:meth:`update_dehumidifier_mode_from_frames`) — an entirely
+        different device family with an entirely different frame layout on
+        the same register number. Safe only because the coordinator gates
+        each decoder to its own SKU set before ever calling it.
+
+        Byte layout, reverse-engineered against
+        https://github.com/egold555/Govee-Reverse-Engineering/blob/master/Products/H5086.md
+        and confirmed against the Govee app on two independent H5086 units
+        across all five fields (issue #200)::
+
+            offset 2-4   uint24  seconds since the outlet was last powered on
+            offset 5-7   uint24  accumulated energy, tenths of a Wh
+            offset 8-9   uint16  voltage, hundredths of a volt
+            offset 10-11 uint16  current, hundredths of an amp
+            offset 12-14 uint24  power, hundredths of a watt
+            offset 15    uint8   power factor, percent
+
+        The frame carries no XOR checksum consistent with the probe
+        thermometer's convention (byte 19 was ``0x00`` in both captures), so
+        none is checked here.
+
+        Args:
+            frames: Decoded (not base64) frames from ``op.command``.
+
+        Returns:
+            True if the frame was recognised.
+        """
+        for raw in frames:
+            if len(raw) >= 16 and raw[0] == 0xAA and raw[1] == 0x19:
+                self.energy_total = round(int.from_bytes(raw[5:8], "big") / 10000.0, 4)
+                self.voltage = round(int.from_bytes(raw[8:10], "big") / 100.0, 2)
+                self.current = round(int.from_bytes(raw[10:12], "big") / 100.0, 2)
+                self.power_draw = round(int.from_bytes(raw[12:15], "big") / 100.0, 2)
+                self.power_factor = raw[15]
+                return True
+        return False
+
+    def update_pm25_from_frames(self, frames: Iterable[bytes]) -> bool:
+        """Apply live temperature/humidity/PM2.5 from an H5106 AQI monitor's
+        AWS IoT push (issue #200).
+
+        Unlike every other frame this module decodes, this one carries no
+        ``0xAA``/register-byte prefix to key on at all — reverse-engineered
+        from homebridge-govee's ``sensor-monitor.js``, which identifies the
+        useful frame by ruling out a fixed list of known boilerplate/settings
+        prefixes (``0000``, ``0003``, ``0100``, ``0101``, ``0102``, ``0103``,
+        ``331a``, ``3315``, ``aa0d``, ``aa0e``) rather than matching one in.
+        That is a weaker identification than this module uses everywhere
+        else, so a physical-plausibility check on the decoded temperature and
+        humidity guards against a frame this integration has never seen
+        being misread as a reading.
+
+        Confirmed against the Govee app on two independent H5106 units, all
+        three fields matching on each: 19.00 degC/54.2%/1 ug/m3, and 25.10
+        degC/54.8%/0 ug/m3.
+
+        Byte layout (20-byte frame, no XOR checksum found)::
+
+            offset 0-1   int16   temperature, hundredths of a degree Celsius
+            offset 9-10  uint16  relative humidity, hundredths of a percent
+            offset 18-19 uint16  PM2.5, micrograms per cubic meter
+
+        Args:
+            frames: Decoded (not base64) frames from ``op.command``.
+
+        Returns:
+            True if a frame was recognised and passed the plausibility check.
+        """
+        for raw in frames:
+            if len(raw) != 20 or raw[:2].hex() in _PM25_FRAME_IGNORED_PREFIXES:
+                continue
+            temp = int.from_bytes(raw[0:2], "big", signed=True) / 100.0
+            humidity = int.from_bytes(raw[9:11], "big") / 100.0
+            if not (-40.0 <= temp <= 125.0) or not (0.0 <= humidity <= 100.0):
+                continue
+            self.sensor_temperature = round(temp, 1)
+            self.sensor_humidity = round(humidity, 1)
+            self.pm25 = int.from_bytes(raw[18:20], "big")
+            return True
         return False
 
     @classmethod

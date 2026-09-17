@@ -19,8 +19,13 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
+    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     PERCENTAGE,
     EntityCategory,
+    UnitOfElectricCurrent,
+    UnitOfElectricPotential,
+    UnitOfEnergy,
+    UnitOfPower,
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
@@ -129,6 +134,16 @@ async def async_setup_entry(
         # from the same AWS IoT push (issue #114 follow-up).
         if device.supports_pump_state:
             entities.append(GoveeDehumidifierModeSensor(coordinator, device))
+        # Live voltage/current/power/energy/power-factor for power-monitoring
+        # smart outlets (H5086) — decoded from the same kind of AWS IoT BLE
+        # push as the pump-model dehumidifier above, no capability for any of
+        # it (issue #200).
+        if device.supports_power_monitoring:
+            entities.append(GoveeVoltageSensor(coordinator, device))
+            entities.append(GoveeCurrentSensor(coordinator, device))
+            entities.append(GoveePowerSensor(coordinator, device))
+            entities.append(GoveeEnergySensor(coordinator, device))
+            entities.append(GoveePowerFactorSensor(coordinator, device))
         # Second probe on dual-probe SKUs (#150). Gated on a reading actually
         # being present rather than on the SKU: the same model ships with one
         # or two probes connected, and a device with nothing on probe 2 must
@@ -145,6 +160,10 @@ async def async_setup_entry(
         # mis-read had turned it into (issue #114).
         if device.supports_air_quality:
             entities.append(GoveeAirQualitySensor(coordinator, device))
+        # Real PM2.5 (H5106) decoded from the AWS IoT push — a different,
+        # finer-grained reading than the coarse index above (issue #200).
+        if device.supports_pm25_frame:
+            entities.append(GoveePm25Sensor(coordinator, device))
         # CO₂ concentration in ppm (H5140 Smart CO₂ Monitor) — issue #117.
         if device.supports_co2:
             entities.append(GoveeCO2Sensor(coordinator, device))
@@ -448,6 +467,126 @@ class GoveeDehumidifierModeSensor(GoveeEntity, SensorEntity):
         return state.dehumidifier_mode if state else None
 
 
+class GoveeVoltageSensor(GoveeEntity, SensorEntity):
+    """Live voltage reading from a power-monitoring smart outlet (H5086).
+
+    Decoded from the AWS IoT push's ``aa 19`` status frame — no capability
+    exists for it. See
+    :meth:`GoveeDeviceState.update_power_monitoring_from_frames` (issue #200).
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "outlet_voltage"
+    _attr_device_class = SensorDeviceClass.VOLTAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_voltage"
+
+    @property
+    def native_value(self) -> float | None:
+        state = self.device_state
+        return state.voltage if state else None
+
+
+class GoveeCurrentSensor(GoveeEntity, SensorEntity):
+    """Live current reading from a power-monitoring smart outlet (H5086).
+
+    See :class:`GoveeVoltageSensor`.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "outlet_current"
+    _attr_device_class = SensorDeviceClass.CURRENT
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_current"
+
+    @property
+    def native_value(self) -> float | None:
+        state = self.device_state
+        return state.current if state else None
+
+
+class GoveePowerSensor(GoveeEntity, SensorEntity):
+    """Live power draw from a power-monitoring smart outlet (H5086).
+
+    See :class:`GoveeVoltageSensor`.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "outlet_power"
+    _attr_device_class = SensorDeviceClass.POWER
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = UnitOfPower.WATT
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_power"
+
+    @property
+    def native_value(self) -> float | None:
+        state = self.device_state
+        return state.power_draw if state else None
+
+
+class GoveeEnergySensor(GoveeEntity, SensorEntity):
+    """Cumulative energy from a power-monitoring smart outlet (H5086).
+
+    ``TOTAL_INCREASING`` rather than ``TOTAL``: the device resets this to
+    zero on its own (observed across power cycles), and Home Assistant's
+    energy dashboard treats a drop as exactly that kind of meter reset,
+    rather than as a discontinuity to discard. See
+    :class:`GoveeVoltageSensor`.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "outlet_energy"
+    _attr_device_class = SensorDeviceClass.ENERGY
+    _attr_state_class = SensorStateClass.TOTAL_INCREASING
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_suggested_display_precision = 3
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_energy"
+
+    @property
+    def native_value(self) -> float | None:
+        state = self.device_state
+        return state.energy_total if state else None
+
+
+class GoveePowerFactorSensor(GoveeEntity, SensorEntity):
+    """Power factor from a power-monitoring smart outlet (H5086).
+
+    See :class:`GoveeVoltageSensor`.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "outlet_power_factor"
+    _attr_device_class = SensorDeviceClass.POWER_FACTOR
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = PERCENTAGE
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_power_factor"
+
+    @property
+    def native_value(self) -> int | None:
+        state = self.device_state
+        return state.power_factor if state else None
+
+
 class GoveeSecondProbeTemperatureSensor(GoveeTemperatureSensor):
     """The second temperature probe on a dual-probe SKU (H5112, issue #150).
 
@@ -550,6 +689,31 @@ class GoveeAirQualitySensor(GoveeEntity, SensorEntity):
     def native_value(self) -> int | None:
         state = self.device_state
         return state.air_quality if state else None
+
+
+class GoveePm25Sensor(GoveeEntity, SensorEntity):
+    """Live PM2.5 reading from an H5106 AQI monitor (issue #200).
+
+    Decoded from the AWS IoT push — the Developer API has no PM2.5 field
+    for this SKU at all, only the coarse index :class:`GoveeAirQualitySensor`
+    already surfaces. See
+    :meth:`GoveeDeviceState.update_pm25_from_frames`.
+    """
+
+    _attr_has_entity_name = True
+    _attr_translation_key = "sensor_pm25"
+    _attr_device_class = SensorDeviceClass.PM25
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}_pm25"
+
+    @property
+    def native_value(self) -> int | None:
+        state = self.device_state
+        return state.pm25 if state else None
 
 
 class GoveeCO2Sensor(GoveeEntity, SensorEntity):

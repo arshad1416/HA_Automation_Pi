@@ -34,6 +34,16 @@ PRESENCE_SENSOR_SKUS = frozenset({"H5127"})
 # therefore SKU-locked, issue #114 follow-up.
 PUMP_DEHUMIDIFIER_SKUS = frozenset({"H7152"})
 
+# Smart outlets that report live voltage/current/power/energy over AWS IoT
+# push frames rather than any capability (issue #200). Detection is
+# SKU-locked like PUMP_DEHUMIDIFIER_SKUS, for the same reason: nothing in the
+# discovered capabilities list hints at it.
+POWER_MONITORING_SKUS = frozenset({"H5086"})
+
+# AQI monitors that report live PM2.5 (and a fresher temp/humidity pair) over
+# AWS IoT push frames rather than any Developer API field (issue #200).
+PM25_FRAME_SKUS = frozenset({"H5106"})
+
 # Thermo-hygrometer SKUs that the Govee *Developer* API (/user/devices) does
 # NOT return, so they never reach capability-based discovery and "don't show
 # up" (issue #86). These battery WiFi sensors are present in the account-login
@@ -613,6 +623,18 @@ class GoveeDevice:
         return self.sku.upper() in PUMP_DEHUMIDIFIER_SKUS
 
     @property
+    def supports_power_monitoring(self) -> bool:
+        """Check if device reports live voltage/current/power/energy (H5086).
+
+        Not a capability (absent from the discovered capabilities list) and
+        not on the OpenAPI event channel or in the flat MQTT ``state`` keys —
+        only in the AWS IoT status push's ``op.command`` BLE-format frames,
+        decoded in :meth:`GoveeDeviceState.update_power_monitoring_from_frames`.
+        Detection is SKU-locked (``POWER_MONITORING_SKUS``), issue #200.
+        """
+        return self.sku.upper() in POWER_MONITORING_SKUS
+
+    @property
     def supports_presence_event(self) -> bool:
         """Check if device is an mmWave presence/occupancy sensor (H5127).
 
@@ -681,6 +703,17 @@ class GoveeDevice:
         return any(
             cap.type == CAPABILITY_PROPERTY and cap.instance == INSTANCE_AIR_QUALITY for cap in self.capabilities
         )
+
+    @property
+    def supports_pm25_frame(self) -> bool:
+        """Check if device reports live PM2.5 over AWS IoT push frames (H5106).
+
+        Not a capability — the Developer API has no PM2.5 field for this SKU
+        at all, only the coarse airQuality index above. Detection is
+        SKU-locked (``PM25_FRAME_SKUS``), issue #200. See
+        :meth:`GoveeDeviceState.update_pm25_from_frames`.
+        """
+        return self.sku.upper() in PM25_FRAME_SKUS
 
     @property
     def supports_filter_life(self) -> bool:

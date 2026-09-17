@@ -300,6 +300,21 @@
           "tank": "Water tank"
         }
       },
+      "outlet_voltage": {
+        "name": "Voltage"
+      },
+      "outlet_current": {
+        "name": "Current"
+      },
+      "outlet_power": {
+        "name": "Power"
+      },
+      "outlet_energy": {
+        "name": "Energy"
+      },
+      "outlet_power_factor": {
+        "name": "Power factor"
+      },
       "sensor_temperature_2": {
         "name": "Probe 2 temperature"
       },
@@ -308,6 +323,9 @@
       },
       "sensor_air_quality": {
         "name": "Air quality"
+      },
+      "sensor_pm25": {
+        "name": "PM2.5"
       },
       "sensor_co2": {
         "name": "CO2"

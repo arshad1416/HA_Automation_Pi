@@ -3344,6 +3344,15 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # either (issue #114 follow-up).
         if device is not None and device.sku.upper() in PUMP_DEHUMIDIFIER_SKUS:
             state.update_temperature_from_frames(self._op_frames_from(state_data))
+        # Smart outlets (H5086) carry live voltage/current/power/energy the
+        # same way — no capability exists for any of it (issue #200).
+        if device is not None and device.supports_power_monitoring:
+            state.update_power_monitoring_from_frames(self._op_frames_from(state_data))
+        # AQI monitors (H5106) carry live PM2.5 and a fresher temp/humidity
+        # pair the same way — no Developer API field for PM2.5 at all
+        # (issue #200).
+        if device is not None and device.supports_pm25_frame:
+            state.update_pm25_from_frames(self._op_frames_from(state_data))
         if device is not None and device.mqtt_outlet_count:
             self._apply_outlet_mask(device, state, state_data.get("onOff"))
 
@@ -3839,6 +3848,25 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     state.pump_state = existing_state.pump_state
                 if existing_state.dehumidifier_mode is not None and state.dehumidifier_mode is None:
                     state.dehumidifier_mode = existing_state.dehumidifier_mode
+                # Power monitoring (H5086) is decoded only from AWS IoT push
+                # frames, same reasoning as the pump/hose fields above (#200).
+                if existing_state.voltage is not None and state.voltage is None:
+                    state.voltage = existing_state.voltage
+                if existing_state.current is not None and state.current is None:
+                    state.current = existing_state.current
+                if existing_state.power_draw is not None and state.power_draw is None:
+                    state.power_draw = existing_state.power_draw
+                if existing_state.energy_total is not None and state.energy_total is None:
+                    state.energy_total = existing_state.energy_total
+                if existing_state.power_factor is not None and state.power_factor is None:
+                    state.power_factor = existing_state.power_factor
+                # PM2.5 (H5106) is decoded only from AWS IoT push frames — the
+                # Developer poll has no field for it at all (#200). Note
+                # sensor_temperature/sensor_humidity are already preserved
+                # above; this SKU's fresher push values benefit from that
+                # existing preservation too.
+                if existing_state.pm25 is not None and state.pm25 is None:
+                    state.pm25 = existing_state.pm25
                 # Occupancy (H5127) is a momentary push event; the developer
                 # /device/state poll returns only `online` for it (never the
                 # bodyAppearedEvent value), so the fresh state has presence=None.
