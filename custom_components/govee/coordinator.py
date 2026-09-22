@@ -10,6 +10,7 @@ import copy
 import dataclasses
 import logging
 import time
+import zlib
 from collections.abc import Awaitable, Callable, Mapping
 from datetime import datetime, timedelta
 from typing import Any, Final
@@ -72,18 +73,22 @@ from .const import (
     CONF_API_TEMPERATURE_UNIT,
     CONF_EMAIL,
     CONF_ENABLE_MQTT_CONTROL,
+    CONF_DAILY_REQUEST_BUDGET,
     CONF_LAN_TARGETS,
     CONF_MQTT_STATUS_INTERVAL,
     CONF_PASSWORD,
     CONF_PROBE_POLL_INTERVAL,
     CONF_WATER_DETECTOR_POLL_INTERVAL,
     DEFAULT_API_TEMPERATURE_UNIT,
+    DEFAULT_DAILY_REQUEST_BUDGET,
     DEFAULT_ENABLE_MQTT_CONTROL,
     DEFAULT_MQTT_STATUS_INTERVAL,
     DEFAULT_PROBE_POLL_INTERVAL,
     DEFAULT_WATER_DETECTOR_POLL_INTERVAL,
     DEVICE_REDISCOVERY_INTERVAL,
     DOMAIN,
+    IDLE_DEVICE_AFTER_SECONDS,
+    IDLE_DEVICE_POLL_DIVISOR,
     IOT_RELOGIN_MIN_INTERVAL,
     KEY_IOT_CREDENTIALS,
     KEY_IOT_LOGIN_FAILED,
@@ -93,6 +98,9 @@ from .const import (
     LAN_WRITE_CONFIRM_TIMEOUT,
     LAN_WRITE_SUPPRESS_SECONDS,
     LAN_WRITE_SUPPRESS_THRESHOLD,
+    LOCAL_READING_FRESHNESS_FACTOR,
+    MAX_BUDGET_PACED_INTERVAL,
+    MAX_LOCAL_FRESH_SKIPS,
     MAX_MQTT_STATUS_INTERVAL,
     MAX_PROBE_POLL_INTERVAL,
     MAX_WATER_DETECTOR_POLL_INTERVAL,
@@ -104,7 +112,15 @@ from .const import (
     MQTT_STATUS_QUERY_QUARANTINE_STRIKES,
     MQTT_STATUS_QUERY_SPACING,
     OPTIMISTIC_GRACE_CAP_SECONDS,
+    RECENT_COMMAND_WINDOW_SECONDS,
     resolve_fahrenheit_conversion,
+)
+from .request_budget import (
+    budget_paced_interval,
+    cloud_poll_divisor,
+    header_backoff_interval,
+    local_reading_is_fresh,
+    poll_exceeds_budget,
 )
 from .models import (
     GoveeDevice,
@@ -262,6 +278,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     - Group device handling
     """
 
+    # Set on first announcement; the class default keeps hand-built test
+    # coordinators that skip __init__ working.
+    _budget_pacing_announced = False
+    _header_deferred = False
+
     def __init__(
         self,
         hass: HomeAssistant,
@@ -384,6 +405,28 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         # Store original poll interval for restoring after rate limit backoff
         self._original_update_interval = timedelta(seconds=poll_interval)
+
+        # Requests/day this install is willing to spend on polling. The poll
+        # interval is paced against the client's running daily counter to land
+        # on it — see _apply_budget_pacing and request_budget.py.
+        self._daily_request_budget: int = int(
+            config_entry.options.get(CONF_DAILY_REQUEST_BUDGET, DEFAULT_DAILY_REQUEST_BUDGET)
+        )
+        self._budget_pacing_announced = False
+
+        # Consecutive cloud reads skipped per device because a local
+        # (LAN/MQTT/BLE) reading was fresher. Capped at MAX_LOCAL_FRESH_SKIPS
+        # so a device is always reconciled against the cloud eventually.
+        self._local_fresh_skips: dict[str, int] = {}
+
+        # Cycle counter per device, used to hold idle devices to one poll in
+        # IDLE_DEVICE_POLL_DIVISOR (see _idle_devices_to_skip).
+        self._poll_cycle_counts: dict[str, int] = {}
+        # True while the previous cycle was deferred on the rate-limit headers.
+        self._header_deferred = False
+        # When each device's cloud state was last observed to change. Drives
+        # the idle-cadence test; absent until a change is seen.
+        self._state_changed_at: dict[str, datetime] = {}
 
         # Developer-API thermometers whose live reading we also pull from the
         # BFF device list (e.g. H5110/H5075 via H5151, H5179). The BFF call
@@ -1446,6 +1489,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # device LAN-available so the very next _refresh_lan_staleness pass
         # leaves it active instead of demoting it to stale_lan.
         self._record_transport_success(device_id, "lan")
+        self._transport.record_read(device_id, "lan")
         # NOTE: a confirmed inbound READ proves the transport is alive (recorded
         # above) but says nothing about whether WRITES land, so it must NOT reset
         # the write-miss streak — only a confirmed write
@@ -3265,6 +3309,20 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             return celsius * (9.0 / 5.0) + 32.0
         return celsius
 
+    def _store_frame_temperature_in_entity_unit(self, device_id: str, sku: str, state: GoveeDeviceState) -> None:
+        """Rewrite a just-decoded frame temperature from °C into the entity's unit.
+
+        The frame decoders store °C, but the temperature sensor converts °F→°C
+        for any device the account or the SKU allowlist marks as Fahrenheit
+        (the H5106 is on it), so an unconverted reading of 19.0 °C surfaces as
+        -7 °C, or 19 °F on a Fahrenheit display (issue #200). Same round-trip
+        :meth:`_thermo_frame_temperature` gives the pool-thermometer frames.
+        """
+        if state.sensor_temperature is not None:
+            state.sensor_temperature = round(
+                self._thermo_frame_temperature(device_id, sku, state.sensor_temperature), 1
+            )
+
     @callback
     def _handle_button_press(self, state_data: dict[str, Any]) -> None:
         """Handle a button press event from MQTT multiSync message."""
@@ -3343,7 +3401,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # only in these BLE-format status frames — no capability exists for
         # either (issue #114 follow-up).
         if device is not None and device.sku.upper() in PUMP_DEHUMIDIFIER_SKUS:
-            state.update_temperature_from_frames(self._op_frames_from(state_data))
+            if state.update_temperature_from_frames(self._op_frames_from(state_data)):
+                self._store_frame_temperature_in_entity_unit(device_id, device.sku, state)
         # Smart outlets (H5086) carry live voltage/current/power/energy the
         # same way — no capability exists for any of it (issue #200).
         if device is not None and device.supports_power_monitoring:
@@ -3352,7 +3411,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # pair the same way — no Developer API field for PM2.5 at all
         # (issue #200).
         if device is not None and device.supports_pm25_frame:
-            state.update_pm25_from_frames(self._op_frames_from(state_data))
+            if state.update_pm25_from_frames(self._op_frames_from(state_data)):
+                self._store_frame_temperature_in_entity_unit(device_id, device.sku, state)
         if device is not None and device.mqtt_outlet_count:
             self._apply_outlet_mask(device, state, state_data.get("onOff"))
 
@@ -3367,6 +3427,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # grace window for this device (state.update_from_mqtt also calls
         # clear_optimistic_window, but recording MQTT health is our job).
         self._record_transport_success(device_id, "mqtt")
+        self._transport.record_read(device_id, "mqtt")
 
         # Update coordinator data and notify HA — only if something changed.
         if state != before:
@@ -3524,13 +3585,50 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if skipped:
             _LOGGER.debug("Skipping %d device(s) with all entities disabled", skipped)
 
-        if not pollable:
-            return self._states
+        # Devices a local transport has already reported on more recently than
+        # one poll interval need no cloud read this cycle (see
+        # _locally_fresh_devices).
+        # Pacing is sized on the full pollable set, not what is left after the
+        # skip: the skip changes from cycle to cycle as devices' runs come due,
+        # and sizing on it would swing the interval with them.
+        pacing_size = len(pollable)
+        locally_fresh = self._locally_fresh_devices(pollable)
+        if locally_fresh:
+            _LOGGER.debug(
+                "Skipping %d cloud read(s) covered by a fresher local reading",
+                len(locally_fresh),
+            )
+            pollable = {device_id: device for device_id, device in pollable.items() if device_id not in locally_fresh}
+
+        # Devices that have been off and unchanged for a while are asked
+        # about less often (see _idle_devices_to_skip) — but only on an install
+        # whose full cadence would overspend the daily budget. Under budget the
+        # user's configured interval applies to every device, as before.
+        if poll_exceeds_budget(
+            requests_per_cycle=pacing_size,
+            base_interval=int(self._original_update_interval.total_seconds()),
+            daily_budget=int(self._daily_request_budget),
+        ):
+            idle = self._idle_devices_to_skip(pollable)
+            if idle:
+                _LOGGER.debug("Holding back %d idle device(s) this cycle", len(idle))
+                pollable = {device_id: device for device_id, device in pollable.items() if device_id not in idle}
+
+        # Govee's own numbers get the last word: if the allowance left will
+        # not cover this cycle, wait for it to refill rather than spending
+        # the requests that would earn a 429. A deferred cycle is an empty one:
+        # it still runs the tail below, and does not re-pace over the interval
+        # the deferral just chose.
+        deferred = bool(pollable) and self._defer_for_rate_limit_headers(len(pollable))
+        if deferred:
+            pollable = {}
 
         # Create tasks for parallel fetching. Each fetch carries its own
         # deadline: a single timeout around the whole gather discarded every
         # device's result as soon as one device was slow, so one unreachable
         # bulb held the entire house's state hostage for that cycle.
+        # When local readings covered every device there is nothing to fetch, but
+        # the rest of the cycle (transport health, LAN rescan, pacing) still runs.
         tasks = [self._fetch_device_state_bounded(device_id, device) for device_id, device in pollable.items()]
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -3540,6 +3638,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         outage_errors: list[Exception] = []
         for device_id, result in zip(pollable.keys(), results):
             if isinstance(result, GoveeDeviceState):
+                self._note_state_change(device_id, result)
                 self._states[device_id] = result
                 successful_updates += 1
             elif isinstance(result, GoveeAuthError):
@@ -3558,7 +3657,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # entities unavailable and logs the outage once (and the recovery once)
         # instead of serving stale state in silence. A partial failure keeps
         # per-device isolation above.
-        if successful_updates == 0 and len(outage_errors) == len(results):
+        if results and successful_updates == 0 and len(outage_errors) == len(results):
             raise UpdateFailed(
                 f"Govee cloud API unreachable for all {len(results)} device(s): " f"{outage_errors[0]}"
             ) from outage_errors[0]
@@ -3572,6 +3671,10 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 self._original_update_interval,
             )
             async_delete_rate_limit_issue(self.hass, self._config_entry)
+
+        # Pace the next tick against what today's polling has already cost.
+        if not deferred:
+            self._apply_budget_pacing(pacing_size)
 
         # Refresh transport-health snapshots tied to coordinator cadence.
         self._refresh_mqtt_health()
@@ -3660,6 +3763,252 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
     def _entities_all_disabled(self, device_id: str) -> bool:
         """True when this one device has entities and all of them are disabled."""
         return device_id in self._devices_with_all_entities_disabled()
+
+    def _defer_for_rate_limit_headers(self, requests_per_cycle: int) -> bool:
+        """Back off on the API's reported allowance, before a 429 happens.
+
+        ``X-RateLimit-Remaining``/``-Reset`` were parsed and displayed but
+        throttled nothing; only a hard 429 reacted, which meant the only way
+        to learn the window was exhausted was to exhaust it.
+
+        Returns True when this cycle should be skipped entirely, having set
+        ``update_interval`` to cover the reset. Isolated from bad readings:
+        a header that does not parse as a number leaves the poll alone.
+        """
+        # Annotated as unknown on purpose. These are parsed from response
+        # headers, so the guard below is a real runtime check rather than a
+        # formality — typing them as the int the client promises would make
+        # the check dead code to a type checker while it still fires in a
+        # test, which is worse than either alone.
+        if self._header_deferred:
+            # One deferral at a time. The headers only refresh when a response
+            # arrives, and a deferred cycle makes no requests, so a reading of
+            # "0 left, resets in 30s" would otherwise repeat identically on every
+            # tick and stall the poll until a command happened to refresh it.
+            # Having waited out one reset, poll; the responses update the numbers.
+            self._header_deferred = False
+            return False
+
+        remaining: object = self._api_client.rate_limit_remaining
+        reset_in: object = self._api_client.rate_limit_reset_in
+        if not isinstance(remaining, int) or not isinstance(reset_in, int):
+            # Headers that did not parse as numbers are no reason to stall a
+            # poll. Tested explicitly, because silently deferring forever on
+            # a malformed header would look exactly like a dead integration.
+            _LOGGER.debug("Rate-limit headers unusable, polling as normal")
+            return False
+
+        interval = header_backoff_interval(
+            remaining=remaining,
+            reset_in=reset_in,
+            requests_per_cycle=requests_per_cycle,
+            base_interval=int(self._original_update_interval.total_seconds()),
+            max_interval=MAX_BUDGET_PACED_INTERVAL,
+        )
+        if interval is None:
+            return False
+
+        _LOGGER.debug(
+            "Govee reports %s request(s) left, this cycle needs %d — deferring %ds until reset",
+            self._api_client.rate_limit_remaining,
+            requests_per_cycle,
+            interval,
+        )
+        self.update_interval = timedelta(seconds=interval)
+        self._header_deferred = True
+        return True
+
+    def _note_state_change(self, device_id: str, state: GoveeDeviceState) -> None:
+        """Stamp the time a freshly read state differs from the one held.
+
+        Only the user-visible control fields count. Anything that ticks on
+        its own — a temperature reading, an RSSI — would make every device
+        look permanently busy and defeat the idle cadence entirely.
+        """
+        previous = self._states.get(device_id)
+        if previous is None:
+            return
+        changed = (
+            previous.power_state,
+            previous.brightness,
+            previous.color,
+            previous.color_temp_kelvin,
+        ) != (
+            state.power_state,
+            state.brightness,
+            state.color,
+            state.color_temp_kelvin,
+        )
+        if changed:
+            self._state_changed_at[device_id] = dt_util.utcnow()
+
+    def _idle_devices_to_skip(self, pollable: dict[str, GoveeDevice]) -> set[str]:
+        """Devices sitting out this cycle because they have been idle.
+
+        A device that has been off with no observed change for
+        IDLE_DEVICE_AFTER_SECONDS is polled one cycle in
+        IDLE_DEVICE_POLL_DIVISOR; a device commanded inside
+        RECENT_COMMAND_WINDOW_SECONDS is always polled, because the poll
+        right after a write is the one that confirms it landed.
+
+        The counter advances for every candidate device each cycle, so the
+        cadence stays in step even while a device moves in and out of idle.
+        """
+        now = dt_util.utcnow()
+        skipped: set[str] = set()
+        for device_id in pollable:
+            if device_id not in self._poll_cycle_counts:
+                # Start each device at its own point in the cycle. Every counter
+                # starting at zero would put all idle devices on the same beat,
+                # so one cycle in four would poll them all at once and the
+                # request count per cycle (and the pacing sized on it) would
+                # swing between the two.
+                self._poll_cycle_counts[device_id] = zlib.crc32(device_id.encode()) % IDLE_DEVICE_POLL_DIVISOR
+            count = self._poll_cycle_counts[device_id]
+            self._poll_cycle_counts[device_id] = count + 1
+
+            state = self._states.get(device_id)
+            if state is None:
+                continue
+
+            changed_at = self._state_changed_at.get(device_id)
+            commanded_at = self.device_last_command_sent(device_id)
+            divisor = cloud_poll_divisor(
+                is_off=not state.power_state,
+                seconds_since_change=None if changed_at is None else (now - changed_at).total_seconds(),
+                seconds_since_command=None if commanded_at is None else (now - commanded_at).total_seconds(),
+                idle_after=IDLE_DEVICE_AFTER_SECONDS,
+                recent_command_window=RECENT_COMMAND_WINDOW_SECONDS,
+                idle_divisor=IDLE_DEVICE_POLL_DIVISOR,
+            )
+            if divisor > 1 and count % divisor != 0:
+                skipped.add(device_id)
+        return skipped
+
+    def _locally_fresh_devices(self, pollable: dict[str, GoveeDevice]) -> set[str]:
+        """Devices whose newest local reading makes this cycle's cloud read moot.
+
+        LAN, MQTT and BLE carry the same power/brightness/colour fields the
+        cloud poll returns, and they cost nothing against Govee's quota. The
+        integration used to overlay them *after* the cloud call was already
+        spent; checking first is where the bulk of the saving on a large
+        install comes from.
+
+        A device qualifies only when it already has state to serve (nothing is
+        ever skipped before its first successful read) and when
+        :func:`request_budget.local_reading_is_fresh` agrees the reading is
+        recent enough and the skip run is not yet capped. The skip counter is
+        reset for every device that is going to be polled, so a device cycles
+        between skipping and reconciling rather than drifting.
+        """
+        window = (self.update_interval or self._original_update_interval).total_seconds()
+        window *= LOCAL_READING_FRESHNESS_FACTOR
+        now = dt_util.utcnow()
+        fresh: set[str] = set()
+        for device_id in pollable:
+            if device_id not in self._states:
+                continue
+            latest = self._local_last_updated(device_id)
+            age = None if latest is None else (now - latest).total_seconds()
+            if device_id not in self._local_fresh_skips:
+                # First sighting: start each device part-way through its run of
+                # skips, at a fixed per-device offset. Every device beginning at
+                # zero would reach the cap together and make one burst of cloud
+                # reads every sixth cycle; the offsets spread those reads out.
+                self._local_fresh_skips[device_id] = zlib.crc32(device_id.encode()) % MAX_LOCAL_FRESH_SKIPS
+            if local_reading_is_fresh(
+                seconds_since_local_reading=age,
+                freshness_window=window,
+                consecutive_skips=self._local_fresh_skips[device_id],
+                max_consecutive_skips=MAX_LOCAL_FRESH_SKIPS,
+            ):
+                fresh.add(device_id)
+                self._local_fresh_skips[device_id] += 1
+            else:
+                self._local_fresh_skips[device_id] = 0
+        return fresh
+
+    def _local_last_updated(self, device_id: str) -> datetime | None:
+        """When a LAN or MQTT reading was last applied to this device's state, or None.
+
+        Reads ``last_read_ts``, not ``last_success_ts``: the latter also moves on
+        a write-only LAN send, a successful BLE command and a LAN readback that
+        was discarded as a mismatch, none of which tell us what the device's
+        state is. ``cloud_api`` is excluded too — the cloud's own last success
+        cannot say whether a local source made the cloud read redundant.
+        """
+        latest: datetime | None = None
+        for kind in ("lan", "mqtt"):
+            health = self._transport.get(device_id, kind)
+            if health is None or health.last_read_ts is None:
+                continue
+            if latest is None or health.last_read_ts > latest:
+                latest = health.last_read_ts
+        return latest
+
+    def _apply_budget_pacing(self, requests_per_cycle: int) -> None:
+        """Stretch the poll interval so the day's spend lands on the budget.
+
+        Reads the API client's running daily counter (the same figure the
+        "API rate limit remaining" sensor exposes as ``requests_today``) and
+        asks :func:`request_budget.budget_paced_interval` what spacing the
+        rest of today can afford. Only ever slows the poll down, never speeds
+        it past the user's configured interval.
+
+        Skipped entirely while a 429 back-off is in force: that back-off is
+        the stronger constraint and owns ``update_interval`` until it clears.
+
+        The counter is a floor — requests that die below the HTTP layer are
+        never counted — so the true spend can exceed what this sees. That is
+        why the default budget is 9,000 against a 10,000 cap: the gap absorbs
+        the undercount along with commands, scene fetches and rediscovery.
+        """
+        if self._rate_limited:
+            return
+
+        now = time.time()
+        seconds_remaining_today = int(86400 - (now % 86400))
+        # Same reasoning as _defer_for_rate_limit_headers: checked, not trusted.
+        requests_today: object = self._api_client.requests_today
+        daily_budget: object = self._daily_request_budget
+        if not isinstance(requests_today, int) or not isinstance(daily_budget, int):
+            # Pacing is an optimisation, never a reason to disturb a poll: if
+            # a counter reads back as something non-numeric, leave the
+            # interval where the user put it.
+            _LOGGER.debug("Budget pacing skipped, counters unusable")
+            return
+
+        interval = budget_paced_interval(
+            base_interval=int(self._original_update_interval.total_seconds()),
+            requests_today=requests_today,
+            requests_per_cycle=requests_per_cycle,
+            seconds_remaining_today=seconds_remaining_today,
+            daily_budget=daily_budget,
+            max_interval=MAX_BUDGET_PACED_INTERVAL,
+        )
+        paced = timedelta(seconds=interval)
+        base_seconds = int(self._original_update_interval.total_seconds())
+        if interval > base_seconds and not self._budget_pacing_announced:
+            # The one thing here a user can act on: polls are slower than the
+            # interval they configured, and why. Said once per run, not per tick.
+            self._budget_pacing_announced = True
+            _LOGGER.info(
+                "Polling every %ds instead of the configured %ds to stay within the daily cloud "
+                "request budget of %d; raise the budget in the integration options or "
+                "rely on LAN/MQTT for live state",
+                interval,
+                base_seconds,
+                self._daily_request_budget,
+            )
+        if paced != self.update_interval:
+            _LOGGER.debug(
+                "Budget pacing: %d request(s)/cycle, %d spent today of %d budget " "-> poll interval %ds",
+                requests_per_cycle,
+                self._api_client.requests_today,
+                self._daily_request_budget,
+                interval,
+            )
+            self.update_interval = paced
 
     async def _fetch_device_state_bounded(
         self,

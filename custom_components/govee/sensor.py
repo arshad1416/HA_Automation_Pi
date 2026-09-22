@@ -19,7 +19,6 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import (
-    CONCENTRATION_MICROGRAMS_PER_CUBIC_METER,
     PERCENTAGE,
     EntityCategory,
     UnitOfElectricCurrent,
@@ -56,6 +55,15 @@ except ImportError:  # hacs.json still declares 2024.11.0 as the minimum
     from homeassistant.const import CONCENTRATION_PARTS_PER_MILLION
 
     PARTS_PER_MILLION = CONCENTRATION_PARTS_PER_MILLION
+
+try:  # HA >= 2026.7 (CONCENTRATION_MICROGRAMS_PER_CUBIC_METER is removed in Core 2027.8)
+    from homeassistant.const import UnitOfDensity
+
+    MICROGRAMS_PER_CUBIC_METER: str = UnitOfDensity.MICROGRAMS_PER_CUBIC_METER
+except ImportError:  # hacs.json still declares 2024.11.0 as the minimum
+    from homeassistant.const import CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+
+    MICROGRAMS_PER_CUBIC_METER = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -480,6 +488,7 @@ class GoveeVoltageSensor(GoveeEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.VOLTAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = UnitOfElectricPotential.VOLT
+    _attr_suggested_display_precision = 2
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
@@ -503,6 +512,7 @@ class GoveeCurrentSensor(GoveeEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.CURRENT
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = UnitOfElectricCurrent.AMPERE
+    _attr_suggested_display_precision = 2
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
@@ -526,6 +536,9 @@ class GoveePowerSensor(GoveeEntity, SensorEntity):
     _attr_device_class = SensorDeviceClass.POWER
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = UnitOfPower.WATT
+    # The device reports hundredths of a watt; without this the frontend rounds
+    # a small load to a whole number.
+    _attr_suggested_display_precision = 2
 
     def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
         super().__init__(coordinator, device)
@@ -540,9 +553,10 @@ class GoveePowerSensor(GoveeEntity, SensorEntity):
 class GoveeEnergySensor(GoveeEntity, SensorEntity):
     """Cumulative energy from a power-monitoring smart outlet (H5086).
 
-    ``TOTAL_INCREASING`` rather than ``TOTAL``: the device resets this to
-    zero on its own (observed across power cycles), and Home Assistant's
-    energy dashboard treats a drop as exactly that kind of meter reset,
+    The device's counter covers one day: it resets to zero at midnight, not
+    when the outlet is switched off and on (confirmed on two units, issue
+    #200). ``TOTAL_INCREASING`` rather than ``TOTAL``, because Home Assistant's
+    energy dashboard treats a drop to zero as exactly that kind of meter reset
     rather than as a discontinuity to discard. See
     :class:`GoveeVoltageSensor`.
     """
@@ -704,7 +718,7 @@ class GoveePm25Sensor(GoveeEntity, SensorEntity):
     _attr_translation_key = "sensor_pm25"
     _attr_device_class = SensorDeviceClass.PM25
     _attr_state_class = SensorStateClass.MEASUREMENT
-    _attr_native_unit_of_measurement = CONCENTRATION_MICROGRAMS_PER_CUBIC_METER
+    _attr_native_unit_of_measurement = MICROGRAMS_PER_CUBIC_METER
 
     def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
         super().__init__(coordinator, device)

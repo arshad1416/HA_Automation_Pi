@@ -11,6 +11,7 @@ CONF_PASSWORD: Final = "password"
 
 # Options keys
 CONF_POLL_INTERVAL: Final = "poll_interval"
+CONF_DAILY_REQUEST_BUDGET: Final = "daily_request_budget"
 CONF_ENABLE_GROUPS: Final = "enable_groups"
 CONF_ENABLE_SCENES: Final = "enable_scenes"
 CONF_ENABLE_DIY_SCENES: Final = "enable_diy_scenes"
@@ -158,6 +159,13 @@ SKU_SEGMENT_OVERRIDES: Final = {
     # light (0=top, 1=bottom, 2=part of the left side, 3=everything else);
     # 4-14 are accepted with HTTP 200 "success" and do nothing (issue #160).
     "H7076": 4,
+    # H7026 Outdoor String Lights: 30 bulbs in the app and elementRange 0-29, but
+    # the Platform API only addresses indices 0-15. 16-29 return HTTP 200 and
+    # recolour the *whole string* instead of one bulb, so a grouped write that
+    # reaches them overwrites the bulbs set before it. The device's AWS IoT status
+    # frames (aa a5 01..08, four bulbs each) carry all 30, so a native write
+    # path could lift this limit later (issue #208).
+    "H7026": 16,
 }
 
 
@@ -221,6 +229,50 @@ MAX_PROBE_POLL_INTERVAL: Final = 600
 # in response headers; the daily one never does, so it is carried here so
 # the rate-limit sensor can say how much of it an install has spent.
 GOVEE_DAILY_REQUEST_LIMIT: Final = 10000
+# How much of that daily allowance this integration is willing to spend on
+# its own polling, leaving headroom for user commands, scene fetches, device
+# rediscovery and the retries none of those count. The adaptive poll pacing
+# in request_budget.py aims to land the day's spend on this figure.
+DEFAULT_DAILY_REQUEST_BUDGET: Final = 9000
+MIN_DAILY_REQUEST_BUDGET: Final = 500
+MAX_DAILY_REQUEST_BUDGET: Final = GOVEE_DAILY_REQUEST_LIMIT
+# Ceiling (seconds) the budget pacing may stretch the poll to. Fifteen
+# minutes: slow enough to keep a large install inside the cap, fast enough
+# that a device with no local transport is never more than that behind.
+MAX_BUDGET_PACED_INTERVAL: Final = 900
+
+# A LAN or MQTT reading that has been applied to a device's state carries the
+# same power/brightness/colour fields as the /device/state poll, at no cost
+# against Govee's quota, so a recent one makes that cycle's cloud read redundant.
+# Only readings actually applied count: an outbound command, a LAN write to a
+# device that never answers reads, or a readback that mismatched the command
+# and was discarded are not readings of the device's state.
+#
+# "Recent" is a multiple of the poll interval rather than the interval itself:
+# solicited LAN reads run at the tail of a poll cycle, so at the start of the
+# next one they are a full interval old plus however long the tail took, and a
+# window of exactly one interval would never admit them.
+LOCAL_READING_FRESHNESS_FACTOR: Final = 1.5
+# How many cloud reads in a row a device may skip on the strength of local
+# readings before one is forced anyway. Five, so a device with a healthy
+# local transport still reconciles against the cloud roughly every sixth
+# cycle — cheap insurance against a local transport that reports confidently
+# wrong values, and against cloud-only fields the local frames never carry.
+MAX_LOCAL_FRESH_SKIPS: Final = 5
+
+# How long a device must have been off with no observed state change before
+# its poll cadence is stretched. Half an hour: long enough that a light
+# someone is actively using never qualifies, short enough that a house's
+# overnight devices drop off the fast cadence for most of the night.
+IDLE_DEVICE_AFTER_SECONDS: Final = 1800
+# Poll an idle device one cycle in this many. Four, so a device switched on
+# outside Home Assistant is still noticed within four intervals, while
+# costing a quarter of what it did.
+IDLE_DEVICE_POLL_DIVISOR: Final = 4
+# How long after a command a device stays on the fast cadence regardless of
+# what it reports. Covers slow cloud propagation, so the poll that confirms
+# a write actually landed is never the one that got skipped.
+RECENT_COMMAND_WINDOW_SECONDS: Final = 300
 # Bounds for the configurable MQTT status-poll interval (seconds). The lower
 # bound matches the fastest cadence observed from the Govee app itself, so
 # this integration can never out-poll what the app already does routinely.
@@ -256,7 +308,15 @@ MQTT_STATUS_QUERY_QUARANTINE_STRIKES: Final = 2
 #     per its FAHRENHEIT_REPORTING_SKUS entry above): confirmed via
 #     diagnostics showing the identical quarantine signature (issue #197
 #     follow-up).
-MQTT_STATUS_QUERY_EXCLUDED_SKUS: Final = frozenset({"H5110", "H5220", "H5111"})
+#   H5075 (thermo-hygrometer): same class again — BLE-advertising, no network
+#     stack of its own, listed on the account with a topic it never answers.
+#     Confirmed on v2026.9.11 with six units on one account, each taking the
+#     session down on its own reconnect cycle: the sweep at the 300s mark
+#     dropped the session, and the five reconnects that followed died ~1s
+#     after querying the next unit, so MQTT was effectively dead for 30
+#     minutes after every restart while the six burned through their strikes
+#     (issue #195 follow-up).
+MQTT_STATUS_QUERY_EXCLUDED_SKUS: Final = frozenset({"H5110", "H5220", "H5111", "H5075"})
 
 # Optimistic state handling
 # Grace window (seconds) during which API polls do NOT overwrite optimistic
@@ -332,6 +392,13 @@ LAN_CORRELATION_TTL_SECONDS: Final = 600
 # though H1250/H60A6 (the other SKUs reported with inert light toggles) are
 # plausibly the same fixture design.
 MAIN_LIGHT_TOGGLE_SKUS: Final = frozenset({"H1270"})
+
+# SKUs whose screen-sync (DreamView) is advertised as ``movie_setting`` /
+# ``movieMode`` instead of the usual ``dreamViewToggle`` capability. The
+# existing DreamView command path drives them unchanged, so the only gap was
+# detection: the H2A41 TV Backlight 3 got no DreamView switch (issue #199).
+# Deliberately narrow: only the H2A41 is verified against real hardware.
+MOVIE_MODE_DREAMVIEW_SKUS: Final = frozenset({"H2A41"})
 
 # BLE constants
 # Govee AWS/BLE advert manufacturer ID. Verified against
