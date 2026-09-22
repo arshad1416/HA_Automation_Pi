@@ -748,9 +748,9 @@ rest_command:
       Content-Type: "application/json"
     payload: >-
       {
-        "model": "ag/gemini-3.7-flash-medium",
+        "model": "ag/gemini-3.8-flash-medium",
         "messages": [{"role": "user", "content": {{ prompt | tojson }}}],
-        "max_tokens": 8192,
+        "max_tokens": 16384,
         "reasoning_effort": "medium",
         "temperature": 0,
         "stream": false

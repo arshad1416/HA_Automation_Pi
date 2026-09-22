@@ -12,6 +12,12 @@
 # ladder floor, inside the ULO overnight window (3.9c/kWh) — the cheapest
 # cooling of the day. The advisor band extends to 22.0C so hourly runs hold
 # (never raise) the sleep target until morning.
+# Cold-night exception (2026-09-21): at or below 14C outside, the master-bedroom
+# and guest-bath windows stay open overnight for cross-ventilation, so the house
+# cools passively for free; mechanical cooling to 22.0-22.5C overcools it and the
+# family wakes up cold. Every setpoint this automation writes is floored at 23.0C
+# (23.5C when outdoor is at or below 10C). The hourly advisor enforces the same
+# floor (cold_night_vent there).
 # The hourly AI run remains authoritative after these fire.
 - id: evening_comfort_setpoint
   alias: evening_comfort_setpoint
@@ -19,7 +25,10 @@
     transitions, re-assert humidity-compensated PMV -0.5 cooling setpoints instead
     of the profiles'' warm defaults. Evening: 23.5C at <=45% RH, 23.0C at 46-55% RH,
     22.5C above 55% RH (slightly-cool bias: PMV-neutral minus ~1.0C, with ~0.5C per
-    10 RH points above 45%). Sleep: flat 22.0C. Cooling season only; the hourly
+    10 RH points above 45%). Sleep: flat 22.0C, except on cold nights (outdoor
+    <=14C) when the windows are open for cross-ventilation: then every setpoint is
+    floored at 23.0C (23.5C when outdoor <=10C), because passive cooling is free and
+    the AC would otherwise overcool the house by morning. Cooling season only; the hourly
     climate_ai_advisor stays authoritative afterwards. Never writes during live
     On-Peak (weekday 16:00-21:00): the Evening ladder is applied at 21:01 instead.'
   mode: single
@@ -67,11 +76,19 @@
   actions:
   - variables:
       rh: '{{ states(''sensor.climate_ai_ecobee_humidity'') | float(states(''sensor.ecobee_current_humidity'') | float(50)) | round(0) }}'
+      # Cold-night ventilation floor (2026-09-21): see header. 0.0 = not cold
+      # enough, so the max() below is a no-op and the normal ladder stands.
+      outdoor_c: '{{ state_attr(''weather.forecast_home'', ''temperature'') | float(20) }}'
+      cold_floor_c: >-
+        {% if outdoor_c | float(20) <= 10 %}23.5
+        {% elif outdoor_c | float(20) <= 14 %}23.0
+        {% else %}0.0
+        {% endif %}
       setpoint: >-
-        {% if trigger.id == 'sleep' %}22.0
-        {% elif rh > 55 %}22.5
-        {% elif rh > 45 %}23.0
-        {% else %}23.5
+        {% if trigger.id == 'sleep' %}{{ [22.0, cold_floor_c | float] | max }}
+        {% elif rh > 55 %}{{ [22.5, cold_floor_c | float] | max }}
+        {% elif rh > 45 %}{{ [23.0, cold_floor_c | float] | max }}
+        {% else %}{{ [23.5, cold_floor_c | float] | max }}
         {% endif %}
   - action: climate.set_temperature
     data:
@@ -82,4 +99,4 @@
   - action: logbook.log
     data:
       name: evening_comfort_setpoint
-      message: '{{ trigger.id | capitalize }} profile: comfort setpoint {{ setpoint }}C applied at {{ rh }}% RH (replaces profile default).'
+      message: '{{ trigger.id | capitalize }} profile: comfort setpoint {{ setpoint }}C applied at {{ rh }}% RH (replaces profile default).{{ '' Cold-night ventilation floor '' ~ cold_floor_c ~ ''C active (outdoor '' ~ outdoor_c ~ ''C, windows open).'' if cold_floor_c | float > 0 }}'
