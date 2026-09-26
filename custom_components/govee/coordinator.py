@@ -107,6 +107,7 @@ from .const import (
     MIN_MQTT_STATUS_INTERVAL,
     MIN_PROBE_POLL_INTERVAL,
     MIN_WATER_DETECTOR_POLL_INTERVAL,
+    MQTT_MUSIC_MODE_SKUS,
     MQTT_STATUS_POLL_OFF,
     MQTT_STATUS_QUERY_EXCLUDED_SKUS,
     MQTT_STATUS_QUERY_QUARANTINE_STRIKES,
@@ -150,6 +151,7 @@ from .models.commands import (
     WorkModeCommand,
     create_dreamview_command,
 )
+from .api.ble_packet import music_v3_effect_code
 from .api.probe_thermometer import (
     ProbeLimits,
     build_limits_read_packet,
@@ -3557,6 +3559,39 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         self._config_entry.async_create_background_task(self.hass, _surface(), name="govee_mqtt_give_up_issue")
 
+    @callback
+    def async_set_updated_data(self, data: dict[str, GoveeDeviceState]) -> None:
+        """Publish pushed or locally applied state without moving the cloud poll.
+
+        Home Assistant's version also cancels the pending poll and re-arms it a
+        full ``update_interval`` later. That suits a coordinator whose pushes
+        replace its poll; here the poll is the only source for devices with no
+        push channel, and every MQTT frame, gateway thermometer frame, LAN read
+        and OpenAPI event goes through this method. Once budget pacing or a
+        rate-limit back-off stretched the interval past the gap between pushes
+        (the MQTT status sweep alone answers every few minutes), the poll was
+        re-armed before it could ever fire, and the pacing that would shorten
+        the interval again only runs inside the poll: cloud-polled devices
+        froze until the entry reloaded (issue #214).
+
+        So a push never moves a poll that is already pending. It still arms
+        one when none is, on Home Assistant's own conditions (someone is
+        listening; ``_schedule_refresh`` checks the interval and
+        ``pref_disable_polling``), because a refresh that ends in
+        ConfigEntryAuthFailed leaves no poll armed, and until now the next
+        push was what brought it back.
+
+        The rest of the contract is unchanged: the data is published, a push
+        still counts as a successful update, and listeners are told. A
+        requested refresh waiting in its debouncer is left to run: a push
+        covers one device, the refresh all of them.
+        """
+        self.data = data
+        self.last_update_success = True
+        if self._listeners and self._unsub_refresh is None:
+            self._schedule_refresh()
+        self.async_update_listeners()
+
     async def _async_update_data(self) -> dict[str, GoveeDeviceState]:
         """Fetch state for all devices (parallel).
 
@@ -4399,6 +4434,45 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         self.async_set_updated_data(self._states)
         return True
 
+    async def _try_mqtt_music_mode(self, device_id: str, device: GoveeDevice, command: MusicModeCommand) -> bool:
+        """Select a music effect with the app's own frame, for SKUs whose REST path is empty.
+
+        Govee relays a Platform-API musicMode to the SKUs in
+        ``MQTT_MUSIC_MODE_SKUS`` as a zeroed ``33 05 01`` frame, so the light
+        goes dark (#186, #215). Returns False, leaving REST to carry the command,
+        when the SKU is not affected, AWS IoT is down, or the effect name has
+        no known app code.
+        """
+        if device.sku.upper() not in MQTT_MUSIC_MODE_SKUS or not self._ble_manager.available:
+            return False
+        name = next(
+            (
+                str(opt.get("name", ""))
+                for opt in device.get_music_mode_options()
+                if opt.get("value") == command.music_mode
+            ),
+            "",
+        )
+        effect_code = music_v3_effect_code(name)
+        if effect_code is None:
+            _LOGGER.debug("No app code for music mode %r on %s, sending over REST", name, device.name)
+            return False
+        ok = await self._ble_manager.async_send_music_mode_v3(device_id, device.sku, effect_code, command.sensitivity)
+        self._record_local_command(
+            device_id,
+            device.sku,
+            "mqtt",
+            command,
+            delivered=ok,
+            detail=f"ptReal 33 05 13 {effect_code:02x} sensitivity={command.sensitivity}",
+        )
+        if not ok:
+            return False
+        self._record_transport_send(device_id, "mqtt")
+        self._apply_optimistic_update(device_id, command)
+        self.async_set_updated_data(self._states)
+        return True
+
     async def async_control_device(
         self,
         device_id: str,
@@ -4455,6 +4529,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             if await self._try_lan_command(device_id, device, command):
                 return True
             # LAN unavailable / unconfirmed — fall through to MQTT/REST.
+
+            if isinstance(command, MusicModeCommand) and await self._try_mqtt_music_mode(device_id, device, command):
+                return True
 
             # MQTT-native control tier: when enabled and connected, push
             # power/brightness/color over the AWS IoT channel (~50ms) instead

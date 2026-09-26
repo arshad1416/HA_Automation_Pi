@@ -127,6 +127,14 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
 # every other fan SKU. Compared case-insensitively against GoveeDevice.sku.
 MQTT_OSCILLATION_SKUS: Final = frozenset({"H7105", "H7107"})
 
+# Lights whose Platform-API musicMode is accepted (HTTP 200) but reaches the
+# device as an empty frame: Govee relays it over AWS IoT as `33 05 01 00 ...`,
+# with the effect and sensitivity zeroed, whatever was sent, so the light goes
+# dark or does nothing (H612F #215, H6022 #186). For these the integration writes
+# the app's own `33 05 13` frame over ptReal instead, falling back to REST when
+# AWS IoT is not connected. Compared case-insensitively against GoveeDevice.sku.
+MQTT_MUSIC_MODE_SKUS: Final = frozenset({"H6022", "H612F"})
+
 
 # Multi-outlet plugs whose Developer API capability list carries only the
 # master powerSwitch (no socketToggle{N}) but whose outlets homebridge-govee
@@ -316,7 +324,12 @@ MQTT_STATUS_QUERY_QUARANTINE_STRIKES: Final = 2
 #     after querying the next unit, so MQTT was effectively dead for 30
 #     minutes after every restart while the six burned through their strikes
 #     (issue #195 follow-up).
-MQTT_STATUS_QUERY_EXCLUDED_SKUS: Final = frozenset({"H5110", "H5220", "H5111", "H5075"})
+#   H5074 (thermo-hygrometer, the H5075's smaller sibling): the same class,
+#     BLE-only with a topic on the account it never answers, so a status
+#     query to it drops the session just as the H5075's did (issue #195).
+#     Not in FAHRENHEIT_REPORTING_SKUS: that list needs a reading showing
+#     which unit the model reports in.
+MQTT_STATUS_QUERY_EXCLUDED_SKUS: Final = frozenset({"H5110", "H5220", "H5111", "H5075", "H5074"})
 
 # Optimistic state handling
 # Grace window (seconds) during which API polls do NOT overwrite optimistic
