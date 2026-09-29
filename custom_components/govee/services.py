@@ -3,6 +3,7 @@
 Provides:
 - ``govee.refresh_scenes``: re-fetch the scene catalog for one or all devices.
 - ``govee.set_segment_color``: set the colour of individual RGBIC segments.
+- ``govee.send_raw_ptreal``: send a raw BLE ptReal frame (developer/debug aid).
 
 Actions are registered once from ``async_setup`` so automations that reference
 them validate even while no config entry is loaded (quality-scale rule
@@ -21,7 +22,9 @@ from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, callback
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv, device_registry as dr
+from homeassistant.helpers.service import async_register_admin_service
 
+from .api.ble_packet import calculate_checksum
 from .const import DOMAIN
 from .coordinator import GoveeCoordinator
 from .models import RGBColor, SegmentColorCommand
@@ -31,13 +34,22 @@ _LOGGER = logging.getLogger(__name__)
 ATTR_DEVICE_ID = "device_id"
 ATTR_RGB_COLOR = "rgb_color"
 ATTR_SEGMENTS = "segments"
+ATTR_FRAME = "frame"
 
 SERVICE_REFRESH_SCENES = "refresh_scenes"
 SERVICE_SET_SEGMENT_COLOR = "set_segment_color"
+SERVICE_SEND_RAW_PTREAL = "send_raw_ptreal"
 
 SERVICE_REFRESH_SCENES_SCHEMA = vol.Schema(
     {
         vol.Optional(ATTR_DEVICE_ID): cv.string,
+    }
+)
+
+SERVICE_SEND_RAW_PTREAL_SCHEMA = vol.Schema(
+    {
+        vol.Required(ATTR_DEVICE_ID): cv.string,
+        vol.Required(ATTR_FRAME): cv.string,
     }
 )
 
@@ -166,6 +178,53 @@ async def async_set_segment_color_handler(hass: HomeAssistant, call: ServiceCall
     _LOGGER.debug("Set segments %s to color %s on device %s", segments, rgb, device_id)
 
 
+async def async_send_raw_ptreal_handler(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Handle ``govee.send_raw_ptreal`` (developer/debug aid for issue #208).
+
+    Sends an arbitrary BLE ptReal command frame to a device over the AWS IoT
+    passthrough. Frames of 19 bytes or fewer get a checksum appended by the
+    coordinator; a 20-byte frame must already carry a valid XOR checksum.
+    """
+    raw_id = call.data[ATTR_DEVICE_ID]
+    raw_frame = call.data[ATTR_FRAME]
+
+    cleaned = raw_frame.replace(" ", "").replace(":", "")
+    try:
+        frame = bytes.fromhex(cleaned)
+    except ValueError:
+        frame = b""
+
+    if not cleaned or len(cleaned) % 2 != 0 or not frame or len(frame) > 20:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_ptreal_frame",
+            translation_placeholders={"frame": raw_frame},
+        )
+
+    if len(frame) == 20 and calculate_checksum(list(frame[:19])) != frame[19]:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_ptreal_frame",
+            translation_placeholders={"frame": raw_frame},
+        )
+
+    found = _get_coordinator_for_device(hass, raw_id)
+    if found is None:
+        raise _device_not_found(raw_id)
+    coordinator, device_id = found
+
+    device = coordinator.devices.get(device_id)
+    device_name = device.name if device is not None else device_id
+
+    if not await coordinator.async_send_raw_ptreal(device_id, frame):
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="ptreal_unavailable",
+            translation_placeholders={"device": device_name},
+        )
+    _LOGGER.debug("Sent raw ptReal frame %s to device %s", frame.hex(), device_id)
+
+
 @callback
 def async_setup_services(hass: HomeAssistant) -> None:
     """Register the Govee service actions (called once from ``async_setup``)."""
@@ -175,6 +234,9 @@ def async_setup_services(hass: HomeAssistant) -> None:
 
     async def _set_segment_color(call: ServiceCall) -> None:
         await async_set_segment_color_handler(hass, call)
+
+    async def _send_raw_ptreal(call: ServiceCall) -> None:
+        await async_send_raw_ptreal_handler(hass, call)
 
     hass.services.async_register(
         DOMAIN,
@@ -187,4 +249,12 @@ def async_setup_services(hass: HomeAssistant) -> None:
         SERVICE_SET_SEGMENT_COLOR,
         _set_segment_color,
         schema=SERVICE_SET_SEGMENT_COLOR_SCHEMA,
+    )
+    # Admin-only: it sends arbitrary frames to the device (#208 debug aid).
+    async_register_admin_service(
+        hass,
+        DOMAIN,
+        SERVICE_SEND_RAW_PTREAL,
+        _send_raw_ptreal,
+        schema=SERVICE_SEND_RAW_PTREAL_SCHEMA,
     )

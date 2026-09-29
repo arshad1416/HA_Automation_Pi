@@ -25,3 +25,17 @@ set_segment_color:
       example: "[255, 0, 0]"
       selector:
         color_rgb:
+
+send_raw_ptreal:
+  fields:
+    device_id:
+      required: true
+      example: "AA:BB:CC:DD:EE:FF:00:11"
+      selector:
+        device:
+          integration: govee
+    frame:
+      required: true
+      example: "33 05 15 01 FF 00 00"
+      selector:
+        text:

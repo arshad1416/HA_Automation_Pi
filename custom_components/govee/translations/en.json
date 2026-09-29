@@ -113,7 +113,7 @@
           "enable_scenes": "Creates a scene dropdown per device that has scenes, and exposes the scenes as light effects. Turn off to save one API request per device at startup.",
           "enable_diy_scenes": "Creates a DIY scene dropdown per device that has DIY scenes created in the Govee app.",
           "expose_transport_entities": "Adds one connectivity binary sensor per transport (cloud API, MQTT, Bluetooth, LAN) for every device. Off by default because it creates four extra diagnostic entities per device.",
-          "enable_mqtt_control": "Routes power, brightness, and color commands through Govee's MQTT channel instead of the REST cloud API, reducing latency and bypassing REST rate limits. Requires email and password login (MQTT credentials). Falls back to REST automatically when MQTT is unavailable. Experimental: it uses an undocumented channel, so leave it off if commands behave unexpectedly.",
+          "enable_mqtt_control": "Routes power, brightness, and color commands through Govee's MQTT channel instead of the REST cloud API, reducing latency and bypassing REST rate limits. Requires email and password login (MQTT credentials). Falls back to REST automatically when MQTT is unavailable, and for any device that has not yet answered over MQTT (it answers the periodic status query, so keep that on). Experimental: it uses an undocumented channel, so leave it off if commands behave unexpectedly.",
           "lan_targets": "Only needed when LAN-enabled Govee devices are on a different subnet or VLAN than Home Assistant, so the local discovery scan cannot reach them. Enter a comma-separated list of device IPs (10.20.0.51), broadcast addresses (10.20.0.255), and subnets in CIDR notation (10.20.0.0/24, /24 or smaller). Subnets are scanned device by device, since most routers drop cross-VLAN broadcasts. Leave blank if all devices share Home Assistant's network. Advanced: if a device still is not found because its scan reply cannot cross the VLAN, pin it with device_id=ip (AA:BB:CC:DD:EE:FF:00:11=10.20.0.51) to skip discovery for that device. Add a trailing ! (=10.20.0.51!) only for firmware that accepts LAN commands but never answers a status read. That turns off every LAN health check for the device, so a wrong IP will look like it is working while the device never responds. Enter off to turn LAN discovery and local control off entirely."
         }
       },
@@ -454,6 +454,9 @@
       },
       "clear_water_full": {
         "name": "Clear water alert"
+      },
+      "clear_leak_alert": {
+        "name": "Clear leak alert"
       }
     },
     "event": {
@@ -497,6 +500,20 @@
           "description": "Color as [R, G, B] values from 0 to 255."
         }
       }
+    },
+    "send_raw_ptreal": {
+      "name": "Send raw ptReal frame",
+      "description": "Developer/debug tool that sends a raw Govee BLE command frame to the device over AWS IoT (a checksum is added automatically when 19 bytes or fewer are given). A wrong frame can leave the light in an unexpected mode.",
+      "fields": {
+        "device_id": {
+          "name": "Device",
+          "description": "The device to send the frame to. Accepts a Home Assistant device or a Govee device ID."
+        },
+        "frame": {
+          "name": "Frame",
+          "description": "The raw BLE command frame as hex bytes, separated by spaces or colons (e.g. \"33 05 15 01 FF 00 00\"). Up to 20 bytes; a checksum is appended automatically for 19 bytes or fewer."
+        }
+      }
     }
   },
   "exceptions": {
@@ -523,6 +540,12 @@
     },
     "unsupported_target_humidity": {
       "message": "{device} does not support a target humidity."
+    },
+    "invalid_ptreal_frame": {
+      "message": "{frame} is not a valid raw ptReal frame. Provide 1-20 hex bytes, optionally separated by spaces or colons, with a valid checksum if 20 bytes are given."
+    },
+    "ptreal_unavailable": {
+      "message": "Could not send the raw ptReal frame to {device}. This requires the account (email/password) login with AWS IoT connected, and the device must not be a group."
     }
   },
   "issues": {

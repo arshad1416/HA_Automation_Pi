@@ -413,6 +413,12 @@ MAIN_LIGHT_TOGGLE_SKUS: Final = frozenset({"H1270"})
 # Deliberately narrow: only the H2A41 is verified against real hardware.
 MOVIE_MODE_DREAMVIEW_SKUS: Final = frozenset({"H2A41"})
 
+# SKUs that advertise ``dreamViewToggle`` but ignore it: Govee answers HTTP 200
+# and the light never enters screen sync (issue #213). The REST toggle is
+# skipped for them, so DreamView ON goes straight to the video-mode frame over
+# AWS IoT and OFF restores the last colour. Unverified on hardware.
+PTREAL_DREAMVIEW_SKUS: Final = frozenset({"H66A0"})
+
 # BLE constants
 # Govee AWS/BLE advert manufacturer ID. Verified against
 # Bluetooth-Devices/govee-ble (used by H5127 and related). Additional IDs

@@ -113,6 +113,7 @@ from .const import (
     MQTT_STATUS_QUERY_QUARANTINE_STRIKES,
     MQTT_STATUS_QUERY_SPACING,
     OPTIMISTIC_GRACE_CAP_SECONDS,
+    PTREAL_DREAMVIEW_SKUS,
     RECENT_COMMAND_WINDOW_SECONDS,
     resolve_fahrenheit_conversion,
 )
@@ -151,7 +152,7 @@ from .models.commands import (
     WorkModeCommand,
     create_dreamview_command,
 )
-from .api.ble_packet import music_v3_effect_code
+from .api.ble_packet import build_packet, calculate_checksum, encode_packet_base64, music_v3_effect_code
 from .api.probe_thermometer import (
     ProbeLimits,
     build_limits_read_packet,
@@ -529,6 +530,9 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # device has freshly reported (or is currently wet), keeping the account
         # API request count low.
         self._water_leak_last_time: dict[str, int] = {}
+        # Bumped per detector when the user clears its leak alert, so a poll
+        # tick already in flight drops the reading it took before the clear.
+        self._water_leak_clear_gen: dict[str, int] = {}
         # PII-free census of the last BFF device-list response (#87 diagnostics):
         # which SKUs the BFF returned and whether they carry leak-discovery
         # fields. Empty until the first _discover_leak_sensors() call.
@@ -2850,6 +2854,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     if state is None:
                         continue
 
+                    clear_gen = self._water_leak_clear_gen.get(device_id, 0)
                     online = bool(info.get("online", True)) and bool(info.get("gateway_online", True))
                     last_time = info.get("last_time") or 0
                     prev_time = self._water_leak_last_time.get(device_id, 0)
@@ -2863,10 +2868,12 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                         except Exception as err:  # noqa: BLE001
                             _LOGGER.debug("warnMessage poll failed for %s: %s", device_id, err)
                             is_wet = bool(state.water_leak)
-                        if state.water_leak != is_wet:
+                        # A clear that landed while warnMessage was in flight
+                        # wins; the next tick reads the alert again.
+                        if self._water_leak_clear_gen.get(device_id, 0) == clear_gen and state.water_leak != is_wet:
                             state.water_leak = is_wet
                             changed = True
-                    if last_time:
+                    if last_time and self._water_leak_clear_gen.get(device_id, 0) == clear_gen:
                         self._water_leak_last_time[device_id] = last_time
 
                     if state.online != online:
@@ -2893,6 +2900,51 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
 
         if changed:
             self.async_update_listeners()
+
+    async def async_clear_water_leak(self, device_id: str) -> bool:
+        """Mark a standalone water detector's leak alerts read (user action).
+
+        A detector's trip latches until its ``LeakageAlert`` is read (issue
+        #62). This sends the same ``warnLifted`` request as the Govee app's
+        "Read" button, so the alert can be acknowledged from Home Assistant,
+        then drops the latched state at once rather than on the next poll. A
+        detector that is still wet raises a new alert and latches again.
+
+        Args:
+            device_id: Device identifier.
+
+        Returns:
+            True once Govee has accepted the request; False when the device is
+            not a standalone detector, account login is not configured, or
+            Govee rejected or could not be reached.
+        """
+        device = next((d for d in self._water_detectors if d.device_id == device_id), None)
+        if device is None or not self._iot_credentials:
+            return False
+        sku = device.sku
+
+        async def _op(auth_client: GoveeAuthClient, token: str) -> bool:
+            return await auth_client.lift_leak_warning(token, device_id, sku)
+
+        try:
+            lifted = await self._async_bff_call(_op, "leak warning lift")
+        except GoveeApiError as err:
+            _LOGGER.debug("Clearing the leak alert for %s failed: %s", device_id, err)
+            return False
+        if not lifted:
+            return False
+
+        # Forget the last report time so the next tick reads warnMessage again
+        # and confirms Govee marked the alert read, and invalidate any tick
+        # already in flight.
+        self._water_leak_clear_gen[device_id] = self._water_leak_clear_gen.get(device_id, 0) + 1
+        self._water_leak_last_time.pop(device_id, None)
+        state = self._states.get(device_id)
+        if state is not None and state.water_leak:
+            state.water_leak = False
+            self.async_update_listeners()
+        _LOGGER.debug("Leak alert cleared for %s (user action, warnLifted)", device_id)
+        return True
 
     @callback
     def _handle_leak_event(self, state_data: dict[str, Any]) -> None:
@@ -4511,7 +4563,7 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # BLE-first dispatch: if a BLE transport is available for this
             # device, try it before the cloud REST API. BLE is ~10x faster
             # (~50ms local vs ~500ms cloud) and works when internet is down.
-            if HAS_BLUETOOTH and device_id in self._ble_devices:
+            if HAS_BLUETOOTH and device_id in self._ble_devices and self._ble_write_eligible(device_id):
                 if await self._try_ble_command(device_id, command):
                     self._apply_optimistic_update(device_id, command)
                     self.async_set_updated_data(self._states)
@@ -4537,7 +4589,15 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             # power/brightness/color over the AWS IoT channel (~50ms) instead
             # of the REST cloud API (~500ms). Group devices and non-capable
             # commands (color temp, scenes, segments) fall through to REST.
-            if self._enable_mqtt_control and self.mqtt_connected and not device.is_group:
+            # A publish is never acknowledged, so only devices that have
+            # answered on AWS IoT this session qualify: some firmware (H6163)
+            # never listens there, and its commands would vanish (#198).
+            if (
+                self._enable_mqtt_control
+                and self.mqtt_connected
+                and not device.is_group
+                and self._mqtt_heard_from(device_id)
+            ):
                 if await self._try_mqtt_command(device_id, device.sku, command):
                     self._record_transport_send(device_id, "mqtt")
                     self._apply_optimistic_update(device_id, command)
@@ -4897,6 +4957,11 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             return abs(reply.color_temp_kelvin - command.kelvin) <= LAN_COLOR_TEMP_CONFIRM_TOLERANCE
         return False
 
+    def _mqtt_heard_from(self, device_id: str) -> bool:
+        """Return True once the device has sent a state message over AWS IoT this session."""
+        health = self._transport.get(device_id, "mqtt")
+        return health is not None and health.last_success_ts is not None
+
     async def _try_mqtt_command(self, device_id: str, sku: str, command: DeviceCommand) -> bool:
         """Attempt to send a command via native MQTT. Returns True on success.
 
@@ -4936,6 +5001,16 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         self._record_local_command(device_id, sku, "mqtt", command, delivered=True)
         return True
 
+    def _ble_write_eligible(self, device_id: str) -> bool:
+        """Return True if this device's BLE advertisements are fresh enough to write to.
+
+        BLE writes are unacked (write_gatt_char(..., response=False)), so a stale
+        advertisement (device out of range / asleep) would otherwise be sent to
+        blindly and never fall through to LAN/MQTT/REST (#198).
+        """
+        health = self._transport.get(device_id, "ble")
+        return health is not None and health.is_available
+
     async def _try_ble_command(self, device_id: str, command: DeviceCommand) -> bool:
         """Attempt to send a command via BLE. Returns True on success.
 
@@ -4945,6 +5020,8 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         ble_device = self._ble_devices.get(device_id)
         if ble_device is None:
             return False
+        device = self._devices.get(device_id)
+        ble_sku = device.sku if device is not None else "unknown"
 
         try:
             if isinstance(command, PowerCommand):
@@ -4970,10 +5047,16 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 exc_info=True,
             )
             self._record_transport_failure(device_id, "ble", str(err))
+            self._record_local_command(device_id, ble_sku, "ble", command, delivered=False, detail=str(err))
             return False
         else:
             _LOGGER.debug("BLE command succeeded for %s: %s", device_id, type(command).__name__)
-            self._record_transport_success(device_id, "ble")
+            # BLE writes are unacked (response=False), so this is a send, not a
+            # confirmed receive — `last_success_ts` is the advertisement clock
+            # `refresh_ble_staleness` uses to decide the device stopped
+            # advertising; a blind write must not move it (#198).
+            self._record_transport_send(device_id, "ble")
+            self._record_local_command(device_id, ble_sku, "ble", command, delivered=True)
             # A successful BLE write reaches the device directly — flip
             # `online` back True if a stale `online: false` from the cloud
             # is masking a recovered device (issue #68).
@@ -5151,21 +5234,23 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             _LOGGER.error("Unknown device for DreamView: %s", device_id)
             return False
 
-        # Try REST API first (works for HTTP-capable devices like H6097)
-        try:
-            success = await self.async_control_device(device_id, create_dreamview_command(enabled))
-            if success:
-                _LOGGER.debug(
-                    "Sent DreamView %s to %s via REST API",
-                    "ON" if enabled else "OFF",
-                    device.name,
-                )
-                return True
-        except ConfigEntryAuthFailed:
-            # Let authentication errors propagate so Home Assistant can handle reauth
-            raise
-        except Exception as err:
-            _LOGGER.debug("REST DreamView failed for %s: %s", device.name, err)
+        # Try REST API first (works for HTTP-capable devices like H6097), except
+        # on SKUs that accept the toggle and ignore it (issue #213).
+        if device.sku.upper() not in PTREAL_DREAMVIEW_SKUS:
+            try:
+                success = await self.async_control_device(device_id, create_dreamview_command(enabled))
+                if success:
+                    _LOGGER.debug(
+                        "Sent DreamView %s to %s via REST API",
+                        "ON" if enabled else "OFF",
+                        device.name,
+                    )
+                    return True
+            except ConfigEntryAuthFailed:
+                # Let authentication errors propagate so Home Assistant can handle reauth
+                raise
+            except Exception as err:
+                _LOGGER.debug("REST DreamView failed for %s: %s", device.name, err)
 
         # Fall back to BLE passthrough for devices that need it.
         #
@@ -5276,6 +5361,60 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             )
 
         return success
+
+    async def async_send_raw_ptreal(self, device_id: str, frame: bytes) -> bool:
+        """Send a raw ptReal BLE frame to a device (developer/debug aid).
+
+        This is a debug path for issue #208 (H7026 and similar RGBIC devices
+        where the Platform API cannot address every segment): it lets a
+        developer service try candidate frames against the device's BLE
+        passthrough. It performs no validation of the frame's meaning and
+        applies no optimistic state update. Sending a wrong frame can put the
+        light into an unexpected mode.
+
+        Args:
+            device_id: Device identifier.
+            frame: Raw command bytes. 1-19 bytes are padded and checksummed
+                via `build_packet`; exactly 20 bytes are sent as-is provided
+                the last byte is a valid XOR checksum of the first 19.
+
+        Returns:
+            True if the frame was sent successfully.
+        """
+        device = self._devices.get(device_id)
+        if not device or device.is_group:
+            _LOGGER.debug("Unknown or group device for raw ptReal: %s", device_id)
+            return False
+
+        if not self._ble_manager.available:
+            _LOGGER.debug(
+                "Cannot send raw ptReal for %s: AWS IoT passthrough not connected",
+                device_id,
+            )
+            return False
+
+        if not frame or len(frame) > 20:
+            _LOGGER.debug("Invalid raw ptReal frame length for %s: %d bytes", device_id, len(frame))
+            return False
+
+        if len(frame) == 20:
+            if calculate_checksum(list(frame[:19])) != frame[19]:
+                _LOGGER.debug("Invalid raw ptReal checksum for %s", device_id)
+                return False
+            packet = bytes(frame)
+        else:
+            packet = build_packet(list(frame))
+
+        result = await self._ble_manager.async_send_ble_packet(device_id, device.sku, encode_packet_base64(packet))
+
+        _LOGGER.debug(
+            "Sent raw ptReal %s to %s: %s",
+            packet.hex(),
+            device_id,
+            "ok" if result else "failed",
+        )
+
+        return result
 
     @staticmethod
     def _preserve_optimistic_field(
