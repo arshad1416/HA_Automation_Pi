@@ -1027,6 +1027,9 @@
            ~ '\nOUTDOOR CROSS-CHECK: Ecobee weather reports ' ~ (state_attr('weather.ecobee', 'temperature') | default('unknown', true)) ~ 'C and ' ~ (state_attr('weather.ecobee', 'humidity') | default('unknown', true)) ~ '% RH; Forecast Home reports ' ~ outdoor_temp_c ~ 'C and ' ~ outdoor_humidity_pct ~ '% RH with dew point ' ~ outdoor_dew_point_c ~ 'C. Use agreement as confidence. If temperature differs by more than 2C or humidity by more than 15 percentage points, treat outdoor conditions as uncertain and do not change HVAC solely because of weather.'
            ~ '\nOUTDOOR ADAPTATION: Current outdoor conditions are ' ~ outdoor_temp_c ~ 'C, ' ~ outdoor_humidity_pct ~ '% RH, dew point ' ~ outdoor_dew_point_c ~ 'C. Use dew point, not outdoor relative humidity alone, to judge outdoor moisture. Weather may shift the normal perceived-temperature target by at most 0.5C; do not change the HVAC merely because a single hourly weather reading changed, and keep the existing two-hour hold. If outdoors is at least 1.5C cooler than the warmest occupied indoor perceived temperature and dew point is below 16C, favor fans, reduced AC, and a null setpoint change; outside air is favorable for optional natural ventilation. If outdoor temperature is 30C or higher while dew point is below 18C and indoor RH is at most 55%, an adaptive 24.5-25.5C cooling target with occupied-room fans is acceptable. If outdoor dew point is 18C or higher, treat the air as moisture-laden: keep the house closed, do not rely on outdoor air for comfort, and when indoor RH exceeds 55% aim near the 22.5-23.0C steps of the guide ladder for cooling/dehumidification rather than 25.5C. When outdoors is below 18C and indoor perceived temperature is already comfortable, avoid mechanical cooling and return a null setpoint. Exceptions to the 0.5C weather adaptation are deliberate ULO pre-cooling and sustained urgent indoor heat/humidity correction.'
            ~ '\nCOLD-NIGHT VENTILATION (2026-09-21): Whenever outdoor temperature is at or below 14C overnight, the occupants keep the master-bedroom and guest-bathroom windows open for cross-ventilation — passive free cooling is the PRIMARY cooling source on such nights and mechanical cooling is redundant. Never select the 22.0C ULO pre-cool on a cold night; keep the cooling setpoint at or above 23.0C (23.5C when outdoor is at or below 10C); prefer setpoint null once rooms are at or below target; and keep ceiling fans off in sleeping rooms at or below target — moving air in an already-cooling house is exactly the too-cold-morning complaint. The automation enforces this floor deterministically even if you return a lower value. Current outdoor: ' ~ outdoor_temp_c ~ 'C, dew point ' ~ outdoor_dew_point_c ~ 'C.' }}
+  - variables:
+      prompt: >-
+        {{ prompt ~ '\nFALL OVERRIDE: Ceiling-fan control is disabled at the user request. Return fans as an empty object. Do not rely on ceiling fans when choosing HVAC setpoints or recommend operating them. This overrides all earlier ceiling-fan instructions. Vent boosters remain available.' }}
   - action: rest_command.climate_ai_gemini
     data:
       prompt: '{{ prompt }}'
@@ -1195,7 +1198,9 @@
       data:
         message: Front door is open while HVAC is running. Close it to save energy.
         title: Front Door Open
-  - repeat:
+  # Fall: ceiling-fan control paused at user request (2026-09-29).
+  - enabled: false
+    repeat:
       for_each:
         - { room: kitchen, fan: fan.kitchen_ceiling_fan, sw: switch.kitchen_fan_switch_1, occ: binary_sensor.kitchen_presence }
         - { room: master, fan: fan.master_bedroom_ceiling_fan, sw: switch.master_bedroom_fan_light_switch_1, occ: binary_sensor.master_bedroom_occupancy_combined }
@@ -1343,7 +1348,9 @@
                 percentage: 0
               target:
                 entity_id: '{{ repeat.item.vent }}'
-          - action: fan.turn_off
+          # Fall: leave ceiling fans under manual control.
+          - enabled: false
+            action: fan.turn_off
             continue_on_error: true
             target:
               entity_id: '{{ repeat.item.fan }}'
