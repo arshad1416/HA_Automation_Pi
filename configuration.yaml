@@ -351,6 +351,12 @@ input_number:
     step: 1
     unit_of_measurement: "¢"
 input_datetime:
+  family_room_echo_last_event:
+    name: Family Room Echo Last Occupancy Event
+    has_date: true
+    has_time: true
+    # A restart requires a new explicit bridge command before room actions resume.
+    initial: '1970-01-01 00:00:00'
   airbnb_check_in_time:
     name: Airbnb Check-In Time
     has_date: false
@@ -395,6 +401,15 @@ input_datetime:
     icon: mdi:thermostat-clock
 
 input_boolean:
+  # Until contact sensors exist, the owner marks these windows open/closed.
+  # Omit initial so the selection survives restarts; no automatic window inference.
+  night_ventilation_windows_open:
+    name: Night Ventilation Windows Open
+    icon: mdi:window-open
+  # Alexa routines write this helper; it is never inferred from playback state.
+  family_room_echo_occupied:
+    name: Family Room Echo Occupancy
+    icon: mdi:motion-sensor
   kitchen_auto_lights_disable:
     name: Kitchen Auto Lights Disable
     icon: mdi:lightbulb-off
@@ -563,6 +578,9 @@ emulated_hue:
     light.cabinet_light_strip_right_nanoleaf_light_strip: {hidden: false}
     light.nanoleaf_multicolor_ls_2: {hidden: false}
     # Family / living
+    input_boolean.family_room_echo_occupied:
+      name: Family Room Echo Occupancy
+      hidden: false
     light.family_room_light: {hidden: false}
     switch.living_room_floor_lamp_switch:
       name: Living Room Floor Lamp
@@ -980,7 +998,66 @@ command_line:
         - rate_cents_kwh
         - fixed_monthly_cad
 
+sensor:
+  - platform: statistics
+    name: Outdoor Temp 7 Day Mean
+    unique_id: outdoor_temp_7_day_mean
+    entity_id: sensor.seasonal_outdoor_temperature
+    state_characteristic: average_step
+    sampling_size: 400
+    max_age:
+      days: 7
+    keep_last_sample: false
+    precision: 1
+
 template:
+  - sensor:
+      - name: Night Ventilation Cooling Floor
+        unique_id: night_ventilation_cooling_floor
+        unit_of_measurement: °C
+        state: >-
+          {% if is_state('input_boolean.night_ventilation_windows_open', 'on')
+                and (now().hour >= 21 or now().hour < 8) %}
+            {% set rh = states('sensor.climate_ai_ecobee_humidity') | float(50) %}
+            {% set comfort = 22.5 if rh > 55 else (23.0 if rh > 45 else 23.5) %}
+            {% set outdoor = state_attr('weather.forecast_home', 'temperature') | float(none) %}
+            {% if outdoor is not none and state_attr('weather.forecast_home', 'temperature_unit') == '°F' %}
+              {% set outdoor = (outdoor - 32) * 5 / 9 %}
+            {% endif %}
+            {% set cold = 23.5 if outdoor is not none and outdoor <= 10
+                else (23.0 if outdoor is not none and outdoor <= 14 else 0) %}
+            {{ [comfort, cold] | max }}
+          {% else %}0
+          {% endif %}
+        attributes:
+          windows: Master bedroom, Izaan's bedroom, guest bathroom
+          state_source: Manual until window-contact sensors are installed
+          policy: Avoid overnight pre-cooling; allow HVAC for comfort
+  # Hourly sampling also records unchanged temperatures. Never substitute 0 C
+  # for missing cloud data. The existing Met.no feed already supplies weather.
+  - triggers:
+      - trigger: time_pattern
+        minutes: '0'
+      - trigger: homeassistant
+        event: start
+    sensor:
+      - name: Seasonal Outdoor Temperature
+        unique_id: seasonal_outdoor_temperature
+        device_class: temperature
+        state_class: measurement
+        unit_of_measurement: °C
+        availability: >
+          {{ has_value('weather.forecast_home')
+             and is_number(state_attr('weather.forecast_home', 'temperature'))
+             and state_attr('weather.forecast_home', 'temperature_unit') in ['°C', '°F']
+             and (now() - states.weather.forecast_home.last_updated).total_seconds() < 7200 }}
+        state: >
+          {% set temp = state_attr('weather.forecast_home', 'temperature') | float(none) %}
+          {{ ((temp - 32) * 5 / 9) | round(1)
+             if temp is not none and state_attr('weather.forecast_home', 'temperature_unit') == '°F'
+             else temp }}
+        attributes:
+          sampled_at: "{{ now().isoformat() }}"
   - binary_sensor:
       - name: Kitchen Presence
         unique_id: kitchen_presence_combined
@@ -1035,21 +1112,30 @@ template:
           source_updated: >
             {{ states.sensor.illuminance.last_updated
                if states.sensor.illuminance is not none else 'none' }}
-      # One authoritative master-bedroom occupancy signal. ON when either the
-      # LD2420 mmWave sensor or the Ecobee SmartSensor (serial 332D) detects
-      # occupancy; unavailable only when both source entities are unavailable.
+      # Keep the existing helper ID stable; the owner disabled both LD2420 nodes.
+      # Use the owner-selected Ecobee motion feed exposed by SmartThings.
       - name: Master Bedroom Occupancy Combined
         unique_id: master_bedroom_occupancy_combined
         device_class: occupancy
         availability: >
-          {{ states('binary_sensor.master_bedroom_mmwave_presence') not in ['unknown', 'unavailable']
-             or states('binary_sensor.332d_occupancy') not in ['unknown', 'unavailable'] }}
+          {{ states('binary_sensor.master_bedroom_motion') in ['on', 'off'] }}
         state: >
-          {{ is_state('binary_sensor.master_bedroom_mmwave_presence', 'on')
-             or is_state('binary_sensor.332d_occupancy', 'on') }}
+          {{ is_state('binary_sensor.master_bedroom_motion', 'on') }}
         attributes:
-          mmwave: "{{ states('binary_sensor.master_bedroom_mmwave_presence') }}"
-          ecobee_332d: "{{ states('binary_sensor.332d_occupancy') }}"
+          source_entity: binary_sensor.master_bedroom_motion
+      # Alexa must first deliver a real ON/OFF command. Missing or old bridge
+      # messages mean unknown occupancy, never an assertion that the room is empty.
+      - name: Family Room Occupancy
+        unique_id: family_room_occupancy
+        device_class: occupancy
+        availability: >
+          {% set event_time = as_timestamp(states('input_datetime.family_room_echo_last_event'), 0) %}
+          {{ states('input_boolean.family_room_echo_occupied') in ['on', 'off']
+             and event_time > 0 and 0 <= as_timestamp(now()) - event_time < 3600 }}
+        state: "{{ is_state('input_boolean.family_room_echo_occupied', 'on') }}"
+        attributes:
+          source_entity: input_boolean.family_room_echo_occupied
+          last_event: "{{ states('input_datetime.family_room_echo_last_event') }}"
       # Single stand-down point for the stair light: motion on the Upstairs Stair Sensor
       # lights light.stair_light only while this is OFF. After bedtime the stair light
       # stands down and the hallway Nanoleaf panels take that window — but the panels ALSO

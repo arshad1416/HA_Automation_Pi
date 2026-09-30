@@ -458,7 +458,7 @@
       - condition: trigger
         id: tv_on
       - condition: state
-        entity_id: binary_sensor.family_room_mmwave_presence
+        entity_id: binary_sensor.family_room_occupancy
         state: 'on'
       sequence:
       - action: light.turn_on
@@ -485,7 +485,7 @@
       # Only turn it off when the room is empty or the sun is up (blinds reopen).
       - if:
         - condition: state
-          entity_id: binary_sensor.family_room_mmwave_presence
+          entity_id: binary_sensor.family_room_occupancy
           state: 'on'
         - condition: state
           entity_id: sun.sun
@@ -497,9 +497,19 @@
           target:
             entity_id: light.family_room_light
         else:
-        - action: light.turn_off
-          target:
-            entity_id: light.family_room_light
+        - if:
+          - condition: or
+            conditions:
+            - condition: state
+              entity_id: binary_sensor.family_room_occupancy
+              state: 'off'
+            - condition: state
+              entity_id: sun.sun
+              state: above_horizon
+          then:
+          - action: light.turn_off
+            target:
+              entity_id: light.family_room_light
       - if:
         - condition: state
           entity_id: sun.sun
@@ -606,13 +616,14 @@
 # Whole-home on-peak load shedding (weekdays 16:00-21:00, 39.1c/kWh).
 # SOLE authority for peak-window pool pump / chlorinator / office heater control.
 # (Absorbs Enhancement D; pool_pump_ulo's on_peak/off_peak_return triggers removed.)
-# Office heater restore is guarded by house_away so away mode isn't overridden.
+# Office heater restore requires home, office occupancy and plausible cold-room
+# telemetry, matching Office Heater Smart Control's 21 C demand policy.
 # -----------------------------------------------------------------------------
 - id: whole_home_onpeak_load_shedding
   alias: "Energy: Whole-home onpeak load shedding"
   description: >-
     Weekdays 16:00 turn off pool pump, chlorinator and office heater for the
-    on-peak window; restore at 21:00 (heater only if the house is not away).
+    on-peak window; restore at 21:00 (heater only if home, occupied and cold).
   mode: single
   triggers:
   - at: "16:00:00"
@@ -635,7 +646,11 @@
           entity_id:
           - switch.pool_pump_heater_pump_heater
           - switch.salt_chlorinator
-          - switch.office_heater_child_lock
+      - action: climate.set_hvac_mode
+        target:
+          entity_id: climate.office_heater
+        data:
+          hvac_mode: 'off'
       - if:
         - condition: state
           entity_id: binary_sensor.grizzl_e_charging
@@ -663,14 +678,29 @@
         - condition: state
           entity_id: input_boolean.house_away
           state: 'off'
+        - condition: state
+          entity_id: binary_sensor.usb_c_mmwave_sensor_presence
+          state: 'on'
+        - condition: numeric_state
+          entity_id: climate.office_heater
+          attribute: current_temperature
+          above: 5
+          below: 20
         then:
-        - action: switch.turn_on
+        - action: climate.set_temperature
           target:
-            entity_id: switch.office_heater_child_lock
+            entity_id: climate.office_heater
+          data:
+            temperature: 21
+        - action: climate.set_hvac_mode
+          target:
+            entity_id: climate.office_heater
+          data:
+            hvac_mode: heat
       - action: notify.mobile_app_cph2655
         data:
           title: "✅ Off-Peak Resumed"
-          message: "On-peak ended. Pool pump restored{{ ' and office heater back on.' if is_state('input_boolean.house_away', 'off') else ' (heater left off — away mode).' }}"
+          message: "On-peak ended. Pool pump restored. Office heater {{ 'heating to 21°C' if is_state('climate.office_heater', 'heat') else 'off; heating resumes only when home, occupied and cold' }}."
 
 # -----------------------------------------------------------------------------
 # Priority 3: Calendar-aware smart charging.

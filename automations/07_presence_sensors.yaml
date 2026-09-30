@@ -1,19 +1,43 @@
 # =============================================================================
-# 07_presence_sensors.yaml — mmWave presence-sensor automations
+# 07_presence_sensors.yaml — room occupancy automations
 # -----------------------------------------------------------------------------
-# Family Room LD2420   -> binary_sensor.family_room_mmwave_presence
-#                         (node family-room-mmwave @ 192.168.0.121, timeout 120s)
+# Family Room Echo Dot -> input_boolean.family_room_echo_occupied via Alexa routines
+#                         -> binary_sensor.family_room_occupancy (freshness guarded)
 # Master Bedroom combined-> binary_sensor.master_bedroom_occupancy_combined
-#   OR of LD2420 mmWave (node @ 192.168.0.108, timeout 120s) + Ecobee 332D.
+#   Ecobee motion via SmartThings binary_sensor.master_bedroom_motion; LD2420 nodes disabled.
 #
 # Ceiling fan speeds are NOT controlled here — the Climate AI owns all fan/HVAC
 # decisions and receives the combined master-bedroom signal in its prompt.
 # =============================================================================
 
+- id: family_room_echo_occupancy_timestamp
+  alias: Family Room — Record Echo occupancy event
+  description: Record explicit ON/OFF bridge commands, including repeated values;
+    helper initialization and restart restoration cannot claim a fresh observation.
+  mode: restart
+  triggers:
+  - trigger: event
+    event_type: call_service
+    event_data:
+      domain: input_boolean
+  conditions:
+  - condition: template
+    value_template: >-
+      {% set entities = trigger.event.data.service_data.get('entity_id', []) %}
+      {{ trigger.event.data.service in ['turn_on', 'turn_off']
+         and 'input_boolean.family_room_echo_occupied' in
+           ([entities] if entities is string else entities) }}
+  actions:
+  - action: input_datetime.set_datetime
+    target:
+      entity_id: input_datetime.family_room_echo_last_event
+    data:
+      timestamp: "{{ as_timestamp(now()) }}"
+
 - id: family_room_auto_off_empty
   alias: Family Room — Lights off after 10 min no presence
-  description: Turn off the family room ceiling light after 10 minutes with no mmWave
-    presence AND the TV plug is off. The TV is plugged into a switched smart plug
+  description: Turn off the family room ceiling light after 10 minutes with no
+    Echo occupancy AND the TV plug is off. The TV is plugged into a switched smart plug
     (switch.family_room_speaker_plug_socket_1) - plug off means the TV is definitely
     off; plug on means it may be in use (movie mode), so the lights are never turned
     off while the plug is on. This replaces the flaky LG WebOS state, which reports
@@ -21,7 +45,7 @@
     A plug-off trigger and a 10-min periodic backstop catch every shutdown path.
   mode: restart
   triggers:
-  - entity_id: binary_sensor.family_room_mmwave_presence
+  - entity_id: binary_sensor.family_room_occupancy
     to: 'off'
     for: 00:10:00
     trigger: state
@@ -36,7 +60,7 @@
     state: 'on'
   # Room must have been empty for at least 10 minutes.
   - condition: template
-    value_template: "{{ is_state('binary_sensor.family_room_mmwave_presence','off') and (now() - states.binary_sensor.family_room_mmwave_presence.last_changed).total_seconds() >= 600 }}"
+    value_template: "{{ is_state('binary_sensor.family_room_occupancy','off') and (now() - states.binary_sensor.family_room_occupancy.last_changed).total_seconds() >= 600 }}"
   # TV plug must be off (TV definitely not in use). While the plug is on the
   # lights are protected, even if the presence sensor briefly misses someone.
   - condition: state
@@ -48,12 +72,12 @@
       entity_id: light.family_room_light
 - id: family_room_tv_idle_alert
   alias: Family Room — TV on but nobody watching for 30 min
-  description: Notify the primary phone if the LG TV is playing but no mmWave presence has been detected for 30 minutes (likely
+  description: Notify the primary phone if the LG TV is playing but no Echo occupancy has been detected for 30 minutes (likely
     left on by accident).
   mode: single
   max_exceeded: silent
   triggers:
-  - entity_id: binary_sensor.family_room_mmwave_presence
+  - entity_id: binary_sensor.family_room_occupancy
     to: 'off'
     for: 00:30:00
     trigger: state
@@ -108,7 +132,7 @@
       entity_id: automation.proactive_nightly_lock_check
 - id: master_bedroom_supernova_auto_off
   alias: Master Bedroom — Fan light off after 30 min no presence
-  description: Turn off the master bedroom fan light after 30 minutes with no combined mmWave/Ecobee presence.
+  description: Turn off the master bedroom fan light after 30 minutes with no Ecobee presence.
   mode: restart
   triggers:
   - entity_id: binary_sensor.master_bedroom_occupancy_combined
@@ -134,11 +158,11 @@
 
 - id: family_room_presence_auto_on
   alias: Family Room — Lights on when someone enters after sunset
-  description: Turn on the family room ceiling light at 80% when mmWave detects presence and the sun is below horizon. Skipped
+  description: Turn on the family room ceiling light at 80% when Echo occupancy detects presence and the sun is below horizon. Skipped
     if the TV is already playing (movie mode owns the lighting in that case).
   mode: restart
   triggers:
-  - entity_id: binary_sensor.family_room_mmwave_presence
+  - entity_id: binary_sensor.family_room_occupancy
     to: 'on'
     trigger: state
   conditions:
@@ -161,12 +185,12 @@
       entity_id: light.family_room_light
 - id: family_room_tv_auto_pause_empty
   alias: Family Room — Pause TV when room empty 10 min
-  description: Pause the LG TV if it is playing but no mmWave presence has been detected for 10 minutes. Prevents wasted streaming
+  description: Pause the LG TV if it is playing but no Echo occupancy has been detected for 10 minutes. Prevents wasted streaming
     / screen burn-in.
   mode: single
   max_exceeded: silent
   triggers:
-  - entity_id: binary_sensor.family_room_mmwave_presence
+  - entity_id: binary_sensor.family_room_occupancy
     to: 'off'
     for: 00:10:00
     trigger: state
@@ -180,7 +204,7 @@
       entity_id: media_player.lg_webos_tv_un8500auj
 - id: master_bedroom_presence_light_auto_on
   alias: Master Bedroom — Fan light on when someone enters (evening)
-  description: Turn on the master bedroom fan light when combined mmWave/Ecobee occupancy detects presence between sunset and 23:00, and the light is
+  description: Turn on the master bedroom fan light when Ecobee occupancy detects presence between sunset and 23:00, and the light is
     currently off.
   mode: restart
   triggers:
