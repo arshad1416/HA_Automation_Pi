@@ -136,6 +136,230 @@
               "cards": [
                 {
                   "type": "heading",
+                  "heading": "Ceiling fans",
+                  "icon": "mdi:ceiling-fan"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Turn the room’s **fan power** on before selecting a speed. Fan speed readings may be assumed; confirm airflow in the room. These are manual controls."
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "switch.kitchen_fan_switch_1",
+                      "name": "Kitchen · power",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "toggle"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "fan.kitchen_ceiling_fan",
+                      "name": "Kitchen · speed",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "fan-speed"
+                        }
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "switch.master_bedroom_fan_light_switch_1",
+                      "name": "Master bedroom · power",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "toggle"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "fan.master_bedroom_ceiling_fan",
+                      "name": "Master bedroom · speed",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "fan-speed"
+                        }
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "switch.izaan_s_bedroom_light_switch_1",
+                      "name": "Izaan’s room · power",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "toggle"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "fan.kids_room_izaan_s_ceiling_fan_light",
+                      "name": "Izaan’s room · speed",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "fan-speed"
+                        }
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "switch.mina_s_light_switch_1",
+                      "name": "Mina’s room · power",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "toggle"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "fan.mina_s_ceiling_fan",
+                      "name": "Mina’s room · speed",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "fan-speed"
+                        }
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "vertical-stack",
+                  "cards": [
+                    {
+                      "type": "tile",
+                      "entity": "switch.guest_room_light_switch_1",
+                      "name": "Guest room · power",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "toggle"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "tile",
+                      "entity": "fan.guest_room_ceiling_fan",
+                      "name": "Guest room · speed",
+                      "icon": "mdi:ceiling-fan",
+                      "tap_action": {
+                        "action": "more-info"
+                      },
+                      "icon_tap_action": {
+                        "action": "more-info"
+                      },
+                      "features": [
+                        {
+                          "type": "fan-speed"
+                        }
+                      ]
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
                   "heading": "Office heating & automatic control",
                   "icon": "mdi:radiator"
                 },
