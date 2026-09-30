@@ -12,6 +12,15 @@
         "require_admin": false,
         "show_in_sidebar": true,
         "mode": "storage"
+      },
+      {
+        "id": "climate_control",
+        "url_path": "climate-control",
+        "title": "Climate",
+        "icon": "mdi:home-thermometer",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
       }
     ]
   }

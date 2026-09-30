@@ -1,0 +1,184 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.climate_control",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "title": "Climate",
+          "path": "climate",
+          "icon": "mdi:home-thermometer",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Home comfort",
+                  "icon": "mdi:home-thermometer"
+                },
+                {
+                  "type": "thermostat",
+                  "entity": "climate.ecobee_3",
+                  "name": "Home thermostat"
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.climate_ai_ecobee_humidity",
+                  "name": "Indoor humidity"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set automatic = states('input_boolean.climate_ai_enabled') %} {% if automatic == 'on' %} **Automatic climate control is on.** It may adjust manual thermostat changes when the next policy or schedule runs. {% elif automatic == 'off' %} **Climate AI is off.** Scheduled comfort and safety controls still apply. {% else %} **Automatic-control status is unavailable.** Check Settings before making changes. {% endif %}\n{% set requested = state_attr('climate.ecobee_3', 'temperature') | float(none) %} {% set effective = state_attr('climate.ecobee', 'temperature') | float(none) %} {% if requested is not none and effective is not none and (effective - requested) | abs >= 0.5 %} The thermostat reports an effective target of **{{ effective }}°C**; the requested target is **{{ requested }}°C**. Utility adjustments can change the effective target. {% endif %}"
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Windows & overnight comfort",
+                  "icon": "mdi:window-open"
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.night_ventilation_windows_open",
+                  "name": "Open-window mode",
+                  "icon": "mdi:window-open",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  },
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ],
+                  "grid_options": {
+                    "columns": 12
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set windows = states('input_boolean.night_ventilation_windows_open') %} {% set floor = states('sensor.night_ventilation_cooling_floor') | float(none) %} {% if windows == 'on' and floor is not none and floor > 0 %} **Overnight window policy is active.** Cooling floor: **{{ floor }}°C**. HVAC remains available for comfort while avoiding overnight pre-cooling. {% elif windows == 'on' and floor == 0 %} **Windows are marked open.** The overnight policy runs from **9 PM to 8 AM**. Daytime comfort targets continue normally. {% elif windows == 'off' %} **Windows are marked closed.** Normal comfort targets apply. {% else %} **Window-policy status is unavailable.** Open the control to check its state. {% endif %}\nTurn this on when the **master-bedroom, Izaan-bedroom or guest-bathroom windows** are open. Turn it off when all three are closed.\nThis is your manual selection; it does not detect the windows."
+                },
+                {
+                  "type": "weather-forecast",
+                  "entity": "weather.forecast_home",
+                  "name": "Outside",
+                  "show_forecast": false
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Room temperatures",
+                  "icon": "mdi:thermometer"
+                },
+                {
+                  "type": "entities",
+                  "show_header_toggle": false,
+                  "entities": [
+                    {
+                      "entity": "sensor.climate_ai_master_bedroom_temperature",
+                      "name": "Master bedroom"
+                    },
+                    {
+                      "entity": "sensor.climate_ai_izaans_room_temperature",
+                      "name": "Izaan's room"
+                    },
+                    {
+                      "entity": "sensor.climate_ai_minas_room_temperature",
+                      "name": "Mina's room"
+                    },
+                    {
+                      "entity": "sensor.climate_ai_guest_room_temperature",
+                      "name": "Guest room"
+                    },
+                    {
+                      "entity": "sensor.climate_ai_basement_temperature",
+                      "name": "Basement"
+                    }
+                  ]
+                },
+                {
+                  "type": "history-graph",
+                  "title": "Room temperatures over the last 12 hours",
+                  "hours_to_show": 12,
+                  "entities": [
+                    {
+                      "entity": "sensor.climate_ai_master_bedroom_temperature",
+                      "name": "Master bedroom"
+                    },
+                    {
+                      "entity": "sensor.climate_ai_izaans_room_temperature",
+                      "name": "Izaan's room"
+                    },
+                    {
+                      "entity": "sensor.climate_ai_minas_room_temperature",
+                      "name": "Mina's room"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Office heating & automatic control",
+                  "icon": "mdi:radiator"
+                },
+                {
+                  "type": "tile",
+                  "entity": "climate.office_heater",
+                  "name": "Office heater",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "Office heating has its own occupancy and temperature automation. Open the heater control for manual changes; automation may adjust it later."
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.climate_ai_enabled",
+                  "name": "Automatic climate control",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set summer = states('input_boolean.climate_summer_mode') %} {% set winter = states('input_boolean.climate_winter_mode') %} {% if summer == 'on' and winter == 'off' %} **Season: Summer** {% elif winter == 'on' and summer == 'off' %} **Season: Winter** {% else %} **Season selection needs checking.** {% endif %}\n{% set coverage = state_attr('sensor.outdoor_temp_7_day_mean', 'age_coverage_ratio') | float(0) %} {% if coverage < 0.98 %} The outdoor average is building its first week of history before automatic seasonal switching can resume. {% endif %}"
+                },
+                {
+                  "type": "markdown",
+                  "title": "Latest climate decision",
+                  "content": "{% set decision = states('input_text.climate_ai_recommendation') %} {{ decision if decision not in ['unknown', 'unavailable', ''] else 'No climate decision is available yet.' }}"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
