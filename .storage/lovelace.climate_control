@@ -391,7 +391,7 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set summer = states('input_boolean.climate_summer_mode') %} {% set winter = states('input_boolean.climate_winter_mode') %} {% if summer == 'on' and winter == 'off' %} **Season: Summer** {% elif winter == 'on' and summer == 'off' %} **Season: Winter** {% else %} **Season selection needs checking.** {% endif %}\n{% set coverage = state_attr('sensor.outdoor_temp_7_day_mean', 'age_coverage_ratio') | float(0) %} {% if coverage < 0.98 %} The outdoor average is building its first week of history before automatic seasonal switching can resume. {% endif %}"
+                  "content": "{% set season = states('sensor.season') %}{% set labels = {'spring': 'Spring', 'summer': 'Summer', 'autumn': 'Fall', 'winter': 'Winter'} %}{% if season in labels %}**Season: {{ labels[season] }}** — astronomical equinoxes and solstices. {% if season in ['spring', 'autumn'] %}Comfort control remains active; heating or cooling follows measured indoor conditions.{% endif %}{% else %}**Season unavailable.** Seasonal modes retain their last valid selection.{% endif %}"
                 },
                 {
                   "type": "markdown",
