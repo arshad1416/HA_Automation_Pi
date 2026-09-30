@@ -226,12 +226,12 @@
                 },
                 {
                   "type": "markdown",
-                  "content": "{% set primary = states('lock.front_door') %} {% set mirror = states('lock.front_door_2') %} {% if primary in ['unknown', 'unavailable'] or mirror in ['unknown', 'unavailable'] %} **Front-door status is incomplete.** One integration is unavailable; check the door itself. {% elif primary != mirror %} **Front-door readings disagree.** The two integrations report different states; verify the door physically rather than relying on either reading alone. {% elif primary == 'locked' %} **Both front-door integrations report locked.** {% elif primary == 'unlocked' %} **Both front-door integrations report unlocked.** {% else %} **Front-door status is changing or unclear.** Check the door itself. {% endif %}\nOpen a device's details for its controls. These tiles do not unlock or open anything directly."
+                  "content": "{% set status = states('lock.front_door') %}\n{% if status == 'locked' %}**Front door reports locked.**\n{% elif status == 'unlocked' %}**Front door reports unlocked.**\n{% elif status == 'locking' %}**Front door is locking.**\n{% elif status == 'unlocking' %}**Front door is unlocking.**\n{% else %}**Front-door status is unavailable or unclear.** Check the door itself.\n{% endif %}\n\nOpen a device's details for its controls. These tiles do not unlock or open anything directly."
                 },
                 {
                   "type": "tile",
                   "entity": "lock.front_door",
-                  "name": "Front door — primary reading",
+                  "name": "Front door",
                   "tap_action": {
                     "action": "more-info"
                   },
