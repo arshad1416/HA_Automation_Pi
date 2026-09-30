@@ -1,0 +1,14 @@
+{
+  "methods": [
+    {
+      "fixed": "9f95abefecd075f5246b727dfb642615f0d4bbd31df603da14d1f31c2d26f7a0",
+      "old": "29557d9c883f4198c7018c19062115e82b8fbcd7b56be74119e625dabe08d74a"
+    },
+    {
+      "fixed": "100f30cabc9ad85634e0ae2f3d1a63f836ec462622e3c542f92e13e73cd6d698",
+      "old": "1940ef703f018e942c77411073347bcf202157a590fb478e9fe1d8236fa979a7"
+    }
+  ],
+  "const_sha256": "476785acca69bfb3b26856c99ef2bbb69cdaeb23d24537f20b7e56171124ccb0",
+  "payload_ast": "bb96b5b497306d37e839769202383013cc60a33b064a6aadda97a4e4caa4a39e"
+}

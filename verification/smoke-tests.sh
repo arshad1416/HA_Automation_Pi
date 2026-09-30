@@ -3,7 +3,16 @@
 # Read-only checks against the Pi. Run from the Mac:  bash verification/smoke-tests.sh
 set -uo pipefail
 
-PI=pi-lan
+PI="${SMOKE_PI_HOST:-pi-lan}"
+# The update guard runs on the Pi itself; avoid SSH-to-self/key assumptions.
+ssh() {
+  if [[ "${1:-}" == "__local__" ]]; then
+    shift
+    bash -c "$*"
+  else
+    command ssh "$@"
+  fi
+}
 PASS=0; FAIL=0
 check() { local name="$1"; shift; if "$@" >/dev/null 2>&1; then echo "  ✓ $name"; PASS=$((PASS+1)); else echo "  ✗ $name"; FAIL=$((FAIL+1)); fi; }
 

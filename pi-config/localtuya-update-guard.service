@@ -1,0 +1,19 @@
+[Unit]
+Description=Verify LocalTuya updates and restore recognized kitchen payload fixes
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=arshad14
+Group=arshad14
+WorkingDirectory=/opt/homeassistant
+ExecStart=/usr/bin/python3 /opt/homeassistant/scripts/localtuya_update_guard.py
+Environment=PYTHONDONTWRITEBYTECODE=1
+UMask=0077
+Restart=on-failure
+RestartSec=30
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target
