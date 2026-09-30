@@ -21,6 +21,15 @@
         "show_in_sidebar": true,
         "require_admin": false,
         "mode": "storage"
+      },
+      {
+        "id": "home_control",
+        "url_path": "home-control",
+        "title": "Home",
+        "icon": "mdi:home",
+        "show_in_sidebar": true,
+        "require_admin": false,
+        "mode": "storage"
       }
     ]
   }

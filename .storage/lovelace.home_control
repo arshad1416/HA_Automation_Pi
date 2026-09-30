@@ -1,0 +1,382 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace.home_control",
+  "data": {
+    "config": {
+      "views": [
+        {
+          "title": "Home",
+          "path": "home",
+          "icon": "mdi:home",
+          "type": "sections",
+          "max_columns": 2,
+          "sections": [
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Home",
+                  "icon": "mdi:home"
+                },
+                {
+                  "type": "conditional",
+                  "conditions": [
+                    {
+                      "condition": "or",
+                      "conditions": [
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.basement_bathroom_leak_sensor_moisture",
+                          "state": "on"
+                        },
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.ensuite_leak_sensor_moisture",
+                          "state": "on"
+                        },
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.guest_bathroom_leak_sensor_moisture",
+                          "state": "on"
+                        },
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.kitchen_leak_sensor_moisture",
+                          "state": "on"
+                        },
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.laundry_room_leak_sensor_moisture",
+                          "state": "on"
+                        },
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.powder_room_leak_sensor_moisture",
+                          "state": "on"
+                        },
+                        {
+                          "condition": "state",
+                          "entity": "binary_sensor.sump_pump_leak_sensor_moisture",
+                          "state": "on"
+                        }
+                      ]
+                    }
+                  ],
+                  "card": {
+                    "type": "markdown",
+                    "content": "## Water detected\nCheck the **Water-leak sensors** section below for the affected location(s)."
+                  }
+                },
+                {
+                  "type": "grid",
+                  "columns": 3,
+                  "square": false,
+                  "cards": [
+                    {
+                      "type": "button",
+                      "name": "Climate",
+                      "icon": "mdi:home-thermometer",
+                      "tap_action": {
+                        "action": "navigate",
+                        "navigation_path": "/climate-control/climate"
+                      }
+                    },
+                    {
+                      "type": "button",
+                      "name": "EV charging",
+                      "icon": "mdi:ev-station",
+                      "tap_action": {
+                        "action": "navigate",
+                        "navigation_path": "/ev-charging/overview"
+                      }
+                    },
+                    {
+                      "type": "button",
+                      "name": "Solar",
+                      "icon": "mdi:solar-power-variant",
+                      "tap_action": {
+                        "action": "navigate",
+                        "navigation_path": "/solar-power/overview"
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "weather-forecast",
+                  "entity": "weather.forecast_home",
+                  "name": "Outside",
+                  "show_forecast": false
+                },
+                {
+                  "type": "tile",
+                  "entity": "climate.ecobee_3",
+                  "name": "Home thermostat",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/climate-control/climate"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/climate-control/climate"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "input_boolean.night_ventilation_windows_open",
+                  "name": "Open-window mode",
+                  "icon": "mdi:window-open",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/climate-control/climate"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/climate-control/climate"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Everyday lights",
+                  "icon": "mdi:lightbulb-group"
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.kitchen_light_light_1",
+                  "name": "Kitchen",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  },
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.island_light_light",
+                  "name": "Kitchen island",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  },
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.family_room_light",
+                  "name": "Family room",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  },
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ]
+                },
+                {
+                  "type": "tile",
+                  "entity": "light.master_bedroom_ceiling_fan",
+                  "name": "Master-bedroom light",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  },
+                  "features": [
+                    {
+                      "type": "toggle"
+                    }
+                  ]
+                },
+                {
+                  "type": "markdown",
+                  "content": "Kitchen lighting also controls its ambient lights. While the kitchen is occupied, its automation can turn the main light back on."
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Doors & garage",
+                  "icon": "mdi:door"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set primary = states('lock.front_door') %} {% set mirror = states('lock.front_door_2') %} {% if primary in ['unknown', 'unavailable'] or mirror in ['unknown', 'unavailable'] %} **Front-door status is incomplete.** One integration is unavailable; check the door itself. {% elif primary != mirror %} **Front-door readings disagree.** The two integrations report different states; verify the door physically rather than relying on either reading alone. {% elif primary == 'locked' %} **Both front-door integrations report locked.** {% elif primary == 'unlocked' %} **Both front-door integrations report unlocked.** {% else %} **Front-door status is changing or unclear.** Check the door itself. {% endif %}\nOpen a device's details for its controls. These tiles do not unlock or open anything directly."
+                },
+                {
+                  "type": "tile",
+                  "entity": "lock.front_door",
+                  "name": "Front door — primary reading",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "lock.garages_entry_door",
+                  "name": "Garage entry",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "cover.larissa_s_garage_door_door",
+                  "name": "Larissa's garage",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "cover.garage_door_wa1nvzx3",
+                  "name": "Other garage door",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Energy today",
+                  "icon": "mdi:lightning-bolt"
+                },
+                {
+                  "type": "tile",
+                  "entity": "binary_sensor.grizzl_e_charging",
+                  "name": "EV charging",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/ev-charging/overview"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/ev-charging/overview"
+                  }
+                },
+                {
+                  "type": "markdown",
+                  "content": "**EV charging cost today**\n\n{% set cost = states('sensor.grizzl_e_cost_daily') | float(none) %}\n{% if cost is not none %}**CA${{ '%.2f' | format(cost) }}**{% else %}Unavailable{% endif %}",
+                  "grid_options": {
+                    "columns": 6
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.solar_power_now",
+                  "name": "Solar power now",
+                  "tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/solar-power/overview"
+                  },
+                  "icon_tap_action": {
+                    "action": "navigate",
+                    "navigation_path": "/solar-power/overview"
+                  }
+                },
+                {
+                  "type": "tile",
+                  "entity": "sensor.solar_energy_today",
+                  "name": "Solar energy today"
+                },
+                {
+                  "type": "markdown",
+                  "content": "EV cost is the charger's energy-cost estimate, not the whole electricity bill. Solar production does not show how much was exported or used at home."
+                }
+              ]
+            },
+            {
+              "type": "grid",
+              "cards": [
+                {
+                  "type": "heading",
+                  "heading": "Water-leak sensors",
+                  "icon": "mdi:water-alert"
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set sensors = ['binary_sensor.basement_bathroom_leak_sensor_moisture',\n  'binary_sensor.ensuite_leak_sensor_moisture',\n  'binary_sensor.guest_bathroom_leak_sensor_moisture',\n  'binary_sensor.kitchen_leak_sensor_moisture',\n  'binary_sensor.laundry_room_leak_sensor_moisture',\n  'binary_sensor.powder_room_leak_sensor_moisture',\n  'binary_sensor.sump_pump_leak_sensor_moisture'] %}\n{% set ns = namespace(wet=0, unavailable=0) %} {% for entity in sensors %}\n  {% if states(entity) == 'on' %}{% set ns.wet = ns.wet + 1 %}\n  {% elif states(entity) != 'off' %}{% set ns.unavailable = ns.unavailable + 1 %}\n  {% endif %}\n{% endfor %} {% if ns.wet > 0 %} **Water detected by {{ ns.wet }} sensor(s).** Check the locations below. {% elif ns.unavailable == 0 %} **All seven monitored sensors report dry.** {% else %} **No water reported by available sensors.** {% endif %} {% if ns.unavailable > 0 %} **{{ ns.unavailable }} sensor(s) are unavailable.** Their locations are not verified dry. {% endif %}"
+                },
+                {
+                  "type": "entities",
+                  "show_header_toggle": false,
+                  "entities": [
+                    {
+                      "entity": "binary_sensor.basement_bathroom_leak_sensor_moisture",
+                      "name": "Basement bathroom"
+                    },
+                    {
+                      "entity": "binary_sensor.ensuite_leak_sensor_moisture",
+                      "name": "Ensuite"
+                    },
+                    {
+                      "entity": "binary_sensor.guest_bathroom_leak_sensor_moisture",
+                      "name": "Guest bathroom"
+                    },
+                    {
+                      "entity": "binary_sensor.kitchen_leak_sensor_moisture",
+                      "name": "Kitchen"
+                    },
+                    {
+                      "entity": "binary_sensor.laundry_room_leak_sensor_moisture",
+                      "name": "Laundry room"
+                    },
+                    {
+                      "entity": "binary_sensor.powder_room_leak_sensor_moisture",
+                      "name": "Powder room"
+                    },
+                    {
+                      "entity": "binary_sensor.sump_pump_leak_sensor_moisture",
+                      "name": "Sump pump"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
