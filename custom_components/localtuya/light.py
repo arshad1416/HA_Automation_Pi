@@ -611,7 +611,7 @@ class LocalTuyaLight(LocalTuyaEntity, LightEntity):
             color_mode = self._modes.white
             states[self._config.get(CONF_BRIGHTNESS)] = brightness
 
-        if color_mode is not None:
+        if color_mode is not None and self.has_config(CONF_COLOR_MODE):
             states[self._config.get(CONF_COLOR_MODE)] = color_mode
 
         await self._device.set_dps(states)
