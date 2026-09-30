@@ -1,141 +1,216 @@
-# Solar production — YAML-managed Lovelace dashboard
-# Deployed to: /opt/homeassistant/dashboards/solar.yaml (= /config/dashboards/...)
-# Registered via the `lovelace:` block in configuration.yaml (url_path: solar).
-# Data: apsystems_daemon.py -> apsystems.json -> command_line sensors
-# (see reference/apsystems-openapi.md). Credits use OEB ULO energy rates,
-# same schedule/rates as the EV dashboard — see grizzl_e_rates.json.
-# NOTE: YAML-managed dashboards must start with `views:` (no top-level `title:`).
+# YAML-managed dashboard. Live source: /opt/homeassistant/dashboards/solar.yaml
 views:
-  - title: Overview
-    path: overview
-    icon: mdi:solar-power-variant
+- title: Overview
+  path: overview
+  icon: mdi:solar-power-variant
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
     cards:
-      # ── Live production ────────────────────────────────────────────
-      - type: horizontal-stack
-        cards:
-          - type: tile
-            entity: sensor.solar_power_now
-            name: Producing Now
-            icon: mdi:solar-power-variant
-            features:
-              - type: "numeric-attribute"
-                attribute: data_age_min
-                name: Data age (min)
-          - type: tile
-            entity: sensor.solar_rate_now
-            name: Earning Rate
-            icon: mdi:cash-multiple
-      - type: gauge
+    - type: heading
+      heading: Solar now
+      icon: mdi:solar-power-variant
+    - type: tile
+      entity: sensor.solar_power_now
+      name: Production now
+      tap_action:
+        action: more-info
+      icon_tap_action:
+        action: more-info
+    - type: tile
+      entity: sensor.solar_energy_today
+      name: Energy produced today
+      tap_action:
+        action: more-info
+      icon_tap_action:
+        action: more-info
+    - type: markdown
+      content: '{% set timestamp = as_timestamp(state_attr(''sensor.solar_power_now'',
+        ''updated''), none) %}
+
+        {% set age = (as_timestamp(now()) - timestamp) if timestamp is not none else
+        none %}
+
+        {% if age is none or age < 0 or age > 900 %}
+
+        **Current telemetry is unverified or stale.** Do not assume the displayed
+        power or activity is current.
+
+        {% else %}
+
+        Latest bridge update: **{{ (age / 60) | round(0) | int }} minute(s) ago**.
+
+        {% endif %}'
+  - type: grid
+    cards:
+    - type: heading
+      heading: Estimated energy value
+      icon: mdi:cash
+    - type: markdown
+      content: '**Today’s estimated energy value**
+
+
+        {% set value = states(''sensor.solar_credits_today'') | float(none) %}{{ (''CA$%.2f''
+        | format(value)) if value is not none else ''Unavailable'' }}'
+    - type: tile
+      entity: sensor.solar_rate_now
+      name: Configured energy rate
+      tap_action:
+        action: more-info
+      icon_tap_action:
+        action: more-info
+    - type: markdown
+      content: This values solar generation using the configured electricity rates.
+        It is **not a confirmed utility credit**. Without a consumption meter, self-use
+        and export cannot be separated.
+  - type: grid
+    cards:
+    - type: heading
+      heading: Production trend
+      icon: mdi:chart-line
+    - type: statistics-graph
+      title: Solar power — past 24 hours
+      entities:
+      - entity: sensor.solar_power_now
+        name: Power (W)
+      stat_types:
+      - mean
+      period: 5minute
+      chart_type: line
+      days_to_show: 1
+- title: Totals & value
+  path: totals
+  icon: mdi:chart-bar
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Production
+      icon: mdi:lightning-bolt
+    - type: entities
+      title: Production totals
+      show_header_toggle: false
+      entities:
+      - entity: sensor.solar_energy_today
+        name: Today
+        icon: mdi:weather-sunny
+      - entity: sensor.solar_energy_yesterday
+        name: Yesterday
+        icon: mdi:weather-sunset
+      - entity: sensor.solar_energy_month
+        name: This Month
+        icon: mdi:calendar-month
+      - entity: sensor.solar_energy_year
+        name: This Year
+        icon: mdi:calendar-range
+      - entity: sensor.solar_energy_lifetime
+        name: Lifetime
+        icon: mdi:molecule-co2
+  - type: grid
+    cards:
+    - type: heading
+      heading: Estimated value
+      icon: mdi:cash
+    - type: entities
+      title: Estimated energy value
+      show_header_toggle: false
+      entities:
+      - entity: sensor.solar_credits_today
+        name: Today
+        icon: mdi:cash-plus
+      - entity: sensor.solar_credits_yesterday
+        name: Yesterday
+        icon: mdi:cash-refund
+      - entity: sensor.solar_credits_week
+        name: This Week
+        icon: mdi:calendar-week
+      - entity: sensor.solar_credits_month
+        name: This Month
+        icon: mdi:calendar-month
+      - entity: sensor.solar_credits_year
+        name: This Year
+        icon: mdi:calendar-range
+      - entity: sensor.solar_credits_lifetime
+        name: Lifetime
+        icon: mdi:cash-multiple
+      - type: attribute
+        entity: sensor.solar_credits_today
+        attribute: rate_period
+        name: Current rate period
+    - type: markdown
+      content: 'Day-level values from September 5, 2026 use panel data and configured
+        time-of-use rates. Earlier archive-based totals use an assumed production-weighted
+        average of about 17 cents/kWh. Historical value estimates are not utility-statement
+        amounts.
+
+
+        Reconcile actual credits with the utility statement. Production totals alone
+        do not establish exported energy.'
+      title: How values are calculated
+- title: Diagnostics
+  path: diagnostics
+  icon: mdi:information-outline
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Available telemetry
+      icon: mdi:lan-connect
+    - type: entities
+      title: Solar bridge
+      show_header_toggle: false
+      entities:
+      - type: attribute
         entity: sensor.solar_power_now
-        name: Live Solar Power (11.44 kW array)
-        unit: W
-        min: 0
-        max: 11440
-        severity:
-          green: 1000
-          yellow: 4500
-          red: 8000
-        needle: true
+        attribute: status
+        name: Bridge status
+      - type: attribute
+        entity: sensor.solar_power_now
+        attribute: updated
+        name: Bridge updated
+      - type: attribute
+        entity: sensor.solar_power_now
+        attribute: data_age_min
+        name: Reported source-data age
+        suffix: ' min'
+      - type: attribute
+        entity: sensor.solar_power_now
+        attribute: last_slot_time
+        name: Last source time
+    - type: markdown
+      content: '{% set timestamp = as_timestamp(state_attr(''sensor.solar_power_now'',
+        ''updated''), none) %}
 
-      # ── Power curve (long-term statistics: purge-proof 5-min means) ─
-      - type: statistics-graph
-        title: Power — last 24 h (5-min statistics)
-        entities:
-          - entity: sensor.solar_power_now
-            name: Power (W)
-        stat_types:
-          - mean
-        period:
-          calendar:
-            period: day
-        chart_type: line
+        {% set age = (as_timestamp(now()) - timestamp) if timestamp is not none else
+        none %}
 
-      # ── Energy totals ──────────────────────────────────────────────
-      - type: entities
-        title: ☀️ Energy Production
-        show_header_toggle: false
-        entities:
-          - entity: sensor.solar_energy_today
-            name: Today
-            icon: mdi:weather-sunny
-          - entity: sensor.solar_energy_yesterday
-            name: Yesterday
-            icon: mdi:weather-sunset
-          - entity: sensor.solar_energy_month
-            name: This Month
-            icon: mdi:calendar-month
-          - entity: sensor.solar_energy_year
-            name: This Year
-            icon: mdi:calendar-range
-          - entity: sensor.solar_energy_lifetime
-            name: Lifetime
-            icon: mdi:molecule-co2
+        {% if age is none or age < 0 or age > 900 %}
 
-      # ── Net-metering credit value (UL-TOU) ─────────────────────────
-      - type: entities
-        title: 💰 Solar Value at ULO Rates (net-metering basis)
-        show_header_toggle: false
-        entities:
-          - entity: sensor.solar_credits_today
-            name: Today
-            icon: mdi:cash-plus
-          - entity: sensor.solar_credits_yesterday
-            name: Yesterday
-            icon: mdi:cash-refund
-          - entity: sensor.solar_credits_week
-            name: This Week
-            icon: mdi:calendar-week
-          - entity: sensor.solar_credits_month
-            name: This Month
-            icon: mdi:calendar-month
-          - entity: sensor.solar_credits_year
-            name: This Year
-            icon: mdi:calendar-range
-          - entity: sensor.solar_credits_lifetime
-            name: Lifetime
-            icon: mdi:cash-multiple
-          - type: attribute
-            entity: sensor.solar_credits_today
-            attribute: rate_period
-            name: Current rate period
-      - type: markdown
-        content: >
-          Every solar kWh is valued at the hour's OEB **UL-TOU energy rate**
-          (overnight 3.9¢ / weekend off-peak 9.8¢ / mid-peak 15.7¢ /
-          on-peak 39.1¢) — the same rate Alectra credits for net-metered
-          exports, and the rate self-consumed kWh displace. Since solar
-          produces mainly during on-peak weekdays, the production-weighted
-          average works out to **~17¢/kWh**.
+        **Current telemetry is unverified or stale.** Do not assume the displayed
+        power or activity is current.
 
-          *Day-level values since Sep 5 are computed from live panel data;
-          earlier totals (week before Sep 7, month before Sep 1, year,
-          lifetime) are estimated from the production archive at that
-          average rate.* *Caveat:* without a consumption meter the
-          **self-use vs. export split** isn't measurable — Alectra nets
-          credits monthly against your bill; reconcile actuals from the
-          Alectra portal's hourly data.
+        {% else %}
 
-      # ── System health ──────────────────────────────────────────────
-      - type: horizontal-stack
-        cards:
-          - type: tile
-            entity: sensor.solar_power_now
-            name: Grid Voltage
-            icon: mdi:sine-wave
-            state_content:
-              - attribute:voltage_v
-              - unit
-          - type: tile
-            entity: sensor.solar_power_now
-            name: Inverter Temp
-            icon: mdi:thermometer
-            state_content:
-              - attribute:temp_c
-              - unit
-          - type: tile
-            entity: sensor.solar_power_now
-            name: Source
-            icon: mdi:lan-connect
-            state_content:
-              - attribute:source
-              - attribute:last_slot_time
+        Latest bridge update: **{{ (age / 60) | round(0) | int }} minute(s) ago**.
+
+        {% endif %}'
+    - type: markdown
+      content: '{% set age = state_attr(''sensor.solar_power_now'',''data_age_min'')
+        | float(none) %}
+
+        {% if age is none or age < 0 %}**Source-data age is unavailable.**{% elif
+        age > 15 %}**Source readings are older than 15 minutes.** Treat current output
+        as a delayed reading.{% else %}Source reports data age of **{{ age | round(0)
+        | int }} minute(s)**.{% endif %}'
+    - type: gauge
+      entity: sensor.solar_power_now
+      name: Array output — 11.44 kW capacity
+      unit: W
+      min: 0
+      max: 11440
+      needle: true

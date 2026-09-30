@@ -1,333 +1,421 @@
-# Grizzl-E Smart — YAML-managed Lovelace dashboard  [DEPLOYED]
-# Deployed to: /opt/homeassistant/dashboards/ev-charging.yaml (= /config/dashboards/...)
-# Registered via the `lovelace:` block in configuration.yaml (url_path: ev-charging).
-# NOTE: YAML-managed dashboards must start with `views:` (no top-level `title:`).
+# YAML-managed dashboard. Live source: /opt/homeassistant/dashboards/ev-charging.yaml
 views:
-  - title: Overview
-    path: overview
-    icon: mdi:ev-station
+- title: Overview
+  path: overview
+  icon: mdi:ev-station
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
     cards:
-      # ── Live status ────────────────────────────────────────────────
-      - type: horizontal-stack
-        cards:
-          - type: tile
-            entity: binary_sensor.grizzl_e_charging
-            name: Charging
-            icon: mdi:ev-plug-type2
-          - type: tile
-            entity: sensor.grizzl_e_power
-            name: Power
-            icon: mdi:flash
-      - type: gauge
+    - type: heading
+      heading: Charger now
+      icon: mdi:ev-station
+    - type: tile
+      entity: binary_sensor.grizzl_e_charging
+      name: Charging activity
+      tap_action:
+        action: more-info
+      icon_tap_action:
+        action: more-info
+    - type: tile
+      entity: sensor.grizzl_e_power
+      name: Charging power
+      tap_action:
+        action: more-info
+      icon_tap_action:
+        action: more-info
+    - type: markdown
+      content: '{% set timestamp = as_timestamp(state_attr(''sensor.grizzl_e_power'',
+        ''updated''), none) %}
+
+        {% set age = (as_timestamp(now()) - timestamp) if timestamp is not none else
+        none %}
+
+        {% if age is none or age < 0 or age > 300 %}
+
+        **Current telemetry is unverified or stale.** Do not assume the displayed
+        power or activity is current.
+
+        {% else %}
+
+        Latest bridge update: **{{ (age / 60) | round(0) | int }} minute(s) ago**.
+
+        {% endif %}'
+  - type: grid
+    cards:
+    - type: heading
+      heading: Today
+      icon: mdi:calendar-today
+    - type: tile
+      entity: sensor.grizzl_e_energy_daily
+      name: Energy charged today
+      tap_action:
+        action: more-info
+      icon_tap_action:
+        action: more-info
+    - type: markdown
+      content: '**Charging cost today**
+
+
+        {% set value = states(''sensor.grizzl_e_cost_daily'') | float(none) %}{{ (''CA$%.2f''
+        | format(value)) if value is not none else ''Unavailable'' }}'
+    - type: markdown
+      content: Energy cost is estimated using the configured tariff. It is not the
+        whole electricity bill or a verified per-vehicle allocation.
+  - type: grid
+    cards:
+    - type: heading
+      heading: Session & electricity rate
+      icon: mdi:clock-outline
+    - type: entities
+      title: 🔌 Current Session
+      show_header_toggle: false
+      entities:
+      - type: attribute
+        entity: sensor.grizzl_e_total_cost
+        name: Session Energy
+        icon: mdi:battery-charging
+        attribute: session_energy_kwh
+        suffix: ' kWh'
+      - entity: sensor.grizzl_e_session_cost
+        name: Session Cost
+        icon: mdi:cash
+      - type: attribute
+        entity: sensor.grizzl_e_total_cost
+        name: Rate Period
+        icon: mdi:clock-outline
+        attribute: period_label
+      - type: attribute
+        entity: sensor.grizzl_e_total_cost
+        name: Rate
+        icon: mdi:currency-usd
+        attribute: rate_cents_kwh
+        suffix: ' ¢/kWh'
+    - type: markdown
+      content: '{% set charging = states(''binary_sensor.grizzl_e_charging'') %}
+
+        {% if charging == ''off'' %}The session readings may describe the most recently
+        retained session, not charging happening now.{% elif charging not in [''on'',''off'']
+        %}Charging status is unavailable.{% endif %}'
+  - type: grid
+    cards:
+    - type: heading
+      heading: Totals & trend
+      icon: mdi:chart-line
+    - type: entities
+      title: Energy-cost estimates
+      show_header_toggle: false
+      entities:
+      - entity: sensor.grizzl_e_cost_daily
+        name: Today
+        icon: mdi:calendar-today
+      - entity: sensor.grizzl_e_cost_weekly
+        name: This Week
+        icon: mdi:calendar-week
+      - entity: sensor.grizzl_e_cost_monthly
+        name: This Month
+        icon: mdi:calendar-month
+      - entity: sensor.grizzl_e_cost_yearly
+        name: This Year
+        icon: mdi:calendar-range
+      - type: divider
+      - entity: sensor.grizzl_e_est_monthly_bill
+        name: Projected month — estimate
+        icon: mdi:receipt-text
+    - type: entities
+      title: Charging energy
+      show_header_toggle: false
+      entities:
+      - entity: sensor.grizzl_e_energy_daily
+        name: Today
+        icon: mdi:calendar-today
+      - entity: sensor.grizzl_e_energy_weekly
+        name: This Week
+        icon: mdi:calendar-week
+      - entity: sensor.grizzl_e_energy_monthly
+        name: This Month
+        icon: mdi:calendar-month
+      - entity: sensor.grizzl_e_energy_yearly
+        name: This Year
+        icon: mdi:calendar-range
+    - type: statistics-graph
+      title: Daily charging cost — 30 days
+      entities:
+      - sensor.grizzl_e_cost_daily
+      stat_types:
+      - sum
+      days_to_show: 30
+      chart_type: bar
+      period: day
+- title: History
+  path: history
+  icon: mdi:history
+  cards:
+  - type: markdown
+    content: '## Historical charging
+
+
+      **November 2024–June 2026 is modeled**, using odometer distance, assumed efficiency
+      and electricity rates. These are estimates, not measured charger sessions.
+
+
+      July 2026 onward uses live charger records. Charger records and per-vehicle
+      attribution are separate data sources.'
+  - type: entities
+    title: Lifetime Totals
+    show_header_toggle: false
+    entities:
+    - entity: sensor.grizzl_e_total_energy
+      name: Lifetime Energy
+      icon: mdi:lightning-bolt-circle
+    - entity: sensor.grizzl_e_total_cost
+      name: Lifetime Cost
+      icon: mdi:currency-usd
+    - entity: sensor.grizzl_e_cost_yearly
+      name: This Year (live)
+      icon: mdi:calendar-range
+  - type: statistics-graph
+    title: Monthly Energy (365 days)
+    entities:
+    - sensor.grizzl_e_energy_daily
+    stat_types:
+    - sum
+    days_to_show: 365
+    chart_type: bar
+    period: month
+  - type: statistics-graph
+    title: Monthly Cost (365 days)
+    entities:
+    - sensor.grizzl_e_cost_daily
+    stat_types:
+    - sum
+    days_to_show: 365
+    chart_type: bar
+    period: month
+  - type: markdown
+    content: '### Modeled Monthly Breakdown (Nov 2024 - Jun 2026)
+
+      | Month | kWh | Cost | Vehicles |
+
+      |-------|-----|------|----------|
+
+      | 2024-11 | 611 | $47 | IONIQ 6 + Santa Fe |
+
+      | 2024-12 | 631 | $49 | IONIQ 6 + Santa Fe |
+
+      | 2025-01 | 631 | $49 | IONIQ 6 + Santa Fe |
+
+      | 2025-02 | 570 | $44 | IONIQ 6 + Santa Fe |
+
+      | 2025-03 | 631 | $49 | IONIQ 6 + Santa Fe |
+
+      | 2025-04 | 611 | $47 | IONIQ 6 + Santa Fe |
+
+      | 2025-05 | 631 | $49 | IONIQ 6 + Santa Fe |
+
+      | 2025-06 | 772 | $60 | All 3 vehicles |
+
+      | 2025-07 | 782 | $60 | IONIQ 6 + VF9 |
+
+      | 2025-08 | 782 | $60 | IONIQ 6 + VF9 |
+
+      | 2025-09 | 757 | $58 | IONIQ 6 + VF9 |
+
+      | 2025-10 | 782 | $60 | IONIQ 6 + VF9 |
+
+      | 2025-11 | 757 | $58 | IONIQ 6 + VF9 |
+
+      | 2025-12 | 782 | $60 | IONIQ 6 + VF9 |
+
+      | 2026-01 | 782 | $60 | IONIQ 6 + VF9 |
+
+      | 2026-02 | 706 | $54 | IONIQ 6 + VF9 |
+
+      | 2026-03 | 782 | $60 | IONIQ 6 + VF9 |
+
+      | 2026-04 | 757 | $58 | IONIQ 6 + VF9 |
+
+      | 2026-05 | 782 | $60 | IONIQ 6 + VF9 |
+
+      | 2026-06 | 757 | $58 | IONIQ 6 + VF9 |
+
+      | **Total** | **14,294** | **$1,102** | **20 months** |
+
+
+      *Avg: 715 kWh/mo | $55/mo | 1.86 c/km*
+
+
+      *Modeled series ends Jun 2026. Jul 2026 onward: live metered (see
+
+      Lifetime Totals cards above). Per-vehicle split (Ioniq 6 / VF9) is
+
+      tracked from Jul 30, 2026 — see the Per-Vehicle view.*
+
+      '
+- title: Vehicles
+  path: per-vehicle
+  icon: mdi:car-multiple
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Vehicle records
+      icon: mdi:car-multiple
+    - type: markdown
+      content: Vehicle assignment is inferred. A session can remain **unattributed**
+        when vehicle telemetry is unavailable; car totals exclude those sessions.
+        Fixed-cost allocations are estimates and do not reconcile a utility bill.
+      title: Vehicle totals & attribution
+    - type: entities
+      title: Current Session
+      icon: mdi:ev-station
+      show_header_toggle: false
+      entities:
+      - entity: sensor.ev_charging_vehicle_detected
+        name: Detected Vehicle
+      - entity: input_text.ev_session_vehicle
+        name: Last Session Vehicle
+      - type: attribute
+        entity: sensor.ev_charging_vehicle_detected
+        name: Ioniq SoC Gain
+        attribute: ioniq_soc_gain
+        suffix: ' %'
+      - type: attribute
+        entity: sensor.ev_charging_vehicle_detected
+        name: VF9 SoC Gain
+        attribute: vf9_soc_gain
+        suffix: ' %'
+      - type: attribute
+        entity: sensor.ev_charging_vehicle_detected
+        name: Session kWh
+        attribute: session_kwh
+        suffix: ' kWh'
+    - type: entities
+      title: Ioniq 6 Total Cost
+      icon: mdi:car-electric
+      show_header_toggle: false
+      entities:
+      - entity: sensor.ev_ioniq_6_total_cost
+        name: Total Cost
+      - entity: sensor.ioniq_6_cost_monthly
+        name: This Month
+      - entity: sensor.ioniq_6_cost_daily
+        name: Today
+    - type: entities
+      title: VF9 Total Cost
+      icon: mdi:car-electric
+      show_header_toggle: false
+      entities:
+      - entity: sensor.ev_vf9_total_cost
+        name: Total Cost
+      - entity: sensor.vf9_cost_monthly
+        name: This Month
+      - entity: sensor.vf9_cost_daily
+        name: Today
+    - type: entities
+      title: Ioniq 6 Total Energy
+      icon: mdi:lightning-bolt
+      show_header_toggle: false
+      entities:
+      - entity: sensor.ev_ioniq_6_total_energy
+        name: Total Energy
+      - entity: sensor.ioniq_6_energy_monthly
+        name: This Month
+      - entity: sensor.ioniq_6_energy_daily
+        name: Today
+    - type: entities
+      title: VF9 Total Energy
+      icon: mdi:lightning-bolt
+      show_header_toggle: false
+      entities:
+      - entity: sensor.ev_vf9_total_energy
+        name: Total Energy
+      - entity: sensor.vf9_energy_monthly
+        name: This Month
+      - entity: sensor.vf9_energy_daily
+        name: Today
+    - type: entity
+      entity: sensor.ev_fixed_cost_total
+      name: Accumulated fixed-cost allocation — estimate
+      icon: mdi:receipt
+    - type: entity
+      entity: sensor.ev_unknown_cost_total
+      name: Unattributed Cost
+      icon: mdi:alert-circle
+    - type: statistics-graph
+      entities:
+      - sensor.ev_ioniq_6_total_cost
+      title: Ioniq 6 Cost Trend
+      period: month
+      days_to_show: 365
+      chart_type: line
+      stat_types:
+      - sum
+    - type: statistics-graph
+      entities:
+      - sensor.ev_vf9_total_cost
+      title: VF9 Cost Trend
+      period: month
+      days_to_show: 365
+      chart_type: line
+      stat_types:
+      - sum
+- title: Diagnostics
+  path: diagnostics
+  icon: mdi:information-outline
+  type: sections
+  max_columns: 2
+  sections:
+  - type: grid
+    cards:
+    - type: heading
+      heading: Telemetry
+      icon: mdi:lan-connect
+    - type: entities
+      title: Charger diagnostics
+      show_header_toggle: false
+      entities:
+      - entity: sensor.grizzl_e_diagnostics
+        name: Free Heap
+        icon: mdi:memory
+      - type: attribute
         entity: sensor.grizzl_e_power
-        name: Live Charging Power
-        unit: W
-        min: 0
-        max: 9600
-        severity:
-          green: 0
-          yellow: 3000
-          red: 6500
-        needle: true
+        name: Wi-Fi RSSI
+        icon: mdi:wifi
+        attribute: rssi_dbm
+        suffix: ' dBm'
+    - type: entities
+      title: Last bridge update
+      show_header_toggle: false
+      entities:
+      - type: attribute
+        entity: sensor.grizzl_e_power
+        attribute: updated
+        name: Updated
+    - type: markdown
+      content: '{% set timestamp = as_timestamp(state_attr(''sensor.grizzl_e_power'',
+        ''updated''), none) %}
 
-      # ── Cost drill-down (Day / Week / Month / Year) ────────────────
-      - type: entities
-        title: 💲 Charging Cost — Drill-Down
-        show_header_toggle: false
-        entities:
-          - entity: sensor.grizzl_e_cost_daily
-            name: Today
-            icon: mdi:calendar-today
-          - entity: sensor.grizzl_e_cost_weekly
-            name: This Week
-            icon: mdi:calendar-week
-          - entity: sensor.grizzl_e_cost_monthly
-            name: This Month
-            icon: mdi:calendar-month
-          - entity: sensor.grizzl_e_cost_yearly
-            name: This Year
-            icon: mdi:calendar-range
-          - type: divider
-          - entity: sensor.grizzl_e_est_monthly_bill
-            name: Est. Monthly Bill
-            icon: mdi:receipt-text
+        {% set age = (as_timestamp(now()) - timestamp) if timestamp is not none else
+        none %}
 
-      # ── Energy drill-down (Day / Week / Month / Year) ──────────────
-      - type: entities
-        title: ⚡ Energy — Drill-Down
-        show_header_toggle: false
-        entities:
-          - entity: sensor.grizzl_e_energy_daily
-            name: Today
-            icon: mdi:calendar-today
-          - entity: sensor.grizzl_e_energy_weekly
-            name: This Week
-            icon: mdi:calendar-week
-          - entity: sensor.grizzl_e_energy_monthly
-            name: This Month
-            icon: mdi:calendar-month
-          - entity: sensor.grizzl_e_energy_yearly
-            name: This Year
-            icon: mdi:calendar-range
+        {% if age is none or age < 0 or age > 300 %}
 
-      # ── Current session + rate period ──────────────────────────────
-      - type: entities
-        title: 🔌 Current Session
-        show_header_toggle: false
-        # `attribute:`/`suffix:` are read only by the attribute row, which requires
-        # `type: attribute`. Without it these rows fell back to the sensor entity row
-        # and all three rendered sensor.grizzl_e_total_cost's lifetime dollar value.
-        entities:
-          - type: attribute
-            entity: sensor.grizzl_e_total_cost
-            name: Session Energy
-            icon: mdi:battery-charging
-            attribute: session_energy_kwh
-            suffix: " kWh"
-          - entity: sensor.grizzl_e_session_cost
-            name: Session Cost
-            icon: mdi:cash
-          - type: attribute
-            entity: sensor.grizzl_e_total_cost
-            name: Rate Period
-            icon: mdi:clock-outline
-            attribute: period_label
-          - type: attribute
-            entity: sensor.grizzl_e_total_cost
-            name: Rate
-            icon: mdi:currency-usd
-            attribute: rate_cents_kwh
-            suffix: " ¢/kWh"
+        **Current telemetry is unverified or stale.** Do not assume the displayed
+        power or activity is current.
 
-      # ── Cost trend (last 30 days) ──────────────────────────────────
-      - type: statistics-graph
-        title: Cost Trend (30d)
-        entities:
-          - sensor.grizzl_e_cost_daily
-        stat_types:
-          - sum
-        days_to_show: 30
-        chart_type: bar
+        {% else %}
 
-      # ── Diagnostics ────────────────────────────────────────────────
-      - type: entities
-        title: 📡 Diagnostics
-        show_header_toggle: false
-        entities:
-          - entity: sensor.grizzl_e_diagnostics
-            name: Free Heap
-            icon: mdi:memory
-          - type: attribute
-            entity: sensor.grizzl_e_power
-            name: Wi-Fi RSSI
-            icon: mdi:wifi
-            attribute: rssi_dbm
-            suffix: " dBm"
+        Latest bridge update: **{{ (age / 60) | round(0) | int }} minute(s) ago**.
 
-  # ══════════════════════════════════════════════════════════════════
-  # HISTORICAL VIEW — Modeled data Nov 2024 – Jun 2026 + live thereafter
-  # ══════════════════════════════════════════════════════════════════
-  - title: History
-    path: history
-    icon: mdi:history
-    cards:
-      - type: markdown
-        content: |
-          ## Lifetime Charging Summary
-          **Vehicles:** IONIQ 6 (Jun 2023-present) | VF9 (Jun 2025-present) | Santa Fe PHEV (May 2023-Jun 2025)
-
-          Nov 2024 - Jun 2026: modeled from odometer x efficiency x ULO rates (within 9% of Alectra billing). Jul 2026+: live metered data.
-
-      - type: entities
-        title: Lifetime Totals
-        show_header_toggle: false
-        entities:
-          - entity: sensor.grizzl_e_total_energy
-            name: Lifetime Energy
-            icon: mdi:lightning-bolt-circle
-          - entity: sensor.grizzl_e_total_cost
-            name: Lifetime Cost
-            icon: mdi:currency-usd
-          - entity: sensor.grizzl_e_cost_yearly
-            name: This Year (live)
-            icon: mdi:calendar-range
-
-      - type: statistics-graph
-        title: Monthly Energy (365 days)
-        entities:
-          - sensor.grizzl_e_energy_daily
-        stat_types:
-          - sum
-        days_to_show: 365
-        chart_type: bar
-
-      - type: statistics-graph
-        title: Monthly Cost (365 days)
-        entities:
-          - sensor.grizzl_e_cost_daily
-        stat_types:
-          - sum
-        days_to_show: 365
-        chart_type: bar
-
-      - type: markdown
-        content: |
-          ### Modeled Monthly Breakdown (Nov 2024 - Jun 2026)
-          | Month | kWh | Cost | Vehicles |
-          |-------|-----|------|----------|
-          | 2024-11 | 611 | $47 | IONIQ 6 + Santa Fe |
-          | 2024-12 | 631 | $49 | IONIQ 6 + Santa Fe |
-          | 2025-01 | 631 | $49 | IONIQ 6 + Santa Fe |
-          | 2025-02 | 570 | $44 | IONIQ 6 + Santa Fe |
-          | 2025-03 | 631 | $49 | IONIQ 6 + Santa Fe |
-          | 2025-04 | 611 | $47 | IONIQ 6 + Santa Fe |
-          | 2025-05 | 631 | $49 | IONIQ 6 + Santa Fe |
-          | 2025-06 | 772 | $60 | All 3 vehicles |
-          | 2025-07 | 782 | $60 | IONIQ 6 + VF9 |
-          | 2025-08 | 782 | $60 | IONIQ 6 + VF9 |
-          | 2025-09 | 757 | $58 | IONIQ 6 + VF9 |
-          | 2025-10 | 782 | $60 | IONIQ 6 + VF9 |
-          | 2025-11 | 757 | $58 | IONIQ 6 + VF9 |
-          | 2025-12 | 782 | $60 | IONIQ 6 + VF9 |
-          | 2026-01 | 782 | $60 | IONIQ 6 + VF9 |
-          | 2026-02 | 706 | $54 | IONIQ 6 + VF9 |
-          | 2026-03 | 782 | $60 | IONIQ 6 + VF9 |
-          | 2026-04 | 757 | $58 | IONIQ 6 + VF9 |
-          | 2026-05 | 782 | $60 | IONIQ 6 + VF9 |
-          | 2026-06 | 757 | $58 | IONIQ 6 + VF9 |
-          | **Total** | **14,294** | **$1,102** | **20 months** |
-
-          *Avg: 715 kWh/mo | $55/mo | 1.86 c/km*
-
-          *Modeled series ends Jun 2026. Jul 2026 onward: live metered (see
-          Lifetime Totals cards above). Per-vehicle split (Ioniq 6 / VF9) is
-          tracked from Jul 30, 2026 — see the Per-Vehicle view.*
-
-  # ══════════════════════════════════════════════════════════════════
-  # PER-VEHICLE VIEW — Per-vehicle charging cost & energy tracking
-  # ══════════════════════════════════════════════════════════════════
-  - title: "Per-Vehicle"
-    path: per-vehicle
-    icon: mdi:car-multiple
-    cards:
-      # ── Section header ─────────────────────────────────────────────
-      - type: markdown
-        content: |
-          ## Per-Vehicle Charging Cost Tracking
-          Track charging costs and energy per vehicle (Ioniq 6 & VF9).
-
-      # ── Current session detection status ───────────────────────────
-      - type: entities
-        title: "Current Session"
-        icon: mdi:ev-station
-        show_header_toggle: false
-        entities:
-          - entity: sensor.ev_charging_vehicle_detected
-            name: "Detected Vehicle"
-          - entity: input_text.ev_session_vehicle
-            name: "Last Session Vehicle"
-          - type: attribute
-            entity: sensor.ev_charging_vehicle_detected
-            name: "Ioniq SoC Gain"
-            attribute: ioniq_soc_gain
-            suffix: " %"
-          - type: attribute
-            entity: sensor.ev_charging_vehicle_detected
-            name: "VF9 SoC Gain"
-            attribute: vf9_soc_gain
-            suffix: " %"
-          - type: attribute
-            entity: sensor.ev_charging_vehicle_detected
-            name: "Session kWh"
-            attribute: session_kwh
-            suffix: " kWh"
-
-      # ── Per-vehicle total costs (side by side) ─────────────────────
-      - type: grid
-        columns: 2
-        cards:
-          - type: entities
-            title: "Ioniq 6 Total Cost"
-            icon: mdi:car-electric
-            show_header_toggle: false
-            entities:
-              - entity: sensor.ev_ioniq_6_total_cost
-                name: "Total Cost"
-              - entity: sensor.ioniq_6_cost_monthly
-                name: "This Month"
-              - entity: sensor.ioniq_6_cost_daily
-                name: "Today"
-          - type: entities
-            title: "VF9 Total Cost"
-            icon: mdi:car-electric
-            show_header_toggle: false
-            entities:
-              - entity: sensor.ev_vf9_total_cost
-                name: "Total Cost"
-              - entity: sensor.vf9_cost_monthly
-                name: "This Month"
-              - entity: sensor.vf9_cost_daily
-                name: "Today"
-
-      # ── Per-vehicle total energy (side by side) ────────────────────
-      - type: grid
-        columns: 2
-        cards:
-          - type: entities
-            title: "Ioniq 6 Total Energy"
-            icon: mdi:lightning-bolt
-            show_header_toggle: false
-            entities:
-              - entity: sensor.ev_ioniq_6_total_energy
-                name: "Total Energy"
-              - entity: sensor.ioniq_6_energy_monthly
-                name: "This Month"
-              - entity: sensor.ioniq_6_energy_daily
-                name: "Today"
-          - type: entities
-            title: "VF9 Total Energy"
-            icon: mdi:lightning-bolt
-            show_header_toggle: false
-            entities:
-              - entity: sensor.ev_vf9_total_energy
-                name: "Total Energy"
-              - entity: sensor.vf9_energy_monthly
-                name: "This Month"
-              - entity: sensor.vf9_energy_daily
-                name: "Today"
-
-      # ── Fixed and unattributed costs ────────────────────────────────
-      - type: grid
-        columns: 2
-        cards:
-          - type: entity
-            entity: sensor.ev_fixed_cost_total
-            name: "Fixed Delivery Cost Accumulated"
-            icon: mdi:receipt
-          - type: entity
-            entity: sensor.ev_unknown_cost_total
-            name: "Unattributed Cost"
-            icon: mdi:alert-circle
-
-      # ── Monthly cost trend comparison ──────────────────────────────
-      - type: grid
-        columns: 2
-        cards:
-          - type: statistics-graph
-            entities:
-              - sensor.ev_ioniq_6_total_cost
-            title: "Ioniq 6 Cost Trend"
-            period: month
-            days_to_show: 365
-            chart_type: line
-            stat_types:
-              - sum
-          - type: statistics-graph
-            entities:
-              - sensor.ev_vf9_total_cost
-            title: "VF9 Cost Trend"
-            period: month
-            days_to_show: 365
-            chart_type: line
-            stat_types:
-              - sum
+        {% endif %}'
+    - type: gauge
+      entity: sensor.grizzl_e_power
+      name: Charging power
+      unit: W
+      min: 0
+      max: 9600
+      needle: true
