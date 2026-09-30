@@ -41,3 +41,5 @@ A cron on the Pi runs `git-sync.sh` every 15 min (at :02/:17/:32/:47), auto-comm
 - `walkthrough.md` — narrative walkthrough
 - `reference/entities.md` — entity reference
 - `reference/climate-setpoint-override.md` — **read before debugging "the AC is not cooling".** The ecobee can run a different setpoint than the one we write (utility demand-response `touSetback`), and `climate.ecobee_3` reports the *requested* value while `climate.ecobee` reports the *effective* one. Also documents the per-room sensor suffix map and the stuck-at-0 sensor failure mode.
+
+- `reference/localtuya-update-guard.md` — owner-approved 2026-09-30 LocalTuya update guard. The unattended vendor-file exception covers only two exact recognized payload defects and at most one validated HA restart per repaired update; unknown source changes require review.

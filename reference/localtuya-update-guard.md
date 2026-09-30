@@ -1,6 +1,6 @@
 # LocalTuya update guard
 
-Deployment status: service installation/enablement was confirmed. Final live acceptance and the latest low-level/deferred-error safeguards remain pending while Pi access is unavailable. See the dated acceptance audit for the deployed versus local version distinction.
+Deployment status: final safeguards deployed and service enabled/active on 2026-09-30. Both live local-dim/cloud-restoration tests passed; unchanged fingerprint did not retrigger after a service restart. The broad smoke passed10checks with local inference and cloud conversation end-to-end explicitly skipped. See the dated acceptance audit.
 
 Owner approved the reviewed design/activation scope by instructing “continue” on 2026-09-30. This is a scoped exception to the vendor-file/restart rules: only the exact two audited payload regressions may be automatically repaired. No other vendor changes are authorized.
 
