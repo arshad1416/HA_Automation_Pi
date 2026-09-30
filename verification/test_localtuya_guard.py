@@ -75,6 +75,9 @@ class LiveTests(unittest.TestCase):
         api=FakeHA();r=live.test_pair(api,'island',sleep=lambda _:None,wait_seconds=5)
         self.assertEqual(r['result'],'passed');self.assertEqual(api.level,180)
         self.assertEqual([c['entity_id'] for c in api.commands],list(live.PAIRS['island']))
+    def test_low_level_defers_without_brightening(self):
+        api=FakeHA(brightness=2)
+        self.assertEqual(live.test_pair(api,'island')['result'],'deferred_low');self.assertFalse(api.commands)
     def test_off_does_not_send(self):
         api=FakeHA(off=True);self.assertEqual(live.test_pair(api,'island')['result'],'deferred_off');self.assertFalse(api.commands)
     def test_lag(self):
@@ -187,6 +190,20 @@ class DaemonTests(SourceTests):
         self.assertEqual(e['rollback'][rel],'preserved_concurrent_change')
 
 class AdditionalTests(unittest.TestCase):
+    def test_deferred_transport_failure_does_not_repeat_controls(self):
+        with tempfile.TemporaryDirectory() as d:
+            g=daemon.Guard(ROOT,d,FakeHA())
+            g.data['event']={'id':'deferred','stage':'complete','status':'deferred',
+                            'tests':{'island':{'result':'deferred_off'}}}
+            with patch.object(g,'functional',side_effect=OSError) as f,patch.object(g,'report'):
+                g.deferred();g.deferred()
+                self.assertEqual(f.call_count,1)
+                self.assertEqual(g.data['event']['status'],'needs_review')
+    def test_gate_transport_disables_unrelated_local_model_inference(self):
+        import os
+        raw=daemon.command(['python3','-c',
+            'import os; print(os.environ["SMOKE_SKIP_LOCAL_INFERENCE"], os.environ["SMOKE_PI_HOST"])'],ROOT)
+        self.assertEqual(raw.strip(),b'1 __local__')
     def test_atomic_replacement_checks_owner_and_expected_bytes(self):
         with tempfile.TemporaryDirectory() as d:
             p=pathlib.Path(d)/'file';p.write_bytes(b'old');p.chmod(0o640)

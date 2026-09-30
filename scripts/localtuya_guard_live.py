@@ -31,7 +31,9 @@ def test_pair(api,pair,save=lambda _:None,sleep=time.sleep,wait_seconds=25):
     original=value(states[0])
     if original is None or not agrees(states,original):
         return {'result':'initial_disagreement','restore':'not_needed'}
-    target=original-26 if original>40 else min(255,original+26)
+    if original<=3:
+        return {'result':'deferred_low','restore':'not_needed'}
+    target=max(1,original-26)
     pending={'pair':pair,'original':original,'target':target,'stage':'dim_reserved'}
     # Persist intent before the first physical command, for crash recovery.
     save(pending)

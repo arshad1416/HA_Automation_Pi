@@ -78,6 +78,8 @@ class HA:
 def command(argv,root,timeout=120,input=None):
     env=dict(os.environ)
     env['SMOKE_PI_HOST']='__local__'
+    # The required broad smoke suite must not load a multi-GB local model for a light repair.
+    env['SMOKE_SKIP_LOCAL_INFERENCE']='1'
     with subprocess.Popen(argv,cwd=root,stdin=subprocess.PIPE,stdout=subprocess.PIPE,
                           stderr=subprocess.PIPE,start_new_session=True,env=env) as p:
         try: out,_=p.communicate(input=input,timeout=timeout)
@@ -174,7 +176,7 @@ class Guard:
                     # Required post-restart smoke gate is bounded; unrelated stalls are reported.
                     try:
                         self.run(['bash','verification/smoke-tests.sh'],self.root,45)
-                        e['smoke']='passed'
+                        e['smoke']='passed_with_local_inference_skipped'
                     except Exception:
                         e['smoke']='failed_or_timed_out'
                     self.save();return
@@ -189,10 +191,10 @@ class Guard:
                 time.sleep(2)
         for pair in live.PAIRS:
             previous=e['tests'].get(pair,{})
-            if previous.get('result') not in (None,'deferred_off'): continue
+            if previous.get('result') not in (None,'deferred_off','deferred_low'): continue
             e['tests'][pair]=live.test_pair(self.api,pair,self.pending);self.save()
         outcomes=[r['result'] for r in e['tests'].values()]
-        e['status']='healthy' if all(s=='passed' for s in outcomes) else ('deferred' if all(s in ('passed','deferred_off') for s in outcomes) else 'needs_review')
+        e['status']='healthy' if all(s=='passed' for s in outcomes) else ('deferred' if all(s in ('passed','deferred_off','deferred_low') for s in outcomes) else 'needs_review')
         e['stage']='complete';self.data['completed_fingerprint']=source.package_fingerprint(self.root);self.save();self.report()
     def process(self,fingerprint):
         if self.data['completed_fingerprint']==fingerprint: return False
@@ -235,8 +237,14 @@ class Guard:
         e=self.data.get('event')
         if not e or e.get('status')!='deferred': return
         # No repeated commands/model calls while off. Retry only when both are on.
-        if any(r.get('result')=='deferred_off' and all(self.api.state(i).get('state')=='on' for i in live.PAIRS[p]) for p,r in e.get('tests',{}).items()):
-            e['stage']='live';self.save();self.functional(e)
+        if any(r.get('result') in ('deferred_off','deferred_low') and all((live.value(self.api.state(i)) or 0)>3 for i in live.PAIRS[p]) for p,r in e.get('tests',{}).items()):
+            e['stage']='live';self.save()
+            try: self.functional(e)
+            except Exception as exc:
+                if e.get('pending_test'):
+                    e.setdefault('tests',{})[e['pending_test']['pair']]={'result':'interrupted_test','restore':'owner_review_required'}
+                e['stage']='complete';e['status']='needs_review';e['failure_type']=type(exc).__name__
+                self.save();self.report()
 
 
 def main():

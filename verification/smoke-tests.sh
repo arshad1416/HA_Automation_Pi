@@ -28,10 +28,15 @@ check "tools capability declared"      ssh $PI "ollama show orieg/gemma3-tools:4
 
 echo
 echo "=== 2. Local brain inference (warm latency) ==="
+if [[ "${SMOKE_SKIP_LOCAL_INFERENCE:-0}" == "1" ]]; then
+  echo "  (skipped explicitly — local-model loading can exhaust this Pi; light guard performs no Ollama inference)"
+else
 ssh $PI 'curl -s http://localhost:11434/api/chat -d "{\"model\":\"orieg/gemma3-tools:4b-ft\",\"messages\":[{\"role\":\"user\",\"content\":\"Reply only PONG\"}],\"stream\":false}"' \
   | python3 -c 'import sys,json; r=json.load(sys.stdin); c=r["message"]["content"].strip(); d=r.get("total_duration",0)/1e9; print(f"  response={c!r}  duration={d:.1f}s"); sys.exit(0 if "PONG" in c else 1)' \
   && echo "  ✓ PONG via /api/chat" && PASS=$((PASS+1)) \
   || { echo "  ✗ PONG via /api/chat"; FAIL=$((FAIL+1)); }
+
+fi
 
 echo
 echo "=== 3. HA conversation agents present ==="
