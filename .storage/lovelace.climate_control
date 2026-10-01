@@ -31,8 +31,24 @@
                   "name": "Indoor humidity"
                 },
                 {
+                  "type": "tile",
+                  "entity": "input_boolean.climate_ai_enabled",
+                  "name": "Automatic climate control",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
+                },
+                {
                   "type": "markdown",
                   "content": "{% set automatic = states('input_boolean.climate_ai_enabled') %} {% if automatic == 'on' %} **Automatic climate control is on.** It may adjust manual thermostat changes when the next policy or schedule runs. {% elif automatic == 'off' %} **Climate AI is off.** Scheduled comfort and safety controls still apply. {% else %} **Automatic-control status is unavailable.** Check Settings before making changes. {% endif %}\n{% set requested = state_attr('climate.ecobee_3', 'temperature') | float(none) %} {% set effective = state_attr('climate.ecobee', 'temperature') | float(none) %} {% if requested is not none and effective is not none and (effective - requested) | abs >= 0.5 %} The thermostat reports an effective target of **{{ effective }}°C**; the requested target is **{{ requested }}°C**. Utility adjustments can change the effective target. {% endif %}"
+                },
+                {
+                  "type": "markdown",
+                  "title": "Latest climate decision",
+                  "content": "{% set decision = states('input_text.climate_ai_recommendation') %} {{ decision if decision not in ['unknown', 'unavailable', ''] else 'No climate decision is available yet.' }}"
                 }
               ]
             },
@@ -73,6 +89,10 @@
                   "entity": "weather.forecast_home",
                   "name": "Outside",
                   "show_forecast": false
+                },
+                {
+                  "type": "markdown",
+                  "content": "{% set season = states('sensor.season') %}{% set labels = {'spring': 'Spring', 'summer': 'Summer', 'autumn': 'Fall', 'winter': 'Winter'} %}{% if season in labels %}**Season: {{ labels[season] }}** — astronomical equinoxes and solstices. {% if season in ['spring', 'autumn'] %}Comfort control remains active; heating or cooling follows measured indoor conditions.{% endif %}{% else %}**Season unavailable.** Seasonal modes retain their last valid selection.{% endif %}"
                 }
               ]
             },
@@ -128,6 +148,26 @@
                       "name": "Mina's room"
                     }
                   ]
+                },
+                {
+                  "type": "heading",
+                  "heading": "Office heating & automatic control",
+                  "icon": "mdi:radiator"
+                },
+                {
+                  "type": "markdown",
+                  "content": "Office heating has its own occupancy and temperature automation. Open the heater control for manual changes; automation may adjust it later."
+                },
+                {
+                  "type": "tile",
+                  "entity": "climate.office_heater",
+                  "name": "Office heater",
+                  "tap_action": {
+                    "action": "more-info"
+                  },
+                  "icon_tap_action": {
+                    "action": "more-info"
+                  }
                 }
               ]
             },
@@ -357,48 +397,7 @@
             },
             {
               "type": "grid",
-              "cards": [
-                {
-                  "type": "heading",
-                  "heading": "Office heating & automatic control",
-                  "icon": "mdi:radiator"
-                },
-                {
-                  "type": "tile",
-                  "entity": "climate.office_heater",
-                  "name": "Office heater",
-                  "tap_action": {
-                    "action": "more-info"
-                  },
-                  "icon_tap_action": {
-                    "action": "more-info"
-                  }
-                },
-                {
-                  "type": "markdown",
-                  "content": "Office heating has its own occupancy and temperature automation. Open the heater control for manual changes; automation may adjust it later."
-                },
-                {
-                  "type": "tile",
-                  "entity": "input_boolean.climate_ai_enabled",
-                  "name": "Automatic climate control",
-                  "tap_action": {
-                    "action": "more-info"
-                  },
-                  "icon_tap_action": {
-                    "action": "more-info"
-                  }
-                },
-                {
-                  "type": "markdown",
-                  "content": "{% set season = states('sensor.season') %}{% set labels = {'spring': 'Spring', 'summer': 'Summer', 'autumn': 'Fall', 'winter': 'Winter'} %}{% if season in labels %}**Season: {{ labels[season] }}** — astronomical equinoxes and solstices. {% if season in ['spring', 'autumn'] %}Comfort control remains active; heating or cooling follows measured indoor conditions.{% endif %}{% else %}**Season unavailable.** Seasonal modes retain their last valid selection.{% endif %}"
-                },
-                {
-                  "type": "markdown",
-                  "title": "Latest climate decision",
-                  "content": "{% set decision = states('input_text.climate_ai_recommendation') %} {{ decision if decision not in ['unknown', 'unavailable', ''] else 'No climate decision is available yet.' }}"
-                }
-              ]
+              "cards": []
             }
           ]
         }
