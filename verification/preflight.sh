@@ -57,7 +57,8 @@ PYEOF
     fail=1
   fi
 else
-  echo "SKIP: PyYAML not installed for python3 — YAML not parsed (pip install pyyaml)"
+  echo "FAIL: no interpreter with PyYAML — YAML not parsed; set PREFLIGHT_PYTHON to an interpreter with PyYAML"
+  fail=1
 fi
 
 echo
