@@ -33,6 +33,14 @@ bash -n git-sync.sh verification/preflight.sh
 git diff --check
 ```
 
+With an interpreter that has both PyYAML and Jinja2, the complete verification
+directory can also be discovered with
+`python3 -m unittest discover -s verification -p 'test_*.py'`.
+The climate TOU check is import-safe and exposes its original assertions to
+discovery while preserving its direct command-line behavior. Its import-safety
+regression also removes a required tariff trigger from a temporary fixture and
+confirms that discovery reports the resulting assertion failure.
+
 The reliability tests run the whole sync script with temporary local Git remotes, synthetic configuration, rejected-push hooks and stubbed notification transport. They never contact the Pi, GitHub or Telegram. They cover staged/unstaged edit preservation, conflict pause/retry, failed-push recovery with no new edits, delivery failure and missing YAML parsers.
 
 Preflight now fails when no available interpreter imports PyYAML. Set `PREFLIGHT_PYTHON` to an existing interpreter with PyYAML if necessary. Passing preflight still does not establish Home Assistant semantics or live device operation; the documented Pi `check_config` and approved post-deployment checks remain required.
