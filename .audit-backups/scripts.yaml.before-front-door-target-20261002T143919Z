@@ -55,7 +55,7 @@ kitchen_lights_step_dim:
 lock_house_doors:
   alias: Lock house doors (idempotent)
   description: >-
-    Locks lock.front_front_door and lock.garages_entry_door, and only those, and only
+    Locks lock.front_door and lock.garages_entry_door, and only those, and only
     the ones currently unlocked. Safe to call any number of times.
   mode: single
   sequence:
@@ -63,7 +63,7 @@ lock_house_doors:
         targets: >-
           {{ states.lock
              | selectattr('entity_id','in',
-                 ['lock.front_front_door','lock.garages_entry_door'])
+                 ['lock.front_door','lock.garages_entry_door'])
              | selectattr('state','eq','unlocked')
              | map(attribute='entity_id') | list }}
     - if:
