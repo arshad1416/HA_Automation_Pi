@@ -14,9 +14,13 @@ Needs PyYAML + Jinja2 (the Pi's python3 has both; on the Mac use the preflight
 venv).  Plain jinja2 is not HA's engine: the stubs cover only what these
 templates call, so a green run means "the logic does what the audit asked",
 not "HA will accept the file" -- check_config on the Pi remains the gate.
+
+Direct execution runs the checks and prints the same success message. Unittest
+discovery runs them through ClimateTOUGuardTests; importing only defines helpers.
 """
 import pathlib
 import sys
+import unittest
 
 import jinja2
 import yaml
@@ -100,74 +104,87 @@ def render_vars(env, block, ctx):
     return ctx
 
 
-# --- 1. evening_comfort_setpoint --------------------------------------------
-comfort = automation(load('automations/10_climate_comfort.yaml'), 'evening_comfort_setpoint')
-tariff_cond = next(c['value_template'] for c in comfort['conditions']
-                   if c.get('condition') == 'template' and 'period_label' in c['value_template'])
-for label, expect in (('On-Peak', False), ('Mid-Peak', True), ('Weekend Off-Peak', True), (None, True)):
-    env = ha_env({}, {('sensor.grizzl_e_total_cost', 'period_label'): label})
-    assert render(env, tariff_cond) is expect, (label, expect)
-assert any(t.get('id') == 'evening_late' and t.get('at') == '21:01:00' for t in comfort['triggers'])
+def run_checks():
+    # --- 1. evening_comfort_setpoint --------------------------------------------
+    comfort = automation(load('automations/10_climate_comfort.yaml'), 'evening_comfort_setpoint')
+    tariff_cond = next(c['value_template'] for c in comfort['conditions']
+                       if c.get('condition') == 'template' and 'period_label' in c['value_template'])
+    for label, expect in (('On-Peak', False), ('Mid-Peak', True), ('Weekend Off-Peak', True), (None, True)):
+        env = ha_env({}, {('sensor.grizzl_e_total_cost', 'period_label'): label})
+        assert render(env, tariff_cond) is expect, (label, expect)
+    assert any(t.get('id') == 'evening_late' and t.get('at') == '21:01:00' for t in comfort['triggers'])
 
-# --- 2. advisor trigger -------------------------------------------------------
-main = load('automations/01_main.yaml')
-adv = automation(main, 'climate_ai_advisor')
-assert any(t.get('id') == 'tariff_change' and t.get('attribute') == 'period_label'
-           for t in adv['triggers']), 'tariff_change trigger missing'
-assert adv.get('mode') == 'queued', 'tariff_change relies on queued mode'
+    # --- 2. advisor trigger -------------------------------------------------------
+    main = load('automations/01_main.yaml')
+    adv = automation(main, 'climate_ai_advisor')
+    assert any(t.get('id') == 'tariff_change' and t.get('attribute') == 'period_label'
+               for t in adv['triggers']), 'tariff_change trigger missing'
+    assert adv.get('mode') == 'queued', 'tariff_change relies on queued mode'
 
-# --- 3. on-peak floor ---------------------------------------------------------
-block = next(a['variables'] for a in adv['actions']
-             if isinstance(a, dict) and 'variables' in a and 'onpeak_coast' in a['variables'])
-# The floor must live in its own block: a second `setpoint:` key in the block that
-# first defines it would be a duplicate YAML key and render at the original position.
-assert list(block)[0] == 'onpeak_coast', 'on-peak floor block must start at onpeak_coast'
-assert 'ai_raw' not in block and 'setpoint' in block and 'setp_apply' in block
-base = dict(setpoint_cooldown_ok=False, comfort_correction=False, outdoor_dew_point_c=12.0,
-            current_target=23.0, night_mode=False, hvac_mode=None, climate_control_entity='climate.ecobee_3',
-            climate_read_entity='climate.ecobee_3', ecobee_compressor_running=True,
-            climate_mode_age_minutes=300.0, reason='r')
-
-
-def scenario(label, rh, setpoint, summer='on', night=False, cooldown_ok=False):
-    env = ha_env({'input_boolean.climate_summer_mode': summer, 'climate.ecobee_3': 'cool'},
-                 {('sensor.grizzl_e_total_cost', 'period_label'): label})
-    ctx = dict(base, humidity_pct=rh, setpoint=setpoint, night_mode=night, setpoint_cooldown_ok=cooldown_ok)
-    return render_vars(env, block, ctx)
+    # --- 3. on-peak floor ---------------------------------------------------------
+    block = next(a['variables'] for a in adv['actions']
+                 if isinstance(a, dict) and 'variables' in a and 'onpeak_coast' in a['variables'])
+    # The floor must live in its own block: a second `setpoint:` key in the block that
+    # first defines it would be a duplicate YAML key and render at the original position.
+    assert list(block)[0] == 'onpeak_coast', 'on-peak floor block must start at onpeak_coast'
+    assert 'ai_raw' not in block and 'setpoint' in block and 'setp_apply' in block
+    base = dict(setpoint_cooldown_ok=False, comfort_correction=False, outdoor_dew_point_c=12.0,
+                current_target=23.0, night_mode=False, hvac_mode=None, climate_control_entity='climate.ecobee_3',
+                climate_read_entity='climate.ecobee_3', ecobee_compressor_running=True,
+                climate_mode_age_minutes=300.0, reason='r')
 
 
-# Gemini returned null at On-Peak, hold active (the Fri 4 Sep case): floor applies and writes.
-r = scenario('On-Peak', 51.0, None)
-assert r['onpeak_floor_applied'] is True and r['setpoint'] == 25.5 and r['setp_apply'] is True, r
-assert 'on-peak floor' in r['reason']
-# Gemini returned 25.5 but the 15:00 write started the hold (Tue 1 Sep): still applies.
-r = scenario('On-Peak', 51.0, 25.5)
-assert r['onpeak_floor_applied'] is False and r['setp_apply'] is True, r
-# Gemini returned 23.0 at On-Peak: floored to 25.5.
-r = scenario('On-Peak', 51.0, 23.0)
-assert r['setpoint'] == 25.5 and r['setp_apply'] is True, r
-# Already at 25.5: no redundant write.
-env = ha_env({'input_boolean.climate_summer_mode': 'on'}, {('sensor.grizzl_e_total_cost', 'period_label'): 'On-Peak'})
-r = render_vars(env, block, dict(base, humidity_pct=51.0, setpoint=None, current_target=25.5))
-assert r['setp_apply'] is False, r
-# Humid (RH 58): the floor stays out of it; null stays null.
-r = scenario('On-Peak', 58.0, None)
-assert r['onpeak_floor_applied'] is False and r['setpoint'] is None and r['setp_apply'] is False, r
-# Mid-Peak: untouched, hold still blocks a raise.
-r = scenario('Mid-Peak', 51.0, 25.5)
-assert r['onpeak_floor_applied'] is False and r['setp_apply'] is False, r
-# Winter or night: never.
-assert scenario('On-Peak', 51.0, None, summer='off')['onpeak_floor_applied'] is False
-assert scenario('On-Peak', 51.0, None, night=True)['onpeak_floor_applied'] is False
+    def scenario(label, rh, setpoint, summer='on', night=False, cooldown_ok=False):
+        env = ha_env({'input_boolean.climate_summer_mode': summer, 'climate.ecobee_3': 'cool'},
+                     {('sensor.grizzl_e_total_cost', 'period_label'): label})
+        ctx = dict(base, humidity_pct=rh, setpoint=setpoint, night_mode=night, setpoint_cooldown_ok=cooldown_ok)
+        return render_vars(env, block, ctx)
 
-# --- 4. door-pause restore clamp ---------------------------------------------
-pause = automation(load('automations/06_enhancements.yaml'), 'hvac_pause_door_open')
-restore = next(a for a in pause['actions'] if isinstance(a, dict) and 'if' in a
-               and 'paused_setpoint' in str(a['if']))
-tpl = restore['then'][0]['data']['temperature']
-for summer, captured, expect in (('on', 20.8, 22.0), ('on', 23.0, 23.0), ('on', 27.0, 25.5), ('off', 20.8, 20.8)):
-    env = ha_env({'input_boolean.climate_summer_mode': summer}, {})
-    assert render(env, tpl, paused_setpoint=captured) == expect, (summer, captured, expect)
 
-print('climate TOU guards: OK')
-sys.exit(0)
+    # Gemini returned null at On-Peak, hold active (the Fri 4 Sep case): floor applies and writes.
+    r = scenario('On-Peak', 51.0, None)
+    assert r['onpeak_floor_applied'] is True and r['setpoint'] == 25.5 and r['setp_apply'] is True, r
+    assert 'on-peak floor' in r['reason']
+    # Gemini returned 25.5 but the 15:00 write started the hold (Tue 1 Sep): still applies.
+    r = scenario('On-Peak', 51.0, 25.5)
+    assert r['onpeak_floor_applied'] is False and r['setp_apply'] is True, r
+    # Gemini returned 23.0 at On-Peak: floored to 25.5.
+    r = scenario('On-Peak', 51.0, 23.0)
+    assert r['setpoint'] == 25.5 and r['setp_apply'] is True, r
+    # Already at 25.5: no redundant write.
+    env = ha_env({'input_boolean.climate_summer_mode': 'on'}, {('sensor.grizzl_e_total_cost', 'period_label'): 'On-Peak'})
+    r = render_vars(env, block, dict(base, humidity_pct=51.0, setpoint=None, current_target=25.5))
+    assert r['setp_apply'] is False, r
+    # Humid (RH 58): the floor stays out of it; null stays null.
+    r = scenario('On-Peak', 58.0, None)
+    assert r['onpeak_floor_applied'] is False and r['setpoint'] is None and r['setp_apply'] is False, r
+    # Mid-Peak: untouched, hold still blocks a raise.
+    r = scenario('Mid-Peak', 51.0, 25.5)
+    assert r['onpeak_floor_applied'] is False and r['setp_apply'] is False, r
+    # Winter or night: never.
+    assert scenario('On-Peak', 51.0, None, summer='off')['onpeak_floor_applied'] is False
+    assert scenario('On-Peak', 51.0, None, night=True)['onpeak_floor_applied'] is False
+
+    # --- 4. door-pause restore clamp ---------------------------------------------
+    pause = automation(load('automations/06_enhancements.yaml'), 'hvac_pause_door_open')
+    restore = next(a for a in pause['actions'] if isinstance(a, dict) and 'if' in a
+                   and 'paused_setpoint' in str(a['if']))
+    tpl = restore['then'][0]['data']['temperature']
+    for summer, captured, expect in (('on', 20.8, 22.0), ('on', 23.0, 23.0), ('on', 27.0, 25.5), ('off', 20.8, 20.8)):
+        env = ha_env({'input_boolean.climate_summer_mode': summer}, {})
+        assert render(env, tpl, paused_setpoint=captured) == expect, (summer, captured, expect)
+
+
+class ClimateTOUGuardTests(unittest.TestCase):
+    def test_climate_tou_guards(self):
+        run_checks()
+
+
+def main():
+    run_checks()
+    print('climate TOU guards: OK')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())
