@@ -750,6 +750,9 @@ recorder:
 
 logger:
   default: warning
+  filters:
+    homeassistant.components.emulated_hue.hue_api:
+      - "^Unknown entity number"
   logs:
     homeassistant.components.emulated_hue: error
     # VinFast integration — reduced logging (debug → warning)
