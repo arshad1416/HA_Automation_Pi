@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "lovelace_resources",
+  "data": {
+    "items": [
+      {
+        "id": "ec4723a753df4f89808b72f268dc05e9",
+        "url": "/dreame_vacuum/frontend.js?v=c005a570c45d5f56b296b855851751a0",
+        "type": "module"
+      }
+    ]
+  }
+}
