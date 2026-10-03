@@ -16,7 +16,7 @@ creating 3×N diagnostic entities by default.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Literal
 
 from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
@@ -34,6 +34,7 @@ from .const import (
     CONF_EXPOSE_TRANSPORT_ENTITIES,
     DEFAULT_EXPOSE_TRANSPORT_ENTITIES,
     DOMAIN,
+    LEAK_DUAL_PROBE_SKUS,
 )
 from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
@@ -129,6 +130,9 @@ async def async_setup_entry(
     for sensor in coordinator.leak_sensors.values():
         entities.append(GoveeLeakBinarySensor(coordinator, sensor))
         entities.append(GoveeLeakOnlineSensor(coordinator, sensor))
+        if sensor.sku.upper() in LEAK_DUAL_PROBE_SKUS:
+            entities.append(GoveeLeakProbeBinarySensor(coordinator, sensor, "upper"))
+            entities.append(GoveeLeakProbeBinarySensor(coordinator, sensor, "lower"))
         if sensor.hub_device_id and sensor.hub_device_id not in seen_hubs:
             seen_hubs.add(sensor.hub_device_id)
             entities.append(GoveeLeakHubOnlineSensor(coordinator, sensor.hub_device_id))
@@ -480,6 +484,51 @@ class GoveeLeakBinarySensor(BinarySensorEntity):
     def is_on(self) -> bool | None:
         state = self._coordinator.leak_states.get(self._sensor.device_id)
         return state.is_wet if state else None
+
+    @property
+    def available(self) -> bool:
+        return self._sensor.device_id in self._coordinator.leak_states
+
+    async def async_added_to_hass(self) -> None:
+        """Subscribe to leak-specific dispatcher signal."""
+        self.async_on_remove(async_dispatcher_connect(self.hass, f"{DOMAIN}_leak_update", self._handle_leak_update))
+
+    @callback
+    def _handle_leak_update(self) -> None:
+        """Handle leak-specific update signal."""
+        self.async_write_ha_state()
+
+
+class GoveeLeakProbeBinarySensor(BinarySensorEntity):
+    """Binary sensor for one dual-probe moisture reading (H5059 only, #224).
+
+    The H5059 reports two independent probes (upper/lower) rather than a
+    single moisture reading; the aggregate stays on ``GoveeLeakBinarySensor``.
+    """
+
+    _attr_has_entity_name = True
+    _attr_should_poll = False
+    _attr_device_class = BinarySensorDeviceClass.MOISTURE
+
+    def __init__(
+        self, coordinator: GoveeCoordinator, sensor: GoveeLeakSensor, probe: Literal["upper", "lower"]
+    ) -> None:
+        self._coordinator = coordinator
+        self._sensor = sensor
+        self._probe = probe
+        self._attr_unique_id = f"{sensor.device_id}_leak_{probe}_probe"
+        self._attr_translation_key = f"leak_{probe}_probe"
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return leak_sensor_device_info(self._sensor, DOMAIN)
+
+    @property
+    def is_on(self) -> bool | None:
+        state = self._coordinator.leak_states.get(self._sensor.device_id)
+        if state is None:
+            return None
+        return state.upper_probe_wet if self._probe == "upper" else state.lower_probe_wet
 
     @property
     def available(self) -> bool:

@@ -37,10 +37,12 @@ from .const import (
     DEFAULT_SEGMENT_MODE,
     DOMAIN,
     MAIN_LIGHT_TOGGLE_SKUS,
+    PTREAL_MAIN_PANEL_BIT,
     SEGMENT_MODE_BOTH,
     SEGMENT_MODE_GROUPED,
     SEGMENT_MODE_INDIVIDUAL,
     SUFFIX_MAIN_LIGHT_TOGGLE,
+    SUFFIX_MAIN_PANEL,
 )
 from .coordinator import GoveeConfigEntry, GoveeCoordinator
 from .entity import GoveeEntity
@@ -54,7 +56,7 @@ from .models import (
     SceneCommand,
     ToggleCommand,
 )
-from .models.device import INSTANCE_NIGHT_LIGHT
+from .models.device import INSTANCE_MAIN_LIGHT_TOGGLE, INSTANCE_NIGHT_LIGHT
 from .platforms.grouped_segment import GoveeGroupedSegmentEntity
 from .platforms.segment import GoveeSegmentEntity
 
@@ -102,6 +104,11 @@ async def async_setup_entry(
                 # channel rather than powerSwitch, so the ring can stay lit.
                 # See GoveeMainLightEntity in this file (issue #131).
                 entities.append(GoveeMainLightEntity(coordinator, device))
+            if device.sku.upper() in PTREAL_MAIN_PANEL_BIT:
+                # H1232 Ceiling Light Pro: a separate main-panel entity driven
+                # over ptReal, alongside the ring segments created elsewhere
+                # in this function (issue #223).
+                entities.append(GoveeMainPanelLight(coordinator, device))
 
         # Appliances whose only light is the nightlight (e.g. H5089 outlet
         # extender, H7124 purifier) get a dedicated nightlight light entity —
@@ -167,6 +174,18 @@ class GoveeLightEntity(GoveeEntity, LightEntity, RestoreEntity):
     - Color temperature
     - State restoration for group devices
     """
+
+    # Auxiliary subclasses that need non-LAN commands opt out below.
+    _allow_lan_availability = True
+
+    @property
+    def available(self) -> bool:
+        """Keep the whole-device light usable while its LAN transport is healthy."""
+        if self._allow_lan_availability and not self._device.is_group:
+            lan = self.coordinator.get_transport_health(self._device_id, "lan")
+            if lan is not None and lan.is_available and self.device_state is not None:
+                return True
+        return super().available
 
     def __init__(
         self,
@@ -435,6 +454,8 @@ class GoveeMainLightEntity(GoveeLightEntity):
     # Distinct from the switch platform's ``govee_main_light`` key, which
     # belongs to the (inert on these SKUs) mainLightToggle capability.
     _attr_translation_key = "govee_main_light_panel"
+    # Panel actions reassert ring segments, which have no LAN representation.
+    _allow_lan_availability = False
 
     def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
         """Initialize the main-panel entity."""
@@ -722,3 +743,90 @@ class GoveeNightLightEntity(GoveeEntity, LightEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Turn the nightlight off."""
         await self._set_toggle(False)
+
+
+class GoveeMainPanelLight(GoveeEntity, LightEntity, RestoreEntity):
+    """The H1232 Ceiling Light Pro's main downlight panel (issue #223).
+
+    This fixture's 17th internal segment is a separate main panel, not part
+    of the RGBIC ring, and the Platform API cannot reach it at all — colour
+    and brightness only land through the masked ptReal frames in
+    ``coordinator.async_set_main_panel``. On/off uses the working
+    ``mainLightToggle`` capability over the normal command path. The API
+    never reports the panel's colour or brightness, so like the ring
+    segments (``GoveeSegmentEntity``) this entity keeps purely optimistic
+    local state persisted via ``RestoreEntity``.
+    """
+
+    _attr_translation_key = "govee_main_light_panel"
+    _attr_supported_color_modes = {ColorMode.RGB}
+    _attr_color_mode = ColorMode.RGB
+
+    def __init__(self, coordinator: GoveeCoordinator, device: GoveeDevice) -> None:
+        """Initialize the main-panel entity."""
+        super().__init__(coordinator, device)
+        self._attr_unique_id = f"{device.device_id}{SUFFIX_MAIN_PANEL}"
+        self._rgb_color: tuple[int, int, int] = (255, 255, 255)
+        self._brightness: int = 255
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return True when the panel's mainLightToggle is on."""
+        state = self.device_state
+        if state is None:
+            return None
+        return state.toggles.get(INSTANCE_MAIN_LIGHT_TOGGLE)
+
+    @property
+    def brightness(self) -> int:
+        """Return the optimistic panel brightness (0-255)."""
+        return self._brightness
+
+    @property
+    def rgb_color(self) -> tuple[int, int, int]:
+        """Return the optimistic panel RGB colour."""
+        return self._rgb_color
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Light the panel, sending colour/brightness over ptReal if given."""
+        if not self.is_on:
+            # The coordinator mirrors the sent toggle into state.toggles.
+            await self._async_send_command(
+                ToggleCommand(toggle_instance=INSTANCE_MAIN_LIGHT_TOGGLE, enabled=True),
+            )
+
+        rgb: RGBColor | None = None
+        if ATTR_RGB_COLOR in kwargs:
+            r, g, b = kwargs[ATTR_RGB_COLOR]
+            self._rgb_color = (r, g, b)
+            rgb = RGBColor(r=r, g=g, b=b)
+
+        device_brightness: int | None = None
+        if ATTR_BRIGHTNESS in kwargs:
+            self._brightness = kwargs[ATTR_BRIGHTNESS]
+            device_brightness = round(self._brightness * 100 / HA_BRIGHTNESS_MAX)
+
+        if rgb is not None or device_brightness is not None:
+            if not await self.coordinator.async_set_main_panel(self._device_id, rgb=rgb, brightness=device_brightness):
+                raise self._command_failed()
+
+        self.async_write_ha_state()
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Switch the panel off via mainLightToggle."""
+        await self._async_send_command(
+            ToggleCommand(toggle_instance=INSTANCE_MAIN_LIGHT_TOGGLE, enabled=False),
+        )
+        self.async_write_ha_state()
+
+    async def async_added_to_hass(self) -> None:
+        """Restore the optimistic colour/brightness from the last known state."""
+        await super().async_added_to_hass()
+
+        last_state = await self.async_get_last_state()
+        if last_state:
+            if last_state.attributes.get("brightness"):
+                self._brightness = last_state.attributes["brightness"]
+            if last_state.attributes.get("rgb_color"):
+                r, g, b = last_state.attributes["rgb_color"]
+                self._rgb_color = (r, g, b)

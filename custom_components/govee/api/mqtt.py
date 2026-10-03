@@ -364,6 +364,12 @@ class GoveeAwsIotClient:
         self._last_message_ts: datetime | None = None
         # UTC timestamp of the most recent inbound MQTT message per device_id.
         self._last_message_per_device: dict[str, datetime] = {}
+        # Every inbound account-topic message, counted before any filtering
+        # (msg-wrapped and missing-device-id messages included) so diagnostics
+        # can tell a completely silent session apart from one that filters
+        # everything out (#222).
+        self._inbound_total = 0
+        self._last_inbound_ts: datetime | None = None
         # Ring buffer of recent decoded multiSync packets (leak/button/unknown),
         # retained for diagnostics so a download alone is enough to crack
         # undecoded hub packets (e.g. the H5059's 0xEE 0x35 wet alarm in #87)
@@ -397,6 +403,16 @@ class GoveeAwsIotClient:
     def recent_probe_frames(self) -> list[dict[str, Any]]:
         """Recent probe-thermometer frames (hex) for diagnostics."""
         return list(self._recent_probe_frames)
+
+    @property
+    def inbound_total(self) -> int:
+        """Count of every inbound account-topic message, filtered or not."""
+        return self._inbound_total
+
+    @property
+    def last_inbound_ts(self) -> datetime | None:
+        """UTC timestamp of the most recent inbound message, filtered or not."""
+        return self._last_inbound_ts
 
     @property
     def last_message_ts(self) -> datetime | None:
@@ -746,6 +762,12 @@ class GoveeAwsIotClient:
         Command responses and other messages are silently ignored.
         """
         try:
+            # Count every inbound account-topic message before any filtering,
+            # including msg-wrapped and missing-device-id ones dropped below
+            # (#222) — distinguishes a silent session from one that filters.
+            self._inbound_total += 1
+            self._last_inbound_ts = datetime.now(timezone.utc)
+
             raw_payload = message.payload
             # Older strips (e.g. H6117/H6163) push payloads with non-UTF-8 bytes
             # — accented characters in scene/DIY/device names (0xb0 '°', 0xfc
@@ -1061,8 +1083,10 @@ class GoveeAwsIotClient:
                 }
 
             elif raw[1] == 0x34:
-                # Leak/dry event. Probe-state bytes 14/16 carry the H5059 wet
-                # flag (issue #87); byte 5 is battery. OR both so older SKUs
+                # Leak/dry event. Probe-state bytes carry the H5059 wet
+                # flags (issues #87, #224); byte 5 is battery. Byte 13 is the
+                # upper probe, byte 14 the lower probe, byte 16 the
+                # aggregate. OR byte 5 with the aggregate so older SKUs
                 # decoded off byte 5 keep working and H5059 is added.
                 is_wet = raw[5] == 0x01 or (len(raw) >= 17 and (raw[14] == 0x01 or raw[16] == 0x01))
 
@@ -1079,6 +1103,9 @@ class GoveeAwsIotClient:
                     "sensor_slot": sensor_slot,
                     "is_wet": is_wet,
                 }
+                if len(raw) >= 17:
+                    event_data["upper_probe_wet"] = raw[13] == 0x01
+                    event_data["lower_probe_wet"] = raw[14] == 0x01
 
             elif raw[1] == 0x32 and len(raw) >= 10:
                 # Button press event

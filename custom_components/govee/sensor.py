@@ -80,14 +80,25 @@ _HUB_DEVICE_INFO = DeviceInfo(
 )
 
 
-def _is_delivering(health: TransportHealth | None) -> bool:
+def _is_delivering(
+    health: TransportHealth | None,
+    kind: TransportKind | None = None,
+    mqtt_connected_since: datetime | None = None,
+) -> bool:
     """True only when ``is_available`` AND ``last_success_ts`` is set.
 
     MQTT, for example, marks itself available on broker connect even for
     devices that never push state — without the timestamp gate the sensor
-    would surface a transport the device is not actually using.
+    would surface a transport the device is not actually using. For MQTT
+    specifically, a ``last_success_ts`` stamp left over from a previous
+    session (before the current reconnect) does not count — it must be at
+    least as recent as ``mqtt_connected_since``.
     """
-    return health is not None and health.is_available and health.last_success_ts is not None
+    if health is None or not health.is_available or health.last_success_ts is None:
+        return False
+    if kind == "mqtt" and mqtt_connected_since is not None:
+        return health.last_success_ts >= mqtt_connected_since
+    return True
 
 
 async def async_setup_entry(
@@ -978,8 +989,10 @@ class GoveeConnectionModeSensor(GoveeEntity, SensorEntity):
             health = self.coordinator.get_transport_health(self._device_id, "cloud_api")
             return "cloud_api" if _is_delivering(health) else None
 
+        mqtt_connected_since = self.coordinator.mqtt_connected_since
         for kind in _PRIORITY_ORDER:
-            if _is_delivering(self.coordinator.get_transport_health(self._device_id, kind)):
+            health = self.coordinator.get_transport_health(self._device_id, kind)
+            if _is_delivering(health, kind, mqtt_connected_since):
                 return kind
         return None
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 import io
 import math
 import time
+import threading
 import base64
 import json
 import zlib
@@ -495,16 +496,14 @@ class DreameMapVacuumMapManager:
             return
 
         frame_id = self._current_frame_id
-        map_data_queue = copy.deepcopy(self._map_data_queue)
-        for k, v in map_data_queue.items():
+        for k in list(self._map_data_queue.keys()):
             if k != self._latest_map_id:
                 del self._map_data_queue[k]
 
         if self._latest_map_id not in self._map_data_queue or not self._map_data_queue[self._latest_map_id]:
             return
 
-        map_data_queue = copy.deepcopy(self._map_data_queue[self._latest_map_id])
-        for k, v in map_data_queue.items():
+        for k in list(self._map_data_queue[self._latest_map_id].keys()):
             if k <= frame_id:
                 del self._map_data_queue[self._latest_map_id][k]
 
@@ -5764,6 +5763,8 @@ class DreameVacuumMapDecoder:
 
             if map_data.low_lying_areas is not None:
                 if map_data.version == 3:
+                    if current_map_data.low_lying_areas is None:
+                        current_map_data.low_lying_areas = []
                     for area in map_data.low_lying_areas:
                         index = next(
                             (i for i, item in enumerate(current_map_data.low_lying_areas) if area.id == item.id),
@@ -5829,6 +5830,12 @@ class DreameVacuumMapDecoder:
                 left_offset = int((new_dimensions.left - left) / grid_size)
                 top_offset = int((new_dimensions.top - top) / grid_size)
 
+                # Track carpet pixel changes with a set, list lookups are O(n) for every changed pixel
+                carpet_set = (
+                    set(current_map_data.carpet_pixels) if current_map_data.carpet_pixels is not None else None
+                )
+                added_carpet_pixels = []
+
                 new_segments = []
                 # Copy new image to buffer at calculated offset
                 for y in range(new_dimensions.height):
@@ -5852,15 +5859,21 @@ class DreameVacuumMapDecoder:
                                 DreameVacuumMapDecoder._get_pixel_type(current_map_data, int(new_value))
                             )
 
-                            if carpet and current_map_data.carpet_pixels is None:
-                                current_map_data.carpet_pixels = []
+                            if carpet and carpet_set is None:
+                                carpet_set = set()
 
-                            if current_map_data.carpet_pixels is not None:
+                            if carpet_set is not None:
                                 coord = (left_offset + x, top_offset + y)
-                                if not carpet and coord in current_map_data.carpet_pixels:
-                                    current_map_data.carpet_pixels.remove(coord)
-                                elif carpet and coord not in current_map_data.carpet_pixels:
-                                    current_map_data.carpet_pixels.append(coord)
+                                if not carpet and coord in carpet_set:
+                                    carpet_set.discard(coord)
+                                elif carpet and coord not in carpet_set:
+                                    carpet_set.add(coord)
+                                    added_carpet_pixels.append(coord)
+
+                if carpet_set is not None:
+                    current_map_data.carpet_pixels = [
+                        coord for coord in (current_map_data.carpet_pixels or []) if coord in carpet_set
+                    ] + added_carpet_pixels
 
                 # Update size and buffer
                 current_map_data.data = bytes(data)
@@ -5869,6 +5882,9 @@ class DreameVacuumMapDecoder:
 
                 current_map_data.combined_dimensions = None
                 current_map_data.combined_pixel_type = None
+
+                if current_map_data.segments is None:
+                    current_map_data.segments = {}
 
                 # Get new segment coords
                 segments = DreameVacuumMapDecoder.get_segments(current_map_data)
@@ -6177,7 +6193,7 @@ class DreameVacuumMapDecoder:
                                     break
 
                             if startI != -1 and endI != -1:
-                                x = (endI - startI) + startI
+                                x = int((endI - startI) / 2) + startI
                     else:
                         center_x = DreameVacuumMapDecoder._get_segment_center(map_data, segment.id, y, False)
                         if center_x is not None:
@@ -6241,7 +6257,7 @@ class DreameVacuumMapDecoder:
         if map_data.segments and obstacles:
             for k, obstacle in obstacles.items():
                 if obstacle.type == ObstacleType.BLOCKED_ROOM:
-                    if obstacle.segment_id in map_data.segments.items():
+                    if obstacle.segment_id in map_data.segments:
                         segment = map_data.segments[obstacle.segment_id]
                         obstacles[k].x = segment.x
                         obstacles[k].y = segment.y
@@ -6250,7 +6266,7 @@ class DreameVacuumMapDecoder:
                 else:
                     segment = DreameVacuumMapDecoder._find_px_type(obstacle.x, obstacle.y, map_data, 200)
 
-                    if segment not in map_data.segments.items():
+                    if segment not in map_data.segments:
                         for v in map_data.segments.values():
                             if not v.unmapped and v.check_point(
                                 obstacle.x,
@@ -7370,6 +7386,7 @@ class DreameVacuumMapRenderer:
         self._wifi_icon = None
         self._font_file = None
         self._light_font_file = None
+        self._font_cache = {}
         self._default_map_image = None
         self._obstacle_bottom_left_icon = None
         self._obstacle_top_left_icon = None
@@ -7437,6 +7454,17 @@ class DreameVacuumMapRenderer:
                 Image.open(BytesIO(base64.b64decode(icon))).convert("RGBA")
                 for icon in MAP_ICON_CUSTOM_MOPPING_ROUTE_DREAME
             ]
+
+    def _get_font(self, light: bool, size: int) -> ImageFont.FreeTypeFont:
+        # Parsing the font file is expensive, reuse loaded fonts for the same size
+        key = (light, size)
+        font = self._font_cache.get(key)
+        if font is None:
+            if len(self._font_cache) >= 32:
+                self._font_cache.clear()
+            font = ImageFont.truetype(BytesIO(self._light_font_file if light else self._font_file), size)
+            self._font_cache[key] = font
+        return font
 
     @staticmethod
     def _to_buffer(image) -> bytes:
@@ -9402,10 +9430,10 @@ class DreameVacuumMapRenderer:
                 if self._light_font_file is None:
                     self._light_font_file = zlib.decompress(base64.b64decode(MAP_FONT_LIGHT), zlib.MAX_WBITS | 32)
 
-                text_font = ImageFont.truetype(BytesIO(self._light_font_file), text_size)
+                text_font = self._get_font(True, text_size)
                 if map_data.history_map:
-                    value_font = ImageFont.truetype(BytesIO(self._light_font_file), int(text_size * 1.8))
-                    name_font = ImageFont.truetype(BytesIO(self._light_font_file), int(text_size * 0.8))
+                    value_font = self._get_font(True, int(text_size * 1.8))
+                    name_font = self._get_font(True, int(text_size * 0.8))
                 left, top, width, height = text_draw.textbbox((0, 0), header_text, font=text_font)
                 max_width = image_width * 0.9
                 if width > max_width:
@@ -11201,21 +11229,19 @@ class DreameVacuumMapRenderer:
             if segment.type == 0 or self.config.name or icon is None:
                 segment_name = segment.name
                 if self._segment_names:
-                    if segment.type == 0:
-                        if segment.custom_name is not None:
-                            segment_name = segment.custom_name
-                        else:
-                            segment_name = self._segment_names[0].replace("%index%", str(segment.id))
-                    elif segment.type in self._segment_names:
+                    if segment.custom_name:
+                        segment_name = segment.custom_name
+                    elif segment.type != 0 and segment.type in self._segment_names:
                         segment_name = self._segment_names[segment.type]
-
-                if segment.index:
-                    segment_name = f"{segment_name} {segment.index + 1}"
+                        if segment.index > 0:
+                            segment_name = f"{segment_name} {segment.index + 1}"
+                    else:
+                        segment_name = self._segment_names[0].replace("%index%", str(segment.id))
 
                 text = (
                     segment_name
                     if (self._robot_type != RobotType.VSLAM or icon is not None)
-                    or (segment.custom_name is not None and segment.type == 0)
+                    or segment.custom_name is not None
                     or self.icon_set == 2
                     else segment.letter
                 )
@@ -11231,13 +11257,13 @@ class DreameVacuumMapRenderer:
                 self._font_file = zlib.decompress(base64.b64decode(MAP_FONT), zlib.MAX_WBITS | 32)
 
             if render_font and self._font_file:
-                text_font = ImageFont.truetype(
-                    BytesIO(self._font_file),
+                text_font = self._get_font(
+                    False,
                     int((size * 1.9)) if segment.index or icon is None else int((size * 1.7)),
                 )
 
             if active and cleaning_sequence[segment.id] and self.config.order and sequence:
-                order_font = ImageFont.truetype(BytesIO(self._font_file), int((size * 2.1)))
+                order_font = self._get_font(False, int((size * 2.1)))
 
             p = Point(segment.x, segment.y).to_img(dimensions)
             x = p.x
@@ -11939,7 +11965,7 @@ class DreameVacuumMapRenderer:
             if self._font_file is None:
                 self._font_file = zlib.decompress(base64.b64decode(MAP_FONT), zlib.MAX_WBITS | 32)
 
-            font = ImageFont.truetype(BytesIO(self._font_file), int((bg_size * 1.5 * scale)))
+            font = self._get_font(False, int((bg_size * 1.5 * scale)))
 
             text = str(index)
             left, top, tw, th = text_box_draw.textbbox((0, 0), text, font)
@@ -12468,6 +12494,7 @@ class DreameVacuumMapRenderer:
 class DreameVacuumMapOptimizer:
     def __init__(self) -> None:
         self._js_optimizer = None
+        self._lock = threading.Lock()
 
     def _clean_wall(self, data, width, height):
         for j in range(1, height - 1):
@@ -13796,6 +13823,11 @@ class DreameVacuumMapOptimizer:
             map_data.optimized_dimensions = MapImageDimensions(top, left, height, width, map_data.dimensions.grid_size)
 
     def optimize(self, map_data, saved_map_data=None, js_optimizer=True):
+        # Called from the map manager and Home Assistant executor threads, the JS optimizer is not thread safe
+        with self._lock:
+            return self._optimize(map_data, saved_map_data, js_optimizer)
+
+    def _optimize(self, map_data, saved_map_data=None, js_optimizer=True):
         if map_data.need_optimization:
             if map_data.saved_map:
                 map_data.need_optimization = False

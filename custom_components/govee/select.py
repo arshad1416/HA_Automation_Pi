@@ -839,6 +839,11 @@ class GoveePurifierModeSelectEntity(_GoveeSelectBase):
 
         self._attr_options = option_names
 
+        # H7124/H7129/H7126-style purifiers have no purifierMode capability;
+        # their options come from the workMode capability's gearMode
+        # sub-options and must be sent through WorkModeCommand (#221).
+        self._gear_work_mode = device.purifier_gear_work_mode
+
         # Unique ID
         self._attr_unique_id = f"{device.device_id}{SUFFIX_PURIFIER_MODE_SELECT}"
 
@@ -846,7 +851,12 @@ class GoveePurifierModeSelectEntity(_GoveeSelectBase):
     def current_option(self) -> str | None:
         """Return current selected option from state."""
         state = self.coordinator.get_state(self._device_id)
-        if state and state.purifier_mode is not None:
+        if state and self._gear_work_mode is not None:
+            if state.work_mode == self._gear_work_mode and state.mode_value is not None:
+                for name, value in self._option_map.items():
+                    if value == state.mode_value:
+                        return name
+        elif state and state.purifier_mode is not None:
             # Find option name matching the current value
             for name, value in self._option_map.items():
                 if value == state.purifier_mode:
@@ -860,7 +870,10 @@ class GoveePurifierModeSelectEntity(_GoveeSelectBase):
         if value is None:
             raise self._unknown_option(option)
 
-        await self._async_send_command(ModeCommand(mode_instance=INSTANCE_PURIFIER_MODE, value=value))
+        if self._gear_work_mode is not None:
+            await self._async_send_command(WorkModeCommand(work_mode=self._gear_work_mode, mode_value=value))
+        else:
+            await self._async_send_command(ModeCommand(mode_instance=INSTANCE_PURIFIER_MODE, value=value))
         self.async_write_ha_state()
         _LOGGER.debug("Set purifier mode '%s' (value=%d) on %s", option, value, self._device.name)
 

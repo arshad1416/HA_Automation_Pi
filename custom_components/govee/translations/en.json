@@ -410,6 +410,12 @@
       },
       "leak_hub_online": {
         "name": "Internet"
+      },
+      "leak_upper_probe": {
+        "name": "Upper probe"
+      },
+      "leak_lower_probe": {
+        "name": "Lower probe"
       }
     },
     "fan": {

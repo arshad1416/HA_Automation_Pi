@@ -95,6 +95,11 @@ CONF_API_TEMPERATURE_UNIT: Final = "api_temperature_unit"
 #     158.6°F, i.e. the °F reading converted a second time. Same path, same
 #     gap: not in the BFF thermo sets, so the model list is its only signal
 #     (issue #173 follow-up).
+#   H5103 (WiFi thermo-hygrometer): same shape again — Auto showed 71.2 under
+#     the °C unit while the Govee app (set to °C) showed 21.8°C, i.e. the raw
+#     °F reading. The login-enabled BFF harvest returned no thermo-hygrometers
+#     for the account, so no fahOpen hint exists and the model list is the only
+#     signal. Also reported as #85, where the option was the workaround.
 FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
     {
         "H5179",
@@ -104,6 +109,7 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
         "H5111",
         "H5053",
         "H5171",
+        "H5103",
         "HS5108",
         "HS5106",
         "H717A",
@@ -126,6 +132,11 @@ FAHRENHEIT_REPORTING_SKUS: Final = frozenset(
 # the H7108 is unverified — both stay on the REST OscillationCommand, as does
 # every other fan SKU. Compared case-insensitively against GoveeDevice.sku.
 MQTT_OSCILLATION_SKUS: Final = frozenset({"H7105", "H7107"})
+
+# Leak sensors reporting independent upper/lower probe moisture bytes over
+# MQTT (issue #224), in addition to the aggregate wet flag every leak sensor
+# already exposes.
+LEAK_DUAL_PROBE_SKUS: Final = frozenset({"H5059"})
 
 # Lights whose Platform-API musicMode is accepted (HTTP 200) but reaches the
 # device as an empty frame: Govee relays it over AWS IoT as `33 05 01 00 ...`,
@@ -174,7 +185,27 @@ SKU_SEGMENT_OVERRIDES: Final = {
     # frames (aa a5 01..08, four bulbs each) carry all 30, so a native write
     # path could lift this limit later (issue #208).
     "H7026": 16,
+    # H1232 Ceiling Light Pro: API reports 13 (elementRange.max=12), but the
+    # fixture has 17 internal segments (1-16 = RGBIC ring, 17 = main panel).
+    # Ring segments 14-16 and the main panel are only reachable via the
+    # masked ptReal frames in api/ble_packet.py (issue #223, reporter-verified
+    # with send_raw_ptreal).
+    "H1232": 16,
 }
+
+# SKUs whose RGBIC ring segments are addressable past the Platform API's
+# advertised count via masked ptReal frames (``build_segment_color_ptreal`` /
+# ``build_segment_brightness_ptreal`` in api/ble_packet.py). The true ring
+# segment count lives in SKU_SEGMENT_OVERRIDES.
+# Deliberately narrow: only the H1232 is verified against real hardware,
+# though H60A6/H1252 (same fixture family) are plausibly identical (#223).
+PTREAL_SEGMENT_SKUS: Final = frozenset({"H1232"})
+
+# SKUs whose 17th internal segment is a separate main panel, not a ring
+# segment, addressed by this bit in the same 3-byte little-endian ptReal
+# segment mask (bit i = internal segment i+1). Reporter-verified on the
+# H1232 only (#223).
+PTREAL_MAIN_PANEL_BIT: Final = {"H1232": 16}
 
 
 def resolve_fahrenheit_conversion(sku: str, api_unit: str, device_unit_hint: str | None = None) -> bool:
@@ -419,6 +450,14 @@ MOVIE_MODE_DREAMVIEW_SKUS: Final = frozenset({"H2A41"})
 # AWS IoT and OFF restores the last colour. Unverified on hardware.
 PTREAL_DREAMVIEW_SKUS: Final = frozenset({"H66A0"})
 
+# SKUs that accept ``dreamViewToggle`` OFF over REST (HTTP 200) but stay in
+# video mode: diagnostics for the H605B showed an MQTT op frame (``aa 05 00``)
+# still driving the light 73s after the accepted toggle (issue #220). Only
+# the OFF direction is rerouted to the colour-restore path below; ON keeps
+# the normal REST path since it does enter video mode. Unverified on
+# hardware beyond the reporter's diagnostics.
+DREAMVIEW_OFF_VIA_COLOUR_SKUS: Final = frozenset({"H605B"})
+
 # BLE constants
 # Govee AWS/BLE advert manufacturer ID. Verified against
 # Bluetooth-Devices/govee-ble (used by H5127 and related). Additional IDs
@@ -476,6 +515,9 @@ SUFFIX_MAIN_LIGHT: Final = "_main_light"
 # ``mainLightToggle`` capability) — this is the dedicated main-panel light
 # entity added for MAIN_LIGHT_TOGGLE_SKUS (issue #131).
 SUFFIX_MAIN_LIGHT_TOGGLE: Final = "_main_light_toggle"
+# H1232 ptReal main panel light (#223); distinct from SUFFIX_MAIN_LIGHT_TOGGLE,
+# which is used by the H1270 GoveeMainLightEntity.
+SUFFIX_MAIN_PANEL: Final = "_main_panel"
 SUFFIX_BACKGROUND_LIGHT: Final = "_background_light"
 SUFFIX_NEBULA_LIGHT: Final = "_nebula_light"
 SUFFIX_RIPPLE_LIGHT: Final = "_ripple_light"

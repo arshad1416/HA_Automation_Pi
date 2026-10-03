@@ -87,6 +87,7 @@ from .const import (
     DEFAULT_WATER_DETECTOR_POLL_INTERVAL,
     DEVICE_REDISCOVERY_INTERVAL,
     DOMAIN,
+    DREAMVIEW_OFF_VIA_COLOUR_SKUS,
     IDLE_DEVICE_AFTER_SECONDS,
     IDLE_DEVICE_POLL_DIVISOR,
     IOT_RELOGIN_MIN_INTERVAL,
@@ -98,6 +99,7 @@ from .const import (
     LAN_WRITE_CONFIRM_TIMEOUT,
     LAN_WRITE_SUPPRESS_SECONDS,
     LAN_WRITE_SUPPRESS_THRESHOLD,
+    LEAK_DUAL_PROBE_SKUS,
     LOCAL_READING_FRESHNESS_FACTOR,
     MAX_BUDGET_PACED_INTERVAL,
     MAX_LOCAL_FRESH_SKIPS,
@@ -114,6 +116,8 @@ from .const import (
     MQTT_STATUS_QUERY_SPACING,
     OPTIMISTIC_GRACE_CAP_SECONDS,
     PTREAL_DREAMVIEW_SKUS,
+    PTREAL_MAIN_PANEL_BIT,
+    PTREAL_SEGMENT_SKUS,
     RECENT_COMMAND_WINDOW_SECONDS,
     resolve_fahrenheit_conversion,
 )
@@ -152,7 +156,14 @@ from .models.commands import (
     WorkModeCommand,
     create_dreamview_command,
 )
-from .api.ble_packet import build_packet, calculate_checksum, encode_packet_base64, music_v3_effect_code
+from .api.ble_packet import (
+    build_packet,
+    build_segment_brightness_ptreal,
+    build_segment_color_ptreal,
+    calculate_checksum,
+    encode_packet_base64,
+    music_v3_effect_code,
+)
 from .api.probe_thermometer import (
     ProbeLimits,
     build_limits_read_packet,
@@ -648,6 +659,13 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         if self._mqtt_client is None:
             return None
         return self._mqtt_client.last_message_ts
+
+    @property
+    def mqtt_connected_since(self) -> datetime | None:
+        """UTC time the current MQTT session became connected, or None."""
+        if self._mqtt_client is None:
+            return None
+        return self._mqtt_client.connected_since
 
     def mqtt_last_receive_for(self, device_id: str) -> datetime | None:
         """UTC timestamp of the last inbound MQTT message for a device, or None."""
@@ -2974,8 +2992,20 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             state.last_mqtt_wet_at = time.time()
             state.last_wet_time = int(time.time() * 1000)
 
+        sensor = self._leak_sensors.get(sensor_id)
+        if sensor is not None and sensor.sku.upper() in LEAK_DUAL_PROBE_SKUS:
+            if not is_wet:
+                # Aggregate-dry frame is authoritative: clear both probes
+                # even if this particular frame did not carry probe bytes.
+                state.upper_probe_wet = False
+                state.lower_probe_wet = False
+            else:
+                if "upper_probe_wet" in state_data:
+                    state.upper_probe_wet = state_data["upper_probe_wet"]
+                if "lower_probe_wet" in state_data:
+                    state.lower_probe_wet = state_data["lower_probe_wet"]
+
         if prev_wet != is_wet:
-            sensor = self._leak_sensors.get(sensor_id)
             sensor_name = sensor.name if sensor else sensor_id
             _LOGGER.debug(
                 "Leak sensor '%s' changed: %s -> %s",
@@ -3740,15 +3770,6 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                 if _is_outage_error(result):
                     outage_errors.append(result)
 
-        # Every cloud read failed to reach Govee: raise so the coordinator marks
-        # entities unavailable and logs the outage once (and the recovery once)
-        # instead of serving stale state in silence. A partial failure keeps
-        # per-device isolation above.
-        if results and successful_updates == 0 and len(outage_errors) == len(results):
-            raise UpdateFailed(
-                f"Govee cloud API unreachable for all {len(results)} device(s): " f"{outage_errors[0]}"
-            ) from outage_errors[0]
-
         # Clear rate limit issue and restore poll interval if we got successful updates
         if successful_updates > 0 and self._rate_limited:
             self._rate_limited = False
@@ -3770,15 +3791,30 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         # LAN overlay (issue #57): re-correlate (throttled) then overlay the
         # fresh cloud state with the latest solicited devStatus reads. Runs AFTER
         # the cloud fan-in so LAN overlays FRESH cloud objects, never the reverse,
-        # and mutates in place so the return below fires HA listeners without a
+        # and mutates in place so the return below (or, during a total cloud
+        # outage, the UpdateFailed path) fires HA listeners without a
         # re-entrant async_set_updated_data. Failure-isolated: a LAN hiccup must
         # never fail the state poll.
         try:
             await self._async_maybe_rescan_lan()
             await self._refresh_lan_reads()
-            self._refresh_lan_staleness()
         except Exception as err:  # noqa: BLE001
             _LOGGER.debug("Govee LAN read refresh failed: %s", err)
+        # Expire old health even when the rescan/read itself failed.
+        self._refresh_lan_staleness()
+
+        # Report a total cloud outage only AFTER local reads and health checks.
+        # Cloud-dependent entities still follow coordinator failure; a main
+        # light can use its independently refreshed LAN availability.
+        if results and successful_updates == 0 and len(outage_errors) == len(results):
+            if not self.last_update_success:
+                # HA notifies on the first failed refresh, but suppresses
+                # listeners on consecutive failures. Publish local state and
+                # health changes without declaring the cloud recovered.
+                self.async_update_listeners()
+            raise UpdateFailed(
+                f"Govee cloud API unreachable for all {len(results)} device(s): " f"{outage_errors[0]}"
+            ) from outage_errors[0]
 
         return self._states
 
@@ -4486,6 +4522,46 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
         self.async_set_updated_data(self._states)
         return True
 
+    async def async_set_main_panel(
+        self,
+        device_id: str,
+        *,
+        rgb: RGBColor | None = None,
+        brightness: int | None = None,
+    ) -> bool:
+        """Write the H1232 main panel's colour and/or brightness over ptReal.
+
+        The main panel is internal segment 17 (bit ``PTREAL_MAIN_PANEL_BIT``),
+        not a ring segment, so it has no Platform-API equivalent and is
+        reachable only through the masked ptReal frames in ``api/ble_packet.py``
+        (issue #223). Returns False when the SKU is not in
+        ``PTREAL_MAIN_PANEL_BIT``, the BLE passthrough is down, or either
+        frame fails to send; True only if every requested frame sent.
+        """
+        device = self._devices.get(device_id)
+        if not device or device.sku.upper() not in PTREAL_MAIN_PANEL_BIT:
+            return False
+        if not self._ble_manager.available:
+            return False
+
+        mask = 1 << PTREAL_MAIN_PANEL_BIT[device.sku.upper()]
+
+        if rgb is not None:
+            packet = build_packet(build_segment_color_ptreal(rgb, mask))
+            sent = await self._ble_manager.async_send_ble_packet(device_id, device.sku, encode_packet_base64(packet))
+            if not sent:
+                return False
+            self._record_transport_send(device_id, "mqtt")
+
+        if brightness is not None:
+            packet = build_packet(build_segment_brightness_ptreal(brightness, mask))
+            sent = await self._ble_manager.async_send_ble_packet(device_id, device.sku, encode_packet_base64(packet))
+            if not sent:
+                return False
+            self._record_transport_send(device_id, "mqtt")
+
+        return True
+
     async def _try_mqtt_music_mode(self, device_id: str, device: GoveeDevice, command: MusicModeCommand) -> bool:
         """Select a music effect with the app's own frame, for SKUs whose REST path is empty.
 
@@ -4604,6 +4680,36 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
                     self.async_set_updated_data(self._states)
                     return True
                 # MQTT not applicable / publish failed — fall through to REST
+
+            # H1232 "Ceiling Light Pro" ptReal tier (issue #223): the
+            # Platform API reaches only ring segments 1-13, so when the BLE
+            # passthrough is up, fold every segment the command touches into
+            # one masked ptReal frame (bit i = ring segment i) instead of
+            # looping REST calls. Without passthrough (or when the publish
+            # fails), requests that stay inside the API-reported segment
+            # count fall through to REST unchanged; segments 14-16 have no
+            # REST equivalent and fail.
+            if isinstance(command, SegmentColorCommand) and device.sku.upper() in PTREAL_SEGMENT_SKUS:
+                if self._ble_manager.available:
+                    mask = 0
+                    for index in command.segment_indices:
+                        mask |= 1 << index
+                    packet = build_packet(build_segment_color_ptreal(command.color, mask))
+                    sent = await self._ble_manager.async_send_ble_packet(
+                        device_id, device.sku, encode_packet_base64(packet)
+                    )
+                    if sent:
+                        self._record_transport_send(device_id, "mqtt")
+                        self._apply_optimistic_update(device_id, command)
+                        self.async_set_updated_data(self._states)
+                        return True
+
+                resolution = device.segment_count_resolution
+                api_count = resolution["api_count"] if resolution else 0
+                if any(index >= api_count for index in command.segment_indices):
+                    return False
+                # All indices are within the API-reported count — fall
+                # through to the existing REST dispatch below unchanged.
 
             # Serialize segment commands per device. Govee silently drops
             # parallel segment requests (issue #53); sequential dispatch
@@ -5235,8 +5341,12 @@ class GoveeCoordinator(DataUpdateCoordinator[dict[str, GoveeDeviceState]]):
             return False
 
         # Try REST API first (works for HTTP-capable devices like H6097), except
-        # on SKUs that accept the toggle and ignore it (issue #213).
-        if device.sku.upper() not in PTREAL_DREAMVIEW_SKUS:
+        # on SKUs that accept the toggle and ignore it (issue #213), and except
+        # for OFF on SKUs that accept OFF but stay in video mode (issue #220).
+        skip_rest = device.sku.upper() in PTREAL_DREAMVIEW_SKUS or (
+            not enabled and device.sku.upper() in DREAMVIEW_OFF_VIA_COLOUR_SKUS
+        )
+        if not skip_rest:
             try:
                 success = await self.async_control_device(device_id, create_dreamview_command(enabled))
                 if success:

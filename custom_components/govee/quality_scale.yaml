@@ -86,7 +86,9 @@ rules:
     comment: >-
       Entities go unavailable when the last update failed or Govee reports
       the device offline (segment lights included); a total cloud outage
-      raises UpdateFailed so every entity goes unavailable.
+      raises UpdateFailed so every cloud-dependent entity goes unavailable.
+      The one exception is a whole-device light whose LAN transport has a
+      fresh read: it stays available and is controlled over LAN (#226).
   integration-owner:
     status: done
   log-when-unavailable:

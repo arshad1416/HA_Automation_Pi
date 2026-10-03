@@ -1103,6 +1103,35 @@ class GoveeDevice:
                                     return gear_options
         return []
 
+    @property
+    def purifier_gear_work_mode(self) -> int | None:
+        """Return the workMode value that selects gearMode speeds, or None.
+
+        H7124/H7129/H7126-style purifiers have no ``purifierMode`` capability;
+        their Mode select options come from the ``workMode`` capability's
+        ``gearMode`` sub-options (``get_purifier_mode_options`` pattern 2), and
+        selecting one must be sent as ``WorkModeCommand(work_mode=..., mode_value=...)``
+        rather than ``ModeCommand(purifierMode)``. Returns None when a real
+        ``purifierMode`` mode capability exists (e.g. H6006), so callers keep
+        using ``ModeCommand`` for those devices.
+        """
+        for cap in self.capabilities:
+            if cap.type == CAPABILITY_MODE and cap.instance == INSTANCE_PURIFIER_MODE:
+                return None
+
+        for cap in self.capabilities:
+            if cap.type == CAPABILITY_WORK_MODE and cap.instance == "workMode":
+                fields = cap.parameters.get("fields", [])
+                for f in fields:
+                    if f.get("fieldName") == "workMode":
+                        for opt in f.get("options", []):
+                            if opt.get("name") == "gearMode":
+                                value = opt.get("value")
+                                if isinstance(value, int):
+                                    return value
+                return 1
+        return None
+
     def get_preset_scene_options(self) -> list[dict[str, Any]]:
         """Extract presetScene options for aroma diffusers (H7161, issue #99).
 
@@ -1211,6 +1240,20 @@ class GoveeDevice:
         the H7075 are caught automatically, while known SKUs still trust the
         explicit override entry.
         """
+        resolution = self.segment_count_resolution
+        return resolution["effective"] if resolution else 0
+
+    @property
+    def segment_count_resolution(self) -> dict[str, Any] | None:
+        """Show how :attr:`segment_count` was derived, for diagnostics.
+
+        Returns None for devices without a segment capability. Otherwise:
+        ``api_count`` (the parser's raw count), ``size_max`` (the
+        ``fields[].size.max`` ceiling, or None), ``override`` (the
+        ``SKU_SEGMENT_OVERRIDES`` entry, or None), ``effective`` (what
+        :attr:`segment_count` returns), and ``source``: ``override``,
+        ``size_max`` (the clamp lowered the API count) or ``api``.
+        """
         for cap in self.capabilities:
             if cap.is_segment_color:
                 params = cap.parameters
@@ -1231,11 +1274,22 @@ class GoveeDevice:
                 # Apply size.max clamp first so it acts as an automatic
                 # safety net for unknown SKUs; then let SKU_SEGMENT_OVERRIDES
                 # override as the authoritative source for known ones.
-                if size_max is not None:
-                    api_count = min(api_count, size_max)
-                effective = SKU_SEGMENT_OVERRIDES.get(self.sku.upper(), api_count)
-                return effective
-        return 0
+                clamped = min(api_count, size_max) if size_max is not None else api_count
+                override = SKU_SEGMENT_OVERRIDES.get(self.sku.upper())
+                if override is not None:
+                    effective, source = override, "override"
+                elif clamped < api_count:
+                    effective, source = clamped, "size_max"
+                else:
+                    effective, source = api_count, "api"
+                return {
+                    "api_count": api_count,
+                    "size_max": size_max,
+                    "override": override,
+                    "effective": effective,
+                    "source": source,
+                }
+        return None
 
     def get_capability(self, cap_type: str, instance: str) -> GoveeCapability | None:
         """Get a specific capability by type and instance."""
@@ -1387,6 +1441,8 @@ class GoveeLeakSensorState:
     last_wet_time: int | None = None  # Epoch ms of last leak event
     read: bool = True  # Alert acknowledged in Govee app
     last_mqtt_wet_at: float = 0.0  # time.time() when MQTT last set is_wet=True
+    upper_probe_wet: bool | None = None  # H5059 dual-probe only; None = not yet reported (#224)
+    lower_probe_wet: bool | None = None  # H5059 dual-probe only; None = not yet reported (#224)
 
 
 def leak_sensor_device_info(sensor: GoveeLeakSensor, domain: str) -> DeviceInfo:

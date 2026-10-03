@@ -20,6 +20,8 @@ from __future__ import annotations
 
 import base64
 
+from ..models.state import RGBColor
+
 # Music mode packet constants
 MUSIC_PACKET_PREFIX = 0x33
 MUSIC_MODE_COMMAND = 0x05
@@ -167,6 +169,75 @@ def build_music_mode_v3_packet(effect_code: int, sensitivity: int) -> bytes:
     if effect_code in MUSIC_V3_LEGACY_EFFECTS:
         data.extend([0x00, 0x00])  # dynamic style, no fixed colour
     return build_packet(data)
+
+
+# H1232 "Ceiling Light Pro" ptReal segment frames (issue #223). The fixture has
+# 17 internal segments (1-16 = RGBIC ring, 17 = main panel) behind a single
+# 3-byte little-endian bitmask, bit i = internal segment i+1 (bits 0-15 =
+# ring, bit 16 = main panel). Verified visually on hardware with
+# ``send_raw_ptreal``, frames before the ``build_packet`` checksum:
+#   ring + panel green:          33 05 15 01 00 FF 00 00 00 00 00 00 FF FF 01
+#   segments 14-16 + panel red:  33 05 15 01 FF 00 00 00 00 00 00 00 00 E0 01
+#   panel only blue:             33 05 15 01 00 00 FF 00 00 00 00 00 00 00 01
+#   ring only at 10 %:           33 05 15 02 0A FF FF 00
+SEGMENT_PTREAL_COMMAND = 0x05
+SEGMENT_PTREAL_INDICATOR = 0x15
+SEGMENT_PTREAL_COLOR_OP = 0x01
+SEGMENT_PTREAL_BRIGHTNESS_OP = 0x02
+
+
+def build_segment_color_ptreal(rgb: RGBColor, mask: int) -> list[int]:
+    """Build the masked ptReal segment colour frame data (H1232, issue #223).
+
+    Args:
+        rgb: Target colour.
+        mask: 3-byte little-endian segment bitmask, bit i = internal
+              segment i+1 (bits 0-15 = ring, bit 16 = main panel).
+
+    Returns:
+        Packet data bytes (before ``build_packet`` padding/checksum).
+    """
+    return [
+        MUSIC_PACKET_PREFIX,  # 0x33
+        SEGMENT_PTREAL_COMMAND,  # 0x05
+        SEGMENT_PTREAL_INDICATOR,  # 0x15
+        SEGMENT_PTREAL_COLOR_OP,  # 0x01
+        rgb.r,
+        rgb.g,
+        rgb.b,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        mask & 0xFF,
+        (mask >> 8) & 0xFF,
+        (mask >> 16) & 0xFF,
+    ]
+
+
+def build_segment_brightness_ptreal(pct: int, mask: int) -> list[int]:
+    """Build the masked ptReal segment brightness frame data (H1232, issue #223).
+
+    Args:
+        pct: Brightness percentage, clamped to 0-100.
+        mask: 3-byte little-endian segment bitmask, bit i = internal
+              segment i+1 (bits 0-15 = ring, bit 16 = main panel).
+
+    Returns:
+        Packet data bytes (before ``build_packet`` padding/checksum).
+    """
+    pct = max(0, min(100, pct))
+    return [
+        MUSIC_PACKET_PREFIX,  # 0x33
+        SEGMENT_PTREAL_COMMAND,  # 0x05
+        SEGMENT_PTREAL_INDICATOR,  # 0x15
+        SEGMENT_PTREAL_BRIGHTNESS_OP,  # 0x02
+        pct,
+        mask & 0xFF,
+        (mask >> 8) & 0xFF,
+        (mask >> 16) & 0xFF,
+    ]
 
 
 def build_dreamview_packet() -> bytes:
