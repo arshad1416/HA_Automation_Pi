@@ -1,0 +1,3 @@
+evaluate:
+  name: Evaluate lawn forecast
+  description: Evaluate the validated local forecast cache without fetching data or operating devices.

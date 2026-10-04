@@ -17,9 +17,9 @@ class DecisionSensor(CoordinatorEntity,SensorEntity):
     @property
     def extra_state_attributes(self):
         data=dict(self.coordinator.data or {})
-        data.update({'lookahead_hours':self._guard_options['lookahead_hours'],
-                     'rain_threshold_mm':self._guard_options['rain_threshold_mm'],
-                     'max_age_seconds':self._guard_options['max_age_minutes']*60})
+        data.update({'lookahead_hours':self.options['lookahead_hours'],
+                     'rain_threshold_mm':self.options['rain_threshold_mm'],
+                     'max_age_seconds':self.options['max_age_minutes']*60})
         return data
     def __init__(self,coordinator,options):
-        super().__init__(coordinator);self._guard_options=options
+        super().__init__(coordinator);self.options=options

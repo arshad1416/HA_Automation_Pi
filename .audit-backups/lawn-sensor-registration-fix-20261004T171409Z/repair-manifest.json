@@ -1,0 +1,13 @@
+{
+  "applied_at_utc": "2026-10-04T17:14:09.793901+00:00",
+  "backup_host": "/opt/homeassistant/.audit-backups/lawn-sensor-registration-fix-20261004T171409Z",
+  "changed_files": {
+    "/opt/homeassistant/custom_components/lawn_forecast_guard/sensor.py": "2ed5c1e6f37a8914229bd9b8acf304cf6421044cfa0ccfbeeec87c205f7a5d2f",
+    "/opt/homeassistant/custom_components/lawn_forecast_guard/services.yaml": "8bff2b8e211b288b92894305869bc5b54dcd11fd773b11dafd5520499ff15e15"
+  },
+  "before_sensor_sha256": "e21f7343e78b52963fa09fb70003a51c68c315230ede2a07f77154b195737805",
+  "other_checked_sources_unchanged": true,
+  "policy_contact_changes": false,
+  "restart_performed": false,
+  "valve_commands": false
+}
