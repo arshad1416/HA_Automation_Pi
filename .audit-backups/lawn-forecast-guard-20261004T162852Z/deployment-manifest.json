@@ -1,0 +1,16 @@
+{
+  "installed_at_utc": "2026-10-04T16:28:52.270376+00:00",
+  "backup_host": "/opt/homeassistant/.audit-backups/lawn-forecast-guard-20261004T162852Z",
+  "files": {
+    "/opt/homeassistant/automations/01_main.yaml": "a427fd403cedc76a0c29ee8cde8bb587882c0454cb57416a33467e688fc9b89c",
+    "/opt/homeassistant/configuration.yaml": "9e24c4f307d01417a5bcd063d2523c79c135290d1f8ed02a419414da7656c87e",
+    "/opt/homeassistant/custom_components/lawn_forecast_guard/__init__.py": "77f1cdde023de4a210f445ca7c7a759bcc63d2fda64542fdf1bc20fbd4323ccf",
+    "/opt/homeassistant/custom_components/lawn_forecast_guard/core.py": "56f6abb3f62df7b06aa34883d3e2bd4a8aa530cdac59e05d01954985828bb176",
+    "/opt/homeassistant/custom_components/lawn_forecast_guard/manifest.json": "c224b0dabf3ee891e1c447a1d9a4383f5c2e64e369f9e639b74fa9be57e0da21",
+    "/opt/homeassistant/custom_components/lawn_forecast_guard/sensor.py": "e21f7343e78b52963fa09fb70003a51c68c315230ede2a07f77154b195737805"
+  },
+  "source_before_sha256": "250c4c441ec9a8de8e5176f5bf0b16e2edb984f828f6aad7a8f26510e29b403b",
+  "config_before_sha256": "405dcb2b5ac2d762f4d0bac861cdae346a9cf15d74a4c2f5f94cd6f9f90babf7",
+  "restart_performed": false,
+  "valve_commands": false
+}

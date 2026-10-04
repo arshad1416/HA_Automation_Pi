@@ -3944,21 +3944,6 @@
         {{ state_attr('input_datetime.lawn_last_watered', 'timestamp') is none
            or (now().timestamp() - state_attr('input_datetime.lawn_last_watered', 'timestamp')) >= 169200 }}
   actions:
-    - action: lawn_forecast_guard.evaluate
-      response_variable: lawn_forecast
-    - condition: template
-      alias: Lawn activation requires dry weather and a validated dry forecast
-      value_template: >-
-        {% set fetched = lawn_forecast.get('validated_at', -1) | float(-1) %}
-        {% set age = now().timestamp() - fetched %}
-        {% set max_age = lawn_forecast.get('max_age_seconds', 0) | float(0) %}
-        {% set interval = state_attr('input_datetime.lawn_last_watered', 'timestamp') %}
-        {{ lawn_forecast.get('decision') == 'allow' and max_age > 0 and 0 <= age <= max_age
-           and states('weather.forecast_home') in
-               ['sunny','clear-night','partlycloudy','cloudy','windy','windy-variant']
-           and is_state('input_boolean.lawn_watering_master_enable', 'on')
-           and states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) > 0
-           and (interval is none or now().timestamp() - interval >= 169200) }}
     - variables:
         run_seconds: >-
           {{ [ states('sensor.smart_irrigation_front_lawn_valve_2') | float(0) | round(0) | int, 5400 ] | min }}
