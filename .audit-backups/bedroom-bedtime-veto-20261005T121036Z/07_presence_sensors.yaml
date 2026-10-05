@@ -204,8 +204,8 @@
       entity_id: media_player.lg_webos_tv_un8500auj
 - id: master_bedroom_presence_light_auto_on
   alias: Master Bedroom — Fan light on when someone enters (evening)
-  description: Turn on the master bedroom fan light on occupancy while dark and before 23:00, if currently off and not after bedtime.
-    Reuses After Bedtime nightly latch semantics; checks again before each turn-on command.
+  description: Turn on the master bedroom fan light when Ecobee occupancy detects presence between sunset and 23:00, and the light is
+    currently off.
   mode: restart
   triggers:
   - entity_id: binary_sensor.master_bedroom_occupancy_combined
@@ -220,31 +220,10 @@
   - condition: state
     entity_id: switch.master_bedroom_fan_light_switch_1
     state: 'off'
-  - condition: state
-    entity_id: binary_sensor.after_bedtime
-    state: 'off'
   actions:
-  - condition: template
-    alias: Bedtime veto immediately before fan-light command
-    value_template: >-
-      {% set latch = states('input_boolean.bedtime_shutdown_done') %}
-      {% set sun = states('sun.sun') %}
-      {{ is_state('binary_sensor.after_bedtime', 'off')
-         and latch in ['on', 'off'] and sun in ['above_horizon', 'below_horizon']
-         and not (latch == 'on' and (now().hour >= 20 or now().hour < 12)
-                  and sun == 'below_horizon') }}
   - action: switch.turn_on
     target:
       entity_id: switch.master_bedroom_fan_light_switch_1
-  - condition: template
-    alias: Bedtime veto immediately before Elements command
-    value_template: >-
-      {% set latch = states('input_boolean.bedtime_shutdown_done') %}
-      {% set sun = states('sun.sun') %}
-      {{ is_state('binary_sensor.after_bedtime', 'off')
-         and latch in ['on', 'off'] and sun in ['above_horizon', 'below_horizon']
-         and not (latch == 'on' and (now().hour >= 20 or now().hour < 12)
-                  and sun == 'below_horizon') }}
   - action: light.turn_on
     data:
       brightness_pct: 100
