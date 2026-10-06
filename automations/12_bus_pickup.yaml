@@ -3,53 +3,90 @@
 # Afternoon school-bus pickup alerts, keyed on Izaan's Life360 tracker
 # (Izaan & Mina ride together). Added 2026-10-06.
 #
-# Life360 is cloud-polled, so positions can lag by a minute or more. The
-# "near" alert measures distance to zone.home because no bus-stop zone exists
-# yet; swap in a bus-stop zone and tune the 1 km threshold once it does.
+# Life360 is cloud-polled, so positions can lag by a minute or more. All
+# distances are straight-line to the bus stop, and the ETAs are rough
+# estimates from the two speed knobs below, not routing. Tune them after a
+# few real rides.
+#
+# The stop is Niska & Boulding until 2026-10-12 and Fellowes & Boulding from
+# 2026-10-13 (coordinates from OpenStreetMap intersections).
 # =============================================================================
 
 - id: bus_pickup_left_school
   alias: "Bus pickup: kids left school"
   description: >-
     Push to Arshad's phone when Izaan's Life360 place stops being the school
-    on a weekday afternoon.
+    on a weekday afternoon, with a second push if Larissa looks unable to
+    reach the bus stop before the bus.
   triggers:
     - trigger: state
       entity_id: device_tracker.life360_izaan_kazi
       attribute: place
       from: "Renaissance Elementary School"
       for: "00:01:00"   # rides out GPS jitter at the school boundary
-  conditions:
+  conditions: &bus_window
     - condition: time
       after: "14:00:00"
       before: "17:30:00"
       weekday: [mon, tue, wed, thu, fri]
+  variables: &bus_vars
+    bus_kmh: 20       # straight-line average incl. stops
+    car_kmh: 35       # straight-line average for a parent driving
+    car_start_min: 3  # time to get out the door
+    stop: >-
+      {{ [43.3459213, -79.8868361] if now().date() | string < '2026-10-13'
+         else [43.3447799, -79.8852459] }}
+    bus_km: "{{ distance('device_tracker.life360_izaan_kazi', stop[0], stop[1]) | float(0) }}"
+    bus_min: "{{ (bus_km / bus_kmh * 60) | round }}"
+    larissa_km: "{{ distance('device_tracker.life360_larissa_kazi', stop[0], stop[1]) | float(-1) }}"
+    larissa_min: "{{ (larissa_km / car_kmh * 60 + car_start_min) | round }}"
+    larissa_age: >-
+      {% set seen = state_attr('device_tracker.life360_larissa_kazi', 'last_seen') %}
+      {{ ((now() - as_datetime(seen)).total_seconds() / 60) | round if seen else 999 }}
+    arshad_km: "{{ distance('device_tracker.life360_arshad_kazi', stop[0], stop[1]) | float(-1) }}"
+    # At the stop already (within 300 m) always counts as on time.
+    larissa_late: "{{ larissa_km < 0 or (larissa_km > 0.3 and larissa_min > bus_min) }}"
+    larissa_note: >-
+      {% if larissa_km < 0 %}Larissa's location is unknown.
+      {% else %}Larissa is {{ larissa_km | round(1) }} km from the stop (about {{ larissa_min }} min){{
+        ', but that fix is ' ~ larissa_age ~ ' min old, so it is uncertain' if larissa_age > 10 else '' }}.
+      {% endif %}
+      {% if arshad_km >= 0 %}You are {{ arshad_km | round(1) }} km away (about {{
+        (arshad_km / car_kmh * 60 + car_start_min) | round }} min).{% endif %}
   actions:
     - action: notify.mobile_app_cph2655
       data:
         title: "Bus pickup"
-        message: "Izaan & Mina have left school."
+        message: "Izaan & Mina have left school. Bus is roughly {{ bus_min }} min from the stop."
+    - if: "{{ larissa_late }}"
+      then:
+        - action: notify.mobile_app_cph2655
+          data:
+            title: "Larissa won't make the bus stop"
+            message: "Bus is about {{ bus_min }} min out. {{ larissa_note }}"
   mode: single
 
 - id: bus_pickup_near_home
   alias: "Bus pickup: kids about 1 km away"
   description: >-
     Push to Arshad's phone when Izaan's Life360 tracker comes within 1 km of
-    home on a weekday afternoon.
+    the bus stop on a weekday afternoon, saying whether Larissa is there.
+  trigger_variables:
+    stop_until_oct_12: [43.3459213, -79.8868361]   # Niska Dr & Boulding Ave
+    stop_from_oct_13: [43.3447799, -79.8852459]    # Fellowes Cres & Boulding Ave
   triggers:
     - trigger: template
       value_template: >-
-        {{ (distance('device_tracker.life360_izaan_kazi', 'zone.home') | float(99)) < 1 }}
-  conditions:
-    - condition: time
-      after: "14:00:00"
-      before: "17:30:00"
-      weekday: [mon, tue, wed, thu, fri]
+        {% set stop = stop_until_oct_12 if now().date() | string < '2026-10-13' else stop_from_oct_13 %}
+        {{ (distance('device_tracker.life360_izaan_kazi', stop[0], stop[1]) | float(99)) < 1 }}
+  conditions: *bus_window
+  variables: *bus_vars
   actions:
     - action: notify.mobile_app_cph2655
       data:
         title: "Bus pickup"
         message: >-
-          Izaan & Mina are about {{ (distance('device_tracker.life360_izaan_kazi', 'zone.home') | float(0)) | round(1) }} km
-          from home. Head to the bus stop.
+          Izaan & Mina are within 1 km of the bus stop.
+          {{ 'Larissa will NOT be there in time. ' ~ larissa_note ~ ' Head over now.'
+             if larissa_late else 'Larissa is ' ~ (larissa_km | round(1)) ~ ' km from the stop and should make it.' }}
   mode: single
