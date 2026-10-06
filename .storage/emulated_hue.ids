@@ -59,6 +59,7 @@
     "54": "cover.mina_s_blinds_curtain",
     "55": "cover.larissa_s_garage_door_door",
     "56": "switch.pool_pump_heater_pump_heater",
-    "57": "input_boolean.family_room_echo_occupied"
+    "57": "input_boolean.family_room_echo_occupied",
+    "58": "light.kids_room_izaan_s_ceiling_fan_light"
   }
 }
