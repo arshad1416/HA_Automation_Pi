@@ -601,7 +601,10 @@ emulated_hue:
       hidden: false
     light.master_bathroom_light: {hidden: false}
     # Izaan's room
-    light.izaan_s_ceiling_fan: {hidden: false}
+    # 2026-10-05: was light.izaan_s_ceiling_fan (old Bond device, disabled) — Alexa polled a dead id.
+    light.kids_room_izaan_s_ceiling_fan_light:
+      name: Izaan's Ceiling Fan
+      hidden: false
     light.izaan_s_lamp: {hidden: false}
     switch.izaan_s_bedroom_light_switch_1:
       name: Izaan's Bedroom light
@@ -745,8 +748,16 @@ adaptive_lighting:
 
 # Limit history to 7 days to keep DB manageable
 recorder:
-  purge_keep_days: 7
+  # 2026-10-05: 7 -> 30 days so usage reviews have a real month of history.
+  purge_keep_days: 30
   auto_purge: true
+  # Chatty, never-reviewed entities; still live for automations, just not stored.
+  exclude:
+    entity_globs:
+      - light.*_segment_*
+      - switch.*_shuffle
+      - switch.*_repeat
+      - switch.*_do_not_disturb
 
 logger:
   default: warning
