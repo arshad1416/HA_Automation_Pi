@@ -46,7 +46,7 @@
         # Google Maps drive times with live traffic (polling is off; the actions
         # refresh them on demand). Falls back to the straight-line guess whenever
         # a sensor has no number.
-        bus_factor: 1.3   # a bus with stops vs Google's car time
+        bus_factor: 2.0   # bus with stops vs Google's car time; 2026-10-06 ride took ~40 min vs Google's ~15
         bus_google: "{{ states('sensor.google_travel_time_2') | float(-1) }}"
         bus_min: "{{ (bus_google * bus_factor if bus_google >= 0 else bus_km / bus_kmh * 60) | round }}"
         larissa_google: "{{ states('sensor.google_travel_time') | float(-1) }}"
@@ -75,6 +75,15 @@
           data:
             title: "Larissa won't make the bus stop"
             message: "Bus is about {{ bus_min }} min out. {{ larissa_note }}"
+    # Spoken on the Echos too. Cloud call, so it goes last and may fail quietly.
+    - action: notify.alexa_media
+      continue_on_error: true
+      data:
+        data: {type: announce}
+        message: >-
+          Izaan and Mina have left school. The bus is roughly {{ bus_min }} minutes from the stop.
+          {{ 'Larissa will not make the bus stop in time.' if larissa_late else '' }}
+        target: &bus_echos [media_player.downstairs_echo_dot, media_player.upstairs_echo_dot]
   mode: single
 
 - id: bus_pickup_near_home
@@ -101,4 +110,48 @@
           Izaan & Mina are within 1 km of the bus stop.
           {{ 'Larissa will NOT be there in time. ' ~ larissa_note ~ ' Head over now.'
              if larissa_late else 'Larissa is ' ~ (larissa_km | round(1)) ~ ' km from the stop and should make it.' }}
+    # Spoken on the Echos too. Cloud call, so it goes last and may fail quietly.
+    - action: notify.alexa_media
+      continue_on_error: true
+      data:
+        data: {type: announce}
+        message: >-
+          The school bus is within one kilometre of the stop.
+          {{ 'Larissa will not be there in time. Head over now.' if larissa_late else 'Larissa should make it.' }}
+        target: *bus_echos
+  mode: single
+
+# --- Kids' phone charge reminder ---------------------------------------------
+# The bus alerts depend on Izaan & Mina's Pixel 7 Pro having battery the next
+# day. One check at 8 pm; quiet if it is at 50% or more, or already charging.
+- id: kids_phone_charge_reminder
+  alias: "Kids' phone: charge reminder (8 pm)"
+  description: >-
+    At 8 pm, remind Arshad to charge Izaan & Mina's phone when Life360 reports
+    it under 50% and not charging.
+  triggers:
+    - trigger: time
+      at: "20:00:00"
+  conditions:
+    - condition: numeric_state
+      entity_id: device_tracker.life360_izaan_kazi
+      attribute: battery_level
+      below: 50
+    - condition: template
+      value_template: "{{ not state_attr('device_tracker.life360_izaan_kazi', 'battery_charging') }}"
+  actions:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "Charge the kids' phone"
+        message: >-
+          Izaan & Mina's phone is at {{ state_attr('device_tracker.life360_izaan_kazi', 'battery_level') | int }}%
+          and not charging. Plug it in for the night.
+    - action: notify.alexa_media
+      continue_on_error: true
+      data:
+        data: {type: announce}
+        message: >-
+          Izaan and Mina's phone is at {{ state_attr('device_tracker.life360_izaan_kazi', 'battery_level') | int }} percent.
+          Please plug it in for the night.
+        target: *bus_echos
   mode: single
