@@ -16,7 +16,10 @@
         "user_id": null,
         "id": "larissa",
         "name": "Larissa",
-        "device_trackers": []
+        "device_trackers": [
+          "device_tracker.sm_s926w"
+        ],
+        "picture": null
       }
     ]
   }
