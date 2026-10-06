@@ -1,0 +1,55 @@
+# =============================================================================
+# 12_bus_pickup.yaml
+# Afternoon school-bus pickup alerts, keyed on Izaan's Life360 tracker
+# (Izaan & Mina ride together). Added 2026-10-06.
+#
+# Life360 is cloud-polled, so positions can lag by a minute or more. The
+# "near" alert measures distance to zone.home because no bus-stop zone exists
+# yet; swap in a bus-stop zone and tune the 1 km threshold once it does.
+# =============================================================================
+
+- id: bus_pickup_left_school
+  alias: "Bus pickup: kids left school"
+  description: >-
+    Push to Arshad's phone when Izaan's Life360 place stops being the school
+    on a weekday afternoon.
+  triggers:
+    - trigger: state
+      entity_id: device_tracker.life360_izaan_kazi
+      attribute: place
+      from: "Renaissance Elementary School"
+      for: "00:01:00"   # rides out GPS jitter at the school boundary
+  conditions:
+    - condition: time
+      after: "14:00:00"
+      before: "17:30:00"
+      weekday: [mon, tue, wed, thu, fri]
+  actions:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "Bus pickup"
+        message: "Izaan & Mina have left school."
+  mode: single
+
+- id: bus_pickup_near_home
+  alias: "Bus pickup: kids about 1 km away"
+  description: >-
+    Push to Arshad's phone when Izaan's Life360 tracker comes within 1 km of
+    home on a weekday afternoon.
+  triggers:
+    - trigger: template
+      value_template: >-
+        {{ (distance('device_tracker.life360_izaan_kazi', 'zone.home') | float(99)) < 1 }}
+  conditions:
+    - condition: time
+      after: "14:00:00"
+      before: "17:30:00"
+      weekday: [mon, tue, wed, thu, fri]
+  actions:
+    - action: notify.mobile_app_cph2655
+      data:
+        title: "Bus pickup"
+        message: >-
+          Izaan & Mina are about {{ (distance('device_tracker.life360_izaan_kazi', 'zone.home') | float(0)) | round(1) }} km
+          from home. Head to the bus stop.
+  mode: single

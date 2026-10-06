@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "minor_version": 1,
+  "key": "life360",
+  "data": {
+    "circles": {
+      "e5fb156c-6ada-42fb-9788-8a9ce5760743": {
+        "name": "Kazi Family",
+        "aids": [
+          "life360@arshadk.mozmail.com"
+        ],
+        "mids": [
+          "0340a814-c587-4a82-bb2c-4cd40c0baef1",
+          "6394e5a1-aa17-4c20-bfbf-a352fa813de7",
+          "48733797-8e23-41b7-a904-268a5658173f"
+        ]
+      }
+    },
+    "mem_details": {
+      "0340a814-c587-4a82-bb2c-4cd40c0baef1": {
+        "name": "Arshad Kazi",
+        "entity_picture": "https://www.life360.com/img/user_images/0340a814-c587-4a82-bb2c-4cd40c0baef1/817e1a1d-b538-4a3a-ac03-b9bba64dcdad.jpg?fd=2"
+      },
+      "48733797-8e23-41b7-a904-268a5658173f": {
+        "name": "Larissa Kazi",
+        "entity_picture": "https://www.life360.com/img/user_images/48733797-8e23-41b7-a904-268a5658173f/b27951f7-3839-47dc-bb49-3b5a8670ef3d.jpg?fd=2"
+      },
+      "6394e5a1-aa17-4c20-bfbf-a352fa813de7": {
+        "name": "Izaan Kazi",
+        "entity_picture": "https://www.life360.com/img/user_images/6394e5a1-aa17-4c20-bfbf-a352fa813de7/20d28111-cd8a-4d05-a870-0fb8e8f865c2.jpg?fd=2"
+      }
+    }
+  }
+}

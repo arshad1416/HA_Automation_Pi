@@ -6,19 +6,30 @@
     "items": [
       {
         "id": "arshad14",
-        "name": "arshad14",
+        "name": "Arshad",
         "user_id": "3b4f228b5f7e4c038ec670067287fc67",
         "device_trackers": [
-          "device_tracker.oneplus_13"
-        ]
+          "device_tracker.oneplus_13",
+          "device_tracker.life360_arshad_kazi"
+        ],
+        "picture": null
       },
       {
         "user_id": null,
         "id": "larissa",
         "name": "Larissa",
         "device_trackers": [
-          "device_tracker.sm_s926w"
+          "device_tracker.life360_larissa_kazi"
         ],
+        "picture": null
+      },
+      {
+        "id": "izaan_mina",
+        "name": "Izaan & Mina",
+        "device_trackers": [
+          "device_tracker.life360_izaan_kazi"
+        ],
+        "user_id": null,
         "picture": null
       }
     ]
