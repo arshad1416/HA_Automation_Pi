@@ -764,6 +764,9 @@ logger:
   filters:
     homeassistant.components.emulated_hue.hue_api:
       - "^Unknown entity number"
+      # 2026-10-06: an unidentified Hue client keeps polling the retired Bond light (hue id 21).
+      # Only this one entity is silenced; any other missing entity still logs.
+      - '^Entity not found: light\.izaan_s_ceiling_fan$'
   logs:
     homeassistant.components.emulated_hue: error
     # VinFast integration — reduced logging (debug → warning)
