@@ -1,0 +1,30 @@
+- id: outdoor_decoration_smartplug_daily_schedule
+  alias: Outdoor Decoration SmartPlug Daily Schedule
+  description: 'Daily local schedule in HA timezone America/Toronto: off at 02:00, on at 16:00.'
+  triggers:
+    - trigger: time
+      at: '02:00:00'
+      id: scheduled_off
+    - trigger: time
+      at: '16:00:00'
+      id: scheduled_on
+  conditions: []
+  actions:
+    - choose:
+        - conditions:
+            - condition: trigger
+              id: scheduled_off
+          sequence:
+            - action: switch.turn_off
+              target:
+                entity_id: switch.outdoor_decoration_smartplug_socket_1
+        - conditions:
+            - condition: trigger
+              id: scheduled_on
+          sequence:
+            - action: switch.turn_on
+              target:
+                entity_id: switch.outdoor_decoration_smartplug_socket_1
+  mode: single
+  trace:
+    stored_traces: 10
