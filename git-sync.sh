@@ -6,8 +6,7 @@
 # MULTI-WRITER SAFE: the curated Mac repo (~/Developer/HA_Automation_Pi) also
 # pushes to origin/main, so this script always incorporates remote commits first
 # via `git pull --rebase --autostash` before committing/pushing local changes.
-# Conflict guards bail out cleanly (never leaving the repo mid-rebase or pushing
-# conflict markers); the next 15-min cycle retries.
+# Conflicts preserve the pre-pull files and pause sync for owner reconciliation.
 
 REPO_DIR="/opt/homeassistant"
 LOG_FILE="/var/log/ha-git-sync.log"
@@ -34,7 +33,7 @@ ALERT_FLAG="/var/tmp/ha-git-sync.alerted"   # presence = "already told them"
 notify() {
     # Message arrives on stdin so it is never interpolated into python source.
     printf '%s' "$1" | python3 -c \
-        "import sys; sys.path.insert(0,'/home/arshad14/.hermes/scripts'); from tg_notify import send_telegram; send_telegram(sys.stdin.read())" \
+        "import sys; sys.path.insert(0,'/home/arshad14/.hermes/scripts'); from tg_notify import send_telegram; sys.exit(0 if send_telegram(sys.stdin.read()) else 1)" \
         >>"$LOG_FILE" 2>&1
 }
 
@@ -43,22 +42,50 @@ BACKLOG=$(git rev-list --count "origin/$BRANCH..HEAD" 2>/dev/null)
 case "$BACKLOG" in ''|*[!0-9]*) BACKLOG=0 ;; esac
 
 if [ "$BACKLOG" -gt "$ALERT_AFTER" ] && [ ! -f "$ALERT_FLAG" ]; then
-    notify "HA git-sync: GitHub backup is FAILING.
+    if notify "HA git-sync: GitHub backup is FAILING.
 
 $BACKLOG commits are stranded on the Pi, so the .storage/ disaster-recovery
 chain is stale and getting staler.
 
-Diagnose: ssh pi-lan \"tail -40 $LOG_FILE\""
-    touch "$ALERT_FLAG"
-    echo "[$(date '+%F %T')] ALERT sent: $BACKLOG commits unpushed" >> "$LOG_FILE"
-elif [ "$BACKLOG" -le "$ALERT_AFTER" ] && [ -f "$ALERT_FLAG" ]; then
+Diagnose: ssh pi-lan \"tail -40 $LOG_FILE\""; then
+        touch "$ALERT_FLAG"
+        echo "[$(date '+%F %T')] ALERT sent: $BACKLOG commits unpushed" >> "$LOG_FILE"
+    else
+        echo "[$(date '+%F %T')] WARN: backlog alert delivery failed; will retry" >> "$LOG_FILE"
+    fi
+elif [ "$BACKLOG" -eq 0 ] && [ -f "$ALERT_FLAG" ]; then
     # An alert that never says "resolved" trains you to ignore it.
-    notify "HA git-sync: recovered. Backlog drained; GitHub backup is current again."
-    rm -f "$ALERT_FLAG"
-    echo "[$(date '+%F %T')] ALERT cleared: backlog drained" >> "$LOG_FILE"
+    if notify "HA git-sync: recovered. Backlog drained; GitHub backup is current again."; then
+        rm -f "$ALERT_FLAG"
+        echo "[$(date '+%F %T')] ALERT cleared: backlog drained" >> "$LOG_FILE"
+    else
+        echo "[$(date '+%F %T')] WARN: recovery alert delivery failed; will retry" >> "$LOG_FILE"
+    fi
 fi
 
 TIMESTAMP=$(date +"%Y-%m-%d %H:%M:%S %Z")
+
+# Keep a pinned pre-pull tree: Git autostash recovery must not replace curated
+# working files with origin/main. The marker stops subsequent cron runs until
+# the owner reconciles both writers. Alert retries happen at most once per run.
+RECOVERY_REF="refs/ha-git-sync/pre-pull"
+CONFLICT_FLAG=$(git rev-parse --git-path ha-git-sync.conflict) || exit 1
+CONFLICT_ALERT="$CONFLICT_FLAG.notified"
+conflict_alert() {
+    if [ ! -f "$CONFLICT_ALERT" ]; then
+        if notify "HA git-sync: conflict requires owner review. Synchronization is paused; inspect the working tree, $RECOVERY_REF and $CONFLICT_FLAG before resuming."; then
+            touch "$CONFLICT_ALERT"
+        else
+            echo "[$TIMESTAMP] WARN: conflict alert delivery failed; will retry" >> "$LOG_FILE"
+        fi
+    fi
+}
+if [ -f "$CONFLICT_FLAG" ] || [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+    touch "$CONFLICT_FLAG"
+    conflict_alert
+    echo "[$TIMESTAMP] ERROR: unresolved conflict; sync paused for owner review" >> "$LOG_FILE"
+    exit 1
+fi
 
 # --- 0b. Repair ownership before git touches the tree -------------------------
 # HACS runs inside the privileged HA container as root, so an integration update
@@ -79,8 +106,30 @@ fi
 # --- 1. Incorporate remote commits (other writers may have pushed to main) ---
 # --autostash temporarily stashes the ever-changing local telemetry, rebases any
 # local commits onto origin/$BRANCH, then restores the stash.
+LOCAL_SNAPSHOT=$(git stash create) || exit 1
+if [ -n "$LOCAL_SNAPSHOT" ]; then
+    git update-ref "$RECOVERY_REF" "$LOCAL_SNAPSHOT" || exit 1
+fi
+PULL_OK=1
 if ! git pull --rebase --autostash origin "$BRANCH" >>"$LOG_FILE" 2>&1; then
     git rebase --abort >>"$LOG_FILE" 2>&1 || true
+    PULL_OK=0
+fi
+if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+    printf '%s\n' "$RECOVERY_REF" > "$CONFLICT_FLAG" || exit 1
+    if [ -n "$LOCAL_SNAPSHOT" ]; then
+        if git restore --source="$LOCAL_SNAPSHOT^2" --staged -- . >>"$LOG_FILE" 2>&1 &&
+           git restore --source="$LOCAL_SNAPSHOT" --worktree -- . >>"$LOG_FILE" 2>&1; then
+            echo "[$TIMESTAMP] Preserved pre-pull index and working files; recovery pinned at $RECOVERY_REF" >> "$LOG_FILE"
+        else
+            echo "[$TIMESTAMP] ERROR: restore incomplete; recovery pinned at $RECOVERY_REF" >> "$LOG_FILE"
+        fi
+    fi
+    conflict_alert
+    echo "[$TIMESTAMP] ERROR: autostash conflict; sync paused for owner review" >> "$LOG_FILE"
+    exit 1
+fi
+if [ "$PULL_OK" -eq 0 ]; then
     echo "[$TIMESTAMP] ERROR: pull --rebase failed; will retry next run" >> "$LOG_FILE"
     # A failing pull exits BEFORE anything is committed, so the backlog stays 0
     # and the step-0 guard above can never notice. That is how the 2026-08-22
@@ -89,37 +138,39 @@ if ! git pull --rebase --autostash origin "$BRANCH" >>"$LOG_FILE" 2>&1; then
     PF_FLAG="/var/tmp/ha-git-sync.pullfail"
     PF=$(( $(cat "$PF_FLAG" 2>/dev/null || echo 0) + 1 ))
     echo "$PF" > "$PF_FLAG"
-    if [ "$PF" -eq "$ALERT_AFTER" ]; then
-        notify "HA git-sync: pull --rebase is FAILING.
+    PF_ALERT="$PF_FLAG.notified"
+    if [ "$PF" -ge "$ALERT_AFTER" ] && [ ! -f "$PF_ALERT" ]; then
+        if notify "HA git-sync: pull --rebase is FAILING.
 
 $PF consecutive runs could not incorporate origin/$BRANCH, so nothing is being
 backed up and Mac-side pushes are not reaching the Pi. Backlog stays 0, so the
 stranded-commits alert cannot see this.
 
-Diagnose: ssh pi-lan \"tail -40 $LOG_FILE\""
+Diagnose: ssh pi-lan \"tail -40 $LOG_FILE\""; then
+            touch "$PF_ALERT"
+        else
+            echo "[$TIMESTAMP] WARN: pull-failure alert delivery failed; will retry" >> "$LOG_FILE"
+        fi
     fi
     exit 1
 fi
-rm -f /var/tmp/ha-git-sync.pullfail
-
-# Belt-and-suspenders: if the autostash pop left unmerged paths, reset clean and
-# bail rather than committing/pushing a broken tree. (Local telemetry regenerates.)
-if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
-    git reset --hard "origin/$BRANCH" >>"$LOG_FILE" 2>&1
-    echo "[$TIMESTAMP] ERROR: autostash conflict; reset to origin/$BRANCH, retry next run" >> "$LOG_FILE"
-    exit 1
+rm -f /var/tmp/ha-git-sync.pullfail /var/tmp/ha-git-sync.pullfail.notified
+if [ -n "$LOCAL_SNAPSHOT" ]; then
+    git update-ref -d "$RECOVERY_REF" "$LOCAL_SNAPSHOT" || exit 1
 fi
 
-# --- 2. Nothing local to back up? We're fully synced — done. ---
-if [ -z "$(git status --porcelain)" ]; then
+# --- 2. Commit new edits, independently of retrying unpublished commits. ---
+if [ -n "$(git status --porcelain)" ]; then
+    # --- 3. Stage + commit local changes (respecting .gitignore) ---
+    if ! git add -A >>"$LOG_FILE" 2>&1 ||
+       ! git commit -m "Auto-sync: $TIMESTAMP" --no-verify >>"$LOG_FILE" 2>&1; then
+        echo "[$TIMESTAMP] ERROR: stage/commit failed" >> "$LOG_FILE"
+        exit 1
+    fi
+fi
+UNPUBLISHED=$(git rev-list --count "origin/$BRANCH..HEAD") || exit 1
+if [ "$UNPUBLISHED" -eq 0 ]; then
     exit 0
-fi
-
-# --- 3. Stage + commit local changes (respecting .gitignore) ---
-git add -A
-if ! git commit -m "Auto-sync: $TIMESTAMP" --no-verify >>"$LOG_FILE" 2>&1; then
-    echo "[$TIMESTAMP] ERROR: commit failed" >> "$LOG_FILE"
-    exit 1
 fi
 
 # --- 4. Push ---
@@ -127,4 +178,5 @@ if git push origin "$BRANCH" >>"$LOG_FILE" 2>&1; then
     echo "[$TIMESTAMP] Pushed to origin/$BRANCH" >> "$LOG_FILE"
 else
     echo "[$TIMESTAMP] ERROR: push failed (will retry next run)" >> "$LOG_FILE"
+    exit 1
 fi
