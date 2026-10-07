@@ -1,0 +1,17 @@
+{
+  "before_sha256": "2652d8f663a70ec1274b7750a3472fb68a75e882554dc6cd83b4dfb67ca64356",
+  "before_automation_hashes": {
+    "automations/02_kitchen_light_sync.yaml": "0774b19b2a815b8111081595a713e0dbb25795f10c66b05dbf647569655166a8",
+    "automations/05_grizzl_e_charging.yaml": "c449007b559f7528d825df04deeef80db9d303683ead7281e705898fda5a80cf",
+    "automations/20_outdoor_decoration_schedule.yaml": "2652d8f663a70ec1274b7750a3472fb68a75e882554dc6cd83b4dfb67ca64356",
+    "automations/06_enhancements.yaml": "cd5709dcb83e2dbd7903727166dbc1938db42364e83af4c2bfa0ff5760f65ccf",
+    "automations/10_climate_comfort.yaml": "f3c66e03f87c6a1a74f9cc5cff63e067cbac60e033c8655302ebe084a19ef22f",
+    "automations/12_bus_pickup.yaml": "257b57170e956793546ec5eb5187516a19a285662c41f081b335dd86a35d07e0",
+    "automations/04_tuya_kitchen_bridge_startup.yaml": "f690459884220daa39eb4d888d55deae5420a1682f118e0ec5660b51eaaf76a4",
+    "automations/08_ev_per_vehicle_cost_tracking.yaml": "5318f0463089516baffa182897c22aa7a3f67d818ff9063cea713a8d7f480f31",
+    "automations/11_appliances.yaml": "1ed84979940b36af19e9849f0ce4b48626e9f530be1dcc0715e8bd69a6969a33",
+    "automations/01_main.yaml": "9b4f0fec9dd8116d60d677a3f85af9e87f98ef97db1d437bd4f9d6dbbfcacc1f",
+    "automations/09_garden_watering.yaml": "8565d1b2e5b7a8cca37f3de454ecda8de0e5ac56cebd5cdbe3096ccb183784f6",
+    "automations/07_presence_sensors.yaml": "2a46377776f828071a48701a6a9e88ea67e19ade582cb424b591c51e6acbe29b"
+  }
+}
